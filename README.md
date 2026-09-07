@@ -1,7 +1,8 @@
-﻿# 📱 Mobile Final Project
+# 📱 InternFinder — Mobile Final Project
 
 [![Flutter CI](https://github.com/tophbeifong123/mobile-final-project/actions/workflows/client-ci.yml/badge.svg)](https://github.com/tophbeifong123/mobile-final-project/actions/workflows/client-ci.yml)
 [![NestJS CI](https://github.com/tophbeifong123/mobile-final-project/actions/workflows/server-ci.yml/badge.svg)](https://github.com/tophbeifong123/mobile-final-project/actions/workflows/server-ci.yml)
+[![Kanban Board](https://img.shields.io/badge/Project-Kanban%20Board-blueviolet?logo=github)](https://github.com/users/tophbeifong123/projects/2)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Flutter](https://img.shields.io/badge/Flutter-3.44+-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![NestJS](https://img.shields.io/badge/NestJS-12.x-E0234E?logo=nestjs&logoColor=white)](https://nestjs.com)
@@ -10,7 +11,43 @@ A production-grade mobile application architecture built with **Flutter** (Front
 
 ---
 
+## 🔗 Links & Guide
+
+| Resource | Link / Details | Description |
+|---|---|---|
+| 📌 **Kanban Project Board** | [InternFinder Board](https://github.com/users/tophbeifong123/projects/2) | Visual task management board (Backlog, Ready, In Progress, Done) |
+| 🗂️ **Product Backlog** | [Issues Tracker #1–#48](https://github.com/tophbeifong123/mobile-final-project/issues) | Complete list of all 48 epics and user stories |
+| 📑 **API Documentation** | [Swagger OpenAPI](http://localhost:3000/api/docs) | Interactive API tester (`/api/docs` on dev server) |
+| 🤝 **Contribution Guide** | [CONTRIBUTING.md](CONTRIBUTING.md) | Branching strategy (Git Flow) & Conventional Commits |
+
+### 🏃‍♂️ Sprint & Backlog Breakdown
+
+```
+Sprint 1: Foundation, Design & Auth (#1–#13, #27)
+ ├── Ready: #1-#6 (Repo, NestJS, Flutter, DB, ERD, Secrets), #11-#13 (Auth API), #27 (Auth UI)
+ └── Backlog: #7-#10 (Figma Design System & Flows)
+
+Sprint 2: Profiles & Job Core (#14–#19, #28–#32)
+ └── Backlog: Student profile, Resume upload, Job CRUD, Public listing/search & Flutter feeds
+
+Sprint 3: Applications & Company Module (#20–#25, #33–#38)
+ └── Backlog: Application workflow, In-app notifications, Company job/applicant management
+
+Sprint 4: Quality, Deployment & Docs (#26, #39–#48)
+ └── Backlog: E2E/Widget tests, Docker container, Cloud deploy, Release APK, Docs & Demo script
+```
+
+### 📋 Kanban Board Workflow
+1. **Backlog**: Tasks planned for upcoming sprints waiting to be picked up.
+2. **Ready**: High-priority tasks groomed and ready to start immediately.
+3. **In Progress**: Actively being worked on (Branch naming: `feat/<name>` or `fix/<name>`).
+4. **In Review**: Pull Request submitted with passing CI checks.
+5. **Done**: Code reviewed, merged into `develop`/`main`, and verified.
+
+---
+
 ## 🏗️ System Architecture
+
 
 ```
 mobile-final-project/
