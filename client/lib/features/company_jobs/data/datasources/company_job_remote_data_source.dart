@@ -10,8 +10,19 @@ class CompanyJobRemoteDataSource {
 
   final Dio _dio;
 
-  Future<List<CompanyJobModel>> fetchMine() {
-    throwNotConnected(_dio, ApiConstants.companyJobs);
+  Future<List<CompanyJobModel>> fetchMine() async {
+    try {
+      final response = await _dio.get<List<dynamic>>(ApiConstants.companyJobs);
+      final data = response.data;
+      if (data == null) {
+        throw const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
+      }
+      return data
+          .map((item) => CompanyJobModel.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } on DioException catch (error) {
+      throw mapCompanyJobError(error);
+    }
   }
 
   Future<CreatedJobModel> create(JobPosting posting) async {
@@ -69,14 +80,23 @@ class CompanyJobRemoteDataSource {
 }
 
 AppException mapCompanyJobError(DioException error) {
+  final message = _serverMessage(error);
   switch (error.response?.statusCode) {
     case 400:
       return const AppException('ข้อมูลไม่ถูกต้อง');
     case 403:
-      return const AppException('เฉพาะบริษัทเท่านั้น');
+      return AppException(message ?? 'เฉพาะบริษัทเท่านั้น');
     case 404:
-      return const AppException('ไม่พบโปรไฟล์บริษัท');
+      return AppException(message ?? 'ไม่พบโปรไฟล์บริษัท');
     default:
       return const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
   }
+}
+
+String? _serverMessage(DioException error) {
+  final data = error.response?.data;
+  if (data is Map && data['message'] is String) {
+    return data['message'] as String;
+  }
+  return null;
 }

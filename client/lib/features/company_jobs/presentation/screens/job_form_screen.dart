@@ -186,6 +186,7 @@ class _JobFormScreenState extends ConsumerState<JobFormScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('สร้างประกาศแล้ว สถานะ ${created.status}')),
       );
+      ref.invalidate(companyJobListProvider);
       context.go('/company/jobs');
     } catch (error) {
       if (!mounted) {

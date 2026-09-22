@@ -12,6 +12,10 @@ final companyJobRepositoryProvider = Provider<CompanyJobRepository>((ref) {
   );
 });
 
+final companyJobListProvider = FutureProvider<List<CompanyJob>>((ref) {
+  return ref.watch(companyJobRepositoryProvider).fetchMine();
+});
+
 class CompanyJobsController extends Notifier<void> {
   @override
   void build() {

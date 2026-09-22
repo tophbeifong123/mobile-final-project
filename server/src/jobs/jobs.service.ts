@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { type AuthUser } from '../auth/auth-user.js';
 import { UserRole } from '../auth/user-role.js';
+import { CompanyJobItemDto } from './dto/company-job-item.dto.js';
 import { CreateJobDto } from './dto/create-job.dto.js';
 import { JobDetailDto } from './dto/job-detail.dto.js';
 import { JobDto } from './dto/job.dto.js';
@@ -98,6 +99,18 @@ export class JobsService {
     return jobs.map(toFeedItem);
   }
 
+  async listMine(user: AuthUser): Promise<CompanyJobItemDto[]> {
+    if (user.role !== UserRole.Company) {
+      throw new ForbiddenException(COMPANY_ONLY);
+    }
+    const companyId = await this.jobsRepository.findCompanyId(user.userId);
+    if (!companyId) {
+      throw new NotFoundException(COMPANY_NOT_FOUND);
+    }
+    const jobs = await this.jobsRepository.listByCompany(companyId);
+    return jobs.map(toCompanyItem);
+  }
+
   private async requireStudentId(user: AuthUser): Promise<string> {
     if (user.role !== UserRole.Student) {
       throw new ForbiddenException(STUDENT_ONLY);
@@ -167,6 +180,20 @@ function toDetail(
   dto.businessType = job.businessType;
   dto.companyDescription = job.companyDescription;
   dto.saved = saved;
+  return dto;
+}
+
+function toCompanyItem(job: {
+  id: string;
+  title: string;
+  status: JobStatus;
+  applicantCount: number;
+}): CompanyJobItemDto {
+  const dto = new CompanyJobItemDto();
+  dto.id = job.id;
+  dto.title = job.title;
+  dto.status = job.status;
+  dto.applicantCount = job.applicantCount;
   return dto;
 }
 

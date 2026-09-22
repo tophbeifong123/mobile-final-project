@@ -18,6 +18,7 @@ describe('JobsService', () => {
     save: vi.fn(),
     unsave: vi.fn(),
     listSaved: vi.fn(),
+    listByCompany: vi.fn(),
   };
 
   let service: JobsService;
@@ -246,5 +247,39 @@ describe('JobsService', () => {
     expect(repository.listSaved).toHaveBeenCalledWith('student-1');
     expect(result).toHaveLength(1);
     expect(result[0]?.title).toBe('Flutter Intern');
+  });
+
+  it('lists the company postings with an applicant count', async () => {
+    repository.findCompanyId.mockResolvedValue('company-1');
+    repository.listByCompany.mockResolvedValue([
+      {
+        id: 'job-1',
+        title: 'Flutter Intern',
+        status: JobStatus.Open,
+        applicantCount: 0,
+      },
+      {
+        id: 'job-2',
+        title: 'งานที่ปิดแล้ว',
+        status: JobStatus.Closed,
+        applicantCount: 0,
+      },
+    ]);
+
+    const result = await service.listMine(company);
+
+    expect(repository.listByCompany).toHaveBeenCalledWith('company-1');
+    expect(result.map((job) => job.status)).toEqual([
+      JobStatus.Open,
+      JobStatus.Closed,
+    ]);
+    expect(result[0]?.applicantCount).toBe(0);
+  });
+
+  it('rejects a student reading the company job list', async () => {
+    await expect(service.listMine(student)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+    expect(repository.listByCompany).not.toHaveBeenCalled();
   });
 });

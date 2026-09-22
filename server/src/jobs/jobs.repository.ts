@@ -32,6 +32,13 @@ export interface OpenJobDetail extends OpenJobRecord {
   companyDescription: string;
 }
 
+export interface CompanyJobRecord {
+  id: string;
+  title: string;
+  status: JobStatus;
+  applicantCount: number;
+}
+
 export interface NewJob {
   companyId: string;
   title: string;
@@ -103,6 +110,24 @@ export class JobsRepository {
       .orderBy('saved.createdAt', 'DESC')
       .getRawMany<Record<string, unknown>>()
       .then((rows) => rows.map(toOpenJob));
+  }
+
+  listByCompany(companyId: string): Promise<CompanyJobRecord[]> {
+    return this.dataSource
+      .getRepository(Job)
+      .find({
+        where: { companyId },
+        select: { id: true, title: true, status: true },
+        order: { createdAt: 'DESC' },
+      })
+      .then((jobs) =>
+        jobs.map((job) => ({
+          id: job.id,
+          title: job.title,
+          status: job.status,
+          applicantCount: 0,
+        })),
+      );
   }
 
   create(input: NewJob): Promise<Job> {

@@ -40,7 +40,10 @@ class StatusChip extends StatelessWidget {
         return const _ChipTone(AppColors.accent, AppColors.textPrimary);
       case 'closed':
       case 'rejected':
+      case 'ปิดรับ':
         return const _ChipTone(Color(0xFFE2E8F0), AppColors.textSecondary);
+      case 'เปิดรับ':
+        return const _ChipTone(AppColors.success, Colors.white);
       default:
         return const _ChipTone(AppColors.primary, Colors.white);
     }
