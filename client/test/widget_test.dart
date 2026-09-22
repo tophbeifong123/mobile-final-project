@@ -18,6 +18,6 @@ void main() {
     await tester.pump();
     await tester.pump();
 
-    expect(find.text('Login'), findsOneWidget);
+    expect(find.text('ยินดีต้อนรับกลับมา!'), findsOneWidget);
   });
 }
