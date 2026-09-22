@@ -3,6 +3,8 @@ import '../entities/company_job.dart';
 abstract class CompanyJobRepository {
   Future<List<CompanyJob>> fetchMine();
 
+  Future<CreatedJob> create(JobPosting posting);
+
   Future<void> setStatus({required String jobId, required String status});
 
   Future<List<Applicant>> fetchApplicants(String jobId);

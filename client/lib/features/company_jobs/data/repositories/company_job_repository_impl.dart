@@ -14,6 +14,11 @@ class CompanyJobRepositoryImpl implements CompanyJobRepository {
   }
 
   @override
+  Future<CreatedJob> create(JobPosting posting) async {
+    return (await _remote.create(posting)).toEntity();
+  }
+
+  @override
   Future<void> setStatus({required String jobId, required String status}) {
     return _remote.setStatus(jobId: jobId, status: status);
   }

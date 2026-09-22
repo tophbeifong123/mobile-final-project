@@ -32,6 +32,24 @@ class CompanyJobModel {
   }
 }
 
+class CreatedJobModel {
+  const CreatedJobModel({required this.id, required this.status});
+
+  factory CreatedJobModel.fromJson(Map<String, dynamic> json) {
+    return CreatedJobModel(
+      id: json['id'] as String,
+      status: json['status'] as String? ?? 'open',
+    );
+  }
+
+  final String id;
+  final String status;
+
+  CreatedJob toEntity() {
+    return CreatedJob(id: id, status: status);
+  }
+}
+
 class ApplicantModel {
   const ApplicantModel({
     required this.applicationId,
