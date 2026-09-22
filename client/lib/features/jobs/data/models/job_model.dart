@@ -18,7 +18,7 @@ class JobModel {
       title: json['title'] as String,
       companyName: json['companyName'] as String,
       province: json['province'] as String,
-      workMode: WorkMode.values.byName(json['workMode'] as String),
+      workMode: workModeFromApi(json['workMode'] as String),
       category: json['category'] as String,
       hasAllowance: json['hasAllowance'] as bool,
       status: JobStatus.values.byName(json['status'] as String),

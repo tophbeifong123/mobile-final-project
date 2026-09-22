@@ -2,6 +2,7 @@ import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { UserRole } from '../auth/user-role.js';
 import { CreateJobDto } from './dto/create-job.dto.js';
+import { JobFeedQueryDto } from './dto/job-feed-query.dto.js';
 import { JobStatus, WorkMode } from './job-enums.js';
 import { JobsRepository } from './jobs.repository.js';
 import { JobsService } from './jobs.service.js';
@@ -10,6 +11,7 @@ describe('JobsService', () => {
   const repository = {
     findCompanyId: vi.fn(),
     create: vi.fn(),
+    findOpen: vi.fn(),
   };
 
   let service: JobsService;
@@ -98,5 +100,46 @@ describe('JobsService', () => {
       NotFoundException,
     );
     expect(repository.create).not.toHaveBeenCalled();
+  });
+
+  it('returns only the open jobs the repository finds for a student', async () => {
+    repository.findOpen.mockResolvedValue([
+      {
+        id: 'job-1',
+        title: 'Flutter Intern',
+        companyName: 'InternFinder',
+        province: 'สงขลา',
+        workMode: WorkMode.Hybrid,
+        category: 'IT',
+        hasAllowance: true,
+        status: JobStatus.Open,
+      },
+    ]);
+    const query = new JobFeedQueryDto();
+    query.search = 'flutter';
+    query.province = 'สงขลา';
+    query.workMode = WorkMode.Hybrid;
+    query.category = 'IT';
+    query.hasAllowance = true;
+
+    const result = await service.listOpen(student, query);
+
+    expect(repository.findOpen).toHaveBeenCalledWith({
+      search: 'flutter',
+      province: 'สงขลา',
+      workMode: WorkMode.Hybrid,
+      category: 'IT',
+      hasAllowance: true,
+    });
+    expect(result).toHaveLength(1);
+    expect(result[0]?.status).toBe(JobStatus.Open);
+    expect(result[0]?.companyName).toBe('InternFinder');
+  });
+
+  it('rejects a company reading the student feed', async () => {
+    await expect(
+      service.listOpen(company, new JobFeedQueryDto()),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(repository.findOpen).not.toHaveBeenCalled();
   });
 });

@@ -23,3 +23,8 @@ class JobsController extends Notifier<JobFilter> {
 final jobsControllerProvider = NotifierProvider<JobsController, JobFilter>(
   JobsController.new,
 );
+
+final jobFeedProvider = FutureProvider<List<Job>>((ref) {
+  final filter = ref.watch(jobsControllerProvider);
+  return ref.watch(jobRepositoryProvider).fetchFeed(filter);
+});

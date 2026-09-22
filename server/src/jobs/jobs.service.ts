@@ -7,11 +7,14 @@ import { type AuthUser } from '../auth/auth-user.js';
 import { UserRole } from '../auth/user-role.js';
 import { CreateJobDto } from './dto/create-job.dto.js';
 import { JobDto } from './dto/job.dto.js';
+import { JobFeedItemDto } from './dto/job-feed-item.dto.js';
+import { JobFeedQueryDto } from './dto/job-feed-query.dto.js';
 import { JobStatus } from './job-enums.js';
 import { JobsRepository } from './jobs.repository.js';
 
 const COMPANY_ONLY = 'เฉพาะบริษัทเท่านั้น';
 const COMPANY_NOT_FOUND = 'ไม่พบโปรไฟล์บริษัท';
+const STUDENT_ONLY = 'เฉพาะนักศึกษาเท่านั้น';
 
 @Injectable()
 export class JobsService {
@@ -39,6 +42,23 @@ export class JobsService {
     });
     return toDto(job);
   }
+
+  async listOpen(
+    user: AuthUser,
+    query: JobFeedQueryDto,
+  ): Promise<JobFeedItemDto[]> {
+    if (user.role !== UserRole.Student) {
+      throw new ForbiddenException(STUDENT_ONLY);
+    }
+    const jobs = await this.jobsRepository.findOpen({
+      search: query.search,
+      province: query.province,
+      workMode: query.workMode,
+      category: query.category,
+      hasAllowance: query.hasAllowance,
+    });
+    return jobs.map(toFeedItem);
+  }
 }
 
 function toDto(job: {
@@ -64,5 +84,27 @@ function toDto(job: {
   dto.requirements = job.requirements;
   dto.status = job.status;
   dto.version = job.version;
+  return dto;
+}
+
+function toFeedItem(job: {
+  id: string;
+  title: string;
+  companyName: string;
+  province: string;
+  workMode: JobFeedItemDto['workMode'];
+  category: string;
+  hasAllowance: boolean;
+  status: JobStatus;
+}): JobFeedItemDto {
+  const dto = new JobFeedItemDto();
+  dto.id = job.id;
+  dto.title = job.title;
+  dto.companyName = job.companyName;
+  dto.province = job.province;
+  dto.workMode = job.workMode;
+  dto.category = job.category;
+  dto.hasAllowance = job.hasAllowance;
+  dto.status = job.status;
   return dto;
 }
