@@ -50,6 +50,62 @@ class CreatedJobModel {
   }
 }
 
+class EditableJobModel {
+  const EditableJobModel({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.province,
+    required this.workMode,
+    required this.category,
+    required this.hasAllowance,
+    required this.requirements,
+    required this.status,
+    required this.version,
+  });
+
+  factory EditableJobModel.fromJson(Map<String, dynamic> json) {
+    return EditableJobModel(
+      id: json['id'] as String,
+      title: json['title'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      province: json['province'] as String? ?? '',
+      workMode: json['workMode'] as String? ?? 'hybrid',
+      category: json['category'] as String? ?? '',
+      hasAllowance: json['hasAllowance'] as bool? ?? false,
+      requirements: json['requirements'] as String? ?? '',
+      status: json['status'] as String? ?? 'open',
+      version: json['version'] as int? ?? 1,
+    );
+  }
+
+  final String id;
+  final String title;
+  final String description;
+  final String province;
+  final String workMode;
+  final String category;
+  final bool hasAllowance;
+  final String requirements;
+  final String status;
+  final int version;
+
+  EditableJob toEntity() {
+    return EditableJob(
+      id: id,
+      title: title,
+      description: description,
+      province: province,
+      workMode: workMode,
+      category: category,
+      hasAllowance: hasAllowance,
+      requirements: requirements,
+      status: status,
+      version: version,
+    );
+  }
+}
+
 class ApplicantModel {
   const ApplicantModel({
     required this.applicationId,

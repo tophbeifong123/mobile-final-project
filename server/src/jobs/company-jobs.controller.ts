@@ -1,9 +1,13 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -11,6 +15,7 @@ import {
   ApiBearerAuth,
   ApiBody,
   ApiOperation,
+  ApiParam,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -20,6 +25,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { CompanyJobItemDto } from './dto/company-job-item.dto.js';
 import { CreateJobDto } from './dto/create-job.dto.js';
 import { JobDto } from './dto/job.dto.js';
+import { UpdateJobDto } from './dto/update-job.dto.js';
 import { JobsService } from './jobs.service.js';
 
 @ApiTags('Company jobs')
@@ -39,6 +45,21 @@ export class CompanyJobsController {
     return this.jobsService.listMine(user);
   }
 
+  @Get(':id')
+  @ApiOperation({ summary: 'อ่านประกาศของบริษัทนี้เพื่อแก้ไข' })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiResponse({ status: 200, type: JobDto })
+  @ApiResponse({ status: 400, description: 'รหัสประกาศไม่ถูกต้อง' })
+  @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
+  @ApiResponse({ status: 403, description: 'เฉพาะบริษัท หรือไม่ใช่ประกาศของบริษัทนี้' })
+  @ApiResponse({ status: 404, description: 'ไม่พบประกาศหรือโปรไฟล์บริษัท' })
+  getOne(
+    @CurrentUser() user: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<JobDto> {
+    return this.jobsService.getMine(user, id);
+  }
+
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'สร้างประกาศฝึกงานสถานะ Open' })
@@ -53,5 +74,39 @@ export class CompanyJobsController {
     @Body() dto: CreateJobDto,
   ): Promise<JobDto> {
     return this.jobsService.create(user, dto);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'แก้ประกาศของบริษัทนี้' })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiBody({ type: UpdateJobDto })
+  @ApiResponse({ status: 200, type: JobDto })
+  @ApiResponse({ status: 400, description: 'ข้อมูลไม่ถูกต้อง' })
+  @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
+  @ApiResponse({ status: 403, description: 'เฉพาะบริษัท หรือไม่ใช่ประกาศของบริษัทนี้' })
+  @ApiResponse({ status: 404, description: 'ไม่พบประกาศหรือโปรไฟล์บริษัท' })
+  @ApiResponse({ status: 409, description: 'เวอร์ชันประกาศไม่ตรง' })
+  update(
+    @CurrentUser() user: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateJobDto,
+  ): Promise<JobDto> {
+    return this.jobsService.update(user, id, dto);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'ลบประกาศของบริษัทนี้' })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiResponse({ status: 204, description: 'ลบแล้ว' })
+  @ApiResponse({ status: 400, description: 'รหัสประกาศไม่ถูกต้อง' })
+  @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
+  @ApiResponse({ status: 403, description: 'เฉพาะบริษัท หรือไม่ใช่ประกาศของบริษัทนี้' })
+  @ApiResponse({ status: 404, description: 'ไม่พบประกาศหรือโปรไฟล์บริษัท' })
+  remove(
+    @CurrentUser() user: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<void> {
+    return this.jobsService.remove(user, id);
   }
 }

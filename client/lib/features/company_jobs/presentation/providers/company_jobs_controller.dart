@@ -16,6 +16,13 @@ final companyJobListProvider = FutureProvider<List<CompanyJob>>((ref) {
   return ref.watch(companyJobRepositoryProvider).fetchMine();
 });
 
+final companyJobDetailProvider = FutureProvider.family<EditableJob, String>((
+  ref,
+  jobId,
+) {
+  return ref.watch(companyJobRepositoryProvider).fetchOne(jobId);
+});
+
 class CompanyJobsController extends Notifier<void> {
   @override
   void build() {
@@ -24,6 +31,20 @@ class CompanyJobsController extends Notifier<void> {
 
   Future<CreatedJob> create(JobPosting posting) {
     return ref.read(companyJobRepositoryProvider).create(posting);
+  }
+
+  Future<EditableJob> update({
+    required String jobId,
+    required JobPosting posting,
+    required int version,
+  }) {
+    return ref
+        .read(companyJobRepositoryProvider)
+        .update(jobId: jobId, posting: posting, version: version);
+  }
+
+  Future<void> remove(String jobId) {
+    return ref.read(companyJobRepositoryProvider).remove(jobId);
   }
 }
 

@@ -154,7 +154,7 @@ Route `GET /api/jobs/saved` ต้องประกาศก่อน `GET /api
 | GET, PATCH | /api/companies/me | Company Profile |
 | POST | /api/companies/me/logo | อัปโหลด logo |
 | GET, POST | /api/company/jobs | Manage Jobs, Create Job |
-| PATCH | /api/company/jobs/:id | Edit Job |
+| GET, PATCH, DELETE | /api/company/jobs/:id | อ่าน แก้ หรือลบประกาศของบริษัทนี้ |
 | PATCH | /api/company/jobs/:id/status | เปิดหรือปิดรับสมัคร |
 | GET | /api/company/jobs/:id/applications | Applicants List |
 | GET | /api/company/jobs/:id/applications/:applicationId | Applicant Detail |

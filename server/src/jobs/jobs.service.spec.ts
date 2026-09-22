@@ -1,10 +1,11 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { UserRole } from '../auth/user-role.js';
 import { CreateJobDto } from './dto/create-job.dto.js';
 import { JobFeedQueryDto } from './dto/job-feed-query.dto.js';
+import { UpdateJobDto } from './dto/update-job.dto.js';
 import { JobStatus, WorkMode } from './job-enums.js';
-import { JobsRepository } from './jobs.repository.js';
+import { JobsRepository, JobVersionConflictError } from './jobs.repository.js';
 import { JobsService } from './jobs.service.js';
 
 describe('JobsService', () => {
@@ -18,6 +19,9 @@ describe('JobsService', () => {
     save: vi.fn(),
     unsave: vi.fn(),
     listSaved: vi.fn(),
+    findById: vi.fn(),
+    updateOwned: vi.fn(),
+    deleteOwned: vi.fn(),
     listByCompany: vi.fn(),
   };
 
@@ -281,5 +285,117 @@ describe('JobsService', () => {
       ForbiddenException,
     );
     expect(repository.listByCompany).not.toHaveBeenCalled();
+  });
+
+  it('updates the company posting when the version matches', async () => {
+    repository.findCompanyId.mockResolvedValue('company-1');
+    repository.findById.mockResolvedValue({
+      id: 'job-1',
+      companyId: 'company-1',
+    });
+    repository.updateOwned.mockResolvedValue({
+      id: 'job-1',
+      title: 'Flutter Intern',
+      description: 'ช่วยพัฒนาแอป',
+      province: 'สงขลา',
+      workMode: WorkMode.Remote,
+      category: 'IT',
+      hasAllowance: false,
+      requirements: 'ใช้ Flutter ได้',
+      status: JobStatus.Open,
+      version: 2,
+    });
+    const dto = new UpdateJobDto();
+    dto.title = ' Flutter Intern ';
+    dto.description = ' ช่วยพัฒนาแอป ';
+    dto.province = ' สงขลา ';
+    dto.workMode = WorkMode.Remote;
+    dto.category = ' IT ';
+    dto.hasAllowance = false;
+    dto.requirements = ' ใช้ Flutter ได้ ';
+    dto.version = 1;
+
+    const result = await service.update(company, 'job-1', dto);
+
+    expect(repository.updateOwned).toHaveBeenCalledWith({
+      id: 'job-1',
+      companyId: 'company-1',
+      version: 1,
+      title: 'Flutter Intern',
+      description: 'ช่วยพัฒนาแอป',
+      province: 'สงขลา',
+      workMode: WorkMode.Remote,
+      category: 'IT',
+      hasAllowance: false,
+      requirements: 'ใช้ Flutter ได้',
+    });
+    expect(result.version).toBe(2);
+  });
+
+  it('rejects an update when the posting version is stale', async () => {
+    repository.findCompanyId.mockResolvedValue('company-1');
+    repository.findById.mockResolvedValue({
+      id: 'job-1',
+      companyId: 'company-1',
+    });
+    repository.updateOwned.mockRejectedValue(new JobVersionConflictError());
+    const dto = new UpdateJobDto();
+    dto.title = 'งาน';
+    dto.description = 'รายละเอียด';
+    dto.province = 'สงขลา';
+    dto.workMode = WorkMode.Hybrid;
+    dto.category = 'IT';
+    dto.hasAllowance = false;
+    dto.requirements = 'คุณสมบัติ';
+    dto.version = 1;
+
+    await expect(service.update(company, 'job-1', dto)).rejects.toBeInstanceOf(
+      ConflictException,
+    );
+  });
+
+  it('rejects a company editing another company posting', async () => {
+    repository.findCompanyId.mockResolvedValue('company-1');
+    repository.findById.mockResolvedValue({
+      id: 'job-1',
+      companyId: 'company-2',
+    });
+    const dto = new UpdateJobDto();
+    dto.title = 'งาน';
+    dto.description = 'รายละเอียด';
+    dto.province = 'สงขลา';
+    dto.workMode = WorkMode.Hybrid;
+    dto.category = 'IT';
+    dto.hasAllowance = false;
+    dto.requirements = 'คุณสมบัติ';
+    dto.version = 1;
+
+    await expect(service.update(company, 'job-1', dto)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+    expect(repository.updateOwned).not.toHaveBeenCalled();
+  });
+
+  it('deletes the company posting', async () => {
+    repository.findCompanyId.mockResolvedValue('company-1');
+    repository.findById.mockResolvedValue({
+      id: 'job-1',
+      companyId: 'company-1',
+    });
+    repository.deleteOwned.mockResolvedValue(true);
+
+    await service.remove(company, 'job-1');
+
+    expect(repository.deleteOwned).toHaveBeenCalledWith('job-1', 'company-1');
+  });
+
+  it('does not delete a missing posting', async () => {
+    repository.findCompanyId.mockResolvedValue('company-1');
+    repository.findById.mockResolvedValue(null);
+
+    await expect(service.remove(company, 'job-1')).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    expect(repository.deleteOwned).not.toHaveBeenCalled();
   });
 });

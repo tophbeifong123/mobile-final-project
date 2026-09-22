@@ -39,6 +39,32 @@ class CreatedJob {
   final String status;
 }
 
+class EditableJob {
+  const EditableJob({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.province,
+    required this.workMode,
+    required this.category,
+    required this.hasAllowance,
+    required this.requirements,
+    required this.status,
+    required this.version,
+  });
+
+  final String id;
+  final String title;
+  final String description;
+  final String province;
+  final String workMode;
+  final String category;
+  final bool hasAllowance;
+  final String requirements;
+  final String status;
+  final int version;
+}
+
 class Applicant {
   const Applicant({
     required this.applicationId,

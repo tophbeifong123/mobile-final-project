@@ -25,6 +25,21 @@ class CompanyJobRemoteDataSource {
     }
   }
 
+  Future<EditableJobModel> fetchOne(String jobId) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '${ApiConstants.companyJobs}/$jobId',
+      );
+      final data = response.data;
+      if (data == null) {
+        throw const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
+      }
+      return EditableJobModel.fromJson(data);
+    } on DioException catch (error) {
+      throw mapCompanyJobError(error);
+    }
+  }
+
   Future<CreatedJobModel> create(JobPosting posting) async {
     try {
       final response = await _dio.post<Map<String, dynamic>>(
@@ -44,6 +59,43 @@ class CompanyJobRemoteDataSource {
         throw const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
       }
       return CreatedJobModel.fromJson(data);
+    } on DioException catch (error) {
+      throw mapCompanyJobError(error);
+    }
+  }
+
+  Future<EditableJobModel> update({
+    required String jobId,
+    required JobPosting posting,
+    required int version,
+  }) async {
+    try {
+      final response = await _dio.patch<Map<String, dynamic>>(
+        '${ApiConstants.companyJobs}/$jobId',
+        data: {
+          'title': posting.title,
+          'description': posting.description,
+          'province': posting.province,
+          'workMode': posting.workMode,
+          'category': posting.category,
+          'hasAllowance': posting.hasAllowance,
+          'requirements': posting.requirements,
+          'version': version,
+        },
+      );
+      final data = response.data;
+      if (data == null) {
+        throw const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
+      }
+      return EditableJobModel.fromJson(data);
+    } on DioException catch (error) {
+      throw mapCompanyJobError(error);
+    }
+  }
+
+  Future<void> remove(String jobId) async {
+    try {
+      await _dio.delete<void>('${ApiConstants.companyJobs}/$jobId');
     } on DioException catch (error) {
       throw mapCompanyJobError(error);
     }
@@ -88,6 +140,8 @@ AppException mapCompanyJobError(DioException error) {
       return AppException(message ?? 'เฉพาะบริษัทเท่านั้น');
     case 404:
       return AppException(message ?? 'ไม่พบโปรไฟล์บริษัท');
+    case 409:
+      return AppException(message ?? 'ประกาศถูกแก้ไปแล้ว โหลดข้อมูลใหม่');
     default:
       return const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
   }

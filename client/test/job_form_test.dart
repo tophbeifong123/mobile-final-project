@@ -69,15 +69,118 @@ void main() {
     expect(repository.lastPosting?.hasAllowance, isFalse);
     expect(find.text('รายการประกาศ'), findsOneWidget);
   });
+
+  testWidgets('company edits and deletes its own posting', (tester) async {
+    final repository = _FakeCompanyJobRepository();
+    final router = GoRouter(
+      initialLocation: '/company/jobs/job-1/edit',
+      routes: [
+        GoRoute(
+          path: '/company/jobs/:jobId/edit',
+          builder: (context, state) =>
+              JobFormScreen(jobId: state.pathParameters['jobId']),
+        ),
+        GoRoute(
+          path: '/company/jobs',
+          builder: (context, state) =>
+              const Scaffold(body: Text('รายการประกาศ')),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+          companyJobRepositoryProvider.overrideWithValue(repository),
+        ],
+        child: MaterialApp.router(
+          theme: AppTheme.lightTheme,
+          routerConfig: router,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Flutter Intern'), findsOneWidget);
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'ชื่องาน'),
+      'Backend Intern',
+    );
+    await tester.ensureVisible(find.text('บันทึกประกาศ'));
+    await tester.tap(find.text('บันทึกประกาศ'));
+    await tester.pumpAndSettle();
+
+    expect(repository.lastPosting?.title, 'Backend Intern');
+    expect(repository.lastVersion, 1);
+    expect(find.text('รายการประกาศ'), findsOneWidget);
+
+    router.go('/company/jobs/job-1/edit');
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('ลบประกาศ'));
+    await tester.tap(find.text('ลบประกาศ'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('ลบ'));
+    await tester.pumpAndSettle();
+
+    expect(repository.removedId, 'job-1');
+    expect(find.text('รายการประกาศ'), findsOneWidget);
+  });
 }
 
 class _FakeCompanyJobRepository implements CompanyJobRepository {
   JobPosting? lastPosting;
+  int? lastVersion;
+  String? removedId;
 
   @override
   Future<CreatedJob> create(JobPosting posting) async {
     lastPosting = posting;
     return const CreatedJob(id: 'job-1', status: 'open');
+  }
+
+  @override
+  Future<EditableJob> fetchOne(String jobId) async {
+    return const EditableJob(
+      id: 'job-1',
+      title: 'Flutter Intern',
+      description: 'ช่วยพัฒนาแอป',
+      province: 'สงขลา',
+      workMode: 'hybrid',
+      category: 'IT',
+      hasAllowance: false,
+      requirements: 'ใช้ Flutter ได้',
+      status: 'open',
+      version: 1,
+    );
+  }
+
+  @override
+  Future<EditableJob> update({
+    required String jobId,
+    required JobPosting posting,
+    required int version,
+  }) async {
+    lastPosting = posting;
+    lastVersion = version;
+    return EditableJob(
+      id: jobId,
+      title: posting.title,
+      description: posting.description,
+      province: posting.province,
+      workMode: posting.workMode,
+      category: posting.category,
+      hasAllowance: posting.hasAllowance,
+      requirements: posting.requirements,
+      status: 'open',
+      version: version + 1,
+    );
+  }
+
+  @override
+  Future<void> remove(String jobId) async {
+    removedId = jobId;
   }
 
   @override

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource, QueryFailedError } from 'typeorm';
+import { DataSource, OptimisticLockVersionMismatchError, QueryFailedError } from 'typeorm';
 import { CompanyProfile } from '../auth/entities/company-profile.entity.js';
 import { StudentProfile } from '../auth/entities/student-profile.entity.js';
 import { Job } from './entities/job.entity.js';
@@ -49,6 +49,21 @@ export interface NewJob {
   hasAllowance: boolean;
   requirements: string;
 }
+
+export interface OwnedJobUpdate {
+  id: string;
+  companyId: string;
+  version: number;
+  title: string;
+  description: string;
+  province: string;
+  workMode: WorkMode;
+  category: string;
+  hasAllowance: boolean;
+  requirements: string;
+}
+
+export class JobVersionConflictError extends Error {}
 
 @Injectable()
 export class JobsRepository {
@@ -145,6 +160,43 @@ export class JobsRepository {
         status: JobStatus.Open,
       }),
     );
+  }
+
+  findById(id: string): Promise<Job | null> {
+    return this.dataSource.getRepository(Job).findOne({ where: { id } });
+  }
+
+  async updateOwned(input: OwnedJobUpdate): Promise<Job | null> {
+    const jobs = this.dataSource.getRepository(Job);
+    const job = await jobs.findOne({
+      where: { id: input.id, companyId: input.companyId },
+    });
+    if (!job) {
+      return null;
+    }
+    job.title = input.title;
+    job.description = input.description;
+    job.province = input.province;
+    job.workMode = input.workMode;
+    job.category = input.category;
+    job.hasAllowance = input.hasAllowance;
+    job.requirements = input.requirements;
+    job.version = input.version;
+    try {
+      return await jobs.save(job);
+    } catch (error) {
+      if (error instanceof OptimisticLockVersionMismatchError) {
+        throw new JobVersionConflictError();
+      }
+      throw error;
+    }
+  }
+
+  deleteOwned(id: string, companyId: string): Promise<boolean> {
+    return this.dataSource
+      .getRepository(Job)
+      .delete({ id, companyId })
+      .then((result) => (result.affected ?? 0) > 0);
   }
 
   findOpen(filter: OpenJobFilter): Promise<OpenJobRecord[]> {

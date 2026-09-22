@@ -14,8 +14,31 @@ class CompanyJobRepositoryImpl implements CompanyJobRepository {
   }
 
   @override
+  Future<EditableJob> fetchOne(String jobId) async {
+    return (await _remote.fetchOne(jobId)).toEntity();
+  }
+
+  @override
   Future<CreatedJob> create(JobPosting posting) async {
     return (await _remote.create(posting)).toEntity();
+  }
+
+  @override
+  Future<EditableJob> update({
+    required String jobId,
+    required JobPosting posting,
+    required int version,
+  }) async {
+    return (await _remote.update(
+      jobId: jobId,
+      posting: posting,
+      version: version,
+    )).toEntity();
+  }
+
+  @override
+  Future<void> remove(String jobId) {
+    return _remote.remove(jobId);
   }
 
   @override

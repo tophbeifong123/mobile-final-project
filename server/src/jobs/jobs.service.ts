@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -11,14 +12,17 @@ import { JobDetailDto } from './dto/job-detail.dto.js';
 import { JobDto } from './dto/job.dto.js';
 import { JobFeedItemDto } from './dto/job-feed-item.dto.js';
 import { JobFeedQueryDto } from './dto/job-feed-query.dto.js';
+import { UpdateJobDto } from './dto/update-job.dto.js';
 import { JobStatus } from './job-enums.js';
-import { JobsRepository } from './jobs.repository.js';
+import { JobsRepository, JobVersionConflictError } from './jobs.repository.js';
 
 const COMPANY_ONLY = 'เฉพาะบริษัทเท่านั้น';
 const COMPANY_NOT_FOUND = 'ไม่พบโปรไฟล์บริษัท';
 const STUDENT_ONLY = 'เฉพาะนักศึกษาเท่านั้น';
 const JOB_NOT_FOUND = 'ไม่พบประกาศ';
 const STUDENT_NOT_FOUND = 'ไม่พบโปรไฟล์';
+const NOT_OWNED = 'เฉพาะประกาศของบริษัทนี้';
+const STALE_JOB = 'ประกาศถูกแก้ไปแล้ว โหลดข้อมูลใหม่';
 
 @Injectable()
 export class JobsService {
@@ -109,6 +113,71 @@ export class JobsService {
     }
     const jobs = await this.jobsRepository.listByCompany(companyId);
     return jobs.map(toCompanyItem);
+  }
+
+  async getMine(user: AuthUser, jobId: string): Promise<JobDto> {
+    const companyId = await this.requireCompanyId(user);
+    const job = await this.requireOwnedJob(companyId, jobId);
+    return toDto(job);
+  }
+
+  async update(user: AuthUser, jobId: string, dto: UpdateJobDto): Promise<JobDto> {
+    const companyId = await this.requireCompanyId(user);
+    await this.requireOwnedJob(companyId, jobId);
+    try {
+      const updated = await this.jobsRepository.updateOwned({
+        id: jobId,
+        companyId,
+        version: dto.version,
+        title: dto.title.trim(),
+        description: dto.description.trim(),
+        province: dto.province.trim(),
+        workMode: dto.workMode,
+        category: dto.category.trim(),
+        hasAllowance: dto.hasAllowance,
+        requirements: dto.requirements.trim(),
+      });
+      if (!updated) {
+        throw new NotFoundException(JOB_NOT_FOUND);
+      }
+      return toDto(updated);
+    } catch (error) {
+      if (error instanceof JobVersionConflictError) {
+        throw new ConflictException(STALE_JOB);
+      }
+      throw error;
+    }
+  }
+
+  async remove(user: AuthUser, jobId: string): Promise<void> {
+    const companyId = await this.requireCompanyId(user);
+    await this.requireOwnedJob(companyId, jobId);
+    const deleted = await this.jobsRepository.deleteOwned(jobId, companyId);
+    if (!deleted) {
+      throw new NotFoundException(JOB_NOT_FOUND);
+    }
+  }
+
+  private async requireCompanyId(user: AuthUser): Promise<string> {
+    if (user.role !== UserRole.Company) {
+      throw new ForbiddenException(COMPANY_ONLY);
+    }
+    const companyId = await this.jobsRepository.findCompanyId(user.userId);
+    if (!companyId) {
+      throw new NotFoundException(COMPANY_NOT_FOUND);
+    }
+    return companyId;
+  }
+
+  private async requireOwnedJob(companyId: string, jobId: string) {
+    const job = await this.jobsRepository.findById(jobId);
+    if (!job) {
+      throw new NotFoundException(JOB_NOT_FOUND);
+    }
+    if (job.companyId !== companyId) {
+      throw new ForbiddenException(NOT_OWNED);
+    }
+    return job;
   }
 
   private async requireStudentId(user: AuthUser): Promise<string> {

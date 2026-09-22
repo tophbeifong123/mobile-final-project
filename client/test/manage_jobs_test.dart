@@ -60,7 +60,26 @@ class _CompanyJobs implements CompanyJobRepository {
   }
 
   @override
+  Future<EditableJob> fetchOne(String jobId) {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<CreatedJob> create(JobPosting posting) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<EditableJob> update({
+    required String jobId,
+    required JobPosting posting,
+    required int version,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> remove(String jobId) {
     throw UnimplementedError();
   }
 
