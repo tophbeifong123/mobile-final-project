@@ -53,7 +53,7 @@ class _OpenJobRepository implements JobRepository {
   }
 
   @override
-  Future<Job> fetchDetail(String jobId) => throw UnimplementedError();
+  Future<JobDetail> fetchDetail(String jobId) => throw UnimplementedError();
 
   @override
   Future<void> save(String jobId) async {}

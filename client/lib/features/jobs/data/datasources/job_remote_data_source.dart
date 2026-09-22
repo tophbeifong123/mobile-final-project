@@ -37,8 +37,19 @@ class JobRemoteDataSource {
     }
   }
 
-  Future<JobModel> fetchDetail(String jobId) {
-    throwNotConnected(_dio, '${ApiConstants.jobs}/$jobId');
+  Future<JobDetailModel> fetchDetail(String jobId) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '${ApiConstants.jobs}/$jobId',
+      );
+      final data = response.data;
+      if (data == null) {
+        throw const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
+      }
+      return JobDetailModel.fromJson(data);
+    } on DioException catch (error) {
+      throw mapJobError(error);
+    }
   }
 
   Future<void> save(String jobId) {
@@ -56,6 +67,8 @@ AppException mapJobError(DioException error) {
       return const AppException('ข้อมูลไม่ถูกต้อง');
     case 403:
       return const AppException('เฉพาะนักศึกษาเท่านั้น');
+    case 404:
+      return const AppException('ไม่พบประกาศ');
     default:
       return const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
   }

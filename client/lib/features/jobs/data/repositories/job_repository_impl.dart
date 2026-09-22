@@ -14,7 +14,7 @@ class JobRepositoryImpl implements JobRepository {
   }
 
   @override
-  Future<Job> fetchDetail(String jobId) async {
+  Future<JobDetail> fetchDetail(String jobId) async {
     final model = await _remote.fetchDetail(jobId);
     return model.toEntity();
   }

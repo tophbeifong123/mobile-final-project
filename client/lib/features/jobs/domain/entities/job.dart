@@ -47,6 +47,36 @@ class Job {
   final JobStatus status;
 }
 
+class JobDetail {
+  const JobDetail({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.province,
+    required this.workMode,
+    required this.category,
+    required this.hasAllowance,
+    required this.requirements,
+    required this.status,
+    required this.companyName,
+    required this.businessType,
+    required this.companyDescription,
+  });
+
+  final String id;
+  final String title;
+  final String description;
+  final String province;
+  final WorkMode workMode;
+  final String category;
+  final bool hasAllowance;
+  final String requirements;
+  final JobStatus status;
+  final String companyName;
+  final String businessType;
+  final String companyDescription;
+}
+
 String workModeToApi(WorkMode mode) {
   return switch (mode) {
     WorkMode.onSite => 'on_site',

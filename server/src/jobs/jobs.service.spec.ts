@@ -12,6 +12,7 @@ describe('JobsService', () => {
     findCompanyId: vi.fn(),
     create: vi.fn(),
     findOpen: vi.fn(),
+    findOpenById: vi.fn(),
   };
 
   let service: JobsService;
@@ -141,5 +142,45 @@ describe('JobsService', () => {
       service.listOpen(company, new JobFeedQueryDto()),
     ).rejects.toBeInstanceOf(ForbiddenException);
     expect(repository.findOpen).not.toHaveBeenCalled();
+  });
+
+  it('returns an open job with the company profile for a student', async () => {
+    repository.findOpenById.mockResolvedValue({
+      id: 'job-1',
+      title: 'Flutter Intern',
+      description: 'ช่วยพัฒนาแอป',
+      province: 'สงขลา',
+      workMode: WorkMode.Hybrid,
+      category: 'IT',
+      hasAllowance: true,
+      requirements: 'ใช้ Flutter ได้',
+      status: JobStatus.Open,
+      companyName: 'InternFinder',
+      businessType: 'ซอฟต์แวร์',
+      companyDescription: 'แพลตฟอร์มฝึกงาน',
+    });
+
+    const result = await service.getOpen(student, 'job-1');
+
+    expect(repository.findOpenById).toHaveBeenCalledWith('job-1');
+    expect(result.companyName).toBe('InternFinder');
+    expect(result.businessType).toBe('ซอฟต์แวร์');
+    expect(result.description).toBe('ช่วยพัฒนาแอป');
+    expect(result.status).toBe(JobStatus.Open);
+  });
+
+  it('hides a missing or closed job from a student', async () => {
+    repository.findOpenById.mockResolvedValue(null);
+
+    await expect(service.getOpen(student, 'job-1')).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+  });
+
+  it('rejects a company reading a job detail', async () => {
+    await expect(service.getOpen(company, 'job-1')).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+    expect(repository.findOpenById).not.toHaveBeenCalled();
   });
 });

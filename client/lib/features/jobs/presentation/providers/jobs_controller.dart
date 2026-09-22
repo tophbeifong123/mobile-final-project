@@ -28,3 +28,7 @@ final jobFeedProvider = FutureProvider<List<Job>>((ref) {
   final filter = ref.watch(jobsControllerProvider);
   return ref.watch(jobRepositoryProvider).fetchFeed(filter);
 });
+
+final jobDetailProvider = FutureProvider.family<JobDetail, String>((ref, id) {
+  return ref.watch(jobRepositoryProvider).fetchDetail(id);
+});

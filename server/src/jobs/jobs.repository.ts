@@ -23,6 +23,13 @@ export interface OpenJobRecord {
   status: JobStatus;
 }
 
+export interface OpenJobDetail extends OpenJobRecord {
+  description: string;
+  requirements: string;
+  businessType: string;
+  companyDescription: string;
+}
+
 export interface NewJob {
   companyId: string;
   title: string;
@@ -110,6 +117,29 @@ export class JobsRepository {
       .getRawMany<Record<string, unknown>>()
       .then((rows) => rows.map(toOpenJob));
   }
+
+  findOpenById(id: string): Promise<OpenJobDetail | null> {
+    return this.dataSource
+      .getRepository(Job)
+      .createQueryBuilder('job')
+      .innerJoin(CompanyProfile, 'company', 'company.id = job.companyId')
+      .where('job.id = :id', { id })
+      .andWhere('job.status = :status', { status: JobStatus.Open })
+      .select('job.id', 'id')
+      .addSelect('job.title', 'title')
+      .addSelect('job.description', 'description')
+      .addSelect('job.province', 'province')
+      .addSelect('job.workMode', 'workMode')
+      .addSelect('job.category', 'category')
+      .addSelect('job.hasAllowance', 'hasAllowance')
+      .addSelect('job.requirements', 'requirements')
+      .addSelect('job.status', 'status')
+      .addSelect('company.name', 'companyName')
+      .addSelect('company.businessType', 'businessType')
+      .addSelect('company.description', 'companyDescription')
+      .getRawOne<Record<string, unknown>>()
+      .then((row) => (row ? toOpenJobDetail(row) : null));
+  }
 }
 
 function containsPattern(value: string): string {
@@ -136,9 +166,22 @@ function toOpenJob(row: Record<string, unknown>): OpenJobRecord {
     province: String(readField(row, 'province') ?? ''),
     workMode: readField(row, 'workMode') as WorkMode,
     category: String(readField(row, 'category') ?? ''),
-    hasAllowance:
-      readField(row, 'hasAllowance') === true ||
-      readField(row, 'hasAllowance') === 'true',
+    hasAllowance: readBoolean(row, 'hasAllowance'),
     status: readField(row, 'status') as JobStatus,
   };
+}
+
+function toOpenJobDetail(row: Record<string, unknown>): OpenJobDetail {
+  return {
+    ...toOpenJob(row),
+    description: String(readField(row, 'description') ?? ''),
+    requirements: String(readField(row, 'requirements') ?? ''),
+    businessType: String(readField(row, 'businessType') ?? ''),
+    companyDescription: String(readField(row, 'companyDescription') ?? ''),
+  };
+}
+
+function readBoolean(row: Record<string, unknown>, key: string): boolean {
+  const value = readField(row, key);
+  return value === true || value === 'true';
 }

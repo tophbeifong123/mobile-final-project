@@ -11,3 +11,10 @@ String workModeLabel(WorkMode mode) {
 String allowanceLabel(bool hasAllowance) {
   return hasAllowance ? 'มีเบี้ยเลี้ยง' : 'ไม่มีเบี้ยเลี้ยง';
 }
+
+String jobStatusLabel(JobStatus status) {
+  return switch (status) {
+    JobStatus.open => 'เปิดรับ',
+    JobStatus.closed => 'ปิดรับ',
+  };
+}

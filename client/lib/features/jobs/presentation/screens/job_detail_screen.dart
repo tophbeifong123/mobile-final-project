@@ -6,6 +6,10 @@ import '../../../../core/error/app_exception.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/app_hero_card.dart';
 import '../../../../core/widgets/app_primary_button.dart';
+import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/loading_view.dart';
+import '../../domain/entities/job.dart';
+import '../job_labels.dart';
 import '../providers/jobs_controller.dart';
 
 class JobDetailScreen extends ConsumerStatefulWidget {
@@ -22,119 +26,29 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
+    final detail = ref.watch(jobDetailProvider(widget.jobId));
     return Scaffold(
       appBar: AppBar(title: const Text('รายละเอียดงาน')),
-      body: ListView(
-        padding: const EdgeInsets.all(kPagePadding),
-        children: [
-          const AppHeroCard(
-            title: 'ประกาศฝึกงาน',
-            body:
-                'ชื่อบริษัท รายละเอียด จังหวัด รูปแบบงาน หมวดงาน เบี้ยเลี้ยง และคุณสมบัติ จะแสดงเมื่อโหลดประกาศนี้ได้',
-          ),
-          const SizedBox(height: 16),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: AppColors.background,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: AppColors.line),
-                        ),
-                        child: const SizedBox(
-                          width: 48,
-                          height: 48,
-                          child: Icon(
-                            Icons.apartment_outlined,
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'เกี่ยวกับบริษัท',
-                          style: textTheme.titleMedium,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  const _DetailRow(
-                    label: 'ชื่อบริษัท',
-                    value: 'ยังไม่มีข้อมูล',
-                  ),
-                  const _DetailRow(
-                    label: 'ประเภทกิจการ',
-                    value: 'ยังไม่มีข้อมูล',
-                  ),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          const _SectionCard(
-            title: 'รายละเอียดงาน',
-            body: 'ยังไม่มีข้อมูลประกาศ',
-          ),
-          const SizedBox(height: 12),
-          const _SectionCard(title: 'คุณสมบัติ', body: 'ยังไม่มีข้อมูลประกาศ'),
-          const SizedBox(height: 12),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: const [
-                  _DetailRow(label: 'จังหวัด', value: 'ยังไม่มีข้อมูล'),
-                  _DetailRow(label: 'รูปแบบงาน', value: 'ยังไม่มีข้อมูล'),
-                  _DetailRow(label: 'หมวดงาน', value: 'ยังไม่มีข้อมูล'),
-                  _DetailRow(label: 'เบี้ยเลี้ยง', value: 'ยังไม่มีข้อมูล'),
-                  _DetailRow(label: 'สถานะ', value: 'ยังไม่มีข้อมูล'),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text('รหัสประกาศ ${widget.jobId}', style: textTheme.bodySmall),
-        ],
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(kPagePadding, 8, kPagePadding, 16),
-          child: Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: _saving ? null : _save,
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(kMinTouchTarget),
-                    foregroundColor: AppColors.primary,
-                    side: const BorderSide(color: AppColors.primary),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: Text(_saving ? 'กำลังบันทึก' : 'บันทึก'),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: AppPrimaryButton(
-                  onPressed: () =>
-                      context.push('/student/jobs/${widget.jobId}/apply'),
-                  child: const Text('สมัครงาน'),
-                ),
-              ),
-            ],
+      body: detail.when(
+        loading: () => const LoadingView(label: 'กำลังโหลดประกาศ'),
+        error: (error, _) => EmptyState(
+          icon: Icons.work_outline,
+          title: 'โหลดประกาศไม่ได้',
+          message: userVisibleError(error),
+          action: AppPrimaryButton(
+            onPressed: () => ref.invalidate(jobDetailProvider(widget.jobId)),
+            child: const Text('ลองอีกครั้ง'),
           ),
         ),
+        data: (job) => _JobBody(job: job),
+      ),
+      bottomNavigationBar: detail.maybeWhen(
+        data: (job) => _Actions(
+          saving: _saving,
+          onSave: _save,
+          onApply: () => context.push('/student/jobs/${job.id}/apply'),
+        ),
+        orElse: () => null,
       ),
     );
   }
@@ -161,6 +75,159 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
         setState(() => _saving = false);
       }
     }
+  }
+}
+
+class _JobBody extends StatelessWidget {
+  const _JobBody({required this.job});
+
+  final JobDetail job;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final businessType = _shown(job.businessType);
+    return ListView(
+      padding: const EdgeInsets.all(kPagePadding),
+      children: [
+        AppHeroCard(title: job.title, body: job.companyName),
+        const SizedBox(height: 16),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    _CompanyMark(name: job.companyName),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('เกี่ยวกับบริษัท', style: textTheme.titleMedium),
+                          Text(job.companyName, style: textTheme.bodyMedium),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                _DetailRow(label: 'ประเภทกิจการ', value: businessType),
+                if (job.companyDescription.trim().isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    job.companyDescription.trim(),
+                    style: textTheme.bodyMedium,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        _SectionCard(title: 'รายละเอียดงาน', body: job.description),
+        const SizedBox(height: 12),
+        _SectionCard(title: 'คุณสมบัติ', body: job.requirements),
+        const SizedBox(height: 12),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                _DetailRow(label: 'จังหวัด', value: job.province),
+                _DetailRow(
+                  label: 'รูปแบบงาน',
+                  value: workModeLabel(job.workMode),
+                ),
+                _DetailRow(label: 'หมวดงาน', value: job.category),
+                _DetailRow(
+                  label: 'เบี้ยเลี้ยง',
+                  value: allowanceLabel(job.hasAllowance),
+                ),
+                _DetailRow(
+                  label: 'สถานะ',
+                  value: jobStatusLabel(job.status),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _Actions extends StatelessWidget {
+  const _Actions({
+    required this.saving,
+    required this.onSave,
+    required this.onApply,
+  });
+
+  final bool saving;
+  final VoidCallback onSave;
+  final VoidCallback onApply;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(kPagePadding, 8, kPagePadding, 16),
+        child: Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: saving ? null : onSave,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(kMinTouchTarget),
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: Text(saving ? 'กำลังบันทึก' : 'บันทึก'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: AppPrimaryButton(
+                onPressed: onApply,
+                child: const Text('สมัครงาน'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CompanyMark extends StatelessWidget {
+  const _CompanyMark({required this.name});
+
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    final trimmed = name.trim();
+    final letter = trimmed.isEmpty ? '?' : trimmed.characters.first;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.line),
+      ),
+      child: SizedBox(
+        width: 48,
+        height: 48,
+        child: Center(
+          child: Text(letter, style: Theme.of(context).textTheme.titleMedium),
+        ),
+      ),
+    );
   }
 }
 
@@ -208,4 +275,9 @@ class _DetailRow extends StatelessWidget {
       ),
     );
   }
+}
+
+String _shown(String value) {
+  final trimmed = value.trim();
+  return trimmed.isEmpty ? 'ยังไม่ได้ระบุ' : trimmed;
 }
