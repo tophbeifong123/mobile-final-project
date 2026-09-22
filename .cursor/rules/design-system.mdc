@@ -1,0 +1,47 @@
+---
+description: Design system, UI styling, and mobile layout for InternFinder Flutter screens
+globs: client/**/*.dart
+alwaysApply: false
+---
+
+# InternFinder (INTERNTH) — Design System
+
+Soft Professional Claymorphism: นุ่ม น่าเชื่อถือ อ่านง่าย ห้ามดูเหมือนของเล่นหรือเกม
+
+ใช้เอฟเฟกต์ clay เฉพาะปุ่มหลัก, ป้ายสถานะ และ hero card ฟอร์ม รายการข้อมูล และตัวหนังสือให้แบน
+
+## สีและพื้นผิว
+
+- พื้นหลังหน้า `#EEF4FF` หรือ `#F8F9FF` ห้ามใช้ `#FFFFFF` ทั้งหน้า เพราะการ์ดขาวจะไม่ลอย
+- การ์ดขาว `#FFFFFF` มุม 16–24
+- เงา indigo บางชั้น ห้ามเงาดำทึบ: `0 10px 25px -5px rgba(79, 70, 229, 0.08)` และ `0 4px 6px -2px rgba(0, 0, 0, 0.03)`
+- Primary `#4F46E5` กดแล้ว `#4338CA` ไฮไลต์ `#F59E0B` สำเร็จ `#10B981`
+- ข้อความ `#1E293B` ข้อความรอง `#64748B` คอนทราสต์ระดับ WCAG AA
+
+## ภาษาไทย
+
+- ฟอนต์ Plus Jakarta Sans, Sukhumvit Set, Kanit หรือ Prompt
+- `height` ของข้อความไทยอยู่ที่ 1.5–1.6 ห้ามต่ำกว่า 1.3 เพราะวรรณยุกต์จะถูกตัด
+- สำนวนสุภาพ ใช้คำทับศัพท์ที่คุ้น: Resume, Status, PDF, Dashboard, Login
+
+## เลย์เอาต์มือถือ
+
+- ออกแบบคอลัมน์เดียว กว้างประมาณ 390
+- ปุ่มหลักอยู่ชิดล่างในเขตนิ้วโป้งกดถึง และเป้าหมายสัมผัสอย่างน้อย 44×44
+- Filter ของ Home ยังเป็น bottom sheet ไม่สร้าง route แยก
+
+## โครงหน้าใหม่
+
+1. แถบบน: ปุ่มกลับ, ชื่อหน้าภาษาไทย, แอ็กชันรองถ้ามี
+2. เนื้อหา: hero card แล้วตามด้วยฟอร์ม รายการ หรือป้ายสถานะ
+3. แถบล่าง: ปุ่มหลักสี indigo แบบ clay
+
+## วิธีใช้ใน Flutter
+
+หน้าจออยู่ที่ `client/` ใช้ Material 3 ไม่สร้างไฟล์ CSS หรือคลาส Tailwind
+
+- สี รัศมี และเงาอยู่ที่ `client/lib/core/theme/app_theme.dart` หน้าอื่นอ่านจาก `Theme.of(context)`
+- ห้ามใส่ `Color(0x...)` ซ้ำในฟีเจอร์ ถ้าโทเคนเปลี่ยน แก้ที่ theme ในคอมมิตเดียวกัน
+- พื้นหลังหน้าเป็น `scaffoldBackgroundColor` การ์ดใช้ `Card` ปุ่มหลักใช้ `FilledButton`
+- ปุ่มชิดล่างใช้ `bottomNavigationBar` หรือ `persistentFooterButtons` ครอบ `SafeArea`
+- ระยะขอบเนื้อหา 16 มีที่ว่างเหนือแถบล่าง ไม่ให้เนื้อหาถูกปุ่มบัง

@@ -2,7 +2,7 @@
 
 อ่าน AGENTS.md ก่อนแก้โค้ด รายละเอียดอยู่ใน docs/REQUIREMENTS.md, docs/ARCHITECTURE.md และ docs/DATABASE.md
 
-กฎตามชนิดไฟล์อยู่ใน .cursor/rules/
+กฎตามชนิดไฟล์อยู่ใน .cursor/rules/ ดีไซน์หน้าแอปอยู่ใน .cursor/rules/design-system.mdc
 
 - คง NestJS บน Express และ Swagger ที่ /api/docs
 - Role มี student กับ company เปลี่ยนทีหลังไม่ได้

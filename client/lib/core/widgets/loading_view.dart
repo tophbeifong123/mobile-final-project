@@ -13,7 +13,7 @@ class LoadingView extends StatelessWidget {
         children: [
           const CircularProgressIndicator(),
           const SizedBox(height: 16),
-          Text(label),
+          Text(label, style: Theme.of(context).textTheme.bodyLarge),
         ],
       ),
     );

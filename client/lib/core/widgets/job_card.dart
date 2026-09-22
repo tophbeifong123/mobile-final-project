@@ -1,26 +1,100 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_tokens.dart';
+import 'info_chip.dart';
+
 class JobCard extends StatelessWidget {
   const JobCard({
     super.key,
     required this.title,
     required this.companyName,
     required this.province,
+    this.details = const [],
     this.onTap,
   });
 
   final String title;
   final String companyName;
   final String province;
+  final List<String> details;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: ListTile(
-        title: Text(title),
-        subtitle: Text('$companyName · $province'),
+    final textTheme = Theme.of(context).textTheme;
+    final chips = <Widget>[
+      InfoChip(label: province, icon: Icons.place_outlined),
+      for (final detail in details)
+        if (detail.trim().isNotEmpty) InfoChip(label: detail.trim()),
+    ];
+
+    return Material(
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.line),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
         onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _CompanyMark(name: companyName),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title, style: textTheme.titleMedium),
+                        const SizedBox(height: 2),
+                        Text(companyName, style: textTheme.bodyMedium),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Wrap(spacing: 8, runSpacing: 8, children: chips),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CompanyMark extends StatelessWidget {
+  const _CompanyMark({required this.name});
+
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    final letter = name.trim().isEmpty
+        ? '?'
+        : String.fromCharCode(name.trim().runes.first).toUpperCase();
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.primary,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: SizedBox(
+        width: 44,
+        height: 44,
+        child: Center(
+          child: Text(
+            letter,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onPrimary,
+            ),
+          ),
+        ),
       ),
     );
   }
