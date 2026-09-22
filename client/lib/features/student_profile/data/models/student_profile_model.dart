@@ -27,6 +27,16 @@ class StudentProfileModel {
   final List<String> skills;
   final String? portfolioUrl;
 
+  Map<String, dynamic> toJson() {
+    return {
+      'fullName': fullName,
+      'university': university,
+      'major': major,
+      'skills': skills,
+      'portfolioUrl': portfolioUrl,
+    };
+  }
+
   StudentProfile toEntity() {
     return StudentProfile(
       fullName: fullName,

@@ -42,6 +42,7 @@ import { BcryptPasswordHasher, PASSWORD_HASHER } from './password-hasher.js';
     }),
   ],
   controllers: [AuthController],
+  exports: [PassportModule, JwtStrategy],
   providers: [
     AuthService,
     AuthRepository,
