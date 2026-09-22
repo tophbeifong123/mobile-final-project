@@ -39,6 +39,7 @@ void main() {
     expect(find.text('On-site'), findsOneWidget);
     expect(find.text('เปิดรับ'), findsOneWidget);
     expect(find.text('สมัครงาน'), findsOneWidget);
+    expect(find.text('บันทึก'), findsOneWidget);
     expect(find.text('ยังไม่มีข้อมูล'), findsNothing);
   });
 }
@@ -62,6 +63,7 @@ class _DetailJobRepository implements JobRepository {
       companyName: 'InternFinder',
       businessType: 'ซอฟต์แวร์',
       companyDescription: 'แพลตฟอร์มฝึกงาน',
+      saved: false,
     );
   }
 

@@ -11,6 +11,9 @@ import 'package:client/features/jobs/presentation/screens/job_detail_screen.dart
 import 'package:client/features/jobs/presentation/screens/job_feed_screen.dart';
 import 'package:client/features/notifications/presentation/screens/notifications_screen.dart';
 import 'package:client/features/resume/presentation/screens/resume_upload_screen.dart';
+import 'package:client/features/saved_jobs/domain/entities/saved_job.dart';
+import 'package:client/features/saved_jobs/domain/repositories/saved_job_repository.dart';
+import 'package:client/features/saved_jobs/presentation/providers/saved_jobs_controller.dart';
 import 'package:client/features/saved_jobs/presentation/screens/saved_jobs_screen.dart';
 import 'package:client/features/student_profile/domain/entities/student_profile.dart';
 import 'package:client/features/student_profile/domain/repositories/student_profile_repository.dart';
@@ -47,6 +50,9 @@ void main() {
               _FakeStudentProfileRepository(),
             ),
             jobRepositoryProvider.overrideWithValue(_EmptyJobRepository()),
+            savedJobRepositoryProvider.overrideWithValue(
+              _EmptySavedJobRepository(),
+            ),
           ],
           child: MaterialApp(theme: AppTheme.lightTheme, home: screen),
         ),
@@ -63,6 +69,9 @@ void main() {
             _FakeStudentProfileRepository(),
           ),
           jobRepositoryProvider.overrideWithValue(_EmptyJobRepository()),
+          savedJobRepositoryProvider.overrideWithValue(
+            _EmptySavedJobRepository(),
+          ),
         ],
         child: MaterialApp(
           theme: AppTheme.lightTheme,
@@ -151,4 +160,9 @@ class _EmptyJobRepository implements JobRepository {
 
   @override
   Future<void> unsave(String jobId) async {}
+}
+
+class _EmptySavedJobRepository implements SavedJobRepository {
+  @override
+  Future<List<SavedJob>> fetchSaved() async => const [];
 }

@@ -62,6 +62,7 @@ class JobDetailModel {
     required this.companyName,
     required this.businessType,
     required this.companyDescription,
+    required this.saved,
   });
 
   factory JobDetailModel.fromJson(Map<String, dynamic> json) {
@@ -78,6 +79,7 @@ class JobDetailModel {
       companyName: json['companyName'] as String,
       businessType: json['businessType'] as String? ?? '',
       companyDescription: json['companyDescription'] as String? ?? '',
+      saved: json['saved'] as bool? ?? false,
     );
   }
 
@@ -93,6 +95,7 @@ class JobDetailModel {
   final String companyName;
   final String businessType;
   final String companyDescription;
+  final bool saved;
 
   JobDetail toEntity() {
     return JobDetail(
@@ -108,6 +111,7 @@ class JobDetailModel {
       companyName: companyName,
       businessType: businessType,
       companyDescription: companyDescription,
+      saved: saved,
     );
   }
 }

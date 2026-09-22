@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, QueryFailedError } from 'typeorm';
 import { CompanyProfile } from '../auth/entities/company-profile.entity.js';
+import { StudentProfile } from '../auth/entities/student-profile.entity.js';
 import { Job } from './entities/job.entity.js';
+import { SavedJob } from './entities/saved-job.entity.js';
 import { JobStatus, type WorkMode } from './job-enums.js';
 
 export interface OpenJobFilter {
@@ -50,6 +52,57 @@ export class JobsRepository {
       .getRepository(CompanyProfile)
       .findOne({ where: { userId }, select: { id: true } })
       .then((profile) => profile?.id ?? null);
+  }
+
+  findStudentId(userId: string): Promise<string | null> {
+    return this.dataSource
+      .getRepository(StudentProfile)
+      .findOne({ where: { userId }, select: { id: true } })
+      .then((profile) => profile?.id ?? null);
+  }
+
+  isSaved(studentId: string, jobId: string): Promise<boolean> {
+    return this.dataSource
+      .getRepository(SavedJob)
+      .existsBy({ studentId, jobId });
+  }
+
+  async save(studentId: string, jobId: string): Promise<void> {
+    try {
+      await this.dataSource.getRepository(SavedJob).insert({ studentId, jobId });
+    } catch (error) {
+      if (!isUniqueViolation(error)) {
+        throw error;
+      }
+    }
+  }
+
+  unsave(studentId: string, jobId: string): Promise<void> {
+    return this.dataSource
+      .getRepository(SavedJob)
+      .delete({ studentId, jobId })
+      .then(() => undefined);
+  }
+
+  listSaved(studentId: string): Promise<OpenJobRecord[]> {
+    return this.dataSource
+      .getRepository(Job)
+      .createQueryBuilder('job')
+      .innerJoin(CompanyProfile, 'company', 'company.id = job.companyId')
+      .innerJoin(SavedJob, 'saved', 'saved.jobId = job.id')
+      .where('saved.studentId = :studentId', { studentId })
+      .andWhere('job.status = :status', { status: JobStatus.Open })
+      .select('job.id', 'id')
+      .addSelect('job.title', 'title')
+      .addSelect('company.name', 'companyName')
+      .addSelect('job.province', 'province')
+      .addSelect('job.workMode', 'workMode')
+      .addSelect('job.category', 'category')
+      .addSelect('job.hasAllowance', 'hasAllowance')
+      .addSelect('job.status', 'status')
+      .orderBy('saved.createdAt', 'DESC')
+      .getRawMany<Record<string, unknown>>()
+      .then((rows) => rows.map(toOpenJob));
   }
 
   create(input: NewJob): Promise<Job> {
@@ -184,4 +237,11 @@ function toOpenJobDetail(row: Record<string, unknown>): OpenJobDetail {
 function readBoolean(row: Record<string, unknown>, key: string): boolean {
   const value = readField(row, key);
   return value === true || value === 'true';
+}
+
+function isUniqueViolation(error: unknown): boolean {
+  return (
+    error instanceof QueryFailedError &&
+    (error.driverError as { code?: string } | undefined)?.code === '23505'
+  );
 }

@@ -52,12 +52,20 @@ class JobRemoteDataSource {
     }
   }
 
-  Future<void> save(String jobId) {
-    throwNotConnected(_dio, '${ApiConstants.jobs}/$jobId/save');
+  Future<void> save(String jobId) async {
+    try {
+      await _dio.post<void>('${ApiConstants.jobs}/$jobId/save');
+    } on DioException catch (error) {
+      throw mapJobError(error);
+    }
   }
 
-  Future<void> unsave(String jobId) {
-    throwNotConnected(_dio, '${ApiConstants.jobs}/$jobId/save');
+  Future<void> unsave(String jobId) async {
+    try {
+      await _dio.delete<void>('${ApiConstants.jobs}/$jobId/save');
+    } on DioException catch (error) {
+      throw mapJobError(error);
+    }
   }
 }
 
@@ -68,6 +76,10 @@ AppException mapJobError(DioException error) {
     case 403:
       return const AppException('เฉพาะนักศึกษาเท่านั้น');
     case 404:
+      final data = error.response?.data;
+      if (data is Map && data['message'] == 'ไม่พบโปรไฟล์') {
+        return const AppException('ไม่พบโปรไฟล์');
+      }
       return const AppException('ไม่พบประกาศ');
     default:
       return const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');

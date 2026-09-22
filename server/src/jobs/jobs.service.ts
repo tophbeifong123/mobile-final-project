@@ -17,6 +17,7 @@ const COMPANY_ONLY = 'เฉพาะบริษัทเท่านั้น'
 const COMPANY_NOT_FOUND = 'ไม่พบโปรไฟล์บริษัท';
 const STUDENT_ONLY = 'เฉพาะนักศึกษาเท่านั้น';
 const JOB_NOT_FOUND = 'ไม่พบประกาศ';
+const STUDENT_NOT_FOUND = 'ไม่พบโปรไฟล์';
 
 @Injectable()
 export class JobsService {
@@ -70,7 +71,42 @@ export class JobsService {
     if (!job) {
       throw new NotFoundException(JOB_NOT_FOUND);
     }
-    return toDetail(job);
+    const studentId = await this.jobsRepository.findStudentId(user.userId);
+    const saved = studentId
+      ? await this.jobsRepository.isSaved(studentId, jobId)
+      : false;
+    return toDetail(job, saved);
+  }
+
+  async save(user: AuthUser, jobId: string): Promise<void> {
+    const studentId = await this.requireStudentId(user);
+    const job = await this.jobsRepository.findOpenById(jobId);
+    if (!job) {
+      throw new NotFoundException(JOB_NOT_FOUND);
+    }
+    await this.jobsRepository.save(studentId, jobId);
+  }
+
+  async unsave(user: AuthUser, jobId: string): Promise<void> {
+    const studentId = await this.requireStudentId(user);
+    await this.jobsRepository.unsave(studentId, jobId);
+  }
+
+  async listSaved(user: AuthUser): Promise<JobFeedItemDto[]> {
+    const studentId = await this.requireStudentId(user);
+    const jobs = await this.jobsRepository.listSaved(studentId);
+    return jobs.map(toFeedItem);
+  }
+
+  private async requireStudentId(user: AuthUser): Promise<string> {
+    if (user.role !== UserRole.Student) {
+      throw new ForbiddenException(STUDENT_ONLY);
+    }
+    const studentId = await this.jobsRepository.findStudentId(user.userId);
+    if (!studentId) {
+      throw new NotFoundException(STUDENT_NOT_FOUND);
+    }
+    return studentId;
   }
 }
 
@@ -100,20 +136,23 @@ function toDto(job: {
   return dto;
 }
 
-function toDetail(job: {
-  id: string;
-  title: string;
-  description: string;
-  province: string;
-  workMode: JobDetailDto['workMode'];
-  category: string;
-  hasAllowance: boolean;
-  requirements: string;
-  status: JobStatus;
-  companyName: string;
-  businessType: string;
-  companyDescription: string;
-}): JobDetailDto {
+function toDetail(
+  job: {
+    id: string;
+    title: string;
+    description: string;
+    province: string;
+    workMode: JobDetailDto['workMode'];
+    category: string;
+    hasAllowance: boolean;
+    requirements: string;
+    status: JobStatus;
+    companyName: string;
+    businessType: string;
+    companyDescription: string;
+  },
+  saved: boolean,
+): JobDetailDto {
   const dto = new JobDetailDto();
   dto.id = job.id;
   dto.title = job.title;
@@ -127,6 +166,7 @@ function toDetail(job: {
   dto.companyName = job.companyName;
   dto.businessType = job.businessType;
   dto.companyDescription = job.companyDescription;
+  dto.saved = saved;
   return dto;
 }
 

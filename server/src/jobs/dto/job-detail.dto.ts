@@ -37,4 +37,7 @@ export class JobDetailDto {
 
   @ApiProperty()
   companyDescription: string;
+
+  @ApiProperty({ description: 'นักศึกษานี้บันทึกประกาศนี้ไว้แล้วหรือยัง' })
+  saved: boolean;
 }

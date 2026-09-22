@@ -61,6 +61,7 @@ class JobDetail {
     required this.companyName,
     required this.businessType,
     required this.companyDescription,
+    required this.saved,
   });
 
   final String id;
@@ -75,6 +76,7 @@ class JobDetail {
   final String companyName;
   final String businessType;
   final String companyDescription;
+  final bool saved;
 }
 
 String workModeToApi(WorkMode mode) {

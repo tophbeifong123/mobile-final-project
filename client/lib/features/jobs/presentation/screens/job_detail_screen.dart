@@ -8,6 +8,7 @@ import '../../../../core/widgets/app_hero_card.dart';
 import '../../../../core/widgets/app_primary_button.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/loading_view.dart';
+import '../../../saved_jobs/presentation/providers/saved_jobs_controller.dart';
 import '../../domain/entities/job.dart';
 import '../job_labels.dart';
 import '../providers/jobs_controller.dart';
@@ -45,7 +46,8 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
       bottomNavigationBar: detail.maybeWhen(
         data: (job) => _Actions(
           saving: _saving,
-          onSave: _save,
+          saved: job.saved,
+          onSave: () => _toggleSave(job),
           onApply: () => context.push('/student/jobs/${job.id}/apply'),
         ),
         orElse: () => null,
@@ -53,16 +55,25 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
     );
   }
 
-  Future<void> _save() async {
+  Future<void> _toggleSave(JobDetail job) async {
     setState(() => _saving = true);
     try {
-      await ref.read(jobRepositoryProvider).save(widget.jobId);
+      final repository = ref.read(jobRepositoryProvider);
+      if (job.saved) {
+        await repository.unsave(job.id);
+      } else {
+        await repository.save(job.id);
+      }
+      ref.invalidate(jobDetailProvider(job.id));
+      ref.invalidate(savedJobsProvider);
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('บันทึกงานแล้ว')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(job.saved ? 'ยกเลิกบันทึกแล้ว' : 'บันทึกงานแล้ว'),
+        ),
+      );
     } catch (error) {
       if (!mounted) {
         return;
@@ -162,11 +173,13 @@ class _JobBody extends StatelessWidget {
 class _Actions extends StatelessWidget {
   const _Actions({
     required this.saving,
+    required this.saved,
     required this.onSave,
     required this.onApply,
   });
 
   final bool saving;
+  final bool saved;
   final VoidCallback onSave;
   final VoidCallback onApply;
 
@@ -188,7 +201,13 @@ class _Actions extends StatelessWidget {
                     borderRadius: BorderRadius.circular(16),
                   ),
                 ),
-                child: Text(saving ? 'กำลังบันทึก' : 'บันทึก'),
+                child: Text(
+                  saving
+                      ? 'กำลังบันทึก'
+                      : saved
+                      ? 'ยกเลิกบันทึก'
+                      : 'บันทึก',
+                ),
               ),
             ),
             const SizedBox(width: 12),

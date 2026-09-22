@@ -10,9 +10,14 @@ import { JobsService } from './jobs.service.js';
 describe('JobsService', () => {
   const repository = {
     findCompanyId: vi.fn(),
+    findStudentId: vi.fn(),
     create: vi.fn(),
     findOpen: vi.fn(),
     findOpenById: vi.fn(),
+    isSaved: vi.fn(),
+    save: vi.fn(),
+    unsave: vi.fn(),
+    listSaved: vi.fn(),
   };
 
   let service: JobsService;
@@ -159,6 +164,8 @@ describe('JobsService', () => {
       businessType: 'ซอฟต์แวร์',
       companyDescription: 'แพลตฟอร์มฝึกงาน',
     });
+    repository.findStudentId.mockResolvedValue('student-1');
+    repository.isSaved.mockResolvedValue(true);
 
     const result = await service.getOpen(student, 'job-1');
 
@@ -167,6 +174,7 @@ describe('JobsService', () => {
     expect(result.businessType).toBe('ซอฟต์แวร์');
     expect(result.description).toBe('ช่วยพัฒนาแอป');
     expect(result.status).toBe(JobStatus.Open);
+    expect(result.saved).toBe(true);
   });
 
   it('hides a missing or closed job from a student', async () => {
@@ -182,5 +190,61 @@ describe('JobsService', () => {
       ForbiddenException,
     );
     expect(repository.findOpenById).not.toHaveBeenCalled();
+  });
+
+  it('saves an open job once for the signed-in student', async () => {
+    repository.findStudentId.mockResolvedValue('student-1');
+    repository.findOpenById.mockResolvedValue({ id: 'job-1' });
+
+    await service.save(student, 'job-1');
+
+    expect(repository.save).toHaveBeenCalledWith('student-1', 'job-1');
+  });
+
+  it('does not save a closed or missing job', async () => {
+    repository.findStudentId.mockResolvedValue('student-1');
+    repository.findOpenById.mockResolvedValue(null);
+
+    await expect(service.save(student, 'job-1')).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    expect(repository.save).not.toHaveBeenCalled();
+  });
+
+  it('rejects a company saving a job', async () => {
+    await expect(service.save(company, 'job-1')).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+    expect(repository.findStudentId).not.toHaveBeenCalled();
+  });
+
+  it('removes a saved job for the student', async () => {
+    repository.findStudentId.mockResolvedValue('student-1');
+
+    await service.unsave(student, 'job-1');
+
+    expect(repository.unsave).toHaveBeenCalledWith('student-1', 'job-1');
+  });
+
+  it('lists only the open jobs this student saved', async () => {
+    repository.findStudentId.mockResolvedValue('student-1');
+    repository.listSaved.mockResolvedValue([
+      {
+        id: 'job-1',
+        title: 'Flutter Intern',
+        companyName: 'InternFinder',
+        province: 'สงขลา',
+        workMode: WorkMode.Hybrid,
+        category: 'IT',
+        hasAllowance: true,
+        status: JobStatus.Open,
+      },
+    ]);
+
+    const result = await service.listSaved(student);
+
+    expect(repository.listSaved).toHaveBeenCalledWith('student-1');
+    expect(result).toHaveLength(1);
+    expect(result[0]?.title).toBe('Flutter Intern');
   });
 });
