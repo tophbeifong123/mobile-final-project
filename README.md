@@ -1,4 +1,4 @@
-# 📱 InternFinder — Mobile Final Project
+# 📱 InternFinder — โปรเจกต์มือถือ
 
 [![Flutter CI](https://github.com/tophbeifong123/mobile-final-project/actions/workflows/client-ci.yml/badge.svg)](https://github.com/tophbeifong123/mobile-final-project/actions/workflows/client-ci.yml)
 [![NestJS CI](https://github.com/tophbeifong123/mobile-final-project/actions/workflows/server-ci.yml/badge.svg)](https://github.com/tophbeifong123/mobile-final-project/actions/workflows/server-ci.yml)
@@ -7,191 +7,216 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.44+-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![NestJS](https://img.shields.io/badge/NestJS-12.x-E0234E?logo=nestjs&logoColor=white)](https://nestjs.com)
 
-A production-grade mobile application architecture built with **Flutter** (Frontend Mobile App) and **NestJS** (Backend API), following industry-standard **Best Practices**, **Clean Architecture**, and **CI/CD Automation**.
+InternFinder เป็นแอปมือถือให้นักศึกษาค้นหาและสมัครงานฝึกงาน และให้บริษัทประกาศงานแล้วจัดการผู้สมัคร สร้างด้วย **Flutter** และ **NestJS บน Express** พร้อมสัญญา API ที่ **Swagger**
+
+บัญชีหนึ่งบัญชีมีได้หนึ่งบทบาท เลือกตอนสมัครเป็นนักศึกษาหรือบริษัท แล้วเปลี่ยนทีหลังไม่ได้ ขอบเขตฟีเจอร์ 18 หน้าอยู่ใน [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md)
 
 ---
 
-## 🔗 Links & Guide
+## ลิงก์และเอกสาร
 
-| Resource | Link / Details | Description |
+| แหล่ง | ลิงก์ | ใช้ทำอะไร |
 |---|---|---|
-| 📌 **Kanban Project Board** | [InternFinder Board](https://github.com/users/tophbeifong123/projects/2) | Visual task management board (Backlog, Ready, In Progress, Done) |
-| 🗂️ **Product Backlog** | [Issues Tracker #1–#48](https://github.com/tophbeifong123/mobile-final-project/issues) | Complete list of all 48 epics and user stories |
-| 📑 **API Documentation** | [Swagger OpenAPI](http://localhost:3000/api/docs) | Interactive API tester (`/api/docs` on dev server) |
-| 🤝 **Contribution Guide** | [CONTRIBUTING.md](CONTRIBUTING.md) | Branching strategy (Git Flow) & Conventional Commits |
+| บอร์ดคัมบัง | [บอร์ด InternFinder](https://github.com/users/tophbeifong123/projects/2) | ดูงานตามสถานะ ค้างไว้, พร้อมทำ, กำลังทำ, เสร็จ |
+| แบ็กล็อก | [Issues #1–#48](https://github.com/tophbeifong123/mobile-final-project/issues) | รายการอีปิกและยูสเซอร์สตอรีทั้ง 48 รายการ |
+| เอกสาร API | [Swagger](http://localhost:3000/api/docs) | ลองเรียก API ที่ `/api/docs` ตอนรันเซิร์ฟเวอร์พัฒนา |
+| วิธีร่วมพัฒนา | [CONTRIBUTING.md](CONTRIBUTING.md) | Git Flow และ Conventional Commits |
+| ความต้องการของระบบ | [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md) | หน้า, ยูสเคส และกติกาของนักศึกษาและบริษัท |
+| สถาปัตยกรรม | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | โมดูล, เส้นทาง API, Swagger, Redis และโครง Flutter |
+| ฐานข้อมูล | [docs/DATABASE.md](docs/DATABASE.md) | สคีมา, ER และจุดที่ใช้ธุรกรรมกับล็อก |
+| จุดเข้าของ AI | [AGENTS.md](AGENTS.md) | ให้ AI อ่านก่อนลงมือแก้โค้ด |
 
-### 🏃‍♂️ Sprint & Backlog Breakdown
+คนและ AI ใช้ตารางด้านบนเป็นแหล่งเดียวกัน ถ้าเอกสารกับโค้ดยังไม่ตรงกัน ให้ถือว่า [docs/REQUIREMENTS.md](docs/REQUIREMENTS.md) เป็นขอบเขตฟีเจอร์ และ [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) เป็นแบบที่โค้ดใหม่ต้องเดินตาม
+
+### สปรินต์และแบ็กล็อก
 
 ```
-Sprint 1: Foundation, Design & Auth (#1–#13, #27)
- ├── Ready: #1-#6 (Repo, NestJS, Flutter, DB, ERD, Secrets), #11-#13 (Auth API), #27 (Auth UI)
- └── Backlog: #7-#10 (Figma Design System & Flows)
+สปรินต์ 1: ฐาน, ดีไซน์ และเข้าสู่ระบบ (#1–#13, #27)
+ ├── พร้อมทำ: #1-#6 (รีโป, NestJS, Flutter, ฐานข้อมูล, ERD, ความลับ), #11-#13 (API เข้าสู่ระบบ), #27 (หน้าเข้าสู่ระบบ)
+ └── ค้างไว้: #7-#10 (ระบบดีไซน์และโฟลว์ใน Figma)
 
-Sprint 2: Profiles & Job Core (#14–#19, #28–#32)
- └── Backlog: Student profile, Resume upload, Job CRUD, Public listing/search & Flutter feeds
+สปรินต์ 2: โปรไฟล์และงาน (#14–#19, #28–#32)
+ └── ค้างไว้: โปรไฟล์นักศึกษา, อัปโหลด Resume, สร้างแก้ประกาศ, รายการสาธารณะและการค้นหา, ฟีดใน Flutter
 
-Sprint 3: Applications & Company Module (#20–#25, #33–#38)
- └── Backlog: Application workflow, In-app notifications, Company job/applicant management
+สปรินต์ 3: ใบสมัครและฝั่งบริษัท (#20–#25, #33–#38)
+ └── ค้างไว้: ขั้นตอนใบสมัคร, แจ้งเตือนในแอป, บริษัทจัดการประกาศและผู้สมัคร
 
-Sprint 4: Quality, Deployment & Docs (#26, #39–#48)
- └── Backlog: E2E/Widget tests, Docker container, Cloud deploy, Release APK, Docs & Demo script
+สปรินต์ 4: คุณภาพ, ขึ้นระบบ และเอกสาร (#26, #39–#48)
+ └── ค้างไว้: เทสครบเส้นทางและวิดเจ็ต, Docker, ขึ้นคลาวด์, APK, เอกสารและสคริปต์เดโม
 ```
 
-### 📋 Kanban Board Workflow
-1. **Backlog**: Tasks planned for upcoming sprints waiting to be picked up.
-2. **Ready**: High-priority tasks groomed and ready to start immediately.
-3. **In Progress**: Actively being worked on (Branch naming: `feat/<name>` or `fix/<name>`).
-4. **In Review**: Pull Request submitted with passing CI checks.
-5. **Done**: Code reviewed, merged into `develop`/`main`, and verified.
+### วิธีเลื่อนงานบนบอร์ด
+
+1. **ค้างไว้**: งานที่วางไว้สำหรับสปรินต์ถัดไป ยังไม่ถูกหยิบ
+2. **พร้อมทำ**: งานที่จัดลำดับแล้ว เริ่มได้ทันที
+3. **กำลังทำ**: มีคนทำอยู่ ชื่อสาขาเป็น `feat/<ชื่อ>` หรือ `fix/<ชื่อ>`
+4. **รอตรวจ**: เปิดพูลรีเควสต์แล้ว และ CI ผ่าน
+5. **เสร็จ**: ตรวจโค้ดแล้ว รวมเข้า `develop` หรือ `main` และตรวจซ้ำแล้ว
 
 ---
 
-## 🏗️ System Architecture
-
+## โครงโปรเจกต์
 
 ```
 mobile-final-project/
-├── .github/                     # GitHub Workflows & Issue/PR Templates
-│   ├── ISSUE_TEMPLATE/          # Bug & Feature templates
-│   ├── workflows/               # CI/CD pipelines for Flutter & NestJS
-│   └── pull_request_template.md # Standard PR checklist
-├── client/                      # Flutter Mobile Application
+├── .github/                     # เวิร์กโฟลว์ GitHub และเทมเพลต Issue/PR
+│   ├── ISSUE_TEMPLATE/          # เทมเพลตบั๊กและฟีเจอร์
+│   ├── workflows/               # CI ของ Flutter และ NestJS
+│   └── pull_request_template.md # เช็กลิสต์พูลรีเควสต์
+├── client/                      # แอป Flutter
 │   ├── lib/
-│   │   ├── core/                # Core utilities, theme, network, constants
-│   │   ├── features/            # Feature-first modules (auth, home, etc.)
-│   │   └── main.dart            # Flutter application entry point
-│   ├── test/                    # Unit and Widget tests
+│   │   ├── core/                # ธีม, Dio, เราเตอร์, ที่เก็บโทเคน, วิดเจ็ตร่วม
+│   │   ├── features/            # auth, jobs, saved_jobs, student_profile, resume,
+│   │   │                        # applications, notifications, company_dashboard,
+│   │   │                        # company_profile, company_jobs
+│   │   └── main.dart            # ProviderScope และ MaterialApp.router
+│   ├── test/                    # เทสวิดเจ็ต
 │   └── pubspec.yaml
-├── server/                      # NestJS Backend API
+├── server/                      # API NestJS
 │   ├── src/
-│   │   ├── main.ts              # Server bootstrap + Swagger Docs + CORS
-│   │   ├── app.module.ts        # Root module with ConfigModule
+│   │   ├── main.ts              # จุดเริ่มเซิร์ฟเวอร์, Swagger และ CORS
+│   │   ├── app.module.ts        # โมดูลรากพร้อม ConfigModule
 │   │   ├── app.controller.ts
 │   │   └── app.service.ts
-│   ├── test/                    # Unit and E2E tests
-│   ├── .env.example             # Environment variables blueprint
-│   ├── Dockerfile               # Containerized production build
+│   ├── test/                    # เทสหน่วยและเทสครบเส้นทาง
+│   ├── .env.example             # แบบตัวแปรสภาพแวดล้อม
+│   ├── Dockerfile               # อิมเมจสำหรับรันจริง
 │   └── package.json
-├── docker-compose.yml           # Local dev database (PostgreSQL) + services
-├── CONTRIBUTING.md              # Git Flow & Conventional Commits guide
-├── LICENSE                      # MIT License
+├── docs/
+│   ├── REQUIREMENTS.md          # หน้า, ยูสเคส และกติกา
+│   ├── ARCHITECTURE.md          # แบบระบบ, API และโครงโฟลเดอร์
+│   └── DATABASE.md              # สคีมาและ ER
+├── .cursor/rules/               # กฎ Cursor แยกตามชั้นของโค้ด
+├── AGENTS.md                    # จุดเข้าสำหรับ AI
+├── docker-compose.yml           # ฐานข้อมูล PostgreSQL สำหรับพัฒนา
+├── CONTRIBUTING.md              # Git Flow และ Conventional Commits
+├── LICENSE                      # สัญญาอนุญาต MIT
 └── README.md
 ```
 
 ---
 
-## 🚀 Tech Stack & Design Patterns
+## สแต็กและรูปแบบการเขียน
 
-### Mobile Client (`client/`)
-- **Framework**: Flutter 3.44+ / Dart 3.12+
-- **Architecture**: **Feature-First / Clean Architecture** (`core/` + `features/`)
-  - `presentation`: UI Screens & reusable Widgets
-  - `domain`: Entities & Use Cases
-  - `data`: Repositories & Data Sources
-- **Design System**: Material 3 with unified Dark/Light theme tokens
-- **Linter**: Official Flutter linter rules via `analysis_options.yaml`
+### แอปมือถือ (`client/`)
 
-### Backend Server (`server/`)
-- **Framework**: NestJS 12.x (TypeScript)
-- **Documentation**: OpenAPI / Swagger configured at `/api/docs`
-- **Config**: Global `@nestjs/config` for `.env` management
-- **Testing**: Vitest & Supertest for Unit and E2E tests
-- **Containerization**: Multi-stage Dockerfile
+- **เฟรมเวิร์ก**: Flutter 3.44+ / Dart 3.12+
+- **หน้าตา**: Material 3 ใน `client/lib/core/theme/app_theme.dart` ไม่ใช้ `shadcn_ui`
+- **สถานะและทางเดินหน้า**: `flutter_riverpod`, `go_router`
+- **เครือข่ายและไฟล์**: `dio`, `flutter_secure_storage`, `file_picker`
+- **โครงโค้ด**: แบ่งตามฟีเจอร์ (`core/` กับ `features/`) แต่ละฟีเจอร์มี 3 ชั้น
+  - `presentation`: หน้า, วิดเจ็ตของฟีเจอร์ และคอนโทรลเลอร์ของ Riverpod
+  - `domain`: เอนทิตีและอินเทอร์เฟซของรีพอสิทอรี ไม่มีคลาสยูสเคสแยก
+  - `data`: โมเดล, แหล่งข้อมูล Dio และรีพอสิทอรี
+- **ตอนเปิดแอป**: Splash อ่านโทเคน แล้วไปหน้าเข้าสู่ระบบ, `/student/home` หรือ `/company/dashboard` ตามบทบาท
+- **สถานะตอนนี้**: โครง 18 หน้าและแถบนำทางพร้อมแล้ว หน้าจอยังไม่ยิง API จริง รายละเอียดอยู่ใน [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- **ตัวตรวจโค้ด**: กฎของ Flutter ใน `analysis_options.yaml`
 
-### DevOps & Collaboration
-- **CI/CD**: GitHub Actions workflows for automated linting, test runs, and build checks
-- **Commit Standard**: [Conventional Commits](https://www.conventionalcommits.org/)
-- **Branching Model**: Git Flow (`main`, `develop`, `feat/*`, `fix/*`)
+### เซิร์ฟเวอร์ (`server/`)
+
+- **เฟรมเวิร์ก**: NestJS 12.x (TypeScript) บน **Express** (`@nestjs/platform-express`) ไม่ใช้ Fastify
+- **เอกสาร API**: OpenAPI / Swagger ที่ `/api/docs` DTO และเส้นทางใหม่ต้องมีเดคอเรเตอร์ของ Swagger
+- **ค่าตั้ง**: `@nestjs/config` แบบทั้งแอป สำหรับไฟล์ `.env`
+- **เทส**: Vitest และ Supertest สำหรับเทสหน่วยและเทสครบเส้นทาง
+- **คอนเทนเนอร์**: Dockerfile แบบหลายสเตจ
+
+### การทำงานร่วมกัน
+
+- **CI**: GitHub Actions ตรวจรูปแบบโค้ด รันเทส และตรวจการビルด์
+- **ข้อความคอมมิต**: [Conventional Commits](https://www.conventionalcommits.org/)
+- **สาขา**: Git Flow (`main`, `develop`, `feat/*`, `fix/*`)
 
 ---
 
-## ⚡ Quick Start Guide
+## วิธีรัน
 
-### 1. Prerequisites
+### 1. สิ่งที่ต้องมี
+
 - [Flutter SDK](https://docs.flutter.dev/get-started/install) (`>= 3.27.0`)
-- [Node.js](https://nodejs.org/) (`>= 20.0.0` or `22.x`) & npm
-- [Docker & Docker Compose](https://www.docker.com/) (Optional, for database)
+- [Node.js](https://nodejs.org/) (`>= 20.0.0` หรือ `22.x`) และ npm
+- [Docker และ Docker Compose](https://www.docker.com/) ถ้าต้องการฐานข้อมูลในเครื่อง
 
 ---
 
-### 2. Backend Setup (`server/`)
+### 2. เซิร์ฟเวอร์ (`server/`)
 
-1. Navigate to the server folder:
+1. เข้าโฟลเดอร์เซิร์ฟเวอร์:
    ```bash
    cd server
    ```
 
-2. Copy the environment file:
+2. คัดลอกไฟล์สภาพแวดล้อม:
    ```bash
    cp .env.example .env
    ```
 
-3. Install dependencies:
+3. ติดตั้งแพ็กเกจ:
    ```bash
    npm install --legacy-peer-deps
    ```
 
-4. Start the development server:
+4. เปิดเซิร์ฟเวอร์โหมดพัฒนา:
    ```bash
    npm run start:dev
    ```
 
-5. Access the API and interactive documentation:
-   - **Base API**: [http://localhost:3000/api](http://localhost:3000/api)
-   - **Swagger OpenAPI Docs**: [http://localhost:3000/api/docs](http://localhost:3000/api/docs)
+5. เปิด API และเอกสาร:
+   - **API**: [http://localhost:3000/api](http://localhost:3000/api)
+   - **Swagger**: [http://localhost:3000/api/docs](http://localhost:3000/api/docs)
 
-*(Optional: Run PostgreSQL via Docker Compose from project root)*
+ถ้าต้องการ PostgreSQL จาก Docker ให้รันที่รากโปรเจกต์:
+
 ```bash
 docker compose up -d
 ```
 
 ---
 
-### 3. Mobile Client Setup (`client/`)
+### 3. แอปมือถือ (`client/`)
 
-1. Navigate to the client folder:
+1. เข้าโฟลเดอร์แอป:
    ```bash
    cd client
    ```
 
-2. Install dependencies:
+2. ติดตั้งแพ็กเกจ:
    ```bash
    flutter pub get
    ```
 
-3. Check connected devices / emulators:
+3. ดูอุปกรณ์ที่ต่ออยู่:
    ```bash
    flutter devices
    ```
 
-4. Run the app:
+4. เปิดแอป:
    ```bash
    flutter run
    ```
 
-> **Note for Android Emulator:** The Android emulator accesses host localhost via `http://10.0.2.2:3000/api`. This is pre-configured in [api_constants.dart](client/lib/core/constants/api_constants.dart).
+> เว็บ เดสก์ท็อป และตัวจำลอง iOS เรียก `http://localhost:3000/api` ตัวจำลอง Android เรียก `http://10.0.2.2:3000/api` มือถือจริงส่ง `--dart-define=API_BASE_URL=http://<lan-ip>:3000/api` ค่าอยู่ที่ [api_constants.dart](client/lib/core/constants/api_constants.dart)
 
 ---
 
-## 🧪 Running Tests & Quality Checks
+## เทสและการตรวจคุณภาพ
 
-| Component | Task | Command |
+| ส่วน | งาน | คำสั่ง |
 |---|---|---|
-| **Client** | Check Code Formatting | `cd client && dart format --output=none --set-exit-if-changed .` |
-| **Client** | Static Code Analysis | `cd client && flutter analyze` |
-| **Client** | Run Unit / Widget Tests | `cd client && flutter test` |
-| **Server** | Linting | `cd server && npm run lint` |
-| **Server** | Unit Tests | `cd server && npm test` |
-| **Server** | Production Build | `cd server && npm run build` |
+| แอป | ตรวจการจัดรูปแบบ | `cd client && dart format --output=none --set-exit-if-changed .` |
+| แอป | วิเคราะห์โค้ด | `cd client && flutter analyze` |
+| แอป | รันเทส | `cd client && flutter test` |
+| เซิร์ฟเวอร์ | ตรวจลินต์ | `cd server && npm run lint` |
+| เซิร์ฟเวอร์ | เทสหน่วย | `cd server && npm test` |
+| เซิร์ฟเวอร์ | บิลด์สำหรับรันจริง | `cd server && npm run build` |
 
 ---
 
-## 🤝 Contribution & Team Workflow
+## การร่วมพัฒนา
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, Git branching strategy, and conventional commit format.
+อ่าน [CONTRIBUTING.md](CONTRIBUTING.md) สำหรับกติกาการทำงานร่วมกัน วิธีแตกสาขา และรูปแบบข้อความคอมมิต
 
 ---
 
-## 📄 License
+## สัญญาอนุญาต
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+โปรเจกต์นี้อยู่ภายใต้สัญญาอนุญาต MIT ดูรายละเอียดใน [LICENSE](LICENSE)

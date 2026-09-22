@@ -16,6 +16,9 @@
       - DATABASE_USER=postgres
       - DATABASE_PASSWORD=postgres
       - DATABASE_NAME=mobile_project_db
+      - JWT_SECRET=supersecretjwtkey_change_me_in_production
+      - JWT_ACCESS_EXPIRATION=15m
+      - JWT_REFRESH_EXPIRATION=7d
     depends_on:
       postgres:
         condition: service_healthy

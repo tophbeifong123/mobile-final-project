@@ -1,0 +1,18 @@
+---
+description: Flutter feature-first structure, Riverpod, and routing
+globs: client/**/*.dart
+alwaysApply: false
+---
+
+# Flutter
+
+คงโค้ดแบบ feature-first ใต้ `client/lib/core` และ `client/lib/features`
+
+- ใช้ Riverpod เป็นตัวฉีด dependency และถือ state
+- ใช้ `go_router` เป็นตัวนำทาง
+- แต่ละฟีเจอร์แยก `presentation/`, `domain/`, `data/`
+- Widget ไม่ยิง HTTP เอง data source ใช้ Dio
+- เก็บ token ใน `flutter_secure_storage`
+- กติกาสมัครได้ครั้งเดียวและทางเดินสถานะอยู่ที่ API แอปแสดงผลและกันการกดซ้ำ
+- Filter ของ Home เป็น state ของหน้านั้น ส่งเป็น query ไม่สร้าง route แยก
+- เรียกเฉพาะเส้นทางที่มีใน Swagger ที่ `/api/docs`

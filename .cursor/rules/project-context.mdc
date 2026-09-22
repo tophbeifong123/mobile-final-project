@@ -1,0 +1,18 @@
+---
+description: InternFinder product boundaries and which docs to follow
+alwaysApply: true
+---
+
+# InternFinder
+
+แอปฝึกงาน Flutter + NestJS บน Express อ่านก่อนเปลี่ยนพฤติกรรม
+
+- docs/REQUIREMENTS.md คือหน้าและกติกา
+- docs/ARCHITECTURE.md คือโมดูล เส้นทาง และชั้นของโค้ด
+- docs/DATABASE.md คือ schema และ lock
+
+Role มี `student` กับ `company` เลือกตอนสมัครแล้วเปลี่ยนไม่ได้
+
+ห้ามเพิ่มแชท, นัดสัมภาษณ์, login โซเชียล, ลืมรหัสผ่าน, ยืนยัน email, ถอนใบสมัคร, หน้าโปรไฟล์บริษัทแยก, Admin หรือ push นอกแอป
+
+Swagger ที่ `/api/docs` คือสัญญา API ห้ามให้แอปเรียกเส้นทางที่เอกสารไม่มี

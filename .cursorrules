@@ -1,0 +1,9 @@
+# InternFinder
+
+อ่าน AGENTS.md ก่อนแก้โค้ด รายละเอียดอยู่ใน docs/REQUIREMENTS.md, docs/ARCHITECTURE.md และ docs/DATABASE.md
+
+กฎตามชนิดไฟล์อยู่ใน .cursor/rules/
+
+- คง NestJS บน Express และ Swagger ที่ /api/docs
+- Role มี student กับ company เปลี่ยนทีหลังไม่ได้
+- ห้ามเพิ่มแชท นัดสัมภาษณ์ หรือฟีเจอร์ที่ REQUIREMENTS.md ตัดออก

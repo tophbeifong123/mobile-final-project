@@ -1,0 +1,17 @@
+---
+description: TypeORM migrations, unique constraints, and locks
+globs: server/**/*entity*.ts,server/**/migrations/**/*.ts
+alwaysApply: false
+---
+
+# Database
+
+ทำตาม docs/DATABASE.md
+
+- เปลี่ยน schema ด้วย migration ที่มีทั้ง `up` และ `down` เท่านั้น
+- ใช้ repository แบบ Data Mapper ไม่ใช้ Active Record
+- คง unique ที่ `users.email`, `applications (student_id, job_id)` และ `saved_jobs (student_id, job_id)`
+- การสมัครงานและการเปิดหรือปิดรับสมัครล็อกแถว job ด้วย `SELECT ... FOR UPDATE` ใน transaction เดียว
+- การแก้ประกาศและการเปลี่ยนสถานะใช้คอลัมน์ `version` ถ้า version เก่าให้ตอบ 409
+- ทางเดินสถานะคือ `submitted` ไป `reviewing` แล้วไป `accepted` หรือ `rejected` สถานะจบแล้วเปลี่ยนต่อไม่ได้
+- เขียนแถว outbox ใน transaction เดียวกับการเปลี่ยนสถานะ ห้ามแทรก `notifications` ใน request นั้น

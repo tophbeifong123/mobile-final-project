@@ -1,3 +1,4 @@
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module.js';
@@ -5,15 +6,18 @@ import { AppModule } from './app.module.js';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // Enable CORS for mobile & web clients
   app.enableCors();
-
-  // Set global API prefix
   app.setGlobalPrefix('api');
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
-  // Setup Swagger OpenAPI Documentation
   const config = new DocumentBuilder()
-    .setTitle('Mobile Final Project API')
+    .setTitle('InternFinder API')
     .setDescription('Backend REST API service for Flutter Mobile Application')
     .setVersion('1.0.0')
     .addBearerAuth()

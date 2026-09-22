@@ -1,0 +1,34 @@
+﻿# Secrets
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.cert
+*.jks
+*.keystore
+
+# Dependencies and build output
+server/node_modules/
+server/dist/
+server/.cache/
+server/coverage/
+client/.dart_tool/
+client/build/
+client/coverage/
+client/.flutter-plugins
+client/.flutter-plugins-dependencies
+client/.packages
+
+# Native build artifacts
+**/android/.gradle/
+**/android/local.properties
+**/android/**/build/
+**/ios/Pods/
+**/ios/DerivedData/
+**/ios/.symlinks/
+
+# Logs and generated files
+*.log
+*.tsbuildinfo
+postgres_data/

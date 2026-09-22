@@ -1,0 +1,25 @@
+---
+description: NestJS controllers, validation, Swagger, and unit tests
+globs: server/**/*.ts
+alwaysApply: false
+---
+
+# NestJS
+
+คง `@nestjs/platform-express` ห้ามย้ายแอปไป Fastify
+
+- Controller รับ DTO เรียก service แล้วคืนค่า ห้ามใส่กติกาธุรกิจใน controller
+- Service ถือกติกา เช่น สมัครได้ครั้งเดียวและทางเดินสถานะ
+- Repository เป็น Data Mapper ห้ามให้ entity เรียก `.save()` เอง
+- ใช้ global `ValidationPipe` แบบ `whitelist`, `forbidNonWhitelisted`, `transform`
+- ผู้ใช้ปัจจุบันมาจาก `@CurrentUser()` ห้ามใช้ request-scoped provider
+- ทุก endpoint มี `@ApiOperation` กับ `@ApiResponse` และมี `@ApiBearerAuth` เมื่อต้อง login
+- ทุกฟิลด์ของ DTO มี `@ApiProperty` อัปโหลดไฟล์ระบุ `multipart/form-data`
+- เทสหน่วยใช้ Vitest กับ `@nestjs/testing` mock repository แล้วจัดเป็น Arrange, Act, Assert
+
+```typescript
+@Post()
+create(@Body() dto: CreateJobDto, @CurrentUser() user: AuthUser) {
+  return this.jobsService.create(user, dto);
+}
+```
