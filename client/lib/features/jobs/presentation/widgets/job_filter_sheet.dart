@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_tokens.dart';
+import '../../../../core/widgets/app_primary_button.dart';
 import '../../domain/entities/job.dart';
+import '../job_labels.dart';
 
 class JobFilterSheet extends StatefulWidget {
   const JobFilterSheet({
@@ -42,63 +45,143 @@ class _JobFilterSheetState extends State<JobFilterSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('Filter', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _province,
-              decoration: const InputDecoration(labelText: 'Province'),
-            ),
-            DropdownButtonFormField<WorkMode>(
-              initialValue: _workMode,
-              decoration: const InputDecoration(labelText: 'Work mode'),
-              items: WorkMode.values
-                  .map(
-                    (mode) =>
-                        DropdownMenuItem(value: mode, child: Text(mode.name)),
-                  )
-                  .toList(),
-              onChanged: (value) => setState(() => _workMode = value),
-            ),
-            TextField(
-              controller: _category,
-              decoration: const InputDecoration(labelText: 'Category'),
-            ),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Has allowance'),
-              value: _hasAllowance ?? false,
-              onChanged: (value) => setState(() => _hasAllowance = value),
-            ),
-            const SizedBox(height: 8),
-            FilledButton(
-              onPressed: () {
-                widget.onApply(
-                  JobFilter(
-                    search: widget.initial.search,
-                    province: _emptyToNull(_province.text),
-                    workMode: _workMode,
-                    category: _emptyToNull(_category.text),
-                    hasAllowance: _hasAllowance,
+    final textTheme = Theme.of(context).textTheme;
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(kPagePadding, 0, kPagePadding, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('ตัวกรอง', style: textTheme.titleLarge),
+              const SizedBox(height: 4),
+              Text(
+                'จังหวัด รูปแบบงาน หมวดงาน และเบี้ยเลี้ยง',
+                style: textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _province,
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(
+                  labelText: 'จังหวัด',
+                  prefixIcon: Icon(Icons.place_outlined),
+                ),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<WorkMode>(
+                key: ValueKey(_workMode),
+                initialValue: _workMode,
+                decoration: const InputDecoration(labelText: 'รูปแบบงาน'),
+                items: [
+                  const DropdownMenuItem(child: Text('ทั้งหมด')),
+                  for (final mode in WorkMode.values)
+                    DropdownMenuItem(
+                      value: mode,
+                      child: Text(workModeLabel(mode)),
+                    ),
+                ],
+                onChanged: (value) => setState(() => _workMode = value),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _category,
+                textInputAction: TextInputAction.done,
+                decoration: const InputDecoration(
+                  labelText: 'หมวดงาน',
+                  prefixIcon: Icon(Icons.category_outlined),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text('เบี้ยเลี้ยง', style: textTheme.titleMedium),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _AllowanceChoice(
+                    label: 'ทั้งหมด',
+                    selected: _hasAllowance == null,
+                    onSelected: () => setState(() => _hasAllowance = null),
                   ),
-                );
-              },
-              child: const Text('Apply filter'),
-            ),
-          ],
+                  _AllowanceChoice(
+                    label: 'มีเบี้ยเลี้ยง',
+                    selected: _hasAllowance == true,
+                    onSelected: () => setState(() => _hasAllowance = true),
+                  ),
+                  _AllowanceChoice(
+                    label: 'ไม่มีเบี้ยเลี้ยง',
+                    selected: _hasAllowance == false,
+                    onSelected: () => setState(() => _hasAllowance = false),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              AppPrimaryButton(
+                onPressed: () => widget.onApply(_currentFilter()),
+                child: const Text('ใช้ตัวกรอง'),
+              ),
+              TextButton(
+                onPressed: () {
+                  widget.onApply(JobFilter(search: widget.initial.search));
+                },
+                child: const Text('ล้างตัวกรอง'),
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  JobFilter _currentFilter() {
+    return JobFilter(
+      search: widget.initial.search,
+      province: _emptyToNull(_province.text),
+      workMode: _workMode,
+      category: _emptyToNull(_category.text),
+      hasAllowance: _hasAllowance,
     );
   }
 
   String? _emptyToNull(String value) {
     final trimmed = value.trim();
     return trimmed.isEmpty ? null : trimmed;
+  }
+}
+
+class _AllowanceChoice extends StatelessWidget {
+  const _AllowanceChoice({
+    required this.label,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return FilterChip(
+      label: Text(label),
+      selected: selected,
+      showCheckmark: false,
+      labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+        color: selected ? scheme.onPrimary : AppColors.textPrimary,
+        fontWeight: FontWeight.w600,
+      ),
+      color: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return AppColors.primary;
+        }
+        return AppColors.surface;
+      }),
+      side: BorderSide(color: selected ? AppColors.primary : AppColors.line),
+      onSelected: (_) => onSelected(),
+    );
   }
 }

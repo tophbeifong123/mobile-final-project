@@ -19,18 +19,25 @@ class StudentShell extends StatelessWidget {
           );
         },
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.work_outline), label: 'Home'),
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            selectedIcon: Icon(Icons.home),
+            label: 'หน้าแรก',
+          ),
           NavigationDestination(
             icon: Icon(Icons.bookmark_outline),
-            label: 'Saved',
+            selectedIcon: Icon(Icons.bookmark),
+            label: 'บันทึก',
           ),
           NavigationDestination(
             icon: Icon(Icons.assignment_outlined),
-            label: 'Applications',
+            selectedIcon: Icon(Icons.assignment),
+            label: 'ใบสมัคร',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),
-            label: 'Profile',
+            selectedIcon: Icon(Icons.person),
+            label: 'โปรไฟล์',
           ),
         ],
       ),

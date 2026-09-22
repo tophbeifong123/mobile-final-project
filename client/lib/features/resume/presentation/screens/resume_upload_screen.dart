@@ -1,17 +1,183 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/error/app_exception.dart';
+import '../../../../core/theme/app_tokens.dart';
+import '../../../../core/widgets/app_primary_button.dart';
+import '../../../../core/widgets/status_chip.dart';
 import '../providers/resume_controller.dart';
 
-class ResumeUploadScreen extends ConsumerWidget {
+class ResumeUploadScreen extends ConsumerStatefulWidget {
   const ResumeUploadScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(resumeControllerProvider);
+  ConsumerState<ResumeUploadScreen> createState() => _ResumeUploadScreenState();
+}
+
+class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
+  PlatformFile? _file;
+  String? _error;
+  bool _uploading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final file = _file;
     return Scaffold(
-      appBar: AppBar(title: const Text('Resume Upload')),
-      body: const Center(child: Text('Resume Upload')),
+      appBar: AppBar(title: const Text('อัปโหลด Resume')),
+      body: ListView(
+        padding: const EdgeInsets.all(kPagePadding),
+        children: [
+          Text('ไฟล์ PDF', style: textTheme.titleLarge),
+          const SizedBox(height: 4),
+          Text(
+            'ต้องมี Resume เป็น PDF ก่อนสมัครงาน',
+            style: textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 16),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.line),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  const Icon(
+                    Icons.upload_file,
+                    size: 40,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'เลือกไฟล์ PDF จากเครื่อง',
+                    textAlign: TextAlign.center,
+                    style: textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton(
+                    onPressed: _uploading ? null : _pickPdf,
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(kMinTouchTarget),
+                      foregroundColor: AppColors.primary,
+                      side: const BorderSide(color: AppColors.primary),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text('เลือกไฟล์'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (file != null) ...[
+            const SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.picture_as_pdf_outlined,
+                      color: AppColors.primary,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(file.name, style: textTheme.titleMedium),
+                          const SizedBox(height: 8),
+                          const StatusChip(label: 'ยังไม่อัปโหลด'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          if (_error != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              _error!,
+              style: textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
+          ],
+        ],
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(kPagePadding, 8, kPagePadding, 16),
+          child: AppPrimaryButton(
+            onPressed: file == null || _uploading ? null : _upload,
+            child: Text(_uploading ? 'กำลังอัปโหลด' : 'อัปโหลด'),
+          ),
+        ),
+      ),
     );
+  }
+
+  Future<void> _pickPdf() async {
+    setState(() => _error = null);
+    try {
+      final file = await FilePicker.pickFile(
+        type: FileType.custom,
+        allowedExtensions: const ['pdf'],
+      );
+      if (file == null) {
+        return;
+      }
+      final extension = file.extension?.toLowerCase();
+      if (extension != 'pdf') {
+        setState(() => _error = 'เลือกได้เฉพาะไฟล์ PDF');
+        return;
+      }
+      setState(() => _file = file);
+    } catch (error) {
+      setState(() => _error = userVisibleError(error));
+    }
+  }
+
+  Future<void> _upload() async {
+    final file = _file;
+    final path = file?.path;
+    if (file == null) {
+      return;
+    }
+    if (path == null || path.isEmpty) {
+      setState(() => _error = 'เลือกไฟล์จากเครื่องเพื่ออัปโหลด');
+      return;
+    }
+    setState(() {
+      _uploading = true;
+      _error = null;
+    });
+    try {
+      await ref
+          .read(resumeRepositoryProvider)
+          .uploadPdf(filePath: path, fileName: file.name);
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('อัปโหลด Resume แล้ว')));
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _error = userVisibleError(error));
+    } finally {
+      if (mounted) {
+        setState(() => _uploading = false);
+      }
+    }
   }
 }

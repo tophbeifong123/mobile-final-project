@@ -11,8 +11,13 @@ class NotificationsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(notificationsControllerProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Notifications')),
-      body: const EmptyState(message: 'No notifications yet'),
+      appBar: AppBar(title: const Text('การแจ้งเตือน')),
+      body: const EmptyState(
+        icon: Icons.notifications_none,
+        title: 'ยังไม่มีการแจ้งเตือน',
+        message:
+            'จะแสดงเมื่อบริษัทเปลี่ยนสถานะใบสมัคร พร้อมเวลาและสถานะว่าอ่านแล้วหรือยัง กดแล้วเปิดรายละเอียดใบสมัคร',
+      ),
     );
   }
 }

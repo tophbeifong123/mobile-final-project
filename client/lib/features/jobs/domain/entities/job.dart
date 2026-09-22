@@ -16,6 +16,13 @@ class JobFilter {
   final WorkMode? workMode;
   final String? category;
   final bool? hasAllowance;
+
+  bool get hasCriteria =>
+      search.trim().isNotEmpty ||
+      province != null ||
+      workMode != null ||
+      (category != null && category!.trim().isNotEmpty) ||
+      hasAllowance != null;
 }
 
 class Job {
@@ -38,4 +45,21 @@ class Job {
   final String category;
   final bool hasAllowance;
   final JobStatus status;
+}
+
+String workModeToApi(WorkMode mode) {
+  return switch (mode) {
+    WorkMode.onSite => 'on_site',
+    WorkMode.hybrid => 'hybrid',
+    WorkMode.remote => 'remote',
+  };
+}
+
+WorkMode workModeFromApi(String value) {
+  return switch (value) {
+    'on_site' => WorkMode.onSite,
+    'hybrid' => WorkMode.hybrid,
+    'remote' => WorkMode.remote,
+    _ => throw FormatException('รูปแบบงานไม่รู้จัก'),
+  };
 }
