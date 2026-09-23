@@ -102,7 +102,8 @@ class _JobFeedScreenState extends ConsumerState<JobFeedScreen> {
                   ),
                   const SizedBox(width: 8),
                   _FilterButton(
-                    active: filter.hasCriteria,
+                    active: filter.hasFilters,
+                    badgeCount: filter.filterCount,
                     onPressed: () => _openFilter(filter),
                   ),
                 ],
@@ -177,6 +178,8 @@ class _JobFeedScreenState extends ConsumerState<JobFeedScreen> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
+      showDragHandle: true,
+      useSafeArea: true,
       builder: (sheetContext) {
         return JobFilterSheet(
           initial: filter,
@@ -191,9 +194,14 @@ class _JobFeedScreenState extends ConsumerState<JobFeedScreen> {
 }
 
 class _FilterButton extends StatelessWidget {
-  const _FilterButton({required this.active, required this.onPressed});
+  const _FilterButton({
+    required this.active,
+    this.badgeCount = 0,
+    required this.onPressed,
+  });
 
   final bool active;
+  final int badgeCount;
   final VoidCallback onPressed;
 
   @override
@@ -205,12 +213,18 @@ class _FilterButton extends StatelessWidget {
         side: BorderSide(color: active ? AppColors.primary : AppColors.line),
       ),
       clipBehavior: Clip.antiAlias,
-      child: IconButton(
-        tooltip: 'ตัวกรอง',
-        onPressed: onPressed,
-        icon: Icon(
-          Icons.tune,
-          color: active ? AppColors.primary : AppColors.textPrimary,
+      child: Badge(
+        isLabelVisible: badgeCount > 0,
+        label: Text('$badgeCount'),
+        backgroundColor: AppColors.primary,
+        textColor: Colors.white,
+        child: IconButton(
+          tooltip: 'ตัวกรอง',
+          onPressed: onPressed,
+          icon: Icon(
+            Icons.tune,
+            color: active ? AppColors.primary : AppColors.textPrimary,
+          ),
         ),
       ),
     );
