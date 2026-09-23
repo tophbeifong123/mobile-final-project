@@ -64,21 +64,35 @@ export class StudentsService {
       throw new BadRequestException(FILE_REQUIRED);
     }
 
+    const isPdfMagic =
+      file.buffer &&
+      file.buffer.length >= 4 &&
+      file.buffer.subarray(0, 4).toString() === '%PDF';
+
     const hasPdfExt = file.originalname?.toLowerCase().endsWith('.pdf');
     const isPdfMime =
       file.mimetype === 'application/pdf' ||
-      file.mimetype === 'application/x-pdf';
+      file.mimetype === 'application/x-pdf' ||
+      file.mimetype === 'application/acrobat' ||
+      file.mimetype === 'applications/vnd.pdf' ||
+      file.mimetype === 'text/pdf';
 
-    if (!hasPdfExt && !isPdfMime) {
+    const isGenericMime =
+      !file.mimetype ||
+      file.mimetype === 'application/octet-stream' ||
+      file.mimetype === 'binary/octet-stream';
+
+    // Must either match PDF magic bytes (%PDF) or have PDF extension/mime
+    const isPdf = isPdfMagic || (hasPdfExt && isGenericMime) || isPdfMime;
+
+    // If buffer exists and has at least 4 bytes, verify it does not have invalid header
+    if (!isPdf || (file.buffer && file.buffer.length >= 4 && !isPdfMagic && !hasPdfExt)) {
       throw new BadRequestException(ONLY_PDF_ALLOWED);
     }
-    if (
-      file.mimetype &&
-      file.mimetype !== 'application/pdf' &&
-      file.mimetype !== 'application/octet-stream' &&
-      file.mimetype !== 'application/x-pdf'
-    ) {
-      throw new BadRequestException(ONLY_PDF_ALLOWED);
+
+    let fileName = file.originalname?.trim() || 'resume.pdf';
+    if (!fileName.toLowerCase().endsWith('.pdf')) {
+      fileName += '.pdf';
     }
 
     const profile = await this.studentsRepository.findByUserId(user.userId);
@@ -92,14 +106,14 @@ export class StudentsService {
     const updated = await this.studentsRepository.updateResume(
       user.userId,
       objectKey,
-      file.originalname,
+      fileName,
     );
     if (!updated) {
       throw new NotFoundException(PROFILE_NOT_FOUND);
     }
 
     return {
-      fileName: updated.resumeFileName ?? file.originalname,
+      fileName: updated.resumeFileName ?? fileName,
       objectKey: updated.resumeObjectKey ?? objectKey,
     };
   }

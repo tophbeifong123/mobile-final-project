@@ -166,8 +166,9 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
         return;
       }
       final extension = file.extension?.toLowerCase();
-      if (extension != 'pdf') {
-        setState(() => _error = 'เลือกได้เฉพาะไฟล์ PDF');
+      final hasPdfExt = file.name.toLowerCase().endsWith('.pdf');
+      if (extension != 'pdf' && !hasPdfExt) {
+        setState(() => _error = 'เลือกได้เฉพาะไฟล์ PDF เท่านั้น');
         return;
       }
       setState(() => _file = file);
@@ -178,22 +179,29 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
 
   Future<void> _upload() async {
     final file = _file;
-    final path = file?.path;
     if (file == null) {
       return;
     }
-    if (path == null || path.isEmpty) {
-      setState(() => _error = 'เลือกไฟล์จากเครื่องเพื่ออัปโหลด');
-      return;
-    }
+    final path = file.path;
     setState(() {
       _uploading = true;
       _error = null;
     });
     try {
+      List<int>? bytes;
+      try {
+        bytes = await file.readAsBytes();
+      } catch (_) {
+        bytes = null;
+      }
+      if ((path == null || path.isEmpty) && (bytes == null || bytes.isEmpty)) {
+        setState(() => _error = 'เลือกไฟล์จากเครื่องเพื่ออัปโหลด');
+        return;
+      }
       await ref.read(resumeRepositoryProvider).uploadPdf(
-            filePath: path,
+            filePath: path ?? '',
             fileName: file.name,
+            bytes: bytes,
           );
       ref.invalidate(studentProfileControllerProvider);
       if (!mounted) {

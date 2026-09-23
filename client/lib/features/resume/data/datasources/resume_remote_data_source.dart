@@ -15,11 +15,23 @@ class ResumeRemoteDataSource {
     List<int>? bytes,
   }) async {
     try {
+      final normalizedName = fileName.toLowerCase().endsWith('.pdf')
+          ? fileName
+          : '$fileName.pdf';
+
       final MultipartFile file;
       if (bytes != null && bytes.isNotEmpty) {
-        file = MultipartFile.fromBytes(bytes, filename: fileName);
+        file = MultipartFile.fromBytes(
+          bytes,
+          filename: normalizedName,
+          contentType: DioMediaType('application', 'pdf'),
+        );
       } else {
-        file = await MultipartFile.fromFile(filePath, filename: fileName);
+        file = await MultipartFile.fromFile(
+          filePath,
+          filename: normalizedName,
+          contentType: DioMediaType('application', 'pdf'),
+        );
       }
 
       final formData = FormData.fromMap({
