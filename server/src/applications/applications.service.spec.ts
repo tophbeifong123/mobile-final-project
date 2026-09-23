@@ -10,6 +10,7 @@ import { UserRole } from '../auth/user-role.js';
 import { ApplicationStatus } from './application-status.js';
 import {
   ALREADY_APPLIED,
+  APPLICATION_NOT_FOUND,
   COVER_LETTER_REQUIRED,
   JOB_CLOSED,
   JOB_NOT_FOUND,
@@ -211,6 +212,83 @@ describe('ApplicationsService', () => {
       expect(result[0].companyName).toBe('Tech Co');
       expect(result[0].status).toBe(ApplicationStatus.Submitted);
       expect(result[0].createdAt).toBe('2026-09-23T10:00:00.000Z');
+    });
+  });
+
+  describe('getDetail', () => {
+    it('rejects if user role is not student', async () => {
+      await expect(service.getDetail(companyUser, 'app-1')).rejects.toThrow(
+        new ForbiddenException(STUDENT_ONLY),
+      );
+    });
+
+    it('rejects if student profile does not exist', async () => {
+      vi.mocked(repository.findStudentProfileByUserId).mockResolvedValue(null);
+
+      await expect(service.getDetail(studentUser, 'app-1')).rejects.toThrow(
+        new NotFoundException(PROFILE_NOT_FOUND),
+      );
+    });
+
+    it('rejects if application is not found or does not belong to student', async () => {
+      vi.mocked(repository.findStudentProfileByUserId).mockResolvedValue(
+        studentProfile as any,
+      );
+      (repository as any).findApplicationDetail = vi.fn().mockResolvedValue(null);
+
+      await expect(service.getDetail(studentUser, 'app-1')).rejects.toThrow(
+        new NotFoundException(APPLICATION_NOT_FOUND),
+      );
+    });
+
+    it('returns full application detail with job info and timeline events', async () => {
+      vi.mocked(repository.findStudentProfileByUserId).mockResolvedValue(
+        studentProfile as any,
+      );
+      (repository as any).findApplicationDetail = vi.fn().mockResolvedValue({
+        id: 'app-1',
+        jobId: 'job-1',
+        status: ApplicationStatus.Submitted,
+        coverLetter: 'My cover letter',
+        resumeObjectKey: 'resumes/key.pdf',
+        createdAt: new Date('2026-09-23T10:00:00Z'),
+        updatedAt: new Date('2026-09-23T10:00:00Z'),
+        job: {
+          id: 'job-1',
+          title: 'Mobile Engineer',
+          companyName: 'Tech Co',
+          province: 'กรุงเทพมหานคร',
+          workMode: 'on_site',
+          category: 'Mobile',
+          hasAllowance: true,
+        },
+        timeline: [
+          {
+            id: 'event-1',
+            fromStatus: null,
+            toStatus: ApplicationStatus.Submitted,
+            createdAt: new Date('2026-09-23T10:00:00Z'),
+          },
+        ],
+      });
+
+      const result = await service.getDetail(studentUser, 'app-1');
+
+      expect((repository as any).findApplicationDetail).toHaveBeenCalledWith(
+        'app-1',
+        studentProfile.id,
+      );
+      expect(result.id).toBe('app-1');
+      expect(result.job.title).toBe('Mobile Engineer');
+      expect(result.job.companyName).toBe('Tech Co');
+      expect(result.status).toBe(ApplicationStatus.Submitted);
+      expect(result.coverLetter).toBe('My cover letter');
+      expect(result.resumeObjectKey).toBe('resumes/key.pdf');
+      expect(result.createdAt).toBe('2026-09-23T10:00:00.000Z');
+      expect(result.timeline).toHaveLength(1);
+      expect(result.timeline[0].toStatus).toBe(ApplicationStatus.Submitted);
+      expect(result.timeline[0].fromStatus).toBeNull();
+      expect(result.timeline[0].createdAt).toBe('2026-09-23T10:00:00.000Z');
     });
   });
 });

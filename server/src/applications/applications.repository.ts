@@ -8,7 +8,7 @@ import { DataSource, QueryFailedError } from 'typeorm';
 import { CompanyProfile } from '../auth/entities/company-profile.entity.js';
 import { StudentProfile } from '../auth/entities/student-profile.entity.js';
 import { Job } from '../jobs/entities/job.entity.js';
-import { JobStatus } from '../jobs/job-enums.js';
+import { JobStatus, WorkMode } from '../jobs/job-enums.js';
 import { ApplicationStatus } from './application-status.js';
 import {
   ALREADY_APPLIED,
@@ -36,6 +36,31 @@ export interface MyApplicationRecord {
   resumeObjectKey: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface ApplicationDetailRecord {
+  id: string;
+  jobId: string;
+  status: ApplicationStatus;
+  coverLetter: string;
+  resumeObjectKey: string;
+  createdAt: Date;
+  updatedAt: Date;
+  job: {
+    id: string;
+    title: string;
+    companyName: string;
+    province: string;
+    workMode: WorkMode;
+    category: string;
+    hasAllowance: boolean;
+  };
+  timeline: {
+    id: string;
+    fromStatus: ApplicationStatus | null;
+    toStatus: ApplicationStatus;
+    createdAt: Date;
+  }[];
 }
 
 @Injectable()
@@ -74,6 +99,71 @@ export class ApplicationsRepository {
       createdAt: new Date(row.createdAt as string | Date),
       updatedAt: new Date(row.updatedAt as string | Date),
     }));
+  }
+
+  async findApplicationDetail(
+    applicationId: string,
+    studentId: string,
+  ): Promise<ApplicationDetailRecord | null> {
+    const row = await this.dataSource
+      .getRepository(Application)
+      .createQueryBuilder('app')
+      .innerJoin(Job, 'job', 'job.id = app.jobId')
+      .innerJoin(CompanyProfile, 'company', 'company.id = job.companyId')
+      .where('app.id = :applicationId AND app.studentId = :studentId', {
+        applicationId,
+        studentId,
+      })
+      .select('app.id', 'id')
+      .addSelect('app.jobId', 'jobId')
+      .addSelect('app.status', 'status')
+      .addSelect('app.coverLetter', 'coverLetter')
+      .addSelect('app.resumeObjectKey', 'resumeObjectKey')
+      .addSelect('app.createdAt', 'createdAt')
+      .addSelect('app.updatedAt', 'updatedAt')
+      .addSelect('job.title', 'jobTitle')
+      .addSelect('job.province', 'province')
+      .addSelect('job.workMode', 'workMode')
+      .addSelect('job.category', 'category')
+      .addSelect('job.hasAllowance', 'hasAllowance')
+      .addSelect('company.name', 'companyName')
+      .getRawOne();
+
+    if (!row) {
+      return null;
+    }
+
+    const events = await this.dataSource
+      .getRepository(ApplicationStatusEvent)
+      .find({
+        where: { applicationId },
+        order: { createdAt: 'ASC' },
+      });
+
+    return {
+      id: row.id as string,
+      jobId: row.jobId as string,
+      status: row.status as ApplicationStatus,
+      coverLetter: row.coverLetter as string,
+      resumeObjectKey: row.resumeObjectKey as string,
+      createdAt: new Date(row.createdAt as string | Date),
+      updatedAt: new Date(row.updatedAt as string | Date),
+      job: {
+        id: row.jobId as string,
+        title: row.jobTitle as string,
+        companyName: row.companyName as string,
+        province: row.province as string,
+        workMode: row.workMode as WorkMode,
+        category: row.category as string,
+        hasAllowance: Boolean(row.hasAllowance),
+      },
+      timeline: events.map((event) => ({
+        id: event.id,
+        fromStatus: event.fromStatus,
+        toStatus: event.toStatus,
+        createdAt: event.createdAt,
+      })),
+    };
   }
 
   async findStudentProfileByUserId(

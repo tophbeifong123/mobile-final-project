@@ -19,6 +19,7 @@ import { type AuthUser } from '../auth/auth-user.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { ApplicationsService } from './applications.service.js';
+import { ApplicationDetailDto } from './dto/application-detail.dto.js';
 import { ApplicationResponseDto } from './dto/application-response.dto.js';
 import { ApplyJobDto } from './dto/apply-job.dto.js';
 import { MyApplicationItemDto } from './dto/my-application-item.dto.js';
@@ -42,6 +43,24 @@ export class ApplicationsController {
   @ApiResponse({ status: 404, description: 'ไม่พบโปรไฟล์นักศึกษา' })
   getMine(@CurrentUser() user: AuthUser): Promise<MyApplicationItemDto[]> {
     return this.applicationsService.getMine(user);
+  }
+
+  @Get('applications/:id')
+  @ApiOperation({ summary: 'รายละเอียดใบสมัครและ timeline' })
+  @ApiParam({ name: 'id', format: 'uuid', description: 'รหัสใบสมัคร' })
+  @ApiResponse({
+    status: 200,
+    type: ApplicationDetailDto,
+    description: 'รายละเอียดใบสมัคร ข้อมูลงาน Cover Letter และ timeline สถานะ',
+  })
+  @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
+  @ApiResponse({ status: 403, description: 'เฉพาะนักศึกษา' })
+  @ApiResponse({ status: 404, description: 'ไม่พบใบสมัคร' })
+  getDetail(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<ApplicationDetailDto> {
+    return this.applicationsService.getDetail(user, id);
   }
 
   @Post('jobs/:id/applications')
