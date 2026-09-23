@@ -6,6 +6,7 @@ import { AppService } from './app.service.js';
 import { ApplicationsModule } from './applications/applications.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { JobsModule } from './jobs/jobs.module.js';
+import { NotificationsModule } from './notifications/notifications.module.js';
 import { StorageModule } from './storage/storage.module.js';
 import { StudentsModule } from './students/students.module.js';
 
@@ -32,6 +33,7 @@ import { StudentsModule } from './students/students.module.js';
     StudentsModule,
     JobsModule,
     ApplicationsModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
