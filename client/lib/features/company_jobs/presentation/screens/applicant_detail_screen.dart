@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:gap/gap.dart';
+
 import '../../../../core/error/app_exception.dart';
+import '../../../../core/theme/app_colors_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
+import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_primary_button.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/loading_view.dart';
@@ -336,15 +340,8 @@ class _ProfileHeaderCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    return Material(
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.line),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
+    return AppCard(
+      child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
@@ -438,7 +435,6 @@ class _ProfileHeaderCard extends StatelessWidget {
             ),
           ],
         ),
-      ),
     );
   }
 }
@@ -452,65 +448,57 @@ class _SkillsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    return Material(
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.line),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.psychology_outlined,
-                  size: 20,
-                  color: AppColors.primary,
-                ),
-                const SizedBox(width: 8),
-                Text('ทักษะความสามารถ', style: textTheme.titleMedium),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (skills.isEmpty)
-              Text(
-                'ไม่ได้ระบุทักษะ',
-                style: textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              )
-            else
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: skills.map((skill) {
-                  return Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: AppColors.primary.withValues(alpha: 0.2),
-                      ),
-                    ),
-                    child: Text(
-                      skill,
-                      style: textTheme.bodySmall?.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  );
-                }).toList(),
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.psychology_outlined,
+                size: 20,
+                color: AppColors.primary,
               ),
-          ],
-        ),
+              const Gap(8),
+              Text('ทักษะความสามารถ', style: textTheme.titleMedium),
+            ],
+          ),
+          const Gap(12),
+          if (skills.isEmpty)
+            Text(
+              'ไม่ได้ระบุทักษะ',
+              style: textTheme.bodySmall?.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: skills.map((skill) {
+                return Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Text(
+                    skill,
+                    style: textTheme.bodySmall?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+        ],
       ),
     );
   }
@@ -525,38 +513,30 @@ class _PortfolioCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    return Material(
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.line),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.link_rounded,
-                  size: 20,
-                  color: AppColors.primary,
-                ),
-                const SizedBox(width: 8),
-                Text('Portfolio / ผลงาน', style: textTheme.titleMedium),
-              ],
-            ),
-            const SizedBox(height: 10),
-            SelectableText(
-              url,
-              style: textTheme.bodyMedium?.copyWith(
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.link_rounded,
+                size: 20,
                 color: AppColors.primary,
-                decoration: TextDecoration.underline,
               ),
+              const Gap(8),
+              Text('Portfolio / ผลงาน', style: textTheme.titleMedium),
+            ],
+          ),
+          const Gap(10),
+          SelectableText(
+            url,
+            style: textTheme.bodyMedium?.copyWith(
+              color: AppColors.primary,
+              decoration: TextDecoration.underline,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -574,73 +554,66 @@ class _ResumeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final colors = context.colors;
 
-    return Material(
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.line),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.picture_as_pdf_outlined,
+                size: 20,
+                color: AppColors.primary,
+              ),
+              const Gap(8),
+              Text('Resume ที่ใช้สมัคร', style: textTheme.titleMedium),
+            ],
+          ),
+          const Gap(12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: colors.border),
+            ),
+            child: Row(
               children: [
                 const Icon(
-                  Icons.picture_as_pdf_outlined,
-                  size: 20,
+                  Icons.description_outlined,
+                  size: 28,
                   color: AppColors.primary,
                 ),
-                const SizedBox(width: 8),
-                Text('Resume ที่ใช้สมัคร', style: textTheme.titleMedium),
+                const Gap(12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        resumeFileName ?? 'Resume (PDF)',
+                        style: textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const Gap(2),
+                      Text(
+                        resumeObjectKey != null
+                            ? 'สำเนา Resume ในระบบ ณ วันที่ยื่นใบสมัคร'
+                            : 'ไม่มีไฟล์ Resume',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colors.mutedForeground,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: AppColors.background,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.line),
-              ),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.description_outlined,
-                    size: 28,
-                    color: AppColors.primary,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          resumeFileName ?? 'Resume (PDF)',
-                          style: textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          resumeObjectKey != null
-                              ? 'สำเนา Resume ในระบบ ณ วันที่ยื่นใบสมัคร'
-                              : 'ไม่มีไฟล์ Resume',
-                          style: textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -655,37 +628,29 @@ class _CoverLetterCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    return Material(
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.line),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.article_outlined,
-                  size: 20,
-                  color: AppColors.primary,
-                ),
-                const SizedBox(width: 8),
-                Text('Cover Letter', style: textTheme.titleMedium),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              coverLetter.trim().isNotEmpty
-                  ? coverLetter.trim()
-                  : 'ไม่ได้ระบุ Cover Letter',
-              style: textTheme.bodyMedium?.copyWith(height: 1.6),
-            ),
-          ],
-        ),
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.article_outlined,
+                size: 20,
+                color: AppColors.primary,
+              ),
+              const Gap(8),
+              Text('Cover Letter', style: textTheme.titleMedium),
+            ],
+          ),
+          const Gap(12),
+          Text(
+            coverLetter.trim().isNotEmpty
+                ? coverLetter.trim()
+                : 'ไม่ได้ระบุ Cover Letter',
+            style: textTheme.bodyMedium?.copyWith(height: 1.6),
+          ),
+        ],
       ),
     );
   }

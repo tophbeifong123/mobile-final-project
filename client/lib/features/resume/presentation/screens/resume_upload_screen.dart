@@ -1,9 +1,13 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gap/gap.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/error/app_exception.dart';
+import '../../../../core/theme/app_colors_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
+import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_primary_button.dart';
 import '../../../../core/widgets/status_chip.dart';
 import '../../../student_profile/presentation/providers/student_profile_controller.dart';
@@ -24,6 +28,7 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final colors = context.colors;
     final file = _file;
     final profileAsync = ref.watch(studentProfileControllerProvider);
     final currentResumeName = profileAsync.asData?.value.resumeFileName;
@@ -34,110 +39,99 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
         padding: const EdgeInsets.all(kPagePadding),
         children: [
           Text('ไฟล์ PDF', style: textTheme.titleLarge),
-          const SizedBox(height: 4),
+          const Gap(4),
           Text(
             'ต้องมี Resume เป็น PDF ก่อนสมัครงาน',
-            style: textTheme.bodyMedium,
+            style: textTheme.bodyMedium?.copyWith(color: colors.mutedForeground),
           ),
-          const SizedBox(height: 16),
+          const Gap(16),
           if (currentResumeName != null && currentResumeName.isNotEmpty) ...[
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.check_circle_outline,
-                      color: AppColors.primary,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Resume ในระบบ', style: textTheme.labelMedium),
-                          const SizedBox(height: 2),
-                          Text(currentResumeName, style: textTheme.titleMedium),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-          ],
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.line),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
+            AppCard(
+              child: Row(
                 children: [
                   const Icon(
-                    Icons.upload_file,
-                    size: 40,
+                    LucideIcons.checkCircle2,
                     color: AppColors.primary,
+                    size: 20,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'เลือกไฟล์ PDF จากเครื่อง',
-                    textAlign: TextAlign.center,
-                    style: textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 12),
-                  OutlinedButton(
-                    onPressed: _uploading ? null : _pickPdf,
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(kMinTouchTarget),
-                      foregroundColor: AppColors.primary,
-                      side: const BorderSide(color: AppColors.primary),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
+                  const Gap(12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Resume ในระบบ', style: textTheme.labelMedium),
+                        const Gap(2),
+                        Text(currentResumeName, style: textTheme.titleMedium),
+                      ],
                     ),
-                    child: const Text('เลือกไฟล์'),
                   ),
                 ],
               ),
             ),
+            const Gap(16),
+          ],
+          AppCard(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              children: [
+                const Icon(
+                  LucideIcons.uploadCloud,
+                  size: 40,
+                  color: AppColors.primary,
+                ),
+                const Gap(8),
+                Text(
+                  'เลือกไฟล์ PDF จากเครื่อง',
+                  textAlign: TextAlign.center,
+                  style: textTheme.titleMedium,
+                ),
+                const Gap(12),
+                OutlinedButton(
+                  onPressed: _uploading ? null : _pickPdf,
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(kMinTouchTarget),
+                    foregroundColor: AppColors.primary,
+                    side: const BorderSide(color: AppColors.primary),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
+                  child: const Text('เลือกไฟล์'),
+                ),
+              ],
+            ),
           ),
           if (file != null) ...[
-            const SizedBox(height: 16),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.picture_as_pdf_outlined,
-                      color: AppColors.primary,
+            const Gap(16),
+            AppCard(
+              child: Row(
+                children: [
+                  const Icon(
+                    LucideIcons.fileText,
+                    color: AppColors.primary,
+                    size: 22,
+                  ),
+                  const Gap(12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(file.name, style: textTheme.titleMedium),
+                        const Gap(8),
+                        const StatusChip(label: 'พร้อมอัปโหลด'),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(file.name, style: textTheme.titleMedium),
-                          const SizedBox(height: 8),
-                          const StatusChip(label: 'พร้อมอัปโหลด'),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ],
           if (_error != null) ...[
-            const SizedBox(height: 12),
+            const Gap(12),
             Text(
               _error!,
               style: textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.error,
+                color: colors.destructive,
               ),
             ),
           ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gap/gap.dart';
 
 import '../theme/app_tokens.dart';
 
@@ -33,11 +34,11 @@ class PageHeading extends StatelessWidget {
                     color: AppColors.primary,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const Gap(4),
               ],
               Text(title, style: textTheme.headlineSmall),
               if (subtitle != null) ...[
-                const SizedBox(height: 4),
+                const Gap(4),
                 Text(subtitle!, style: textTheme.bodyMedium),
               ],
             ],

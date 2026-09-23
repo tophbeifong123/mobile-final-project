@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/error/app_exception.dart';
+import '../../../../core/theme/app_colors_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/app_primary_button.dart';
+import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/loading_view.dart';
 import '../../../jobs/domain/entities/job.dart';
 import '../../../jobs/presentation/job_labels.dart';
 import '../../domain/entities/company_job.dart';
@@ -25,25 +31,14 @@ class JobFormScreen extends ConsumerWidget {
     return detail.when(
       loading: () => Scaffold(
         appBar: AppBar(title: const Text('แก้ประกาศ')),
-        body: const Center(child: CircularProgressIndicator()),
+        body: const LoadingView(label: 'กำลังโหลดประกาศ'),
       ),
       error: (error, _) => Scaffold(
         appBar: AppBar(title: const Text('แก้ประกาศ')),
         body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(kPagePadding),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(userVisibleError(error), textAlign: TextAlign.center),
-                const SizedBox(height: 12),
-                TextButton(
-                  onPressed: () =>
-                      ref.invalidate(companyJobDetailProvider(jobId)),
-                  child: const Text('ลองอีกครั้ง'),
-                ),
-              ],
-            ),
+          child: AppErrorView(
+            message: userVisibleError(error),
+            onRetry: () => ref.invalidate(companyJobDetailProvider(jobId)),
           ),
         ),
       ),
@@ -108,7 +103,9 @@ class _JobFormState extends ConsumerState<_JobForm> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final editing = widget.job != null;
+
     return Scaffold(
       appBar: AppBar(title: Text(editing ? 'แก้ประกาศ' : 'สร้างประกาศ')),
       body: Form(
@@ -116,38 +113,47 @@ class _JobFormState extends ConsumerState<_JobForm> {
         child: ListView(
           padding: const EdgeInsets.all(kPagePadding),
           children: [
-            TextFormField(
+            AppTextField(
               controller: _titleController,
               textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(labelText: 'ชื่องาน'),
+              label: 'ชื่องาน',
               validator: _required,
             ),
-            const SizedBox(height: 12),
-            TextFormField(
+            const Gap(12),
+            AppTextField(
               controller: _descriptionController,
               minLines: 4,
               maxLines: 6,
-              decoration: const InputDecoration(
-                labelText: 'รายละเอียด',
-                alignLabelWithHint: true,
-              ),
+              label: 'รายละเอียด',
               validator: _required,
             ),
-            const SizedBox(height: 12),
-            TextFormField(
+            const Gap(12),
+            AppTextField(
               controller: _provinceController,
               textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: 'จังหวัด',
-                prefixIcon: Icon(Icons.place_outlined),
-              ),
+              label: 'จังหวัด',
+              prefixIcon: const Icon(LucideIcons.mapPin, size: 18),
               validator: _required,
             ),
-            const SizedBox(height: 12),
+            const Gap(12),
             DropdownButtonFormField<WorkMode>(
               key: ValueKey(_workMode),
               initialValue: _workMode,
-              decoration: const InputDecoration(labelText: 'รูปแบบงาน'),
+              decoration: InputDecoration(
+                labelText: 'รูปแบบงาน',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: colors.border),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: colors.border),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: colors.ring, width: 1.5),
+                ),
+              ),
               items: [
                 for (final mode in WorkMode.values)
                   DropdownMenuItem(
@@ -163,13 +169,14 @@ class _JobFormState extends ConsumerState<_JobForm> {
                       }
                     },
             ),
-            const SizedBox(height: 12),
-            TextFormField(
+            const Gap(12),
+            AppTextField(
               controller: _categoryController,
               textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(labelText: 'หมวดงาน'),
+              label: 'หมวดงาน',
               validator: _required,
             ),
+            const Gap(4),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('มีเบี้ยเลี้ยง'),
@@ -178,22 +185,19 @@ class _JobFormState extends ConsumerState<_JobForm> {
                   ? null
                   : (value) => setState(() => _hasAllowance = value),
             ),
-            TextFormField(
+            AppTextField(
               controller: _requirementsController,
               minLines: 3,
               maxLines: 5,
-              decoration: const InputDecoration(
-                labelText: 'คุณสมบัติ',
-                alignLabelWithHint: true,
-              ),
+              label: 'คุณสมบัติ',
               validator: _required,
             ),
             if (_error != null) ...[
-              const SizedBox(height: 12),
+              const Gap(12),
               Text(
                 _error!,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.error,
+                  color: colors.destructive,
                 ),
               ),
             ],
@@ -206,11 +210,13 @@ class _JobFormState extends ConsumerState<_JobForm> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (editing)
+              if (editing) ...[
                 TextButton(
                   onPressed: _busy ? null : _confirmDelete,
                   child: Text(_deleting ? 'กำลังลบ' : 'ลบประกาศ'),
                 ),
+                const Gap(4),
+              ],
               AppPrimaryButton(
                 onPressed: _busy ? null : _submit,
                 child: Text(_submitLabel),

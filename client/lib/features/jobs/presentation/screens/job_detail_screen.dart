@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/error/app_exception.dart';
+import '../../../../core/theme/app_colors_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
+import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_hero_card.dart';
 import '../../../../core/widgets/app_primary_button.dart';
 import '../../../../core/widgets/empty_state.dart';
@@ -33,12 +38,14 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
       body: detail.when(
         loading: () => const LoadingView(label: 'กำลังโหลดประกาศ'),
         error: (error, _) => EmptyState(
-          icon: Icons.work_outline,
+          icon: LucideIcons.briefcase,
           title: 'โหลดประกาศไม่ได้',
           message: userVisibleError(error),
-          action: AppPrimaryButton(
+          action: AppButton(
+            variant: AppButtonVariant.outline,
+            size: AppButtonSize.sm,
             onPressed: () => ref.invalidate(jobDetailProvider(widget.jobId)),
-            child: const Text('ลองอีกครั้ง'),
+            text: 'ลองอีกครั้ง',
           ),
         ),
         data: (job) => _JobBody(job: job),
@@ -98,71 +105,66 @@ class _JobBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final businessType = _shown(job.businessType);
+
     return ListView(
       padding: const EdgeInsets.all(kPagePadding),
       children: [
         AppHeroCard(title: job.title, body: job.companyName),
-        const SizedBox(height: 16),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    _CompanyMark(name: job.companyName),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('เกี่ยวกับบริษัท', style: textTheme.titleMedium),
-                          Text(job.companyName, style: textTheme.bodyMedium),
-                        ],
-                      ),
+        const Gap(16),
+        AppCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  _CompanyMark(name: job.companyName),
+                  const Gap(12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('เกี่ยวกับบริษัท', style: textTheme.titleMedium),
+                        Text(job.companyName, style: textTheme.bodyMedium),
+                      ],
                     ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                _DetailRow(label: 'ประเภทกิจการ', value: businessType),
-                if (job.companyDescription.trim().isNotEmpty) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    job.companyDescription.trim(),
-                    style: textTheme.bodyMedium,
                   ),
                 ],
+              ),
+              const Gap(8),
+              _DetailRow(label: 'ประเภทกิจการ', value: businessType),
+              if (job.companyDescription.trim().isNotEmpty) ...[
+                const Gap(8),
+                Text(
+                  job.companyDescription.trim(),
+                  style: textTheme.bodyMedium,
+                ),
               ],
-            ),
+            ],
           ),
         ),
-        const SizedBox(height: 12),
+        const Gap(12),
         _SectionCard(title: 'รายละเอียดงาน', body: job.description),
-        const SizedBox(height: 12),
+        const Gap(12),
         _SectionCard(title: 'คุณสมบัติ', body: job.requirements),
-        const SizedBox(height: 12),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                _DetailRow(label: 'จังหวัด', value: job.province),
-                _DetailRow(
-                  label: 'รูปแบบงาน',
-                  value: workModeLabel(job.workMode),
-                ),
-                _DetailRow(label: 'หมวดงาน', value: job.category),
-                _DetailRow(
-                  label: 'เบี้ยเลี้ยง',
-                  value: allowanceLabel(job.hasAllowance),
-                ),
-                _DetailRow(
-                  label: 'สถานะ',
-                  value: jobStatusLabel(job.status),
-                ),
-              ],
-            ),
+        const Gap(12),
+        AppCard(
+          child: Column(
+            children: [
+              _DetailRow(label: 'จังหวัด', value: job.province),
+              _DetailRow(
+                label: 'รูปแบบงาน',
+                value: workModeLabel(job.workMode),
+              ),
+              _DetailRow(label: 'หมวดงาน', value: job.category),
+              _DetailRow(
+                label: 'เบี้ยเลี้ยง',
+                value: allowanceLabel(job.hasAllowance),
+              ),
+              _DetailRow(
+                label: 'สถานะ',
+                value: jobStatusLabel(job.status),
+              ),
+            ],
           ),
         ),
       ],
@@ -191,26 +193,14 @@ class _Actions extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
-              child: OutlinedButton(
+              child: AppButton(
+                variant: AppButtonVariant.outline,
                 onPressed: saving ? null : onSave,
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(kMinTouchTarget),
-                  foregroundColor: AppColors.primary,
-                  side: const BorderSide(color: AppColors.primary),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                child: Text(
-                  saving
-                      ? 'กำลังบันทึก'
-                      : saved
-                      ? 'ยกเลิกบันทึก'
-                      : 'บันทึก',
-                ),
+                isLoading: saving,
+                text: saved ? 'ยกเลิกบันทึก' : 'บันทึก',
               ),
             ),
-            const SizedBox(width: 12),
+            const Gap(12),
             Expanded(
               child: AppPrimaryButton(
                 onPressed: onApply,
@@ -231,13 +221,14 @@ class _CompanyMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     final trimmed = name.trim();
     final letter = trimmed.isEmpty ? '?' : trimmed.characters.first;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.background,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.line),
+        border: Border.all(color: colors.border),
       ),
       child: SizedBox(
         width: 48,
@@ -258,17 +249,14 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            Text(body, style: Theme.of(context).textTheme.bodyMedium),
-          ],
-        ),
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: Theme.of(context).textTheme.titleMedium),
+          const Gap(8),
+          Text(body, style: Theme.of(context).textTheme.bodyMedium),
+        ],
       ),
     );
   }
@@ -283,12 +271,20 @@ class _DetailRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final colors = context.colors;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(width: 120, child: Text(label, style: textTheme.bodyMedium)),
+          SizedBox(
+            width: 120,
+            child: Text(
+              label,
+              style: textTheme.bodyMedium?.copyWith(color: colors.mutedForeground),
+            ),
+          ),
           Expanded(child: Text(value, style: textTheme.bodyLarge)),
         ],
       ),

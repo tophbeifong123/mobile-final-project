@@ -39,6 +39,11 @@ dependencies:
   dio: ^5.11.1
   flutter_secure_storage: ^11.2.0
   file_picker: ^13.1.0
+  gap: ^3.0.1
+  skeletonizer: ^3.0.0
+  flutter_animate: ^4.5.2
+  google_fonts: ^8.2.1
+  lucide_icons_flutter: ^3.1.20
 
 dev_dependencies:
   flutter_test:

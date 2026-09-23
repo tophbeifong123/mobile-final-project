@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
+import 'app_colors_extension.dart';
 import 'app_tokens.dart';
 
 class AppTheme {
@@ -15,13 +17,17 @@ class AppTheme {
       surface: AppColors.surface,
       onSurface: AppColors.textPrimary,
     );
-    final textTheme = _textTheme(scheme);
+    final baseTextTheme = _textTheme(scheme);
+    final textTheme = GoogleFonts.interTextTheme(baseTextTheme);
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
       scaffoldBackgroundColor: AppColors.background,
       textTheme: textTheme,
+      extensions: const [
+        AppColorsExtension.light,
+      ],
       appBarTheme: AppBarTheme(
         centerTitle: true,
         elevation: 0,

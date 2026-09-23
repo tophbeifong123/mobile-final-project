@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../../core/theme/app_colors_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
-import '../../../../core/widgets/app_primary_button.dart';
+import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_card.dart';
+import '../../../../core/widgets/app_text_field.dart';
 import '../../domain/entities/auth_session.dart';
 import '../providers/auth_controller.dart';
 
@@ -57,109 +62,115 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final colors = context.colors;
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           tooltip: 'กลับ',
           onPressed: _submitting ? null : () => context.go('/login'),
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(LucideIcons.arrowLeft),
         ),
       ),
       body: Form(
         key: _formKey,
         child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-            children: [
-              Text('สร้างบัญชีใหม่', style: textTheme.headlineSmall),
-              const SizedBox(height: 8),
-              Text(
-                'เริ่มค้นหาที่ฝึกงาน หรือเปิดรับนักศึกษา',
-                style: textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 20),
-              Text('เลือกบทบาทของคุณ', style: textTheme.titleMedium),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _RoleCard(
-                      selected: _role == UserRole.student,
-                      icon: Icons.school_outlined,
-                      title: 'นักศึกษา',
-                      subtitle: 'กำลังมองหาที่ฝึกงาน',
-                      onTap: _submitting
-                          ? null
-                          : () => setState(() => _role = UserRole.student),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _RoleCard(
-                      selected: _role == UserRole.company,
-                      icon: Icons.apartment_outlined,
-                      title: 'บริษัท',
-                      subtitle: 'เปิดรับสมัครนักศึกษา',
-                      onTap: _submitting
-                          ? null
-                          : () => setState(() => _role = UserRole.company),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              TextFormField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                autofillHints: const [AutofillHints.email],
-                decoration: const InputDecoration(
-                  labelText: 'อีเมล',
-                  prefixIcon: Icon(Icons.alternate_email),
-                ),
-                validator: (value) {
-                  final email = value?.trim() ?? '';
-                  if (email.isEmpty || !email.contains('@')) {
-                    return 'กรอกอีเมลให้ถูกต้อง';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _passwordController,
-                obscureText: _obscurePassword,
-                autofillHints: const [AutofillHints.newPassword],
-                decoration: InputDecoration(
-                  labelText: 'รหัสผ่าน',
-                  helperText: 'อย่างน้อย 8 ตัวอักษร',
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  suffixIcon: IconButton(
-                    tooltip: _obscurePassword ? 'แสดงรหัสผ่าน' : 'ซ่อนรหัสผ่าน',
-                    onPressed: () => setState(
-                      () => _obscurePassword = !_obscurePassword,
-                    ),
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                    ),
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+          children: [
+            Text('สร้างบัญชีใหม่', style: textTheme.headlineSmall),
+            const Gap(8),
+            Text(
+              'เริ่มค้นหาที่ฝึกงาน หรือเปิดรับนักศึกษา',
+              style: textTheme.bodyMedium,
+            ),
+            const Gap(20),
+            Text('เลือกบทบาทของคุณ', style: textTheme.titleMedium),
+            const Gap(12),
+            Row(
+              children: [
+                Expanded(
+                  child: _RoleCard(
+                    selected: _role == UserRole.student,
+                    icon: LucideIcons.graduationCap,
+                    title: 'นักศึกษา',
+                    subtitle: 'กำลังมองหาที่ฝึกงาน',
+                    onTap: _submitting
+                        ? null
+                        : () => setState(() => _role = UserRole.student),
                   ),
                 ),
-                validator: (value) {
-                  if (value == null || value.length < 8) {
-                    return 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร';
-                  }
-                  return null;
-                },
-              ),
-              if (_error != null) ...[
-                const SizedBox(height: 16),
-                Text(
-                  _error!,
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.error,
+                const Gap(12),
+                Expanded(
+                  child: _RoleCard(
+                    selected: _role == UserRole.company,
+                    icon: LucideIcons.building2,
+                    title: 'บริษัท',
+                    subtitle: 'เปิดรับสมัครนักศึกษา',
+                    onTap: _submitting
+                        ? null
+                        : () => setState(() => _role = UserRole.company),
                   ),
                 ),
               ],
+            ),
+            const Gap(20),
+            AppCard(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  AppTextField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    autofillHints: const [AutofillHints.email],
+                    label: 'อีเมล',
+                    hintText: 'name@example.com',
+                    prefixIcon: const Icon(LucideIcons.mail, size: 18),
+                    validator: (value) {
+                      final email = value?.trim() ?? '';
+                      if (email.isEmpty || !email.contains('@')) {
+                        return 'กรอกอีเมลให้ถูกต้อง';
+                      }
+                      return null;
+                    },
+                  ),
+                  const Gap(16),
+                  AppTextField(
+                    controller: _passwordController,
+                    obscureText: _obscurePassword,
+                    autofillHints: const [AutofillHints.newPassword],
+                    label: 'รหัสผ่าน',
+                    hintText: '••••••••',
+                    helperText: 'อย่างน้อย 8 ตัวอักษร',
+                    prefixIcon: const Icon(LucideIcons.lock, size: 18),
+                    suffixIcon: IconButton(
+                      tooltip: _obscurePassword ? 'แสดงรหัสผ่าน' : 'ซ่อนรหัสผ่าน',
+                      onPressed: () => setState(
+                        () => _obscurePassword = !_obscurePassword,
+                      ),
+                      icon: Icon(
+                        _obscurePassword ? LucideIcons.eye : LucideIcons.eyeOff,
+                        size: 18,
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.length < 8) {
+                        return 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร';
+                      }
+                      return null;
+                    },
+                  ),
+                  if (_error != null) ...[
+                    const Gap(16),
+                    Text(
+                      _error!,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colors.destructive,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -170,20 +181,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              AppPrimaryButton(
+              AppButton(
                 onPressed: _submitting ? null : _submit,
-                child: _submitting
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text('สร้างบัญชี'),
+                isLoading: _submitting,
+                isFullWidth: true,
+                text: 'สร้างบัญชี',
               ),
-              const SizedBox(height: 4),
+              const Gap(4),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -220,46 +224,39 @@ class _RoleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    return Material(
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: selected ? AppColors.primary : AppColors.line,
-          width: selected ? 1.5 : 1,
-        ),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    final colors = context.colors;
+
+    return AppCard(
+      onTap: onTap,
+      borderColor: selected ? AppColors.primary : colors.border,
+      borderWidth: selected ? 1.5 : 1,
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Row(
-                children: [
-                  Icon(
-                    icon,
-                    color: selected ? AppColors.primary : AppColors.textSecondary,
-                  ),
-                  const Spacer(),
-                  Icon(
-                    selected
-                        ? Icons.check_circle
-                        : Icons.circle_outlined,
-                    color: selected ? AppColors.primary : AppColors.line,
-                    size: 20,
-                  ),
-                ],
+              Icon(
+                icon,
+                color: selected ? AppColors.primary : colors.mutedForeground,
+                size: 22,
               ),
-              const SizedBox(height: 12),
-              Text(title, style: textTheme.titleMedium),
-              const SizedBox(height: 4),
-              Text(subtitle, style: textTheme.bodySmall),
+              const Spacer(),
+              Icon(
+                selected ? LucideIcons.checkCircle2 : LucideIcons.circle,
+                color: selected ? AppColors.primary : colors.border,
+                size: 20,
+              ),
             ],
           ),
-        ),
+          const Gap(12),
+          Text(title, style: textTheme.titleMedium),
+          const Gap(4),
+          Text(
+            subtitle,
+            style: textTheme.bodySmall?.copyWith(color: colors.mutedForeground),
+          ),
+        ],
       ),
     );
   }
