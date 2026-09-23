@@ -6,6 +6,7 @@ class AppNotificationModel {
     required this.applicationId,
     required this.message,
     required this.isRead,
+    this.createdAt,
   });
 
   factory AppNotificationModel.fromJson(Map<String, dynamic> json) {
@@ -14,6 +15,9 @@ class AppNotificationModel {
       applicationId: json['applicationId'] as String,
       message: json['message'] as String? ?? '',
       isRead: json['readAt'] != null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'] as String)
+          : null,
     );
   }
 
@@ -21,6 +25,7 @@ class AppNotificationModel {
   final String applicationId;
   final String message;
   final bool isRead;
+  final DateTime? createdAt;
 
   AppNotification toEntity() {
     return AppNotification(
@@ -28,6 +33,7 @@ class AppNotificationModel {
       applicationId: applicationId,
       message: message,
       isRead: isRead,
+      createdAt: createdAt,
     );
   }
 }

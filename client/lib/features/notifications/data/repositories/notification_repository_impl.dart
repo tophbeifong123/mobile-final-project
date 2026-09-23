@@ -12,4 +12,10 @@ class NotificationRepositoryImpl implements NotificationRepository {
     final models = await _remote.fetchAll();
     return models.map((model) => model.toEntity()).toList();
   }
+
+  @override
+  Future<AppNotification> markAsRead(String id) async {
+    final model = await _remote.markAsRead(id);
+    return model.toEntity();
+  }
 }

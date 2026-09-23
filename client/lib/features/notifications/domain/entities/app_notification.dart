@@ -4,10 +4,12 @@ class AppNotification {
     required this.applicationId,
     required this.message,
     required this.isRead,
+    this.createdAt,
   });
 
   final String id;
   final String applicationId;
   final String message;
   final bool isRead;
+  final DateTime? createdAt;
 }
