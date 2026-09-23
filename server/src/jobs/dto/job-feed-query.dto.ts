@@ -7,6 +7,7 @@ import {
   IsString,
   MaxLength,
 } from 'class-validator';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto.js';
 import { WorkMode } from '../job-enums.js';
 
 function emptyToUndefined({ value }: { value: unknown }): unknown {
@@ -17,7 +18,7 @@ function emptyToUndefined({ value }: { value: unknown }): unknown {
   return trimmed.length === 0 ? undefined : trimmed;
 }
 
-export class JobFeedQueryDto {
+export class JobFeedQueryDto extends PaginationQueryDto {
   @ApiPropertyOptional({ example: 'flutter' })
   @Transform(emptyToUndefined)
   @IsOptional()
