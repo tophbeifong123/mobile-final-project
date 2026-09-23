@@ -11,9 +11,9 @@ import {
   COMPANY_ONLY,
   COMPANY_PROFILE_NOT_FOUND,
   COVER_LETTER_REQUIRED,
+  INVALID_STATUS_TRANSITION,
   JOB_NOT_FOUND,
   NOT_YOUR_JOB,
-  ONLY_SUBMITTED_CAN_BE_REVIEWING,
   PROFILE_NOT_FOUND,
   RESUME_REQUIRED,
   STUDENT_ONLY,
@@ -255,13 +255,18 @@ export class ApplicationsService {
       throw new ForbiddenException(NOT_YOUR_JOB);
     }
 
-    if (dto.status !== ApplicationStatus.Reviewing) {
-      throw new BadRequestException(ONLY_SUBMITTED_CAN_BE_REVIEWING);
+    if (
+      dto.status !== ApplicationStatus.Reviewing &&
+      dto.status !== ApplicationStatus.Accepted &&
+      dto.status !== ApplicationStatus.Rejected
+    ) {
+      throw new BadRequestException(INVALID_STATUS_TRANSITION);
     }
 
-    await this.applicationsRepository.updateApplicationStatusToReviewing({
+    await this.applicationsRepository.updateApplicationStatus({
       jobId,
       applicationId,
+      newStatus: dto.status,
       jobTitle: job.title,
       actorUserId: user.userId,
     });

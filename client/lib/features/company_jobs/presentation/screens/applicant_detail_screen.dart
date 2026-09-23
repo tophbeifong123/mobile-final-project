@@ -60,6 +60,75 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
     }
   }
 
+  Future<void> _confirmDecision({
+    required String targetStatus,
+    required String applicantName,
+  }) async {
+    final isAccept = targetStatus == 'accepted';
+    final title = isAccept ? 'ยืนยันการรับเข้าฝึกงาน' : 'ยืนยันการปฏิเสธใบสมัคร';
+    final content = isAccept
+        ? 'คุณต้องการตอบรับคุณ $applicantName เข้าฝึกงานใช่หรือไม่? เมื่อตัดสินแล้วจะไม่สามารถเปลี่ยนสถานะได้อีก'
+        : 'คุณต้องการปฏิเสธใบสมัครของคุณ $applicantName ใช่หรือไม่? เมื่อตัดสินแล้วจะไม่สามารถเปลี่ยนสถานะได้อีก';
+    final confirmText = isAccept ? 'ตอบรับ (Accept)' : 'ปฏิเสธ (Reject)';
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(title),
+        content: Text(content),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('ยกเลิก'),
+          ),
+          FilledButton(
+            style: isAccept
+                ? FilledButton.styleFrom(backgroundColor: AppColors.success)
+                : FilledButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(confirmText),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isUpdating = true);
+    try {
+      await ref
+          .read(companyJobsControllerProvider.notifier)
+          .updateApplicantStatus(
+            jobId: widget.jobId,
+            applicationId: widget.applicationId,
+            status: targetStatus,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isAccept
+                ? 'ตอบรับผู้สมัคร (Accepted) สำเร็จแล้ว'
+                : 'ปฏิเสธผู้สมัคร (Rejected) สำเร็จแล้ว',
+          ),
+          backgroundColor: isAccept ? AppColors.success : AppColors.primary,
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(userVisibleError(error)),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isUpdating = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final applicantAsync = ref.watch(
@@ -118,55 +187,120 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
       ),
       bottomNavigationBar: applicantAsync.maybeWhen(
         data: (applicant) {
-          if (applicant.status.trim().toLowerCase() != 'submitted') {
-            return null;
-          }
-          return SafeArea(
-            child: Container(
-              padding: const EdgeInsets.all(kPagePadding),
-              decoration: const BoxDecoration(
-                color: AppColors.surface,
-                border: Border(
-                  top: BorderSide(color: AppColors.line),
+          final status = applicant.status.trim().toLowerCase();
+          if (status == 'submitted') {
+            return SafeArea(
+              child: Container(
+                padding: const EdgeInsets.all(kPagePadding),
+                decoration: const BoxDecoration(
+                  color: AppColors.surface,
+                  border: Border(
+                    top: BorderSide(color: AppColors.line),
+                  ),
+                ),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: AppPrimaryButton(
+                    onPressed: _isUpdating
+                        ? null
+                        : () => _updateStatusToReviewing(applicant),
+                    child: _isUpdating
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.rate_review_outlined, size: 20),
+                                SizedBox(width: 8),
+                                Text('เปลี่ยนสถานะเป็น Reviewing'),
+                              ],
+                            ),
+                          ),
+                  ),
                 ),
               ),
-              child: SizedBox(
-                width: double.infinity,
-                child: AppPrimaryButton(
-                  onPressed: _isUpdating
-                      ? null
-                      : () => _updateStatusToReviewing(applicant),
-                  child: _isUpdating
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.rate_review_outlined, size: 20),
-                              SizedBox(width: 8),
-                              Text('เปลี่ยนสถานะเป็น Reviewing'),
-                            ],
+            );
+          } else if (status == 'reviewing') {
+            return SafeArea(
+              child: Container(
+                padding: const EdgeInsets.all(kPagePadding),
+                decoration: const BoxDecoration(
+                  color: AppColors.surface,
+                  border: Border(
+                    top: BorderSide(color: AppColors.line),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.red,
+                          side: const BorderSide(color: Colors.red),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
                           ),
                         ),
+                        onPressed: _isUpdating
+                            ? null
+                            : () => _confirmDecision(
+                                  targetStatus: 'rejected',
+                                  applicantName: applicant.fullName,
+                                ),
+                        icon: const Icon(Icons.close_rounded, size: 18),
+                        label: const FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text('ปฏิเสธ (Reject)'),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.success,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        onPressed: _isUpdating
+                            ? null
+                            : () => _confirmDecision(
+                                  targetStatus: 'accepted',
+                                  applicantName: applicant.fullName,
+                                ),
+                        icon: const Icon(Icons.check_rounded, size: 18),
+                        label: const FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text('ตอบรับ (Accept)'),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-          );
+            );
+          }
+          return null;
         },
         orElse: () => null,
       ),
     );
   }
+
 }
+
 
 
 class _ProfileHeaderCard extends StatelessWidget {

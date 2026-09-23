@@ -14,8 +14,11 @@ import { ApplicationStatus } from './application-status.js';
 import {
   ALREADY_APPLIED,
   APPLICATION_NOT_FOUND,
+  APPLICATION_TERMINAL_STATUS,
+  INVALID_STATUS_TRANSITION,
   JOB_CLOSED,
   JOB_NOT_FOUND,
+  MUST_BE_REVIEWING_BEFORE_DECISION,
   ONLY_SUBMITTED_CAN_BE_REVIEWING,
 } from './applications.constants.js';
 import { ApplicationStatusEvent } from './entities/application-status-event.entity.js';
@@ -352,9 +355,10 @@ export class ApplicationsRepository {
     };
   }
 
-  async updateApplicationStatusToReviewing(params: {
+  async updateApplicationStatus(params: {
     jobId: string;
     applicationId: string;
+    newStatus: ApplicationStatus;
     jobTitle: string;
     actorUserId: string;
   }): Promise<Application> {
@@ -372,26 +376,53 @@ export class ApplicationsRepository {
         throw new NotFoundException(APPLICATION_NOT_FOUND);
       }
 
-      if (application.status !== ApplicationStatus.Submitted) {
-        throw new BadRequestException(ONLY_SUBMITTED_CAN_BE_REVIEWING);
+      if (
+        application.status === ApplicationStatus.Accepted ||
+        application.status === ApplicationStatus.Rejected
+      ) {
+        throw new BadRequestException(APPLICATION_TERMINAL_STATUS);
+      }
+
+      if (params.newStatus === ApplicationStatus.Reviewing) {
+        if (application.status !== ApplicationStatus.Submitted) {
+          throw new BadRequestException(ONLY_SUBMITTED_CAN_BE_REVIEWING);
+        }
+      } else if (
+        params.newStatus === ApplicationStatus.Accepted ||
+        params.newStatus === ApplicationStatus.Rejected
+      ) {
+        if (application.status !== ApplicationStatus.Reviewing) {
+          throw new BadRequestException(MUST_BE_REVIEWING_BEFORE_DECISION);
+        }
+      } else {
+        throw new BadRequestException(INVALID_STATUS_TRANSITION);
       }
 
       const fromStatus = application.status;
-      application.status = ApplicationStatus.Reviewing;
+      application.status = params.newStatus;
       const updatedApplication = await manager.save(Application, application);
 
       const statusEvent = manager.create(ApplicationStatusEvent, {
         applicationId: application.id,
         fromStatus,
-        toStatus: ApplicationStatus.Reviewing,
+        toStatus: params.newStatus,
         actorUserId: params.actorUserId,
       });
       await manager.save(ApplicationStatusEvent, statusEvent);
 
+      let notificationMessage: string;
+      if (params.newStatus === ApplicationStatus.Reviewing) {
+        notificationMessage = `สถานะใบสมัครงาน ${params.jobTitle} ปรับเป็น Reviewing`;
+      } else if (params.newStatus === ApplicationStatus.Accepted) {
+        notificationMessage = `สถานะใบสมัครงาน ${params.jobTitle} ผ่านการคัดเลือก (Accepted)`;
+      } else {
+        notificationMessage = `สถานะใบสมัครงาน ${params.jobTitle} ไม่ผ่านการคัดเลือก (Rejected)`;
+      }
+
       const notification = manager.create(Notification, {
         studentId: application.studentId,
         applicationId: application.id,
-        message: `สถานะใบสมัครงาน ${params.jobTitle} ปรับเป็น Reviewing`,
+        message: notificationMessage,
         readAt: null,
       });
       await manager.save(Notification, notification);
@@ -399,4 +430,17 @@ export class ApplicationsRepository {
       return updatedApplication;
     });
   }
+
+  async updateApplicationStatusToReviewing(params: {
+    jobId: string;
+    applicationId: string;
+    jobTitle: string;
+    actorUserId: string;
+  }): Promise<Application> {
+    return this.updateApplicationStatus({
+      ...params,
+      newStatus: ApplicationStatus.Reviewing,
+    });
+  }
 }
+
