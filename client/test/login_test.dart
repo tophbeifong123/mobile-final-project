@@ -183,6 +183,37 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byIcon(Icons.visibility_off_outlined), findsOneWidget);
   });
+
+  testWidgets('shows top toast notice when tapping forgot PIN or unreleased features', (
+    tester,
+  ) async {
+    final fakeAuthRepo = _FakeAuthRepository();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+          authRepositoryProvider.overrideWithValue(fakeAuthRepo),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: const LoginScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('ลืมรหัส PIN?'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('ระบบรีเซ็ต PIN กำลังอยู่ระหว่างการพัฒนา'), findsOneWidget);
+
+    // Dismiss toast
+    await tester.pump(const Duration(milliseconds: 2800));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('ระบบรีเซ็ต PIN กำลังอยู่ระหว่างการพัฒนา'), findsNothing);
+  });
 }
 
 class _FakeAuthRepository implements AuthRepository {

@@ -4,6 +4,7 @@ import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_assets.dart';
+import '../../../../core/widgets/app_toast.dart';
 import '../providers/auth_controller.dart';
 
 /// Neo-Brutalist Login Screen styled precisely after design-system.mdc and UI mockups.
@@ -57,24 +58,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void _showNotice(String message) {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          message,
-          style: const TextStyle(
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF18181B),
-          ),
-        ),
-        backgroundColor: const Color(0xFFFEF08A),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: Color(0xFF18181B), width: 2),
-        ),
-      ),
-    );
+    AppToast.info(context, message);
   }
 
   @override
