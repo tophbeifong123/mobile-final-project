@@ -107,6 +107,15 @@ void main() {
     expect(find.text('กรอกอีเมลให้ถูกต้อง'), findsOneWidget);
     expect(find.text('กรอกรหัสผ่าน'), findsOneWidget);
     expect(fakeAuthRepo.loginCalls, 0);
+
+    // Verify error text appears below the input area
+    final emailFieldCenter = tester.getCenter(find.byType(TextFormField).first);
+    final emailErrorTop = tester.getTopLeft(find.text('กรอกอีเมลให้ถูกต้อง'));
+    expect(emailErrorTop.dy, greaterThan(emailFieldCenter.dy));
+
+    final passwordFieldCenter = tester.getCenter(find.byType(TextFormField).last);
+    final passwordErrorTop = tester.getTopLeft(find.text('กรอกรหัสผ่าน'));
+    expect(passwordErrorTop.dy, greaterThan(passwordFieldCenter.dy));
   });
 
   testWidgets('submits valid credentials and shows error if login fails', (

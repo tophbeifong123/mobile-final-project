@@ -76,9 +76,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 14),
               decoration: const BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: inkSolid, width: 1.5),
-                ),
+                border: Border(bottom: BorderSide(color: inkSolid, width: 1.5)),
               ),
               child: const Text(
                 'เข้าสู่ระบบนักศึกษา',
@@ -169,17 +167,30 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           const Gap(8),
 
                           // Email Input Box
-                          Container(
-                            height: 48,
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: inkSolid, width: 2),
+                          TextFormField(
+                            controller: _emailController,
+                            keyboardType: TextInputType.emailAddress,
+                            autofillHints: const [AutofillHints.email],
+                            textAlignVertical: TextAlignVertical.center,
+                            style: const TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w600,
+                              color: inkSolid,
                             ),
-                            child: Row(
-                              children: [
-                                Container(
+                            decoration: InputDecoration(
+                              filled: true,
+                              fillColor: Colors.white,
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 14,
+                              ),
+                              prefixIcon: Padding(
+                                padding: const EdgeInsets.only(
+                                  left: 8,
+                                  right: 10,
+                                ),
+                                child: Container(
                                   width: 32,
                                   height: 32,
                                   decoration: BoxDecoration(
@@ -196,41 +207,66 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     color: inkSolid,
                                   ),
                                 ),
-                                const Gap(10),
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: _emailController,
-                                    keyboardType: TextInputType.emailAddress,
-                                    autofillHints: const [AutofillHints.email],
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: inkSolid,
-                                    ),
-                                    decoration: const InputDecoration(
-                                      isDense: true,
-                                      border: InputBorder.none,
-                                      hintText: 'student@university.ac.th',
-                                      hintStyle: TextStyle(
-                                        fontSize: 12.5,
-                                        fontWeight: FontWeight.w500,
-                                        color: Color(0xFF9CA3AF),
-                                      ),
-                                      contentPadding:
-                                          EdgeInsets.symmetric(vertical: 10),
-                                    ),
-                                    validator: (value) {
-                                      final email = value?.trim() ?? '';
-                                      if (email.isEmpty ||
-                                          !email.contains('@')) {
-                                        return 'กรอกอีเมลให้ถูกต้อง';
-                                      }
-                                      return null;
-                                    },
-                                  ),
+                              ),
+                              prefixIconConstraints: const BoxConstraints(
+                                minWidth: 48,
+                                minHeight: 48,
+                              ),
+                              hintText: 'student@university.ac.th',
+                              hintStyle: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF9CA3AF),
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: inkSolid,
+                                  width: 2,
                                 ),
-                              ],
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: inkSolid,
+                                  width: 2,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: inkSolid,
+                                  width: 2.2,
+                                ),
+                              ),
+                              errorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFE11D48),
+                                  width: 2,
+                                ),
+                              ),
+                              focusedErrorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFE11D48),
+                                  width: 2.2,
+                                ),
+                              ),
+                              errorStyle: const TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFFE11D48),
+                                height: 1.3,
+                              ),
                             ),
+                            validator: (value) {
+                              final email = value?.trim() ?? '';
+                              if (email.isEmpty || !email.contains('@')) {
+                                return 'กรอกอีเมลให้ถูกต้อง';
+                              }
+                              return null;
+                            },
                           ),
                           const Gap(4),
                           const Text(
@@ -271,7 +307,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                 ),
                               ),
                               GestureDetector(
-                                onTap: () => _showNotice('ระบบรีเซ็ต PIN กำลังอยู่ระหว่างการพัฒนา'),
+                                onTap: () => _showNotice(
+                                  'ระบบรีเซ็ต PIN กำลังอยู่ระหว่างการพัฒนา',
+                                ),
                                 child: const Text(
                                   'ลืมรหัส PIN?',
                                   style: TextStyle(
@@ -287,17 +325,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           const Gap(8),
 
                           // Password Input Box
-                          Container(
-                            height: 48,
-                            padding: const EdgeInsets.symmetric(horizontal: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: inkSolid, width: 2),
+                          TextFormField(
+                            controller: _passwordController,
+                            obscureText: _obscurePassword,
+                            autofillHints: const [AutofillHints.password],
+                            textAlignVertical: TextAlignVertical.center,
+                            style: const TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w600,
+                              color: inkSolid,
+                              letterSpacing: 2,
                             ),
-                            child: Row(
-                              children: [
-                                Container(
+                            decoration: InputDecoration(
+                              filled: true,
+                              fillColor: Colors.white,
+                              isDense: true,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 14,
+                              ),
+                              prefixIcon: Padding(
+                                padding: const EdgeInsets.only(
+                                  left: 8,
+                                  right: 10,
+                                ),
+                                child: Container(
                                   width: 32,
                                   height: 32,
                                   decoration: BoxDecoration(
@@ -314,39 +366,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     color: inkSolid,
                                   ),
                                 ),
-                                const Gap(10),
-                                Expanded(
-                                  child: TextFormField(
-                                    controller: _passwordController,
-                                    obscureText: _obscurePassword,
-                                    autofillHints: const [AutofillHints.password],
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                      color: inkSolid,
-                                      letterSpacing: 2,
-                                    ),
-                                    decoration: const InputDecoration(
-                                      isDense: true,
-                                      border: InputBorder.none,
-                                      hintText: '••••••••',
-                                      hintStyle: TextStyle(
-                                        fontSize: 14,
-                                        color: Color(0xFF9CA3AF),
-                                        letterSpacing: 2,
-                                      ),
-                                      contentPadding:
-                                          EdgeInsets.symmetric(vertical: 10),
-                                    ),
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'กรอกรหัสผ่าน';
-                                      }
-                                      return null;
-                                    },
-                                  ),
+                              ),
+                              prefixIconConstraints: const BoxConstraints(
+                                minWidth: 48,
+                                minHeight: 48,
+                              ),
+                              suffixIcon: Padding(
+                                padding: const EdgeInsets.only(
+                                  right: 8,
+                                  left: 6,
                                 ),
-                                GestureDetector(
+                                child: GestureDetector(
                                   onTap: () => setState(
                                     () => _obscurePassword = !_obscurePassword,
                                   ),
@@ -370,8 +400,65 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     ),
                                   ),
                                 ),
-                              ],
+                              ),
+                              suffixIconConstraints: const BoxConstraints(
+                                minWidth: 48,
+                                minHeight: 48,
+                              ),
+                              hintText: '••••••••',
+                              hintStyle: const TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF9CA3AF),
+                                letterSpacing: 2,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: inkSolid,
+                                  width: 2,
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: inkSolid,
+                                  width: 2,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: inkSolid,
+                                  width: 2.2,
+                                ),
+                              ),
+                              errorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFE11D48),
+                                  width: 2,
+                                ),
+                              ),
+                              focusedErrorBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: Color(0xFFE11D48),
+                                  width: 2.2,
+                                ),
+                              ),
+                              errorStyle: const TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFFE11D48),
+                                height: 1.3,
+                              ),
                             ),
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'กรอกรหัสผ่าน';
+                              }
+                              return null;
+                            },
                           ),
                           const Gap(14),
 
@@ -394,8 +481,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                           color: _rememberMe
                                               ? const Color(0xFFA7F3D0)
                                               : Colors.white,
-                                          borderRadius:
-                                              BorderRadius.circular(5),
+                                          borderRadius: BorderRadius.circular(
+                                            5,
+                                          ),
                                           border: Border.all(
                                             color: inkSolid,
                                             width: 1.5,
@@ -534,10 +622,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           Stack(
                             alignment: Alignment.center,
                             children: [
-                              const Divider(
-                                color: inkSolid,
-                                thickness: 1.5,
-                              ),
+                              const Divider(color: inkSolid, thickness: 1.5),
                               Container(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 12,
@@ -569,7 +654,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             children: [
                               Expanded(
                                 child: _SocialButton(
-                                  onTap: () => _showNotice('ระบบเข้าสู่ระบบด้วย Google จะเปิดให้บริการในเร็วๆ นี้'),
+                                  onTap: () => _showNotice(
+                                    'ระบบเข้าสู่ระบบด้วย Google จะเปิดให้บริการในเร็วๆ นี้',
+                                  ),
                                   child: const Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
@@ -752,11 +839,7 @@ class _HeroLogoBadge extends StatelessWidget {
               borderRadius: BorderRadius.circular(18),
               border: Border.all(color: inkSolid, width: 2.5),
               boxShadow: const [
-                BoxShadow(
-                  color: inkSolid,
-                  offset: Offset(3, 3),
-                  blurRadius: 0,
-                ),
+                BoxShadow(color: inkSolid, offset: Offset(3, 3), blurRadius: 0),
               ],
             ),
             padding: const EdgeInsets.all(8),
@@ -842,11 +925,7 @@ class _SocialButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: inkSolid, width: 2),
             boxShadow: const [
-              BoxShadow(
-                color: inkSolid,
-                offset: Offset(2, 2),
-                blurRadius: 0,
-              ),
+              BoxShadow(color: inkSolid, offset: Offset(2, 2), blurRadius: 0),
             ],
           ),
           child: Center(child: child),
@@ -888,13 +967,8 @@ class _GitHubIcon extends StatelessWidget {
         shape: BoxShape.circle,
       ),
       child: const Center(
-        child: Icon(
-          Icons.terminal_rounded,
-          size: 11,
-          color: Colors.white,
-        ),
+        child: Icon(Icons.terminal_rounded, size: 11, color: Colors.white),
       ),
     );
   }
 }
-
