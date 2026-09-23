@@ -28,10 +28,12 @@ class CompanyProfileRepositoryImpl implements CompanyProfileRepository {
   Future<CompanyProfile> uploadLogo({
     required String filePath,
     required String fileName,
+    List<int>? bytes,
   }) async {
     final model = await _remote.uploadLogo(
       filePath: filePath,
       fileName: fileName,
+      bytes: bytes,
     );
     return model.toEntity();
   }

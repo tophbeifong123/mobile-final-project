@@ -1,6 +1,11 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { UserRole } from '../auth/user-role.js';
+import { StorageService } from '../storage/storage.service.js';
 import { CompaniesRepository } from './companies.repository.js';
 import { CompaniesService } from './companies.service.js';
 
@@ -10,6 +15,12 @@ describe('CompaniesService', () => {
   const repository = {
     findCompanyProfileByUserId: vi.fn(),
     getDashboardSummary: vi.fn(),
+    updateProfile: vi.fn(),
+    updateLogoObjectKey: vi.fn(),
+  };
+
+  const storageService = {
+    put: vi.fn(),
   };
 
   const companyUser = { userId: 'company-user-1', role: UserRole.Company };
@@ -21,6 +32,7 @@ describe('CompaniesService', () => {
       providers: [
         CompaniesService,
         { provide: CompaniesRepository, useValue: repository },
+        { provide: StorageService, useValue: storageService },
       ],
     }).compile();
 
@@ -86,6 +98,182 @@ describe('CompaniesService', () => {
         NotFoundException,
       );
       expect(repository.getDashboardSummary).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getProfile', () => {
+    it('returns company profile for company user', async () => {
+      repository.findCompanyProfileByUserId.mockResolvedValue({
+        id: 'company-profile-1',
+        userId: 'company-user-1',
+        name: 'Tech Corp',
+        businessType: 'Software',
+        description: 'Tech Company',
+        logoObjectKey: 'company-logos/user-1/logo.png',
+      });
+
+      const result = await service.getProfile(companyUser);
+
+      expect(result).toEqual({
+        name: 'Tech Corp',
+        businessType: 'Software',
+        description: 'Tech Company',
+        logoObjectKey: 'company-logos/user-1/logo.png',
+      });
+    });
+
+    it('rejects student accessing company profile', async () => {
+      await expect(service.getProfile(studentUser)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+    });
+
+    it('throws NotFoundException when company profile is not found', async () => {
+      repository.findCompanyProfileByUserId.mockResolvedValue(null);
+
+      await expect(service.getProfile(companyUser)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('updateProfile', () => {
+    it('updates company profile fields and returns updated DTO', async () => {
+      repository.findCompanyProfileByUserId.mockResolvedValue({
+        id: 'company-profile-1',
+        userId: 'company-user-1',
+      });
+      repository.updateProfile.mockResolvedValue({
+        id: 'company-profile-1',
+        userId: 'company-user-1',
+        name: 'Updated Tech Corp',
+        businessType: 'Consulting',
+        description: 'Updated Description',
+        logoObjectKey: null,
+      });
+
+      const result = await service.updateProfile(companyUser, {
+        name: ' Updated Tech Corp ',
+        businessType: ' Consulting ',
+        description: ' Updated Description ',
+      });
+
+      expect(repository.updateProfile).toHaveBeenCalledWith(
+        'company-profile-1',
+        {
+          name: 'Updated Tech Corp',
+          businessType: 'Consulting',
+          description: 'Updated Description',
+        },
+      );
+      expect(result).toEqual({
+        name: 'Updated Tech Corp',
+        businessType: 'Consulting',
+        description: 'Updated Description',
+        logoObjectKey: null,
+      });
+    });
+
+    it('rejects student updating company profile', async () => {
+      await expect(
+        service.updateProfile(studentUser, {
+          name: 'Tech',
+          businessType: 'IT',
+          description: 'Desc',
+        }),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('throws NotFoundException if profile does not exist', async () => {
+      repository.findCompanyProfileByUserId.mockResolvedValue(null);
+
+      await expect(
+        service.updateProfile(companyUser, {
+          name: 'Tech',
+          businessType: 'IT',
+          description: 'Desc',
+        }),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+  });
+
+  describe('uploadLogo', () => {
+    it('uploads valid image file and updates company profile', async () => {
+      repository.findCompanyProfileByUserId.mockResolvedValue({
+        id: 'company-profile-1',
+        userId: 'company-user-1',
+      });
+      storageService.put.mockResolvedValue('uploaded-key');
+      repository.updateLogoObjectKey.mockResolvedValue({
+        id: 'company-profile-1',
+        userId: 'company-user-1',
+        name: 'Tech Corp',
+        businessType: 'IT',
+        description: 'Desc',
+        logoObjectKey: 'company-logos/company-user-1/mock.png',
+      });
+
+      const pngHeader = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+      const file = {
+        fieldname: 'file',
+        originalname: 'logo.png',
+        encoding: '7bit',
+        mimetype: 'image/png',
+        size: 8,
+        buffer: pngHeader,
+      };
+
+      const result = await service.uploadLogo(companyUser, file);
+
+      expect(storageService.put).toHaveBeenCalledWith(
+        expect.stringMatching(/^company-logos\/company-user-1\/.+\.png$/),
+        pngHeader,
+        'image/png',
+      );
+      expect(repository.updateLogoObjectKey).toHaveBeenCalled();
+      expect(result).toEqual({
+        name: 'Tech Corp',
+        businessType: 'IT',
+        description: 'Desc',
+        logoObjectKey: 'company-logos/company-user-1/mock.png',
+      });
+    });
+
+    it('throws BadRequestException when file is missing', async () => {
+      await expect(service.uploadLogo(companyUser, undefined)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+    });
+
+    it('throws BadRequestException when file is not an image', async () => {
+      const pdfHeader = Buffer.from('%PDF-1.5');
+      const file = {
+        fieldname: 'file',
+        originalname: 'document.pdf',
+        encoding: '7bit',
+        mimetype: 'application/pdf',
+        size: 8,
+        buffer: pdfHeader,
+      };
+
+      await expect(service.uploadLogo(companyUser, file)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+    });
+
+    it('rejects student uploading company logo', async () => {
+      const file = {
+        fieldname: 'file',
+        originalname: 'logo.png',
+        encoding: '7bit',
+        mimetype: 'image/png',
+        size: 8,
+        buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+      };
+
+      await expect(service.uploadLogo(studentUser, file)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
     });
   });
 });
