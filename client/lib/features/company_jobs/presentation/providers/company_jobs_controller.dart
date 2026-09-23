@@ -23,6 +23,11 @@ final companyJobDetailProvider = FutureProvider.family<EditableJob, String>((
   return ref.watch(companyJobRepositoryProvider).fetchOne(jobId);
 });
 
+final companyJobApplicantsProvider =
+    FutureProvider.family<List<Applicant>, String>((ref, jobId) {
+  return ref.watch(companyJobRepositoryProvider).fetchApplicants(jobId);
+});
+
 class CompanyJobsController extends Notifier<void> {
   @override
   void build() {

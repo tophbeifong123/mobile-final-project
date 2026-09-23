@@ -63,6 +63,16 @@ export interface ApplicationDetailRecord {
   }[];
 }
 
+export interface JobApplicantRecord {
+  applicationId: string;
+  fullName: string;
+  university: string;
+  major: string;
+  status: ApplicationStatus;
+  coverLetter: string;
+  createdAt: Date;
+}
+
 @Injectable()
 export class ApplicationsRepository {
   constructor(private readonly dataSource: DataSource) {}
@@ -242,5 +252,46 @@ export class ApplicationsRepository {
       }
       throw error;
     }
+  }
+
+  async findCompanyProfileByUserId(
+    userId: string,
+  ): Promise<CompanyProfile | null> {
+    return this.dataSource.getRepository(CompanyProfile).findOne({
+      where: { userId },
+    });
+  }
+
+  async findJobById(jobId: string): Promise<Job | null> {
+    return this.dataSource.getRepository(Job).findOne({
+      where: { id: jobId },
+    });
+  }
+
+  async listJobApplicants(jobId: string): Promise<JobApplicantRecord[]> {
+    const rows = await this.dataSource
+      .getRepository(Application)
+      .createQueryBuilder('app')
+      .innerJoin(StudentProfile, 'student', 'student.id = app.studentId')
+      .where('app.jobId = :jobId', { jobId })
+      .select('app.id', 'applicationId')
+      .addSelect('student.fullName', 'fullName')
+      .addSelect('student.university', 'university')
+      .addSelect('student.major', 'major')
+      .addSelect('app.status', 'status')
+      .addSelect('app.coverLetter', 'coverLetter')
+      .addSelect('app.createdAt', 'createdAt')
+      .orderBy('app.createdAt', 'DESC')
+      .getRawMany();
+
+    return rows.map((row) => ({
+      applicationId: row.applicationId as string,
+      fullName: (row.fullName as string) ?? '',
+      university: (row.university as string) ?? '',
+      major: (row.major as string) ?? '',
+      status: row.status as ApplicationStatus,
+      coverLetter: (row.coverLetter as string) ?? '',
+      createdAt: new Date(row.createdAt as string | Date),
+    }));
   }
 }

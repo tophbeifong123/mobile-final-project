@@ -22,6 +22,7 @@ import { ApplicationsService } from './applications.service.js';
 import { ApplicationDetailDto } from './dto/application-detail.dto.js';
 import { ApplicationResponseDto } from './dto/application-response.dto.js';
 import { ApplyJobDto } from './dto/apply-job.dto.js';
+import { JobApplicantItemDto } from './dto/job-applicant-item.dto.js';
 import { MyApplicationItemDto } from './dto/my-application-item.dto.js';
 
 @ApiTags('Applications')
@@ -87,5 +88,30 @@ export class ApplicationsController {
     @Body() dto: ApplyJobDto,
   ): Promise<ApplicationResponseDto> {
     return this.applicationsService.apply(user, id, dto);
+  }
+
+  @Get('company/jobs/:id/applications')
+  @ApiOperation({ summary: 'รายชื่อผู้สมัครของประกาศตำแหน่งงานนี้' })
+  @ApiParam({ name: 'id', format: 'uuid', description: 'รหัสประกาศงาน' })
+  @ApiResponse({
+    status: 200,
+    type: [JobApplicantItemDto],
+    description:
+      'รายชื่อผู้สมัครของประกาศงาน พร้อมข้อมูลมหาวิทยาลัย สาขา และสถานะ',
+  })
+  @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
+  @ApiResponse({
+    status: 403,
+    description: 'เฉพาะบริษัท หรือไม่ใช่ประกาศของบริษัทนี้',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'ไม่พบประกาศงานหรือโปรไฟล์บริษัท',
+  })
+  getJobApplicants(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ParseUUIDPipe()) jobId: string,
+  ): Promise<JobApplicantItemDto[]> {
+    return this.applicationsService.getJobApplicants(user, jobId);
   }
 }
