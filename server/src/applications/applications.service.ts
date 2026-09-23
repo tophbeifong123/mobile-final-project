@@ -7,12 +7,14 @@ import {
 import { type AuthUser } from '../auth/auth-user.js';
 import { UserRole } from '../auth/user-role.js';
 import {
+  APPLICATION_NOT_FOUND,
   COVER_LETTER_REQUIRED,
   PROFILE_NOT_FOUND,
   RESUME_REQUIRED,
   STUDENT_ONLY,
 } from './applications.constants.js';
 import { ApplicationsRepository } from './applications.repository.js';
+import { ApplicationDetailDto } from './dto/application-detail.dto.js';
 import { ApplicationResponseDto } from './dto/application-response.dto.js';
 import { ApplyJobDto } from './dto/apply-job.dto.js';
 import { MyApplicationItemDto } from './dto/my-application-item.dto.js';
@@ -23,6 +25,54 @@ export class ApplicationsService {
   constructor(
     private readonly applicationsRepository: ApplicationsRepository,
   ) {}
+
+  async getDetail(
+    user: AuthUser,
+    applicationId: string,
+  ): Promise<ApplicationDetailDto> {
+    this.assertStudent(user);
+
+    const profile = await this.applicationsRepository.findStudentProfileByUserId(
+      user.userId,
+    );
+    if (!profile) {
+      throw new NotFoundException(PROFILE_NOT_FOUND);
+    }
+
+    const application =
+      await this.applicationsRepository.findApplicationDetail(
+        applicationId,
+        profile.id,
+      );
+    if (!application) {
+      throw new NotFoundException(APPLICATION_NOT_FOUND);
+    }
+
+    return {
+      id: application.id,
+      jobId: application.jobId,
+      job: {
+        id: application.job.id,
+        title: application.job.title,
+        companyName: application.job.companyName,
+        province: application.job.province,
+        workMode: application.job.workMode,
+        category: application.job.category,
+        hasAllowance: application.job.hasAllowance,
+      },
+      status: application.status,
+      coverLetter: application.coverLetter,
+      resumeObjectKey: application.resumeObjectKey,
+      createdAt: application.createdAt.toISOString(),
+      updatedAt: application.updatedAt.toISOString(),
+      timeline: application.timeline.map((event) => ({
+        id: event.id,
+        fromStatus: event.fromStatus,
+        toStatus: event.toStatus,
+        createdAt: event.createdAt.toISOString(),
+      })),
+    };
+  }
 
   async getMine(user: AuthUser): Promise<MyApplicationItemDto[]> {
     this.assertStudent(user);

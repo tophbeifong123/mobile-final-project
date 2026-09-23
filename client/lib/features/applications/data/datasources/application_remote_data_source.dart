@@ -25,8 +25,19 @@ class ApplicationRemoteDataSource {
     }
   }
 
-  Future<JobApplicationModel> fetchDetail(String applicationId) {
-    throwNotConnected(_dio, '${ApiConstants.applications}/$applicationId');
+  Future<JobApplicationModel> fetchDetail(String applicationId) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '${ApiConstants.applications}/$applicationId',
+      );
+      final data = response.data;
+      if (data == null) {
+        throw const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
+      }
+      return JobApplicationModel.fromJson(data);
+    } on DioException catch (e) {
+      throw _mapApplicationError(e);
+    }
   }
 
   Future<JobApplicationModel> apply({

@@ -28,6 +28,20 @@ extension ApplicationStatusX on ApplicationStatus {
   }
 }
 
+class TimelineEvent {
+  const TimelineEvent({
+    required this.id,
+    this.fromStatus,
+    required this.toStatus,
+    required this.createdAt,
+  });
+
+  final String id;
+  final ApplicationStatus? fromStatus;
+  final ApplicationStatus toStatus;
+  final DateTime createdAt;
+}
+
 class JobApplication {
   const JobApplication({
     required this.id,
@@ -35,13 +49,27 @@ class JobApplication {
     required this.companyName,
     required this.status,
     required this.coverLetter,
+    this.jobId,
+    this.province,
+    this.workMode,
+    this.category,
+    this.hasAllowance,
+    this.resumeObjectKey,
     this.createdAt,
+    this.timeline = const [],
   });
 
   final String id;
+  final String? jobId;
   final String jobTitle;
   final String companyName;
+  final String? province;
+  final String? workMode;
+  final String? category;
+  final bool? hasAllowance;
   final ApplicationStatus status;
   final String coverLetter;
+  final String? resumeObjectKey;
   final DateTime? createdAt;
+  final List<TimelineEvent> timeline;
 }

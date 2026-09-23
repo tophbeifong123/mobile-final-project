@@ -16,6 +16,11 @@ final myApplicationsProvider = FutureProvider<List<JobApplication>>((ref) {
   return ref.watch(applicationRepositoryProvider).fetchMine();
 });
 
+final applicationDetailProvider =
+    FutureProvider.family<JobApplication, String>((ref, applicationId) {
+  return ref.watch(applicationRepositoryProvider).fetchDetail(applicationId);
+});
+
 class ApplicationsController extends Notifier<void> {
   @override
   void build() {
