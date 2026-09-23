@@ -25,16 +25,18 @@ final companyJobDetailProvider = FutureProvider.family<EditableJob, String>((
 
 final companyJobApplicantsProvider =
     FutureProvider.family<List<Applicant>, String>((ref, jobId) {
-  return ref.watch(companyJobRepositoryProvider).fetchApplicants(jobId);
-});
+      return ref.watch(companyJobRepositoryProvider).fetchApplicants(jobId);
+    });
 
-final companyApplicantDetailProvider = FutureProvider.family<
-    Applicant,
-    ({String jobId, String applicationId})>((ref, arg) {
-  return ref
-      .watch(companyJobRepositoryProvider)
-      .fetchApplicant(jobId: arg.jobId, applicationId: arg.applicationId);
-});
+final companyApplicantDetailProvider =
+    FutureProvider.family<Applicant, ({String jobId, String applicationId})>((
+      ref,
+      arg,
+    ) {
+      return ref
+          .watch(companyJobRepositoryProvider)
+          .fetchApplicant(jobId: arg.jobId, applicationId: arg.applicationId);
+    });
 
 class CompanyJobsController extends Notifier<void> {
   @override
@@ -60,20 +62,34 @@ class CompanyJobsController extends Notifier<void> {
     return ref.read(companyJobRepositoryProvider).remove(jobId);
   }
 
+  Future<void> updateJobStatus({
+    required String jobId,
+    required String status,
+  }) async {
+    await ref
+        .read(companyJobRepositoryProvider)
+        .setStatus(jobId: jobId, status: status);
+    ref.invalidate(companyJobListProvider);
+    ref.invalidate(companyJobDetailProvider(jobId));
+  }
+
   Future<void> updateApplicantStatus({
     required String jobId,
     required String applicationId,
     required String status,
   }) async {
-    await ref.read(companyJobRepositoryProvider).updateApplicantStatus(
+    await ref
+        .read(companyJobRepositoryProvider)
+        .updateApplicantStatus(
           jobId: jobId,
           applicationId: applicationId,
           status: status,
         );
     ref.invalidate(
-      companyApplicantDetailProvider(
-        (jobId: jobId, applicationId: applicationId),
-      ),
+      companyApplicantDetailProvider((
+        jobId: jobId,
+        applicationId: applicationId,
+      )),
     );
     ref.invalidate(companyJobApplicantsProvider(jobId));
   }

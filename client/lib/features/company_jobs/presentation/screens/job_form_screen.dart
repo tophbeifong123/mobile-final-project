@@ -196,9 +196,9 @@ class _JobFormState extends ConsumerState<_JobForm> {
               const Gap(12),
               Text(
                 _error!,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: colors.destructive,
-                ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: colors.destructive),
               ),
             ],
           ],

@@ -28,6 +28,7 @@ import { JobDto } from './dto/job.dto.js';
 import { PaginatedCompanyJobsDto } from './dto/paginated-company-jobs.dto.js';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto.js';
 import { UpdateJobDto } from './dto/update-job.dto.js';
+import { UpdateJobStatusDto } from './dto/update-job-status.dto.js';
 import { JobsService } from './jobs.service.js';
 
 @ApiTags('Company jobs')
@@ -97,6 +98,23 @@ export class CompanyJobsController {
     @Body() dto: UpdateJobDto,
   ): Promise<JobDto> {
     return this.jobsService.update(user, id, dto);
+  }
+
+  @Patch(':id/status')
+  @ApiOperation({ summary: 'เปิดหรือปิดรับสมัคร' })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiBody({ type: UpdateJobStatusDto })
+  @ApiResponse({ status: 200, type: JobDto })
+  @ApiResponse({ status: 400, description: 'ข้อมูลไม่ถูกต้อง' })
+  @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
+  @ApiResponse({ status: 403, description: 'เฉพาะบริษัท หรือไม่ใช่ประกาศของบริษัทนี้' })
+  @ApiResponse({ status: 404, description: 'ไม่พบประกาศหรือโปรไฟล์บริษัท' })
+  updateStatus(
+    @CurrentUser() user: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateJobStatusDto,
+  ): Promise<JobDto> {
+    return this.jobsService.updateStatus(user, id, dto);
   }
 
   @Delete(':id')

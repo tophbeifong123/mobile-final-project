@@ -69,7 +69,9 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
     required String applicantName,
   }) async {
     final isAccept = targetStatus == 'accepted';
-    final title = isAccept ? 'ยืนยันการรับเข้าฝึกงาน' : 'ยืนยันการปฏิเสธใบสมัคร';
+    final title = isAccept
+        ? 'ยืนยันการรับเข้าฝึกงาน'
+        : 'ยืนยันการปฏิเสธใบสมัคร';
     final content = isAccept
         ? 'คุณต้องการตอบรับคุณ $applicantName เข้าฝึกงานใช่หรือไม่? เมื่อตัดสินแล้วจะไม่สามารถเปลี่ยนสถานะได้อีก'
         : 'คุณต้องการปฏิเสธใบสมัครของคุณ $applicantName ใช่หรือไม่? เมื่อตัดสินแล้วจะไม่สามารถเปลี่ยนสถานะได้อีก';
@@ -136,9 +138,10 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final applicantAsync = ref.watch(
-      companyApplicantDetailProvider(
-        (jobId: widget.jobId, applicationId: widget.applicationId),
-      ),
+      companyApplicantDetailProvider((
+        jobId: widget.jobId,
+        applicationId: widget.applicationId,
+      )),
     );
 
     return Scaffold(
@@ -151,9 +154,10 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
           message: userVisibleError(error),
           action: AppPrimaryButton(
             onPressed: () => ref.invalidate(
-              companyApplicantDetailProvider(
-                (jobId: widget.jobId, applicationId: widget.applicationId),
-              ),
+              companyApplicantDetailProvider((
+                jobId: widget.jobId,
+                applicationId: widget.applicationId,
+              )),
             ),
             child: const Text('ลองอีกครั้ง'),
           ),
@@ -161,9 +165,10 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
         data: (applicant) {
           return RefreshIndicator(
             onRefresh: () => ref.refresh(
-              companyApplicantDetailProvider(
-                (jobId: widget.jobId, applicationId: widget.applicationId),
-              ).future,
+              companyApplicantDetailProvider((
+                jobId: widget.jobId,
+                applicationId: widget.applicationId,
+              )).future,
             ),
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
@@ -198,9 +203,7 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
                 padding: const EdgeInsets.all(kPagePadding),
                 decoration: const BoxDecoration(
                   color: AppColors.surface,
-                  border: Border(
-                    top: BorderSide(color: AppColors.line),
-                  ),
+                  border: Border(top: BorderSide(color: AppColors.line)),
                 ),
                 child: SizedBox(
                   width: double.infinity,
@@ -239,9 +242,7 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
                 padding: const EdgeInsets.all(kPagePadding),
                 decoration: const BoxDecoration(
                   color: AppColors.surface,
-                  border: Border(
-                    top: BorderSide(color: AppColors.line),
-                  ),
+                  border: Border(top: BorderSide(color: AppColors.line)),
                 ),
                 child: Row(
                   children: [
@@ -258,9 +259,9 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
                         onPressed: _isUpdating
                             ? null
                             : () => _confirmDecision(
-                                  targetStatus: 'rejected',
-                                  applicantName: applicant.fullName,
-                                ),
+                                targetStatus: 'rejected',
+                                applicantName: applicant.fullName,
+                              ),
                         icon: const Icon(Icons.close_rounded, size: 18),
                         label: const FittedBox(
                           fit: BoxFit.scaleDown,
@@ -281,9 +282,9 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
                         onPressed: _isUpdating
                             ? null
                             : () => _confirmDecision(
-                                  targetStatus: 'accepted',
-                                  applicantName: applicant.fullName,
-                                ),
+                                targetStatus: 'accepted',
+                                applicantName: applicant.fullName,
+                              ),
                         icon: const Icon(Icons.check_rounded, size: 18),
                         label: const FittedBox(
                           fit: BoxFit.scaleDown,
@@ -302,10 +303,7 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
       ),
     );
   }
-
 }
-
-
 
 class _ProfileHeaderCard extends StatelessWidget {
   const _ProfileHeaderCard({required this.applicant});
@@ -342,99 +340,100 @@ class _ProfileHeaderCard extends StatelessWidget {
 
     return AppCard(
       child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const SizedBox(
-                    width: 52,
-                    height: 52,
-                    child: Icon(
-                      Icons.person_outline_rounded,
-                      color: AppColors.primary,
-                      size: 28,
-                    ),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const SizedBox(
+                  width: 52,
+                  height: 52,
+                  child: Icon(
+                    Icons.person_outline_rounded,
+                    color: AppColors.primary,
+                    size: 28,
                   ),
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        applicant.fullName.isEmpty
-                            ? 'ไม่ระบุชื่อ'
-                            : applicant.fullName,
-                        style: textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      applicant.fullName.isEmpty
+                          ? 'ไม่ระบุชื่อ'
+                          : applicant.fullName,
+                      style: textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(height: 4),
-                      if (applicant.university.isNotEmpty ||
-                          applicant.major.isNotEmpty) ...[
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.school_outlined,
-                              size: 16,
-                              color: AppColors.textSecondary,
-                            ),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                [applicant.university, applicant.major]
-                                    .where((s) => s.isNotEmpty)
-                                    .join(' • '),
-                                style: textTheme.bodyMedium?.copyWith(
-                                  color: AppColors.textSecondary,
-                                ),
+                    ),
+                    const SizedBox(height: 4),
+                    if (applicant.university.isNotEmpty ||
+                        applicant.major.isNotEmpty) ...[
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.school_outlined,
+                            size: 16,
+                            color: AppColors.textSecondary,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              [
+                                applicant.university,
+                                applicant.major,
+                              ].where((s) => s.isNotEmpty).join(' • '),
+                              style: textTheme.bodyMedium?.copyWith(
+                                color: AppColors.textSecondary,
                               ),
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ],
-                  ),
+                  ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            const Divider(color: AppColors.line, height: 1),
-            const SizedBox(height: 14),
-            Wrap(
-              spacing: 12,
-              runSpacing: 8,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                StatusChip(label: _displayStatus(applicant.status)),
-                if (applicant.createdAt != null)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.calendar_today_outlined,
-                        size: 14,
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Divider(color: AppColors.line, height: 1),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              StatusChip(label: _displayStatus(applicant.status)),
+              if (applicant.createdAt != null)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.calendar_today_outlined,
+                      size: 14,
+                      color: AppColors.textSecondary,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'ยื่นเมื่อ ${_formatDate(applicant.createdAt)}',
+                      style: textTheme.bodySmall?.copyWith(
                         color: AppColors.textSecondary,
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'ยื่นเมื่อ ${_formatDate(applicant.createdAt)}',
-                        style: textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-              ],
-            ),
-          ],
-        ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
@@ -543,10 +542,7 @@ class _PortfolioCard extends StatelessWidget {
 }
 
 class _ResumeCard extends StatelessWidget {
-  const _ResumeCard({
-    this.resumeFileName,
-    this.resumeObjectKey,
-  });
+  const _ResumeCard({this.resumeFileName, this.resumeObjectKey});
 
   final String? resumeFileName;
   final String? resumeObjectKey;

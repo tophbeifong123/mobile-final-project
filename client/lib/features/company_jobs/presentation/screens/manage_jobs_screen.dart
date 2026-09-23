@@ -113,41 +113,83 @@ class ManageJobsScreen extends ConsumerWidget {
   }
 }
 
-class _CompanyJobCard extends StatelessWidget {
+class _CompanyJobCard extends ConsumerStatefulWidget {
   const _CompanyJobCard({required this.job});
 
   final CompanyJob job;
 
   @override
+  ConsumerState<_CompanyJobCard> createState() => _CompanyJobCardState();
+}
+
+class _CompanyJobCardState extends ConsumerState<_CompanyJobCard> {
+  bool _isUpdating = false;
+
+  Future<void> _toggleStatus(bool value) async {
+    setState(() => _isUpdating = true);
+    try {
+      await ref
+          .read(companyJobsControllerProvider.notifier)
+          .updateJobStatus(
+            jobId: widget.job.id,
+            status: value ? 'open' : 'closed',
+          );
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(userVisibleError(error))));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUpdating = false);
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final open = job.status == 'open';
+    final open = widget.job.status == 'open';
     return AppCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(child: Text(job.title, style: textTheme.titleMedium)),
+              Expanded(
+                child: Text(widget.job.title, style: textTheme.titleMedium),
+              ),
+              const Gap(8),
               StatusChip(label: open ? 'เปิดรับ' : 'ปิดรับ'),
+              const Gap(4),
+              Semantics(
+                label: 'สลับสถานะเปิดปิดรับสมัคร',
+                child: Switch.adaptive(
+                  key: ValueKey('toggle-job-${widget.job.id}'),
+                  value: open,
+                  onChanged: _isUpdating ? null : _toggleStatus,
+                ),
+              ),
             ],
           ),
           const Gap(8),
           Text(
-            'ผู้สมัคร ${job.applicantCount} คน',
+            'ผู้สมัคร ${widget.job.applicantCount} คน',
             style: textTheme.bodyMedium,
           ),
           const Gap(8),
           Row(
             children: [
               TextButton(
-                onPressed: () => context.push('/company/jobs/${job.id}/edit'),
+                onPressed: () =>
+                    context.push('/company/jobs/${widget.job.id}/edit'),
                 child: const Text('แก้ไข'),
               ),
               TextButton(
                 onPressed: () =>
-                    context.push('/company/jobs/${job.id}/applicants'),
+                    context.push('/company/jobs/${widget.job.id}/applicants'),
                 child: const Text('ผู้สมัคร'),
               ),
             ],

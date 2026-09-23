@@ -129,7 +129,8 @@ class ApplicantModel {
       major: json['major'] as String? ?? '',
       status: json['status'] as String? ?? 'submitted',
       coverLetter: json['coverLetter'] as String? ?? '',
-      skills: (json['skills'] as List<dynamic>?)
+      skills:
+          (json['skills'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const [],

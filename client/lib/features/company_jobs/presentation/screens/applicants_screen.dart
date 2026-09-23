@@ -115,10 +115,7 @@ class ApplicantsScreen extends ConsumerWidget {
 }
 
 class _ApplicantCard extends StatelessWidget {
-  const _ApplicantCard({
-    required this.applicant,
-    required this.onTap,
-  });
+  const _ApplicantCard({required this.applicant, required this.onTap});
 
   final Applicant applicant;
   final VoidCallback onTap;
@@ -157,11 +154,7 @@ class _ApplicantCard extends StatelessWidget {
             child: const SizedBox(
               width: 44,
               height: 44,
-              child: Icon(
-                LucideIcons.user,
-                color: AppColors.primary,
-                size: 22,
-              ),
+              child: Icon(LucideIcons.user, color: AppColors.primary, size: 22),
             ),
           ),
           const Gap(12),
@@ -190,9 +183,10 @@ class _ApplicantCard extends StatelessWidget {
                       const Gap(4),
                       Expanded(
                         child: Text(
-                          [applicant.university, applicant.major]
-                              .where((s) => s.isNotEmpty)
-                              .join(' • '),
+                          [
+                            applicant.university,
+                            applicant.major,
+                          ].where((s) => s.isNotEmpty).join(' • '),
                           style: textTheme.bodySmall?.copyWith(
                             color: colors.mutedForeground,
                           ),
