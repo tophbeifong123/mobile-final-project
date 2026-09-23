@@ -34,13 +34,17 @@ class StatusChip extends StatelessWidget {
     switch (value.trim().toLowerCase()) {
       case 'open':
       case 'accepted':
+      case 'ผ่านการคัดเลือก':
         return const _ChipTone(AppColors.success, Colors.white);
       case 'reviewing':
       case 'submitted':
+      case 'ยื่นใบสมัครแล้ว':
+      case 'กำลังพิจารณา':
         return const _ChipTone(AppColors.accent, AppColors.textPrimary);
       case 'closed':
       case 'rejected':
       case 'ปิดรับ':
+      case 'ไม่ผ่านการคัดเลือก':
         return const _ChipTone(Color(0xFFE2E8F0), AppColors.textSecondary);
       case 'เปิดรับ':
         return const _ChipTone(AppColors.success, Colors.white);

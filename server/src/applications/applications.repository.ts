@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { DataSource, QueryFailedError } from 'typeorm';
+import { CompanyProfile } from '../auth/entities/company-profile.entity.js';
 import { StudentProfile } from '../auth/entities/student-profile.entity.js';
 import { Job } from '../jobs/entities/job.entity.js';
 import { JobStatus } from '../jobs/job-enums.js';
@@ -25,9 +26,55 @@ export interface ApplyJobParams {
   actorUserId: string;
 }
 
+export interface MyApplicationRecord {
+  id: string;
+  jobId: string;
+  jobTitle: string;
+  companyName: string;
+  status: ApplicationStatus;
+  coverLetter: string;
+  resumeObjectKey: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 @Injectable()
 export class ApplicationsRepository {
   constructor(private readonly dataSource: DataSource) {}
+
+  async listStudentApplications(
+    studentId: string,
+  ): Promise<MyApplicationRecord[]> {
+    const rows = await this.dataSource
+      .getRepository(Application)
+      .createQueryBuilder('app')
+      .innerJoin(Job, 'job', 'job.id = app.jobId')
+      .innerJoin(CompanyProfile, 'company', 'company.id = job.companyId')
+      .where('app.studentId = :studentId', { studentId })
+      .select('app.id', 'id')
+      .addSelect('app.jobId', 'jobId')
+      .addSelect('job.title', 'jobTitle')
+      .addSelect('company.name', 'companyName')
+      .addSelect('app.status', 'status')
+      .addSelect('app.coverLetter', 'coverLetter')
+      .addSelect('app.resumeObjectKey', 'resumeObjectKey')
+      .addSelect('app.createdAt', 'createdAt')
+      .addSelect('app.updatedAt', 'updatedAt')
+      .orderBy('app.createdAt', 'DESC')
+      .getRawMany();
+
+    return rows.map((row) => ({
+      id: row.id as string,
+      jobId: row.jobId as string,
+      jobTitle: row.jobTitle as string,
+      companyName: row.companyName as string,
+      status: row.status as ApplicationStatus,
+      coverLetter: row.coverLetter as string,
+      resumeObjectKey: row.resumeObjectKey as string,
+      createdAt: new Date(row.createdAt as string | Date),
+      updatedAt: new Date(row.updatedAt as string | Date),
+    }));
+  }
 
   async findStudentProfileByUserId(
     userId: string,

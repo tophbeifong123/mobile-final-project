@@ -15,6 +15,7 @@ import {
 import { ApplicationsRepository } from './applications.repository.js';
 import { ApplicationResponseDto } from './dto/application-response.dto.js';
 import { ApplyJobDto } from './dto/apply-job.dto.js';
+import { MyApplicationItemDto } from './dto/my-application-item.dto.js';
 import { Application } from './entities/application.entity.js';
 
 @Injectable()
@@ -22,6 +23,32 @@ export class ApplicationsService {
   constructor(
     private readonly applicationsRepository: ApplicationsRepository,
   ) {}
+
+  async getMine(user: AuthUser): Promise<MyApplicationItemDto[]> {
+    this.assertStudent(user);
+
+    const profile = await this.applicationsRepository.findStudentProfileByUserId(
+      user.userId,
+    );
+    if (!profile) {
+      throw new NotFoundException(PROFILE_NOT_FOUND);
+    }
+
+    const applications =
+      await this.applicationsRepository.listStudentApplications(profile.id);
+
+    return applications.map((item) => ({
+      id: item.id,
+      jobId: item.jobId,
+      jobTitle: item.jobTitle,
+      companyName: item.companyName,
+      status: item.status,
+      coverLetter: item.coverLetter,
+      resumeObjectKey: item.resumeObjectKey,
+      createdAt: item.createdAt.toISOString(),
+      updatedAt: item.updatedAt.toISOString(),
+    }));
+  }
 
   async apply(
     user: AuthUser,

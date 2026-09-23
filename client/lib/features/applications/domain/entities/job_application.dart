@@ -1,5 +1,33 @@
 enum ApplicationStatus { submitted, reviewing, accepted, rejected }
 
+extension ApplicationStatusX on ApplicationStatus {
+  String get labelTh {
+    switch (this) {
+      case ApplicationStatus.submitted:
+        return 'ยื่นใบสมัครแล้ว';
+      case ApplicationStatus.reviewing:
+        return 'กำลังพิจารณา';
+      case ApplicationStatus.accepted:
+        return 'ผ่านการคัดเลือก';
+      case ApplicationStatus.rejected:
+        return 'ไม่ผ่านการคัดเลือก';
+    }
+  }
+
+  String get labelEn {
+    switch (this) {
+      case ApplicationStatus.submitted:
+        return 'Submitted';
+      case ApplicationStatus.reviewing:
+        return 'Reviewing';
+      case ApplicationStatus.accepted:
+        return 'Accepted';
+      case ApplicationStatus.rejected:
+        return 'Rejected';
+    }
+  }
+}
+
 class JobApplication {
   const JobApplication({
     required this.id,
@@ -7,6 +35,7 @@ class JobApplication {
     required this.companyName,
     required this.status,
     required this.coverLetter,
+    this.createdAt,
   });
 
   final String id;
@@ -14,4 +43,5 @@ class JobApplication {
   final String companyName;
   final ApplicationStatus status;
   final String coverLetter;
+  final DateTime? createdAt;
 }

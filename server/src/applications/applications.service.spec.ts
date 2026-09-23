@@ -166,4 +166,51 @@ describe('ApplicationsService', () => {
       service.apply(studentUser, 'job-1', { coverLetter: 'Hello' }),
     ).rejects.toThrow(new ConflictException(ALREADY_APPLIED));
   });
+
+  describe('getMine', () => {
+    it('rejects if user role is not student', async () => {
+      await expect(service.getMine(companyUser)).rejects.toThrow(
+        new ForbiddenException(STUDENT_ONLY),
+      );
+    });
+
+    it('rejects if student profile does not exist', async () => {
+      vi.mocked(repository.findStudentProfileByUserId).mockResolvedValue(null);
+
+      await expect(service.getMine(studentUser)).rejects.toThrow(
+        new NotFoundException(PROFILE_NOT_FOUND),
+      );
+    });
+
+    it('returns student applications list mapped to DTO', async () => {
+      vi.mocked(repository.findStudentProfileByUserId).mockResolvedValue(
+        studentProfile as any,
+      );
+      (repository as any).listStudentApplications = vi.fn().mockResolvedValue([
+        {
+          id: 'app-1',
+          jobId: 'job-1',
+          jobTitle: 'Flutter Intern',
+          companyName: 'Tech Co',
+          status: ApplicationStatus.Submitted,
+          coverLetter: 'Hello',
+          resumeObjectKey: 'resumes/key.pdf',
+          createdAt: new Date('2026-09-23T10:00:00Z'),
+          updatedAt: new Date('2026-09-23T10:00:00Z'),
+        },
+      ]);
+
+      const result = await service.getMine(studentUser);
+
+      expect((repository as any).listStudentApplications).toHaveBeenCalledWith(
+        studentProfile.id,
+      );
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('app-1');
+      expect(result[0].jobTitle).toBe('Flutter Intern');
+      expect(result[0].companyName).toBe('Tech Co');
+      expect(result[0].status).toBe(ApplicationStatus.Submitted);
+      expect(result[0].createdAt).toBe('2026-09-23T10:00:00.000Z');
+    });
+  });
 });
