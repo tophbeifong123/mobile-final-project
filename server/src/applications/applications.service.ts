@@ -18,6 +18,7 @@ import {
   STUDENT_ONLY,
 } from './applications.constants.js';
 import { ApplicationsRepository } from './applications.repository.js';
+import { ApplicantDetailDto } from './dto/applicant-detail.dto.js';
 import { ApplicationDetailDto } from './dto/application-detail.dto.js';
 import { ApplicationResponseDto } from './dto/application-response.dto.js';
 import { ApplyJobDto } from './dto/apply-job.dto.js';
@@ -174,6 +175,56 @@ export class ApplicationsService {
       coverLetter: app.coverLetter,
       createdAt: app.createdAt.toISOString(),
     }));
+  }
+
+  async getApplicantDetail(
+    user: AuthUser,
+    jobId: string,
+    applicationId: string,
+  ): Promise<ApplicantDetailDto> {
+    this.assertCompany(user);
+
+    const companyProfile =
+      await this.applicationsRepository.findCompanyProfileByUserId(
+        user.userId,
+      );
+    if (!companyProfile) {
+      throw new NotFoundException(COMPANY_PROFILE_NOT_FOUND);
+    }
+
+    const job = await this.applicationsRepository.findJobById(jobId);
+    if (!job) {
+      throw new NotFoundException(JOB_NOT_FOUND);
+    }
+
+    if (job.companyId !== companyProfile.id) {
+      throw new ForbiddenException(NOT_YOUR_JOB);
+    }
+
+    const detail =
+      await this.applicationsRepository.findCompanyApplicantDetail(
+        jobId,
+        applicationId,
+      );
+    if (!detail) {
+      throw new NotFoundException(APPLICATION_NOT_FOUND);
+    }
+
+    return {
+      applicationId: detail.applicationId,
+      jobId: detail.jobId,
+      fullName: detail.fullName,
+      university: detail.university,
+      major: detail.major,
+      skills: detail.skills,
+      portfolioUrl: detail.portfolioUrl,
+      resumeObjectKey: detail.resumeObjectKey,
+      resumeFileName: detail.resumeFileName,
+      status: detail.status,
+      coverLetter: detail.coverLetter,
+      createdAt: detail.createdAt.toISOString(),
+      updatedAt: detail.updatedAt.toISOString(),
+    };
   }
 
   private assertStudent(user: AuthUser): void {

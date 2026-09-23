@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/error/app_exception.dart';
+import '../../../../core/theme/app_tokens.dart';
+import '../../../../core/widgets/app_primary_button.dart';
+import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/loading_view.dart';
 import '../../../../core/widgets/status_chip.dart';
+import '../../domain/entities/company_job.dart';
+import '../providers/company_jobs_controller.dart';
 
-class ApplicantDetailScreen extends StatelessWidget {
+class ApplicantDetailScreen extends ConsumerWidget {
   const ApplicantDetailScreen({
     super.key,
     required this.jobId,
@@ -13,16 +21,446 @@ class ApplicantDetailScreen extends StatelessWidget {
   final String applicationId;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final applicantAsync = ref.watch(
+      companyApplicantDetailProvider(
+        (jobId: jobId, applicationId: applicationId),
+      ),
+    );
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Applicant Detail')),
-      body: Center(
+      appBar: AppBar(title: const Text('รายละเอียดผู้สมัคร')),
+      body: applicantAsync.when(
+        loading: () => const LoadingView(label: 'กำลังโหลดข้อมูลผู้สมัคร'),
+        error: (error, _) => EmptyState(
+          icon: Icons.person_off_outlined,
+          title: 'โหลดข้อมูลผู้สมัครไม่ได้',
+          message: userVisibleError(error),
+          action: AppPrimaryButton(
+            onPressed: () => ref.invalidate(
+              companyApplicantDetailProvider(
+                (jobId: jobId, applicationId: applicationId),
+              ),
+            ),
+            child: const Text('ลองอีกครั้ง'),
+          ),
+        ),
+        data: (applicant) {
+          return RefreshIndicator(
+            onRefresh: () => ref.refresh(
+              companyApplicantDetailProvider(
+                (jobId: jobId, applicationId: applicationId),
+              ).future,
+            ),
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(kPagePadding),
+              children: [
+                _ProfileHeaderCard(applicant: applicant),
+                const SizedBox(height: 16),
+                _SkillsCard(skills: applicant.skills),
+                if (applicant.portfolioUrl != null &&
+                    applicant.portfolioUrl!.trim().isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  _PortfolioCard(url: applicant.portfolioUrl!.trim()),
+                ],
+                const SizedBox(height: 16),
+                _ResumeCard(
+                  resumeFileName: applicant.resumeFileName,
+                  resumeObjectKey: applicant.resumeObjectKey,
+                ),
+                const SizedBox(height: 16),
+                _CoverLetterCard(coverLetter: applicant.coverLetter),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _ProfileHeaderCard extends StatelessWidget {
+  const _ProfileHeaderCard({required this.applicant});
+
+  final Applicant applicant;
+
+  String _displayStatus(String status) {
+    switch (status.trim().toLowerCase()) {
+      case 'submitted':
+        return 'ยื่นใบสมัครแล้ว';
+      case 'reviewing':
+        return 'กำลังพิจารณา';
+      case 'accepted':
+        return 'ผ่านการคัดเลือก';
+      case 'rejected':
+        return 'ไม่ผ่านการคัดเลือก';
+      default:
+        return status;
+    }
+  }
+
+  String _formatDate(DateTime? dateTime) {
+    if (dateTime == null) return '';
+    final local = dateTime.toLocal();
+    final day = local.day.toString().padLeft(2, '0');
+    final month = local.month.toString().padLeft(2, '0');
+    final year = local.year;
+    return '$day/$month/$year';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Material(
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.line),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Applicant Detail: $jobId / $applicationId'),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const SizedBox(
+                    width: 52,
+                    height: 52,
+                    child: Icon(
+                      Icons.person_outline_rounded,
+                      color: AppColors.primary,
+                      size: 28,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        applicant.fullName.isEmpty
+                            ? 'ไม่ระบุชื่อ'
+                            : applicant.fullName,
+                        style: textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      if (applicant.university.isNotEmpty ||
+                          applicant.major.isNotEmpty) ...[
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.school_outlined,
+                              size: 16,
+                              color: AppColors.textSecondary,
+                            ),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                [applicant.university, applicant.major]
+                                    .where((s) => s.isNotEmpty)
+                                    .join(' • '),
+                                style: textTheme.bodyMedium?.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Divider(color: AppColors.line, height: 1),
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                StatusChip(label: _displayStatus(applicant.status)),
+                if (applicant.createdAt != null)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.calendar_today_outlined,
+                        size: 14,
+                        color: AppColors.textSecondary,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'ยื่นเมื่อ ${_formatDate(applicant.createdAt)}',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SkillsCard extends StatelessWidget {
+  const _SkillsCard({required this.skills});
+
+  final List<String> skills;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Material(
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.line),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.psychology_outlined,
+                  size: 20,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: 8),
+                Text('ทักษะความสามารถ', style: textTheme.titleMedium),
+              ],
+            ),
             const SizedBox(height: 12),
-            const StatusChip(label: 'Submitted'),
+            if (skills.isEmpty)
+              Text(
+                'ไม่ได้ระบุทักษะ',
+                style: textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              )
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: skills.map((skill) {
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: AppColors.primary.withValues(alpha: 0.2),
+                      ),
+                    ),
+                    child: Text(
+                      skill,
+                      style: textTheme.bodySmall?.copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PortfolioCard extends StatelessWidget {
+  const _PortfolioCard({required this.url});
+
+  final String url;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Material(
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.line),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.link_rounded,
+                  size: 20,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: 8),
+                Text('Portfolio / ผลงาน', style: textTheme.titleMedium),
+              ],
+            ),
+            const SizedBox(height: 10),
+            SelectableText(
+              url,
+              style: textTheme.bodyMedium?.copyWith(
+                color: AppColors.primary,
+                decoration: TextDecoration.underline,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ResumeCard extends StatelessWidget {
+  const _ResumeCard({
+    this.resumeFileName,
+    this.resumeObjectKey,
+  });
+
+  final String? resumeFileName;
+  final String? resumeObjectKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Material(
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.line),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.picture_as_pdf_outlined,
+                  size: 20,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: 8),
+                Text('Resume ที่ใช้สมัคร', style: textTheme.titleMedium),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.line),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.description_outlined,
+                    size: 28,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          resumeFileName ?? 'Resume (PDF)',
+                          style: textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          resumeObjectKey != null
+                              ? 'สำเนา Resume ในระบบ ณ วันที่ยื่นใบสมัคร'
+                              : 'ไม่มีไฟล์ Resume',
+                          style: textTheme.bodySmall?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CoverLetterCard extends StatelessWidget {
+  const _CoverLetterCard({required this.coverLetter});
+
+  final String coverLetter;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Material(
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: AppColors.line),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.article_outlined,
+                  size: 20,
+                  color: AppColors.primary,
+                ),
+                const SizedBox(width: 8),
+                Text('Cover Letter', style: textTheme.titleMedium),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              coverLetter.trim().isNotEmpty
+                  ? coverLetter.trim()
+                  : 'ไม่ได้ระบุ Cover Letter',
+              style: textTheme.bodyMedium?.copyWith(height: 1.6),
+            ),
           ],
         ),
       ),

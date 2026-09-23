@@ -73,6 +73,11 @@ class Applicant {
     required this.major,
     required this.status,
     required this.coverLetter,
+    this.skills = const [],
+    this.portfolioUrl,
+    this.resumeObjectKey,
+    this.resumeFileName,
+    this.createdAt,
   });
 
   final String applicationId;
@@ -81,4 +86,9 @@ class Applicant {
   final String major;
   final String status;
   final String coverLetter;
+  final List<String> skills;
+  final String? portfolioUrl;
+  final String? resumeObjectKey;
+  final String? resumeFileName;
+  final DateTime? createdAt;
 }

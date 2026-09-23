@@ -114,16 +114,31 @@ class ApplicantModel {
     required this.major,
     required this.status,
     required this.coverLetter,
+    this.skills = const [],
+    this.portfolioUrl,
+    this.resumeObjectKey,
+    this.resumeFileName,
+    this.createdAt,
   });
 
   factory ApplicantModel.fromJson(Map<String, dynamic> json) {
     return ApplicantModel(
-      applicationId: json['applicationId'] as String,
+      applicationId: (json['applicationId'] ?? json['id']) as String,
       fullName: json['fullName'] as String? ?? '',
       university: json['university'] as String? ?? '',
       major: json['major'] as String? ?? '',
       status: json['status'] as String? ?? 'submitted',
       coverLetter: json['coverLetter'] as String? ?? '',
+      skills: (json['skills'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
+      portfolioUrl: json['portfolioUrl'] as String?,
+      resumeObjectKey: json['resumeObjectKey'] as String?,
+      resumeFileName: json['resumeFileName'] as String?,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'] as String)
+          : null,
     );
   }
 
@@ -133,6 +148,11 @@ class ApplicantModel {
   final String major;
   final String status;
   final String coverLetter;
+  final List<String> skills;
+  final String? portfolioUrl;
+  final String? resumeObjectKey;
+  final String? resumeFileName;
+  final DateTime? createdAt;
 
   Applicant toEntity() {
     return Applicant(
@@ -142,6 +162,11 @@ class ApplicantModel {
       major: major,
       status: status,
       coverLetter: coverLetter,
+      skills: skills,
+      portfolioUrl: portfolioUrl,
+      resumeObjectKey: resumeObjectKey,
+      resumeFileName: resumeFileName,
+      createdAt: createdAt,
     );
   }
 }
