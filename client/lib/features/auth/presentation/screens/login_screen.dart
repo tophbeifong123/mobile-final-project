@@ -90,13 +90,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
             ),
 
-            // Scrollable Content
+            // Centered Scrollable Content
             Expanded(
-              child: Form(
-                key: _formKey,
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-                  children: [
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  return SingleChildScrollView(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: constraints.maxHeight,
+                      ),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 448),
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+                            child: Form(
+                              key: _formKey,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
                     // Hero Logo Badge with Stickers
                     const Center(child: _HeroLogoBadge()),
                     const Gap(14),
@@ -808,6 +821,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  },
+),
+),
           ],
         ),
       ),
