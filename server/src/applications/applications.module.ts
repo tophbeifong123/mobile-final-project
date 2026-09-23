@@ -4,6 +4,7 @@ import { AuthModule } from '../auth/auth.module.js';
 import { CompanyProfile } from '../auth/entities/company-profile.entity.js';
 import { StudentProfile } from '../auth/entities/student-profile.entity.js';
 import { Job } from '../jobs/entities/job.entity.js';
+import { Notification } from '../notifications/entities/notification.entity.js';
 import { ApplicationsController } from './applications.controller.js';
 import { ApplicationsRepository } from './applications.repository.js';
 import { ApplicationsService } from './applications.service.js';
@@ -19,6 +20,7 @@ import { Application } from './entities/application.entity.js';
       StudentProfile,
       CompanyProfile,
       Job,
+      Notification,
     ]),
   ],
   controllers: [ApplicationsController],

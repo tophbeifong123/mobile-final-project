@@ -9,3 +9,5 @@ export const APPLICATION_NOT_FOUND = 'ไม่พบใบสมัคร';
 export const COMPANY_ONLY = 'เฉพาะบริษัทเท่านั้น';
 export const COMPANY_PROFILE_NOT_FOUND = 'ไม่พบโปรไฟล์บริษัท';
 export const NOT_YOUR_JOB = 'เฉพาะบริษัท หรือไม่ใช่ประกาศของบริษัทนี้';
+export const ONLY_SUBMITTED_CAN_BE_REVIEWING =
+  'เปลี่ยนสถานะเป็น Reviewing ได้เฉพาะใบสมัครที่อยู่ในสถานะ Submitted เท่านั้น';

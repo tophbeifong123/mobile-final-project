@@ -153,16 +153,151 @@ void main() {
     expect(find.text('สุดา ขยันดี'), findsOneWidget);
     expect(find.text('กำลังพิจารณา'), findsOneWidget);
   });
+
+  testWidgets(
+    'shows action button when status is submitted and transitions to reviewing upon tap',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final applicant = Applicant(
+        applicationId: 'app-1',
+        fullName: 'สมชาย ใจดี',
+        university: 'มหาวิทยาลัยเกษตรศาสตร์',
+        major: 'วิทยาการคอมพิวเตอร์',
+        status: 'submitted',
+        coverLetter: 'มีความสนใจและพร้อมจะเรียนรู้งานอย่างเต็มที่ครับ',
+        skills: const ['Flutter'],
+        createdAt: DateTime(2026, 9, 23, 14, 0),
+      );
+
+      final fakeRepo = _FakeCompanyJobRepository(applicant: applicant);
+
+      final router = GoRouter(
+        initialLocation: '/company/jobs/job-1/applicants/app-1',
+        routes: [
+          GoRoute(
+            path: '/company/jobs/:jobId/applicants/:applicationId',
+            builder: (context, state) => ApplicantDetailScreen(
+              jobId: state.pathParameters['jobId']!,
+              applicationId: state.pathParameters['applicationId']!,
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+            companyJobRepositoryProvider.overrideWithValue(fakeRepo),
+          ],
+          child: MaterialApp.router(
+            theme: AppTheme.lightTheme,
+            routerConfig: router,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('เปลี่ยนสถานะเป็น Reviewing'), findsOneWidget);
+
+      await tester.tap(find.text('เปลี่ยนสถานะเป็น Reviewing'));
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(fakeRepo.updateCallCount, 1);
+      expect(fakeRepo.updatedJobId, 'job-1');
+      expect(fakeRepo.updatedApplicationId, 'app-1');
+      expect(fakeRepo.updatedStatus, 'reviewing');
+
+      expect(find.text('เปลี่ยนสถานะเป็น Reviewing แล้ว'), findsOneWidget);
+      expect(find.text('กำลังพิจารณา'), findsOneWidget);
+      expect(find.text('เปลี่ยนสถานะเป็น Reviewing'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'shows error snackbar when changing status to reviewing fails',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final applicant = Applicant(
+        applicationId: 'app-1',
+        fullName: 'สมชาย ใจดี',
+        university: 'มหาวิทยาลัยเกษตรศาสตร์',
+        major: 'วิทยาการคอมพิวเตอร์',
+        status: 'submitted',
+        coverLetter: 'มีความสนใจและพร้อมจะเรียนรู้งานอย่างเต็มที่ครับ',
+        skills: const ['Flutter'],
+        createdAt: DateTime(2026, 9, 23, 14, 0),
+      );
+
+      final fakeRepo = _FakeCompanyJobRepository(
+        applicant: applicant,
+        updateError: const AppException('เกิดข้อผิดพลาดในการเปลี่ยนสถานะ'),
+      );
+
+      final router = GoRouter(
+        initialLocation: '/company/jobs/job-1/applicants/app-1',
+        routes: [
+          GoRoute(
+            path: '/company/jobs/:jobId/applicants/:applicationId',
+            builder: (context, state) => ApplicantDetailScreen(
+              jobId: state.pathParameters['jobId']!,
+              applicationId: state.pathParameters['applicationId']!,
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+            companyJobRepositoryProvider.overrideWithValue(fakeRepo),
+          ],
+          child: MaterialApp.router(
+            theme: AppTheme.lightTheme,
+            routerConfig: router,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('เปลี่ยนสถานะเป็น Reviewing'), findsOneWidget);
+
+      await tester.tap(find.text('เปลี่ยนสถานะเป็น Reviewing'));
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(find.text('เกิดข้อผิดพลาดในการเปลี่ยนสถานะ'), findsOneWidget);
+      expect(find.text('เปลี่ยนสถานะเป็น Reviewing'), findsOneWidget);
+    },
+  );
 }
 
 class _FakeCompanyJobRepository implements CompanyJobRepository {
   _FakeCompanyJobRepository({
     this.applicant,
     this.error,
+    this.updateError,
   });
 
   Applicant? applicant;
   AppException? error;
+  AppException? updateError;
+  int updateCallCount = 0;
+  String? updatedJobId;
+  String? updatedApplicationId;
+  String? updatedStatus;
 
   @override
   Future<Applicant> fetchApplicant({
@@ -205,5 +340,27 @@ class _FakeCompanyJobRepository implements CompanyJobRepository {
     required String jobId,
     required String applicationId,
     required String status,
-  }) async {}
+  }) async {
+    if (updateError != null) throw updateError!;
+    updateCallCount++;
+    updatedJobId = jobId;
+    updatedApplicationId = applicationId;
+    updatedStatus = status;
+    if (applicant != null) {
+      applicant = Applicant(
+        applicationId: applicant!.applicationId,
+        fullName: applicant!.fullName,
+        university: applicant!.university,
+        major: applicant!.major,
+        status: status,
+        coverLetter: applicant!.coverLetter,
+        skills: applicant!.skills,
+        portfolioUrl: applicant!.portfolioUrl,
+        resumeFileName: applicant!.resumeFileName,
+        resumeObjectKey: applicant!.resumeObjectKey,
+        createdAt: applicant!.createdAt,
+      );
+    }
+  }
 }
+

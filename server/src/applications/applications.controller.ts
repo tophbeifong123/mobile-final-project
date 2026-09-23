@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -25,6 +26,7 @@ import { ApplicationResponseDto } from './dto/application-response.dto.js';
 import { ApplyJobDto } from './dto/apply-job.dto.js';
 import { JobApplicantItemDto } from './dto/job-applicant-item.dto.js';
 import { MyApplicationItemDto } from './dto/my-application-item.dto.js';
+import { UpdateApplicationStatusDto } from './dto/update-application-status.dto.js';
 
 @ApiTags('Applications')
 @ApiBearerAuth()
@@ -150,6 +152,47 @@ export class ApplicationsController {
       user,
       jobId,
       applicationId,
+    );
+  }
+
+  @Patch('company/jobs/:id/applications/:applicationId/status')
+  @ApiOperation({ summary: 'เปลี่ยนสถานะผู้สมัคร (เช่น Reviewing)' })
+  @ApiParam({ name: 'id', format: 'uuid', description: 'รหัสประกาศงาน' })
+  @ApiParam({
+    name: 'applicationId',
+    format: 'uuid',
+    description: 'รหัสใบสมัคร',
+  })
+  @ApiBody({ type: UpdateApplicationStatusDto })
+  @ApiResponse({
+    status: 200,
+    type: ApplicantDetailDto,
+    description: 'เปลี่ยนสถานะใบสมัครสำเร็จ พร้อมบันทึก event และแจ้งเตือน',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'เปลี่ยนสถานะได้เฉพาะจาก submitted เป็น reviewing',
+  })
+  @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
+  @ApiResponse({
+    status: 403,
+    description: 'เฉพาะบริษัท หรือไม่ใช่ประกาศของบริษัทนี้',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'ไม่พบประกาศงาน ใบสมัคร หรือโปรไฟล์บริษัท',
+  })
+  updateApplicantStatus(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ParseUUIDPipe()) jobId: string,
+    @Param('applicationId', new ParseUUIDPipe()) applicationId: string,
+    @Body() dto: UpdateApplicationStatusDto,
+  ): Promise<ApplicantDetailDto> {
+    return this.applicationsService.updateApplicantStatus(
+      user,
+      jobId,
+      applicationId,
+      dto,
     );
   }
 }

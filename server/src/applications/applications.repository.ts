@@ -9,11 +9,14 @@ import { CompanyProfile } from '../auth/entities/company-profile.entity.js';
 import { StudentProfile } from '../auth/entities/student-profile.entity.js';
 import { Job } from '../jobs/entities/job.entity.js';
 import { JobStatus, WorkMode } from '../jobs/job-enums.js';
+import { Notification } from '../notifications/entities/notification.entity.js';
 import { ApplicationStatus } from './application-status.js';
 import {
   ALREADY_APPLIED,
+  APPLICATION_NOT_FOUND,
   JOB_CLOSED,
   JOB_NOT_FOUND,
+  ONLY_SUBMITTED_CAN_BE_REVIEWING,
 } from './applications.constants.js';
 import { ApplicationStatusEvent } from './entities/application-status-event.entity.js';
 import { Application } from './entities/application.entity.js';
@@ -347,5 +350,53 @@ export class ApplicationsRepository {
       createdAt: application.createdAt,
       updatedAt: application.updatedAt,
     };
+  }
+
+  async updateApplicationStatusToReviewing(params: {
+    jobId: string;
+    applicationId: string;
+    jobTitle: string;
+    actorUserId: string;
+  }): Promise<Application> {
+    return this.dataSource.transaction(async (manager) => {
+      const application = await manager
+        .createQueryBuilder(Application, 'app')
+        .setLock('pessimistic_write')
+        .where('app.id = :applicationId AND app.jobId = :jobId', {
+          applicationId: params.applicationId,
+          jobId: params.jobId,
+        })
+        .getOne();
+
+      if (!application) {
+        throw new NotFoundException(APPLICATION_NOT_FOUND);
+      }
+
+      if (application.status !== ApplicationStatus.Submitted) {
+        throw new BadRequestException(ONLY_SUBMITTED_CAN_BE_REVIEWING);
+      }
+
+      const fromStatus = application.status;
+      application.status = ApplicationStatus.Reviewing;
+      const updatedApplication = await manager.save(Application, application);
+
+      const statusEvent = manager.create(ApplicationStatusEvent, {
+        applicationId: application.id,
+        fromStatus,
+        toStatus: ApplicationStatus.Reviewing,
+        actorUserId: params.actorUserId,
+      });
+      await manager.save(ApplicationStatusEvent, statusEvent);
+
+      const notification = manager.create(Notification, {
+        studentId: application.studentId,
+        applicationId: application.id,
+        message: `สถานะใบสมัครงาน ${params.jobTitle} ปรับเป็น Reviewing`,
+        readAt: null,
+      });
+      await manager.save(Notification, notification);
+
+      return updatedApplication;
+    });
   }
 }

@@ -5,7 +5,6 @@ import 'package:client/core/theme/app_theme.dart';
 import 'package:client/features/company_jobs/domain/entities/company_job.dart';
 import 'package:client/features/company_jobs/domain/repositories/company_job_repository.dart';
 import 'package:client/features/company_jobs/presentation/providers/company_jobs_controller.dart';
-import 'package:client/features/company_jobs/presentation/screens/applicant_detail_screen.dart';
 import 'package:client/features/company_jobs/presentation/screens/applicants_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
