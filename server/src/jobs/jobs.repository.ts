@@ -12,6 +12,8 @@ export interface OpenJobFilter {
   workMode?: WorkMode;
   category?: string;
   hasAllowance?: boolean;
+  page?: number;
+  limit?: number;
 }
 
 export interface OpenJobRecord {
@@ -106,14 +108,24 @@ export class JobsRepository {
       .then(() => undefined);
   }
 
-  listSaved(studentId: string): Promise<OpenJobRecord[]> {
-    return this.dataSource
+  async listSaved(
+    studentId: string,
+    pagination?: { page?: number; limit?: number },
+  ): Promise<{ items: OpenJobRecord[]; total: number }> {
+    const qb = this.dataSource
       .getRepository(Job)
       .createQueryBuilder('job')
       .innerJoin(CompanyProfile, 'company', 'company.id = job.companyId')
       .innerJoin(SavedJob, 'saved', 'saved.jobId = job.id')
       .where('saved.studentId = :studentId', { studentId })
-      .andWhere('job.status = :status', { status: JobStatus.Open })
+      .andWhere('job.status = :status', { status: JobStatus.Open });
+
+    const total = await qb.getCount();
+    const page = Math.max(1, pagination?.page ?? 1);
+    const limit = Math.min(100, Math.max(1, pagination?.limit ?? 20));
+    const skip = (page - 1) * limit;
+
+    const rows = await qb
       .select('job.id', 'id')
       .addSelect('job.title', 'title')
       .addSelect('company.name', 'companyName')
@@ -123,26 +135,43 @@ export class JobsRepository {
       .addSelect('job.hasAllowance', 'hasAllowance')
       .addSelect('job.status', 'status')
       .orderBy('saved.createdAt', 'DESC')
-      .getRawMany<Record<string, unknown>>()
-      .then((rows) => rows.map(toOpenJob));
+      .offset(skip)
+      .limit(limit)
+      .getRawMany<Record<string, unknown>>();
+
+    return {
+      items: rows.map(toOpenJob),
+      total,
+    };
   }
 
-  listByCompany(companyId: string): Promise<CompanyJobRecord[]> {
-    return this.dataSource
+  async listByCompany(
+    companyId: string,
+    pagination?: { page?: number; limit?: number },
+  ): Promise<{ items: CompanyJobRecord[]; total: number }> {
+    const page = Math.max(1, pagination?.page ?? 1);
+    const limit = Math.min(100, Math.max(1, pagination?.limit ?? 20));
+    const skip = (page - 1) * limit;
+
+    const [jobs, total] = await this.dataSource
       .getRepository(Job)
-      .find({
+      .findAndCount({
         where: { companyId },
         select: { id: true, title: true, status: true },
         order: { createdAt: 'DESC' },
-      })
-      .then((jobs) =>
-        jobs.map((job) => ({
-          id: job.id,
-          title: job.title,
-          status: job.status,
-          applicantCount: 0,
-        })),
-      );
+        skip,
+        take: limit,
+      });
+
+    return {
+      items: jobs.map((job) => ({
+        id: job.id,
+        title: job.title,
+        status: job.status,
+        applicantCount: 0,
+      })),
+      total,
+    };
   }
 
   create(input: NewJob): Promise<Job> {
@@ -199,7 +228,9 @@ export class JobsRepository {
       .then((result) => (result.affected ?? 0) > 0);
   }
 
-  findOpen(filter: OpenJobFilter): Promise<OpenJobRecord[]> {
+  async findOpen(
+    filter: OpenJobFilter,
+  ): Promise<{ items: OpenJobRecord[]; total: number }> {
     const jobs = this.dataSource
       .getRepository(Job)
       .createQueryBuilder('job')
@@ -234,7 +265,12 @@ export class JobsRepository {
       });
     }
 
-    return jobs
+    const total = await jobs.getCount();
+    const page = Math.max(1, filter.page ?? 1);
+    const limit = Math.min(100, Math.max(1, filter.limit ?? 20));
+    const skip = (page - 1) * limit;
+
+    const rows = await jobs
       .select('job.id', 'id')
       .addSelect('job.title', 'title')
       .addSelect('company.name', 'companyName')
@@ -244,8 +280,14 @@ export class JobsRepository {
       .addSelect('job.hasAllowance', 'hasAllowance')
       .addSelect('job.status', 'status')
       .orderBy('job.createdAt', 'DESC')
-      .getRawMany<Record<string, unknown>>()
-      .then((rows) => rows.map(toOpenJob));
+      .offset(skip)
+      .limit(limit)
+      .getRawMany<Record<string, unknown>>();
+
+    return {
+      items: rows.map(toOpenJob),
+      total,
+    };
   }
 
   findOpenById(id: string): Promise<OpenJobDetail | null> {

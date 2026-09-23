@@ -12,6 +12,10 @@ import { JobDetailDto } from './dto/job-detail.dto.js';
 import { JobDto } from './dto/job.dto.js';
 import { JobFeedItemDto } from './dto/job-feed-item.dto.js';
 import { JobFeedQueryDto } from './dto/job-feed-query.dto.js';
+import { PaginatedCompanyJobsDto } from './dto/paginated-company-jobs.dto.js';
+import { PaginatedJobsDto } from './dto/paginated-jobs.dto.js';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto.js';
+import { toPaginatedResult } from '../common/dto/paginated-result.js';
 import { UpdateJobDto } from './dto/update-job.dto.js';
 import { JobStatus } from './job-enums.js';
 import { JobsRepository, JobVersionConflictError } from './jobs.repository.js';
@@ -54,18 +58,27 @@ export class JobsService {
   async listOpen(
     user: AuthUser,
     query: JobFeedQueryDto,
-  ): Promise<JobFeedItemDto[]> {
+  ): Promise<PaginatedJobsDto> {
     if (user.role !== UserRole.Student) {
       throw new ForbiddenException(STUDENT_ONLY);
     }
-    const jobs = await this.jobsRepository.findOpen({
+    const page = Math.max(1, query.page ?? 1);
+    const limit = Math.min(100, Math.max(1, query.limit ?? 20));
+    const result = await this.jobsRepository.findOpen({
       search: query.search,
       province: query.province,
       workMode: query.workMode,
       category: query.category,
       hasAllowance: query.hasAllowance,
+      page,
+      limit,
     });
-    return jobs.map(toFeedItem);
+    return toPaginatedResult(
+      result.items.map(toFeedItem),
+      result.total,
+      page,
+      limit,
+    );
   }
 
   async getOpen(user: AuthUser, jobId: string): Promise<JobDetailDto> {
@@ -97,13 +110,29 @@ export class JobsService {
     await this.jobsRepository.unsave(studentId, jobId);
   }
 
-  async listSaved(user: AuthUser): Promise<JobFeedItemDto[]> {
+  async listSaved(
+    user: AuthUser,
+    pagination?: PaginationQueryDto,
+  ): Promise<PaginatedJobsDto> {
     const studentId = await this.requireStudentId(user);
-    const jobs = await this.jobsRepository.listSaved(studentId);
-    return jobs.map(toFeedItem);
+    const page = Math.max(1, pagination?.page ?? 1);
+    const limit = Math.min(100, Math.max(1, pagination?.limit ?? 20));
+    const result = await this.jobsRepository.listSaved(studentId, {
+      page,
+      limit,
+    });
+    return toPaginatedResult(
+      result.items.map(toFeedItem),
+      result.total,
+      page,
+      limit,
+    );
   }
 
-  async listMine(user: AuthUser): Promise<CompanyJobItemDto[]> {
+  async listMine(
+    user: AuthUser,
+    pagination?: PaginationQueryDto,
+  ): Promise<PaginatedCompanyJobsDto> {
     if (user.role !== UserRole.Company) {
       throw new ForbiddenException(COMPANY_ONLY);
     }
@@ -111,8 +140,18 @@ export class JobsService {
     if (!companyId) {
       throw new NotFoundException(COMPANY_NOT_FOUND);
     }
-    const jobs = await this.jobsRepository.listByCompany(companyId);
-    return jobs.map(toCompanyItem);
+    const page = Math.max(1, pagination?.page ?? 1);
+    const limit = Math.min(100, Math.max(1, pagination?.limit ?? 20));
+    const result = await this.jobsRepository.listByCompany(companyId, {
+      page,
+      limit,
+    });
+    return toPaginatedResult(
+      result.items.map(toCompanyItem),
+      result.total,
+      page,
+      limit,
+    );
   }
 
   async getMine(user: AuthUser, jobId: string): Promise<JobDto> {

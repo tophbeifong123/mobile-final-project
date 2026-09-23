@@ -114,18 +114,21 @@ describe('JobsService', () => {
   });
 
   it('returns only the open jobs the repository finds for a student', async () => {
-    repository.findOpen.mockResolvedValue([
-      {
-        id: 'job-1',
-        title: 'Flutter Intern',
-        companyName: 'InternFinder',
-        province: 'สงขลา',
-        workMode: WorkMode.Hybrid,
-        category: 'IT',
-        hasAllowance: true,
-        status: JobStatus.Open,
-      },
-    ]);
+    repository.findOpen.mockResolvedValue({
+      items: [
+        {
+          id: 'job-1',
+          title: 'Flutter Intern',
+          companyName: 'InternFinder',
+          province: 'สงขลา',
+          workMode: WorkMode.Hybrid,
+          category: 'IT',
+          hasAllowance: true,
+          status: JobStatus.Open,
+        },
+      ],
+      total: 1,
+    });
     const query = new JobFeedQueryDto();
     query.search = 'flutter';
     query.province = 'สงขลา';
@@ -141,10 +144,16 @@ describe('JobsService', () => {
       workMode: WorkMode.Hybrid,
       category: 'IT',
       hasAllowance: true,
+      page: 1,
+      limit: 20,
     });
-    expect(result).toHaveLength(1);
-    expect(result[0]?.status).toBe(JobStatus.Open);
-    expect(result[0]?.companyName).toBe('InternFinder');
+    expect(result.items).toHaveLength(1);
+    expect(result.total).toBe(1);
+    expect(result.page).toBe(1);
+    expect(result.limit).toBe(20);
+    expect(result.totalPages).toBe(1);
+    expect(result.items[0]?.status).toBe(JobStatus.Open);
+    expect(result.items[0]?.companyName).toBe('InternFinder');
   });
 
   it('rejects a company reading the student feed', async () => {
@@ -233,51 +242,65 @@ describe('JobsService', () => {
 
   it('lists only the open jobs this student saved', async () => {
     repository.findStudentId.mockResolvedValue('student-1');
-    repository.listSaved.mockResolvedValue([
-      {
-        id: 'job-1',
-        title: 'Flutter Intern',
-        companyName: 'InternFinder',
-        province: 'สงขลา',
-        workMode: WorkMode.Hybrid,
-        category: 'IT',
-        hasAllowance: true,
-        status: JobStatus.Open,
-      },
-    ]);
+    repository.listSaved.mockResolvedValue({
+      items: [
+        {
+          id: 'job-1',
+          title: 'Flutter Intern',
+          companyName: 'InternFinder',
+          province: 'สงขลา',
+          workMode: WorkMode.Hybrid,
+          category: 'IT',
+          hasAllowance: true,
+          status: JobStatus.Open,
+        },
+      ],
+      total: 1,
+    });
 
     const result = await service.listSaved(student);
 
-    expect(repository.listSaved).toHaveBeenCalledWith('student-1');
-    expect(result).toHaveLength(1);
-    expect(result[0]?.title).toBe('Flutter Intern');
+    expect(repository.listSaved).toHaveBeenCalledWith('student-1', {
+      page: 1,
+      limit: 20,
+    });
+    expect(result.items).toHaveLength(1);
+    expect(result.total).toBe(1);
+    expect(result.items[0]?.title).toBe('Flutter Intern');
   });
 
   it('lists the company postings with an applicant count', async () => {
     repository.findCompanyId.mockResolvedValue('company-1');
-    repository.listByCompany.mockResolvedValue([
-      {
-        id: 'job-1',
-        title: 'Flutter Intern',
-        status: JobStatus.Open,
-        applicantCount: 0,
-      },
-      {
-        id: 'job-2',
-        title: 'งานที่ปิดแล้ว',
-        status: JobStatus.Closed,
-        applicantCount: 0,
-      },
-    ]);
+    repository.listByCompany.mockResolvedValue({
+      items: [
+        {
+          id: 'job-1',
+          title: 'Flutter Intern',
+          status: JobStatus.Open,
+          applicantCount: 0,
+        },
+        {
+          id: 'job-2',
+          title: 'งานที่ปิดแล้ว',
+          status: JobStatus.Closed,
+          applicantCount: 0,
+        },
+      ],
+      total: 2,
+    });
 
     const result = await service.listMine(company);
 
-    expect(repository.listByCompany).toHaveBeenCalledWith('company-1');
-    expect(result.map((job) => job.status)).toEqual([
+    expect(repository.listByCompany).toHaveBeenCalledWith('company-1', {
+      page: 1,
+      limit: 20,
+    });
+    expect(result.items.map((job) => job.status)).toEqual([
       JobStatus.Open,
       JobStatus.Closed,
     ]);
-    expect(result[0]?.applicantCount).toBe(0);
+    expect(result.total).toBe(2);
+    expect(result.items[0]?.applicantCount).toBe(0);
   });
 
   it('rejects a student reading the company job list', async () => {

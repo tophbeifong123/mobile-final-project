@@ -12,7 +12,7 @@ class JobRemoteDataSource {
 
   Future<List<JobModel>> fetchFeed(JobFilter filter) async {
     try {
-      final response = await _dio.get<List<dynamic>>(
+      final response = await _dio.get<dynamic>(
         ApiConstants.jobs,
         queryParameters: {
           if (filter.search.trim().isNotEmpty) 'search': filter.search.trim(),
@@ -23,13 +23,23 @@ class JobRemoteDataSource {
           if (filter.category != null && filter.category!.trim().isNotEmpty)
             'category': filter.category!.trim(),
           if (filter.hasAllowance != null) 'hasAllowance': filter.hasAllowance,
+          'page': filter.page,
+          'limit': filter.limit,
         },
       );
       final data = response.data;
       if (data == null) {
         throw const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
       }
-      return data
+      final List<dynamic> list;
+      if (data is Map<String, dynamic> && data['items'] is List) {
+        list = data['items'] as List<dynamic>;
+      } else if (data is List) {
+        list = data;
+      } else {
+        throw const AppException('ข้อมูลไม่ถูกต้อง');
+      }
+      return list
           .map((item) => JobModel.fromJson(item as Map<String, dynamic>))
           .toList();
     } on DioException catch (error) {

@@ -9,6 +9,8 @@ class JobFilter {
     this.workMode,
     this.category,
     this.hasAllowance,
+    this.page = 1,
+    this.limit = 20,
   });
 
   final String search;
@@ -16,6 +18,8 @@ class JobFilter {
   final WorkMode? workMode;
   final String? category;
   final bool? hasAllowance;
+  final int page;
+  final int limit;
 
   bool get hasCriteria =>
       search.trim().isNotEmpty ||
@@ -23,6 +27,69 @@ class JobFilter {
       workMode != null ||
       (category != null && category!.trim().isNotEmpty) ||
       hasAllowance != null;
+
+  bool get hasFilters =>
+      (province != null && province!.trim().isNotEmpty) ||
+      workMode != null ||
+      (category != null && category!.trim().isNotEmpty) ||
+      hasAllowance != null;
+
+  int get filterCount {
+    var count = 0;
+    if (province != null && province!.trim().isNotEmpty) count++;
+    if (workMode != null) count++;
+    if (category != null && category!.trim().isNotEmpty) count++;
+    if (hasAllowance != null) count++;
+    return count;
+  }
+
+  JobFilter copyWith({
+    String? search,
+    String? province,
+    bool clearProvince = false,
+    WorkMode? workMode,
+    bool clearWorkMode = false,
+    String? category,
+    bool clearCategory = false,
+    bool? hasAllowance,
+    bool clearAllowance = false,
+    int? page,
+    int? limit,
+  }) {
+    return JobFilter(
+      search: search ?? this.search,
+      province: clearProvince ? null : province ?? this.province,
+      workMode: clearWorkMode ? null : workMode ?? this.workMode,
+      category: clearCategory ? null : category ?? this.category,
+      hasAllowance: clearAllowance ? null : hasAllowance ?? this.hasAllowance,
+      page: page ?? this.page,
+      limit: limit ?? this.limit,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is JobFilter &&
+        other.search == search &&
+        other.province == province &&
+        other.workMode == workMode &&
+        other.category == category &&
+        other.hasAllowance == hasAllowance &&
+        other.page == page &&
+        other.limit == limit;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    search,
+    province,
+    workMode,
+    category,
+    hasAllowance,
+    page,
+    limit,
+  );
 }
 
 class Job {

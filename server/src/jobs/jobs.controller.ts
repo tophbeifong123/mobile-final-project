@@ -21,8 +21,9 @@ import { type AuthUser } from '../auth/auth-user.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { JobDetailDto } from './dto/job-detail.dto.js';
-import { JobFeedItemDto } from './dto/job-feed-item.dto.js';
 import { JobFeedQueryDto } from './dto/job-feed-query.dto.js';
+import { PaginatedJobsDto } from './dto/paginated-jobs.dto.js';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto.js';
 import { JobsService } from './jobs.service.js';
 
 @ApiTags('Jobs')
@@ -34,24 +35,27 @@ export class JobsController {
 
   @Get()
   @ApiOperation({ summary: 'รายการงานที่เปิดรับ' })
-  @ApiResponse({ status: 200, type: [JobFeedItemDto] })
+  @ApiResponse({ status: 200, type: PaginatedJobsDto })
   @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
   @ApiResponse({ status: 403, description: 'เฉพาะนักศึกษา' })
   list(
     @CurrentUser() user: AuthUser,
     @Query() query: JobFeedQueryDto,
-  ): Promise<JobFeedItemDto[]> {
+  ): Promise<PaginatedJobsDto> {
     return this.jobsService.listOpen(user, query);
   }
 
   @Get('saved')
   @ApiOperation({ summary: 'งานที่นักศึกษาบันทึกไว้และยังเปิดรับ' })
-  @ApiResponse({ status: 200, type: [JobFeedItemDto] })
+  @ApiResponse({ status: 200, type: PaginatedJobsDto })
   @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
   @ApiResponse({ status: 403, description: 'เฉพาะนักศึกษา' })
   @ApiResponse({ status: 404, description: 'ไม่พบโปรไฟล์' })
-  listSaved(@CurrentUser() user: AuthUser): Promise<JobFeedItemDto[]> {
-    return this.jobsService.listSaved(user);
+  listSaved(
+    @CurrentUser() user: AuthUser,
+    @Query() pagination: PaginationQueryDto,
+  ): Promise<PaginatedJobsDto> {
+    return this.jobsService.listSaved(user, pagination);
   }
 
   @Get(':id')

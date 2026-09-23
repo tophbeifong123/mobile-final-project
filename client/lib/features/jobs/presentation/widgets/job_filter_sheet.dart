@@ -71,12 +71,12 @@ class _JobFilterSheetState extends State<JobFilterSheet> {
                 ),
               ),
               const SizedBox(height: 12),
-              DropdownButtonFormField<WorkMode>(
+              DropdownButtonFormField<WorkMode?>(
                 key: ValueKey(_workMode),
                 initialValue: _workMode,
                 decoration: const InputDecoration(labelText: 'รูปแบบงาน'),
                 items: [
-                  const DropdownMenuItem(child: Text('ทั้งหมด')),
+                  const DropdownMenuItem(value: null, child: Text('ทั้งหมด')),
                   for (final mode in WorkMode.values)
                     DropdownMenuItem(
                       value: mode,
@@ -89,10 +89,46 @@ class _JobFilterSheetState extends State<JobFilterSheet> {
               TextField(
                 controller: _category,
                 textInputAction: TextInputAction.done,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'หมวดงาน',
-                  prefixIcon: Icon(Icons.category_outlined),
+                  prefixIcon: const Icon(Icons.category_outlined),
+                  suffixIcon: _category.text.isNotEmpty
+                      ? IconButton(
+                          tooltip: 'ล้างหมวดงาน',
+                          onPressed: () => setState(() => _category.clear()),
+                          icon: const Icon(Icons.clear, size: 20),
+                        )
+                      : null,
                 ),
+                onChanged: (_) => setState(() {}),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: [
+                  for (final cat in [
+                    'IT & Software',
+                    'Design & UX/UI',
+                    'Marketing',
+                    'Data',
+                  ])
+                    ActionChip(
+                      label: Text(cat),
+                      avatar: _category.text.trim() == cat
+                          ? const Icon(Icons.check, size: 16)
+                          : null,
+                      onPressed: () {
+                        setState(() {
+                          if (_category.text.trim() == cat) {
+                            _category.clear();
+                          } else {
+                            _category.text = cat;
+                          }
+                        });
+                      },
+                    ),
+                ],
               ),
               const SizedBox(height: 16),
               Text('เบี้ยเลี้ยง', style: textTheme.titleMedium),

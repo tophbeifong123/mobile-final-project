@@ -12,12 +12,20 @@ class CompanyJobRemoteDataSource {
 
   Future<List<CompanyJobModel>> fetchMine() async {
     try {
-      final response = await _dio.get<List<dynamic>>(ApiConstants.companyJobs);
+      final response = await _dio.get<dynamic>(ApiConstants.companyJobs);
       final data = response.data;
       if (data == null) {
         throw const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
       }
-      return data
+      final List<dynamic> list;
+      if (data is Map<String, dynamic> && data['items'] is List) {
+        list = data['items'] as List<dynamic>;
+      } else if (data is List) {
+        list = data;
+      } else {
+        throw const AppException('ข้อมูลไม่ถูกต้อง');
+      }
+      return list
           .map((item) => CompanyJobModel.fromJson(item as Map<String, dynamic>))
           .toList();
     } on DioException catch (error) {
