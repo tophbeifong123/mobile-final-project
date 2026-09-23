@@ -1,47 +1,253 @@
+# 🎨 Internship Matching Platform — Design System & UI/UX Specification (design.md)
+
+> **Design Direction:** Retro-Chunky Neo-Brutalism & Playful Illustrated EdTech  
+> **Target Audience:** Gen-Z University Students (Undergraduates / Interns) & Modern Tech / Startup Recruiters  
+> **Form Factor:** Mobile-first viewport (`390px` – `430px`, max-width `448px`), iOS/Android compliant touch targets.
+
 ---
-description: Design system, UI styling, and mobile layout for InternFinder Flutter screens
-globs: client/**/*.dart
-alwaysApply: false
+
+## 1. 🌈 Design Foundations & Philosophy
+
+### 1.1 Core Principles
+1. **Playful yet Purposeful (ขี้เล่นแต่จริงจัง):** Combining chunky retro pop illustration with clear recruitment ergonomics. Information must never be obscured by novelty.
+2. **Hard Surfaces & Physical Tactility:** No soft Gaussian blurs or subtle drop shadows. Instead, we use solid black outlines (`2px` – `3.5px`) with hard `3px 3px 0px #18181B` offset shadows that depress on tap.
+3. **Warm Paper Canvas:** Ditching sterile pure white `#FFFFFF` backgrounds in favor of warm creamy tones (`#FDF8EE` / `#FFFBEB`) mimicking zines, indie comic prints, and retro Japanese editorial layouts.
+4. **Instant Scannability:** Pill badges, color-coded status chips, bold emoji stickers, and oversized numerals for stipends and match percentages.
+
 ---
 
-# InternFinder (INTERNTH) — Design System
+## 2. 🎨 Color Tokens & Palette
 
-Soft Professional Claymorphism: นุ่ม น่าเชื่อถือ อ่านง่าย ห้ามดูเหมือนของเล่นหรือเกม
+### 2.1 Surfaces & Neutrals
+| Token Name | Hex Code | Tailwind Equivalent | Usage |
+| :--- | :--- | :--- | :--- |
+| **Paper Canvas** | `#FDF8EE` | Custom / `bg-amber-50/40` | Main screen background |
+| **Card / Surface Cream** | `#FFFBEB` | `bg-amber-50` | Secondary surface, headers, bottom sheets |
+| **Pure White** | `#FFFFFF` | `bg-white` | Form fields, active card interiors |
+| **Ink Solid (Outlines)** | `#18181B` | `border-zinc-900` / `text-zinc-900` | Borders, primary typography, hard drop shadows |
+| **Subtle Ink** | `#4B5563` | `text-gray-600` | Secondary descriptions, timestamps |
+| **Muted Ink** | `#9CA3AF` | `text-gray-400` | Placeholders, inactive state icons |
 
-ใช้เอฟเฟกต์ clay เฉพาะปุ่มหลัก, ป้ายสถานะ และ hero card ฟอร์ม รายการข้อมูล และตัวหนังสือให้แบน
+### 2.2 Vibrant Retro Accents
+| Accent Name | Hex Code | Purpose | Emotional Tone |
+| :--- | :--- | :--- | :--- |
+| **Butter Yellow** | `#FEF08A` | Primary highlights, stipend tags, filter triggers | Warmth, energetic, optimism |
+| **Sky Blue** | `#BAE6FD` | Tech cards, info banners, student headers | Friendly, digital, calm |
+| **Pastel Coral / Peach** | `#FDBA74` | Design banners, CTAs, pending review badges | Creativity, warmth |
+| **Soft Lilac / Purple** | `#DDD6FE` | Art/Illustration badges, interview stages | Quirky, modern indie |
+| **Fresh Mint** | `#A7F3D0` | Approved/Offer status, match rate, active roles | Success, high match |
+| **Soft Rose** | `#FDA4AF` | Rejected status, delete actions, warnings | Direct without being punitive |
+| **Deep Electric Indigo** | `#4F46E5` | Primary action button, brand anchor | Tech credibility & contrast |
 
-## สีและพื้นผิว
+---
 
-- พื้นหลังหน้า `#EEF4FF` หรือ `#F8F9FF` ห้ามใช้ `#FFFFFF` ทั้งหน้า เพราะการ์ดขาวจะไม่ลอย
-- การ์ดขาว `#FFFFFF` มุม 16–24
-- เงา indigo บางชั้น ห้ามเงาดำทึบ: `0 10px 25px -5px rgba(79, 70, 229, 0.08)` และ `0 4px 6px -2px rgba(0, 0, 0, 0.03)`
-- Primary `#4F46E5` กดแล้ว `#4338CA` ไฮไลต์ `#F59E0B` สำเร็จ `#10B981`
-- ข้อความ `#1E293B` ข้อความรอง `#64748B` คอนทราสต์ระดับ WCAG AA
+## 3. ✍️ Typography & Elevation Rules
 
-## ภาษาไทย
+### 3.1 Typography
+- **Heading / Display Font:** Serif / Grotesk Display (`font-serif` / `Clash Display` / `Cooper Black` style fallback) with `font-black` weights.
+- **Body & Numerical Font:** Clean Geometric Sans (`Inter` / `Plus Jakarta Sans` / `Noto Sans Thai` for bilingual support).
+- **Scale:**
+  - `Hero / Title`: `24px` – `32px` (Line height: `1.15`, letter-spacing: `-0.03em`)
+  - `Section Header`: `18px` – `20px` (Weight: `900`)
+  - `Card Title / Item`: `14px` – `15px` (Weight: `800`)
+  - `Body / Descriptions`: `12px` – `13px` (Weight: `500`, Line height: `1.5`)
+  - `Micro / Badges / Timestamps`: `10px` – `11px` (Weight: `800`, uppercase tracking)
 
-- ฟอนต์ Plus Jakarta Sans, Sukhumvit Set, Kanit หรือ Prompt
-- `height` ของข้อความไทยอยู่ที่ 1.5–1.6 ห้ามต่ำกว่า 1.3 เพราะวรรณยุกต์จะถูกตัด
-- สำนวนสุภาพ ใช้คำทับศัพท์ที่คุ้น: Resume, Status, PDF, Dashboard, Login
+### 3.2 Elevation & Shadow Elevation Matrix
+```css
+/* Chunky Neo-Brutalist CSS Rules */
+--border-standard: 2.5px solid #18181B;
+--border-thin: 1.5px solid #18181B;
+--border-thick: 3.5px solid #18181B;
 
-## เลย์เอาต์มือถือ
+/* Elevation 1 (Chips / Badges) */
+box-shadow: 1.5px 1.5px 0px #18181B;
 
-- ออกแบบคอลัมน์เดียว กว้างประมาณ 390
-- ปุ่มหลักอยู่ชิดล่างในเขตนิ้วโป้งกดถึง และเป้าหมายสัมผัสอย่างน้อย 44×44
-- Filter ของ Home ยังเป็น bottom sheet ไม่สร้าง route แยก
+/* Elevation 2 (Cards / Inputs / Buttons) */
+box-shadow: 3px 3px 0px #18181B;
 
-## โครงหน้าใหม่
+/* Elevation 3 (Device Frame / Floating Panels) */
+box-shadow: 6px 6px 0px #18181B;
 
-1. แถบบน: ปุ่มกลับ, ชื่อหน้าภาษาไทย, แอ็กชันรองถ้ามี
-2. เนื้อหา: hero card แล้วตามด้วยฟอร์ม รายการ หรือป้ายสถานะ
-3. แถบล่าง: ปุ่มหลักสี indigo แบบ clay
+/* Active Pressed Effect */
+transform: translate(2px, 2px);
+box-shadow: 1px 1px 0px #18181B;
+```
 
-## วิธีใช้ใน Flutter
+---
 
-หน้าจออยู่ที่ `client/` ใช้ Material 3 ไม่สร้างไฟล์ CSS หรือคลาส Tailwind
+## 4. 🧩 Core Component Anatomy
 
-- สี รัศมี และเงาอยู่ที่ `client/lib/core/theme/app_theme.dart` หน้าอื่นอ่านจาก `Theme.of(context)`
-- ห้ามใส่ `Color(0x...)` ซ้ำในฟีเจอร์ ถ้าโทเคนเปลี่ยน แก้ที่ theme ในคอมมิตเดียวกัน
-- พื้นหลังหน้าเป็น `scaffoldBackgroundColor` การ์ดใช้ `Card` ปุ่มหลักใช้ `FilledButton`
-- ปุ่มชิดล่างใช้ `bottomNavigationBar` หรือ `persistentFooterButtons` ครอบ `SafeArea`
-- ระยะขอบเนื้อหา 16 มีที่ว่างเหนือแถบล่าง ไม่ให้เนื้อหาถูกปุ่มบัง
+### 4.1 Neo-Card (`NeoCard`)
+- **Container:** `rounded-2xl`, `border-[2.5px] border-[#18181B]`, `shadow-[3px_3px_0px_#18181B]`.
+- **States:** Hover/tap moves `translate-x-[2px] translate-y-[2px]` with shadow reduction.
+- **Header:** Company avatar (`44px` by `44px` rounded square with solid border).
+
+### 4.2 Pill Tags & Badges (`NeoBadge`)
+- **Shape:** `rounded-full` or `rounded-lg`, border `1.5px` to `2px`.
+- **Colors:** Contextual (e.g. Remote = Mint `#A7F3D0`, Hybrid = Lilac `#DDD6FE`, Stipend = Butter Yellow `#FEF08A`).
+
+### 4.3 Form Controls
+- **Inputs:** `h-11`, `rounded-xl`, `border-[2.5px] border-[#18181B]`, `shadow-[2.5px_2.5px_0px_#18181B]`.
+- **Focus State:** Background shifts to `#FEF08A`/15% tint with border remaining deep black.
+- **Labels:** Uppercase `11px`, `tracking-wider`, `font-black`.
+
+### 4.4 Sticky Bottom Action Bar
+- Pinned at the bottom of the viewport with frosted glass / solid backing (`bg-white/95 backdrop-blur-sm`).
+- Top solid border `2.5px solid #18181B`.
+- Primary CTA button takes `flex-1` width alongside a quick action square button (e.g., Bookmark / Shortlist).
+
+---
+
+## 5. 📱 Screen Specifications (18 Screens + 1 Filter Sheet)
+
+### Part 1: Common & Authentication (3 Screens)
+
+```
+[Splash Screen] ──────────► [Login Screen] ──────────► [Register Screen]
+  - Illustrated Hero          - Student / Company Tab     - Student vs Recruiter Cards
+  - Value Prop Tagline        - Google 1-Tap CTA          - Fast Onboarding
+```
+
+#### 1. Splash Screen
+- **Visuals:** Large retro rocket sticker `🚀`, wavy decorative underlines, contrast CTA.
+- **Actions:** "Get Started" (routes to Login) and "Explore As Guest 👋" (direct to Student Feed).
+
+#### 2. Login Screen
+- **Role Segmented Control:** Segmented pill toggle `[ 🎓 Student ]` vs `[ 🏢 Company ]`.
+- **Fields:** Email, Password with show/hide, Remember Me checkbox, and Google social login button.
+
+#### 3. Register Screen
+- **Role Selector Cards:** Side-by-side selectable chunky cards (Student looking for internships vs Recruiter posting positions).
+- **Inputs:** Full name, School/Company domain email, password.
+
+---
+
+### Part 2: Student Flow (9 Screens + 1 Filter Sheet)
+
+#### 4. Job Feed & Home Screen
+- **Header:** Sticky top header with user avatar, greeting, and notification bell with unread indicator dot.
+- **Quick Banners:** 2 chunky promotional cards (`25K+ Stipend Tech` & `18K+ Creative Design`).
+- **Search Bar & Filter Trigger:** Search input with instant clear button + dedicated filter slider trigger.
+- **Category Chips:** Horizontal scroller (`All`, `Design`, `Software`, `Marketing`, `Data`).
+- **Job Cards Feed:**
+  - Company logo with background accent.
+  - Position title, company name, relative post date (`2d ago`).
+  - Stipend badge (`💰 18,000 THB`) and location badge (`Hybrid / Bangkok`).
+  - Bookmark toggle button with active state persistence.
+
+#### 4.1 Filter Bottom Sheet (Overlay)
+- Accessible from Home Feed search bar.
+- Filters:
+  - **Work Format:** `All`, `Hybrid`, `Remote`, `Onsite` chips.
+  - **Job Category:** Grid selector.
+  - **Stipend Toggle:** "มีเบี้ยเลี้ยงเท่านั้น (Paid Only)" toggle switch.
+- Action Buttons: `Clear All` (Outline) and `Apply Filter (X Results)` (Primary Indigo).
+
+#### 5. Job Detail Screen
+- **Hero Card:** Position name, company header, duration badge, stipend highlight.
+- **Stat Cards:** 2-column metrics (Application Deadline & Response Rate ~2-3 Days).
+- **Content Sections:** Role Overview, Bulleted Requirements with green checkmarks, and Benefits tags.
+- **Sticky Footer Bar:** Bookmark button + "Apply Now (ใช้เรซูเม่นี้)" action button.
+
+#### 6. Saved Jobs Screen
+- Filtered view of all bookmarked internships.
+- Card includes quick stipend summary, remove action, and 1-tap redirect to application flow.
+- Empty state with cute bookmark illustration.
+
+#### 7. Student Profile Screen
+- **Profile Header Card:** Custom avatar emoji with edit button, university, faculty, year, and GPA pill.
+- **Bio Section:** Editable statement with playful copy.
+- **Skills Tag Cloud:** Removable skill pills + inline text input with "+ Add" to dynamically append new skills.
+- **Active Resume Preview Card:** Quick glance at the active PDF name, file size, and upload date with quick edit CTA.
+- **Portfolio Links:** External links for Behance, GitHub, and LinkedIn.
+
+#### 8. Resume Upload Screen
+- **Upload Dropzone:** Dashed 3px border container with upload icon.
+- **Auto-Parser Badge:** "Auto-Parses Skills & GPA".
+- **Current Resume Card:** File preview with file size, modified date, "Replace PDF", and "Delete" actions.
+
+#### 9. Apply Job Screen
+- **Recap Card:** Target position and company summary.
+- **Applicant Data Check:** Pre-filled student name, university, and attached PDF resume name.
+- **Cover Statement Textarea:** Pre-filled contextual draft with prompt helper `[+ Insert Availability]`.
+- **CTA:** "Confirm & Send Application 🚀".
+
+#### 10. My Applications Screen
+- **Status Filter Tabs:** `All`, `In Review`, `Interview`, `Accepted`.
+- **Application List Item:** Company avatar, position, status chip with distinct colors, applied date, and link to detailed timeline.
+
+#### 11. Application Detail (Sequential Step Timeline)
+- Step-by-step progress tracking component:
+  1. *Application Submitted* (Date, attached assets)
+  2. *Application In Review* (Reviewing recruiter name)
+  3. *Interview Call* (Current step indicator with date & time)
+  4. *Final Result* (Pending / Offer status)
+- Recruiter contact box with "Send Message" action.
+
+#### 12. Notifications Screen
+- Activity stream showing company actions (viewed application, interview invitations, algorithm match alerts).
+- Unread indicator dots and "Mark all read" quick action.
+
+---
+
+### Part 3: Company / Recruiter Flow (6 Screens)
+
+#### 13. Company Dashboard
+- **Metric Cards (2x2 Grid):**
+  - *Active Roles* (`4`)
+  - *Applicants* (`38`)
+  - *Pending Review* (`9`)
+  - *Shortlisted* (`6`)
+- **Quick Action CTA:** "Post New Job" button.
+- **Recent Candidates List:** Direct access to review incoming applicants.
+
+#### 14. Company Profile Screen
+- Company avatar, verified partner badge, industry tags, office location, official careers URL, and recruiter leads.
+
+#### 15. Manage Jobs Screen
+- List of open job postings with status indicators (`Active` vs `Closed`), total candidate count pill, and edit/delete actions.
+
+#### 16. Create / Edit Job Form
+- Structured inputs:
+  - Position Name / Job Title
+  - Format (Dropdown: `Hybrid`, `Onsite`, `Remote`)
+  - Stipend Amount (`THB/Month`)
+  - Description & Responsibilities
+  - Duration & Location
+- Publish button with validation feedback.
+
+#### 17. Applicants List Screen
+- Candidate cards ranked with match percentages (`96% Match`, `89% Match`).
+- Candidate university, faculty, applied timestamp, and extracted top skills.
+- Status tag showing current pipeline step.
+
+#### 18. Applicant Detail & Reviewer
+- Full student dossier with GPA and match score badge.
+- Candidate cover note quote box.
+- Embedded resume PDF viewer preview with download action.
+- Internal Recruiter Notes textarea.
+- **Sticky Pipeline Action Bar:** 4 quick buttons to transition candidate status:
+  - `[ Shortlist ]`
+  - `[ Interview ]`
+  - `[ Accept 🎉 ]`
+  - `[ Reject ]`
+
+---
+
+## 6. 🛠️ Interactive Dev Prototype Navigator
+An omnipresent floating dev toolbar is positioned at the top of the mobile frame for seamless design reviews and stakeholder presentations:
+- Displays current active screen key and active user role (`Student` vs `Company`).
+- Categorized 1-tap jump buttons across all 18 screens.
+- One-click access to the modal Filter Bottom Sheet.
+
+---
+
+## 7. 📐 Responsive & Touch Ergonomics
+- **Minimum Tap Target:** `44px` height on all buttons, tabs, and interactive chips.
+- **Safe Area Insets:** Padding account for mobile home indicator bars (`pb-20` on bottom navigation views).
+- **Z-Index System:**
+  - `z-10`: Interactive cards and badges.
+  - `z-30`: Sticky bottom navigation bars.
+  - `z-40`: Sticky action drawers (Job Detail CTA, Candidate Review Bar).
+  - `z-50`: Modals, filter bottom sheets, and system toast notifications.
