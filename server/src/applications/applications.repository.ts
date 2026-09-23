@@ -73,6 +73,23 @@ export interface JobApplicantRecord {
   createdAt: Date;
 }
 
+export interface CompanyApplicantDetailRecord {
+  applicationId: string;
+  jobId: string;
+  studentId: string;
+  fullName: string;
+  university: string;
+  major: string;
+  skills: string[];
+  portfolioUrl: string | null;
+  resumeFileName: string | null;
+  status: ApplicationStatus;
+  coverLetter: string;
+  resumeObjectKey: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 @Injectable()
 export class ApplicationsRepository {
   constructor(private readonly dataSource: DataSource) {}
@@ -293,5 +310,42 @@ export class ApplicationsRepository {
       coverLetter: (row.coverLetter as string) ?? '',
       createdAt: new Date(row.createdAt as string | Date),
     }));
+  }
+
+  async findCompanyApplicantDetail(
+    jobId: string,
+    applicationId: string,
+  ): Promise<CompanyApplicantDetailRecord | null> {
+    const application = await this.dataSource
+      .getRepository(Application)
+      .findOne({
+        where: { id: applicationId, jobId },
+      });
+    if (!application) {
+      return null;
+    }
+
+    const student = await this.dataSource
+      .getRepository(StudentProfile)
+      .findOne({
+        where: { id: application.studentId },
+      });
+
+    return {
+      applicationId: application.id,
+      jobId: application.jobId,
+      studentId: application.studentId,
+      fullName: student?.fullName ?? '',
+      university: student?.university ?? '',
+      major: student?.major ?? '',
+      skills: Array.isArray(student?.skills) ? student.skills : [],
+      portfolioUrl: student?.portfolioUrl ?? null,
+      resumeFileName: student?.resumeFileName ?? null,
+      status: application.status,
+      coverLetter: application.coverLetter,
+      resumeObjectKey: application.resumeObjectKey,
+      createdAt: application.createdAt,
+      updatedAt: application.updatedAt,
+    };
   }
 }

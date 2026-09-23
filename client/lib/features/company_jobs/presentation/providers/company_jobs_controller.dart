@@ -28,6 +28,14 @@ final companyJobApplicantsProvider =
   return ref.watch(companyJobRepositoryProvider).fetchApplicants(jobId);
 });
 
+final companyApplicantDetailProvider = FutureProvider.family<
+    Applicant,
+    ({String jobId, String applicationId})>((ref, arg) {
+  return ref
+      .watch(companyJobRepositoryProvider)
+      .fetchApplicant(jobId: arg.jobId, applicationId: arg.applicationId);
+});
+
 class CompanyJobsController extends Notifier<void> {
   @override
   void build() {

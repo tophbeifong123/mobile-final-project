@@ -19,6 +19,7 @@ import { type AuthUser } from '../auth/auth-user.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { ApplicationsService } from './applications.service.js';
+import { ApplicantDetailDto } from './dto/applicant-detail.dto.js';
 import { ApplicationDetailDto } from './dto/application-detail.dto.js';
 import { ApplicationResponseDto } from './dto/application-response.dto.js';
 import { ApplyJobDto } from './dto/apply-job.dto.js';
@@ -113,5 +114,42 @@ export class ApplicationsController {
     @Param('id', new ParseUUIDPipe()) jobId: string,
   ): Promise<JobApplicantItemDto[]> {
     return this.applicationsService.getJobApplicants(user, jobId);
+  }
+
+  @Get('company/jobs/:id/applications/:applicationId')
+  @ApiOperation({
+    summary: 'รายละเอียดผู้สมัคร โปรไฟล์ Resume และ Cover Letter',
+  })
+  @ApiParam({ name: 'id', format: 'uuid', description: 'รหัสประกาศงาน' })
+  @ApiParam({
+    name: 'applicationId',
+    format: 'uuid',
+    description: 'รหัสใบสมัคร',
+  })
+  @ApiResponse({
+    status: 200,
+    type: ApplicantDetailDto,
+    description:
+      'รายละเอียดผู้สมัคร ข้อมูลโปรไฟล์นักศึกษา Resume และ Cover Letter',
+  })
+  @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
+  @ApiResponse({
+    status: 403,
+    description: 'เฉพาะบริษัท หรือไม่ใช่ประกาศของบริษัทนี้',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'ไม่พบประกาศงาน ใบสมัคร หรือโปรไฟล์บริษัท',
+  })
+  getApplicantDetail(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ParseUUIDPipe()) jobId: string,
+    @Param('applicationId', new ParseUUIDPipe()) applicationId: string,
+  ): Promise<ApplicantDetailDto> {
+    return this.applicationsService.getApplicantDetail(
+      user,
+      jobId,
+      applicationId,
+    );
   }
 }

@@ -385,4 +385,127 @@ describe('ApplicationsService', () => {
       });
     });
   });
+
+  describe('getApplicantDetail', () => {
+    const companyProfile = {
+      id: 'company-profile-456',
+      userId: 'company-user-456',
+      name: 'Tech Co',
+    };
+
+    const targetJob = {
+      id: 'job-123',
+      companyId: 'company-profile-456',
+      title: 'Frontend Intern',
+    };
+
+    it('rejects if role is not company', async () => {
+      await expect(
+        service.getApplicantDetail(studentUser, 'job-123', 'app-1'),
+      ).rejects.toThrow(new ForbiddenException(COMPANY_ONLY));
+    });
+
+    it('throws NotFoundException if company profile does not exist', async () => {
+      (repository as any).findCompanyProfileByUserId = vi
+        .fn()
+        .mockResolvedValue(null);
+
+      await expect(
+        service.getApplicantDetail(companyUser, 'job-123', 'app-1'),
+      ).rejects.toThrow(new NotFoundException(COMPANY_PROFILE_NOT_FOUND));
+    });
+
+    it('throws NotFoundException if job does not exist', async () => {
+      (repository as any).findCompanyProfileByUserId = vi
+        .fn()
+        .mockResolvedValue(companyProfile);
+      (repository as any).findJobById = vi.fn().mockResolvedValue(null);
+
+      await expect(
+        service.getApplicantDetail(companyUser, 'job-123', 'app-1'),
+      ).rejects.toThrow(new NotFoundException(JOB_NOT_FOUND));
+    });
+
+    it('throws ForbiddenException if job belongs to another company', async () => {
+      (repository as any).findCompanyProfileByUserId = vi
+        .fn()
+        .mockResolvedValue(companyProfile);
+      (repository as any).findJobById = vi.fn().mockResolvedValue({
+        id: 'job-123',
+        companyId: 'other-company-789',
+      });
+
+      await expect(
+        service.getApplicantDetail(companyUser, 'job-123', 'app-1'),
+      ).rejects.toThrow(new ForbiddenException(NOT_YOUR_JOB));
+    });
+
+    it('throws NotFoundException if applicant detail does not exist', async () => {
+      (repository as any).findCompanyProfileByUserId = vi
+        .fn()
+        .mockResolvedValue(companyProfile);
+      (repository as any).findJobById = vi
+        .fn()
+        .mockResolvedValue(targetJob);
+      (repository as any).findCompanyApplicantDetail = vi
+        .fn()
+        .mockResolvedValue(null);
+
+      await expect(
+        service.getApplicantDetail(companyUser, 'job-123', 'app-non-existent'),
+      ).rejects.toThrow(new NotFoundException(APPLICATION_NOT_FOUND));
+    });
+
+    it('returns full applicant detail including profile, resume, and cover letter', async () => {
+      (repository as any).findCompanyProfileByUserId = vi
+        .fn()
+        .mockResolvedValue(companyProfile);
+      (repository as any).findJobById = vi
+        .fn()
+        .mockResolvedValue(targetJob);
+      (repository as any).findCompanyApplicantDetail = vi
+        .fn()
+        .mockResolvedValue({
+          applicationId: 'app-1',
+          jobId: 'job-123',
+          studentId: 'student-profile-123',
+          fullName: 'สมชาย ใจดี',
+          university: 'มหาวิทยาลัยเกษตรศาสตร์',
+          major: 'วิทยาการคอมพิวเตอร์',
+          skills: ['Flutter', 'Dart', 'Node.js'],
+          portfolioUrl: 'https://github.com/somchai',
+          resumeFileName: 'somchai-resume.pdf',
+          status: ApplicationStatus.Submitted,
+          coverLetter: 'อยากฝึกงานที่นี่มากครับ',
+          resumeObjectKey: 'resumes/somchai.pdf',
+          createdAt: new Date('2026-09-23T12:00:00Z'),
+          updatedAt: new Date('2026-09-23T12:30:00Z'),
+        });
+
+      const result = await service.getApplicantDetail(
+        companyUser,
+        'job-123',
+        'app-1',
+      );
+
+      expect(
+        (repository as any).findCompanyApplicantDetail,
+      ).toHaveBeenCalledWith('job-123', 'app-1');
+      expect(result).toEqual({
+        applicationId: 'app-1',
+        jobId: 'job-123',
+        fullName: 'สมชาย ใจดี',
+        university: 'มหาวิทยาลัยเกษตรศาสตร์',
+        major: 'วิทยาการคอมพิวเตอร์',
+        skills: ['Flutter', 'Dart', 'Node.js'],
+        portfolioUrl: 'https://github.com/somchai',
+        resumeFileName: 'somchai-resume.pdf',
+        resumeObjectKey: 'resumes/somchai.pdf',
+        status: ApplicationStatus.Submitted,
+        coverLetter: 'อยากฝึกงานที่นี่มากครับ',
+        createdAt: '2026-09-23T12:00:00.000Z',
+        updatedAt: '2026-09-23T12:30:00.000Z',
+      });
+    });
+  });
 });

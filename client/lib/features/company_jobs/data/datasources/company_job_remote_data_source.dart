@@ -133,11 +133,19 @@ class CompanyJobRemoteDataSource {
   Future<ApplicantModel> fetchApplicant({
     required String jobId,
     required String applicationId,
-  }) {
-    throwNotConnected(
-      _dio,
-      '${ApiConstants.companyJobs}/$jobId/applications/$applicationId',
-    );
+  }) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        '${ApiConstants.companyJobs}/$jobId/applications/$applicationId',
+      );
+      final data = response.data;
+      if (data == null) {
+        throw const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
+      }
+      return ApplicantModel.fromJson(data);
+    } on DioException catch (error) {
+      throw mapCompanyJobError(error);
+    }
   }
 
   Future<void> updateApplicantStatus({

@@ -154,9 +154,10 @@ void main() {
           routes: [
             GoRoute(
               path: ':applicationId',
-              builder: (context, state) => ApplicantDetailScreen(
-                jobId: state.pathParameters['jobId']!,
-                applicationId: state.pathParameters['applicationId']!,
+              builder: (context, state) => Scaffold(
+                body: Text(
+                  'Applicant Detail: ${state.pathParameters['jobId']} / ${state.pathParameters['applicationId']}',
+                ),
               ),
             ),
           ],
