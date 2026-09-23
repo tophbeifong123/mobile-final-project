@@ -17,6 +17,7 @@ import { PaginatedJobsDto } from './dto/paginated-jobs.dto.js';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto.js';
 import { toPaginatedResult } from '../common/dto/paginated-result.js';
 import { UpdateJobDto } from './dto/update-job.dto.js';
+import { UpdateJobStatusDto } from './dto/update-job-status.dto.js';
 import { JobStatus } from './job-enums.js';
 import { JobsRepository, JobVersionConflictError } from './jobs.repository.js';
 
@@ -186,6 +187,24 @@ export class JobsService {
       }
       throw error;
     }
+  }
+
+  async updateStatus(
+    user: AuthUser,
+    jobId: string,
+    dto: UpdateJobStatusDto,
+  ): Promise<JobDto> {
+    const companyId = await this.requireCompanyId(user);
+    await this.requireOwnedJob(companyId, jobId);
+    const updated = await this.jobsRepository.updateOwnedStatus(
+      jobId,
+      companyId,
+      dto.status,
+    );
+    if (!updated) {
+      throw new NotFoundException(JOB_NOT_FOUND);
+    }
+    return toDto(updated);
   }
 
   async remove(user: AuthUser, jobId: string): Promise<void> {

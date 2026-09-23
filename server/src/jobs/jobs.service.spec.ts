@@ -4,6 +4,7 @@ import { UserRole } from '../auth/user-role.js';
 import { CreateJobDto } from './dto/create-job.dto.js';
 import { JobFeedQueryDto } from './dto/job-feed-query.dto.js';
 import { UpdateJobDto } from './dto/update-job.dto.js';
+import { UpdateJobStatusDto } from './dto/update-job-status.dto.js';
 import { JobStatus, WorkMode } from './job-enums.js';
 import { JobsRepository, JobVersionConflictError } from './jobs.repository.js';
 import { JobsService } from './jobs.service.js';
@@ -21,6 +22,7 @@ describe('JobsService', () => {
     listSaved: vi.fn(),
     findById: vi.fn(),
     updateOwned: vi.fn(),
+    updateOwnedStatus: vi.fn(),
     deleteOwned: vi.fn(),
     listByCompany: vi.fn(),
   };
@@ -420,5 +422,109 @@ describe('JobsService', () => {
       NotFoundException,
     );
     expect(repository.deleteOwned).not.toHaveBeenCalled();
+  });
+
+  describe('updateStatus', () => {
+    it('updates status from open to closed', async () => {
+      repository.findCompanyId.mockResolvedValue('company-1');
+      repository.findById.mockResolvedValue({
+        id: 'job-1',
+        companyId: 'company-1',
+      });
+      repository.updateOwnedStatus.mockResolvedValue({
+        id: 'job-1',
+        title: 'Flutter Intern',
+        description: 'คำอธิบาย',
+        province: 'สงขลา',
+        workMode: WorkMode.Hybrid,
+        category: 'IT',
+        hasAllowance: true,
+        requirements: 'คุณสมบัติ',
+        status: JobStatus.Closed,
+        version: 2,
+      });
+
+      const dto = new UpdateJobStatusDto();
+      dto.status = JobStatus.Closed;
+
+      const result = await service.updateStatus(company, 'job-1', dto);
+
+      expect(repository.updateOwnedStatus).toHaveBeenCalledWith(
+        'job-1',
+        'company-1',
+        JobStatus.Closed,
+      );
+      expect(result.status).toBe(JobStatus.Closed);
+      expect(result.version).toBe(2);
+    });
+
+    it('updates status from closed to open', async () => {
+      repository.findCompanyId.mockResolvedValue('company-1');
+      repository.findById.mockResolvedValue({
+        id: 'job-1',
+        companyId: 'company-1',
+      });
+      repository.updateOwnedStatus.mockResolvedValue({
+        id: 'job-1',
+        title: 'Flutter Intern',
+        description: 'คำอธิบาย',
+        province: 'สงขลา',
+        workMode: WorkMode.Hybrid,
+        category: 'IT',
+        hasAllowance: true,
+        requirements: 'คุณสมบัติ',
+        status: JobStatus.Open,
+        version: 3,
+      });
+
+      const dto = new UpdateJobStatusDto();
+      dto.status = JobStatus.Open;
+
+      const result = await service.updateStatus(company, 'job-1', dto);
+
+      expect(repository.updateOwnedStatus).toHaveBeenCalledWith(
+        'job-1',
+        'company-1',
+        JobStatus.Open,
+      );
+      expect(result.status).toBe(JobStatus.Open);
+    });
+
+    it('rejects a student changing status', async () => {
+      const dto = new UpdateJobStatusDto();
+      dto.status = JobStatus.Closed;
+
+      await expect(
+        service.updateStatus(student, 'job-1', dto),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(repository.updateOwnedStatus).not.toHaveBeenCalled();
+    });
+
+    it('rejects changing status of another company job', async () => {
+      repository.findCompanyId.mockResolvedValue('company-1');
+      repository.findById.mockResolvedValue({
+        id: 'job-1',
+        companyId: 'company-2',
+      });
+      const dto = new UpdateJobStatusDto();
+      dto.status = JobStatus.Closed;
+
+      await expect(
+        service.updateStatus(company, 'job-1', dto),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(repository.updateOwnedStatus).not.toHaveBeenCalled();
+    });
+
+    it('returns not found if job does not exist', async () => {
+      repository.findCompanyId.mockResolvedValue('company-1');
+      repository.findById.mockResolvedValue(null);
+      const dto = new UpdateJobStatusDto();
+      dto.status = JobStatus.Closed;
+
+      await expect(
+        service.updateStatus(company, 'job-1', dto),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(repository.updateOwnedStatus).not.toHaveBeenCalled();
+    });
   });
 });

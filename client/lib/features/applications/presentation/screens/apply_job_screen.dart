@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/error/app_exception.dart';
+import '../../../../core/theme/app_colors_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
+import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_hero_card.dart';
 import '../../../../core/widgets/app_primary_button.dart';
+import '../../../../core/widgets/app_text_field.dart';
 import '../../../jobs/presentation/providers/jobs_controller.dart';
 import '../../../student_profile/presentation/providers/student_profile_controller.dart';
 import '../providers/applications_controller.dart';
@@ -34,7 +39,7 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final colorScheme = Theme.of(context).colorScheme;
+    final colors = context.colors;
 
     final profileAsync = ref.watch(studentProfileControllerProvider);
     final profile = profileAsync.asData?.value;
@@ -59,146 +64,122 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
               body:
                   'เขียน Cover Letter ให้ครบ ใบสมัครใหม่จะได้สถานะ Submitted ต้องมี Resume PDF ก่อน และสมัครได้ครั้งเดียวต่องาน',
             ),
-            const SizedBox(height: 16),
+            const Gap(16),
             if (job != null) ...[
-              Card(
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: const BorderSide(color: AppColors.line),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        job.title,
-                        style: textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      job.title,
+                      style: textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        job.companyName,
-                        style: textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
+                    ),
+                    const Gap(4),
+                    Text(
+                      job.companyName,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: colors.mutedForeground,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
+              const Gap(16),
             ] else ...[
               Text(
                 'รหัสประกาศ ${widget.jobId}',
                 style: textTheme.bodySmall,
               ),
-              const SizedBox(height: 12),
+              const Gap(12),
             ],
             if (!hasResume) ...[
-              Card(
-                color: colorScheme.errorContainer.withValues(alpha: 0.3),
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(color: colorScheme.error),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.warning_amber_rounded,
-                            color: colorScheme.error,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'ยังไม่มี Resume ในระบบ',
-                              style: textTheme.titleSmall?.copyWith(
-                                color: colorScheme.error,
-                                fontWeight: FontWeight.bold,
-                              ),
+              AppCard(
+                backgroundColor: colors.destructive.withValues(alpha: 0.08),
+                borderColor: colors.destructive,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          LucideIcons.alertTriangle,
+                          color: colors.destructive,
+                          size: 20,
+                        ),
+                        const Gap(8),
+                        Expanded(
+                          child: Text(
+                            'ยังไม่มี Resume ในระบบ',
+                            style: textTheme.titleSmall?.copyWith(
+                              color: colors.destructive,
+                              fontWeight: FontWeight.bold,
                             ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Gap(8),
+                    Text(
+                      'คุณต้องมี Resume เป็นไฟล์ PDF ก่อน จึงจะสามารถยื่นใบสมัครได้',
+                      style: textTheme.bodySmall,
+                    ),
+                    const Gap(12),
+                    OutlinedButton(
+                      onPressed: () => context.push('/student/resume'),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(kMinTouchTarget),
+                        foregroundColor: colors.destructive,
+                        side: BorderSide(color: colors.destructive),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+                      child: const Text('อัปโหลด Resume'),
+                    ),
+                  ],
+                ),
+              ),
+              const Gap(16),
+            ] else ...[
+              AppCard(
+                child: Row(
+                  children: [
+                    const Icon(
+                      LucideIcons.checkCircle2,
+                      color: AppColors.primary,
+                      size: 20,
+                    ),
+                    const Gap(12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Resume ที่จะใช้', style: textTheme.labelSmall),
+                          const Gap(2),
+                          Text(
+                            profile.resumeFileName ?? 'resume.pdf',
+                            style: textTheme.titleSmall,
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'คุณต้องมี Resume เป็นไฟล์ PDF ก่อน จึงจะสามารถยื่นใบสมัครได้',
-                        style: textTheme.bodySmall,
-                      ),
-                      const SizedBox(height: 12),
-                      OutlinedButton(
-                        onPressed: () => context.push('/student/resume'),
-                        style: OutlinedButton.styleFrom(
-                          minimumSize: const Size.fromHeight(kMinTouchTarget),
-                          foregroundColor: colorScheme.error,
-                          side: BorderSide(color: colorScheme.error),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
-                        child: const Text('อัปโหลด Resume'),
-                      ),
-                    ],
-                  ),
+                    ),
+                    TextButton(
+                      onPressed: () => context.push('/student/resume'),
+                      child: const Text('เปลี่ยน'),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 16),
-            ] else ...[
-              Card(
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: const BorderSide(color: AppColors.line),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.check_circle_outline,
-                        color: AppColors.primary,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Resume ที่จะใช้', style: textTheme.labelSmall),
-                            const SizedBox(height: 2),
-                            Text(
-                              profile.resumeFileName ?? 'resume.pdf',
-                              style: textTheme.titleSmall,
-                            ),
-                          ],
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => context.push('/student/resume'),
-                        child: const Text('เปลี่ยน'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
+              const Gap(16),
             ],
-            TextFormField(
+            AppTextField(
               controller: _coverLetterController,
               minLines: 8,
               maxLines: 12,
-              decoration: const InputDecoration(
-                labelText: 'Cover Letter',
-                alignLabelWithHint: true,
-                hintText: 'บอกว่าทำไมอยากฝึกงานที่นี่',
-              ),
+              label: 'Cover Letter',
+              hintText: 'บอกว่าทำไมอยากฝึกงานที่นี่',
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
                   return 'กรอก Cover Letter';
@@ -207,11 +188,11 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
               },
             ),
             if (_error != null) ...[
-              const SizedBox(height: 12),
+              const Gap(12),
               Text(
                 _error!,
                 style: textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.error,
+                  color: colors.destructive,
                 ),
               ),
             ],

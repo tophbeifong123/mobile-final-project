@@ -109,8 +109,18 @@ class CompanyJobRemoteDataSource {
     }
   }
 
-  Future<void> setStatus({required String jobId, required String status}) {
-    throwNotConnected(_dio, '${ApiConstants.companyJobs}/$jobId/status');
+  Future<void> setStatus({
+    required String jobId,
+    required String status,
+  }) async {
+    try {
+      await _dio.patch<Map<String, dynamic>>(
+        '${ApiConstants.companyJobs}/$jobId/status',
+        data: {'status': status},
+      );
+    } on DioException catch (error) {
+      throw mapCompanyJobError(error);
+    }
   }
 
   Future<List<ApplicantModel>> fetchApplicants(String jobId) async {

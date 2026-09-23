@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:gap/gap.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../core/theme/app_tokens.dart';
+import '../../../../core/theme/app_colors_extension.dart';
 import '../../../../core/widgets/app_logo.dart';
 
 class SplashScreen extends StatelessWidget {
@@ -9,6 +11,8 @@ class SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final colors = context.colors;
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -17,19 +21,19 @@ class SplashScreen extends StatelessWidget {
             children: [
               const Spacer(),
               const _Pill(label: 'เครือข่ายมหาวิทยาลัยทั่วประเทศ'),
-              const SizedBox(height: 28),
+              const Gap(28),
               const AppLogo(size: 64),
-              const SizedBox(height: 24),
+              const Gap(24),
               Text('InternFinder', style: textTheme.headlineSmall),
-              const SizedBox(height: 8),
+              const Gap(8),
               Text(
                 'ค้นหาที่ฝึกงานที่ใช่สำหรับคุณ',
                 style: textTheme.bodyLarge?.copyWith(
-                  color: AppColors.textSecondary,
+                  color: colors.mutedForeground,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 20),
+              const Gap(20),
               const Wrap(
                 alignment: WrapAlignment.center,
                 spacing: 8,
@@ -40,12 +44,12 @@ class SplashScreen extends StatelessWidget {
                   _Pill(label: 'ฝึกงานฤดูร้อน'),
                 ],
               ),
-              const SizedBox(height: 28),
+              const Gap(28),
               const ClipRRect(
                 borderRadius: BorderRadius.all(Radius.circular(99)),
                 child: LinearProgressIndicator(minHeight: 6),
               ),
-              const SizedBox(height: 12),
+              const Gap(12),
               Text(
                 'กำลังตรวจสอบการเข้าสู่ระบบ',
                 style: textTheme.bodyMedium,
@@ -54,15 +58,17 @@ class SplashScreen extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.lock_outline,
+                  Icon(
+                    LucideIcons.shieldCheck,
                     size: 16,
-                    color: AppColors.textSecondary,
+                    color: colors.mutedForeground,
                   ),
-                  const SizedBox(width: 6),
+                  const Gap(6),
                   Text(
                     'ระบบความปลอดภัยระดับสถาบันการศึกษา',
-                    style: textTheme.bodySmall,
+                    style: textTheme.bodySmall?.copyWith(
+                      color: colors.mutedForeground,
+                    ),
                   ),
                 ],
               ),
@@ -81,11 +87,12 @@ class _Pill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: colors.card,
         borderRadius: BorderRadius.circular(99),
-        border: Border.all(color: AppColors.line),
+        border: Border.all(color: colors.border),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

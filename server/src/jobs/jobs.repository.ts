@@ -221,6 +221,22 @@ export class JobsRepository {
     }
   }
 
+  async updateOwnedStatus(
+    id: string,
+    companyId: string,
+    status: JobStatus,
+  ): Promise<Job | null> {
+    const jobs = this.dataSource.getRepository(Job);
+    const job = await jobs.findOne({
+      where: { id, companyId },
+    });
+    if (!job) {
+      return null;
+    }
+    job.status = status;
+    return jobs.save(job);
+  }
+
   deleteOwned(id: string, companyId: string): Promise<boolean> {
     return this.dataSource
       .getRepository(Job)

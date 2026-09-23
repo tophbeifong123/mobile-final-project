@@ -19,7 +19,10 @@ class AppPrimaryButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: onPressed == null ? const [] : AppShadows.clay,
       ),
-      child: FilledButton(onPressed: onPressed, child: child),
+      child: FilledButton(
+        onPressed: onPressed,
+        child: child,
+      ),
     );
   }
 }

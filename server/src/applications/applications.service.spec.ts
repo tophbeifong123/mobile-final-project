@@ -14,10 +14,10 @@ import {
   COMPANY_ONLY,
   COMPANY_PROFILE_NOT_FOUND,
   COVER_LETTER_REQUIRED,
+  INVALID_STATUS_TRANSITION,
   JOB_CLOSED,
   JOB_NOT_FOUND,
   NOT_YOUR_JOB,
-  ONLY_SUBMITTED_CAN_BE_REVIEWING,
   PROFILE_NOT_FOUND,
   RESUME_REQUIRED,
   STUDENT_ONLY,
@@ -572,7 +572,7 @@ describe('ApplicationsService', () => {
       ).rejects.toThrow(new ForbiddenException(NOT_YOUR_JOB));
     });
 
-    it('throws BadRequestException if requested status is not Reviewing', async () => {
+    it('throws BadRequestException if requested status is not Reviewing, Accepted, or Rejected', async () => {
       (repository as any).findCompanyProfileByUserId = vi
         .fn()
         .mockResolvedValue(companyProfile);
@@ -580,9 +580,9 @@ describe('ApplicationsService', () => {
 
       await expect(
         service.updateApplicantStatus(companyUser, 'job-123', 'app-1', {
-          status: ApplicationStatus.Accepted,
+          status: ApplicationStatus.Submitted,
         }),
-      ).rejects.toThrow(new BadRequestException(ONLY_SUBMITTED_CAN_BE_REVIEWING));
+      ).rejects.toThrow(new BadRequestException(INVALID_STATUS_TRANSITION));
     });
 
     it('updates status to reviewing and returns updated applicant detail', async () => {
@@ -590,7 +590,7 @@ describe('ApplicationsService', () => {
         .fn()
         .mockResolvedValue(companyProfile);
       (repository as any).findJobById = vi.fn().mockResolvedValue(targetJob);
-      (repository as any).updateApplicationStatusToReviewing = vi
+      (repository as any).updateApplicationStatus = vi
         .fn()
         .mockResolvedValue({ id: 'app-1', status: ApplicationStatus.Reviewing });
       (repository as any).findCompanyApplicantDetail = vi.fn().mockResolvedValue({
@@ -618,10 +618,11 @@ describe('ApplicationsService', () => {
       );
 
       expect(
-        (repository as any).updateApplicationStatusToReviewing,
+        (repository as any).updateApplicationStatus,
       ).toHaveBeenCalledWith({
         jobId: 'job-123',
         applicationId: 'app-1',
+        newStatus: ApplicationStatus.Reviewing,
         jobTitle: targetJob.title,
         actorUserId: companyUser.userId,
       });
@@ -631,12 +632,104 @@ describe('ApplicationsService', () => {
       expect(result.fullName).toBe('สมชาย ใจดี');
     });
 
+    it('updates status to accepted and returns updated applicant detail', async () => {
+      (repository as any).findCompanyProfileByUserId = vi
+        .fn()
+        .mockResolvedValue(companyProfile);
+      (repository as any).findJobById = vi.fn().mockResolvedValue(targetJob);
+      (repository as any).updateApplicationStatus = vi
+        .fn()
+        .mockResolvedValue({ id: 'app-1', status: ApplicationStatus.Accepted });
+      (repository as any).findCompanyApplicantDetail = vi.fn().mockResolvedValue({
+        applicationId: 'app-1',
+        jobId: 'job-123',
+        studentId: 'student-profile-123',
+        fullName: 'สมชาย ใจดี',
+        university: 'มหาวิทยาลัยเกษตรศาสตร์',
+        major: 'วิทยาการคอมพิวเตอร์',
+        skills: ['Flutter'],
+        portfolioUrl: null,
+        resumeFileName: 'resume.pdf',
+        status: ApplicationStatus.Accepted,
+        coverLetter: 'อยากฝึกงานที่นี่มากครับ',
+        resumeObjectKey: 'resumes/somchai.pdf',
+        createdAt: new Date('2026-09-23T12:00:00Z'),
+        updatedAt: new Date('2026-09-23T13:00:00Z'),
+      });
+
+      const result = await service.updateApplicantStatus(
+        companyUser,
+        'job-123',
+        'app-1',
+        { status: ApplicationStatus.Accepted },
+      );
+
+      expect(
+        (repository as any).updateApplicationStatus,
+      ).toHaveBeenCalledWith({
+        jobId: 'job-123',
+        applicationId: 'app-1',
+        newStatus: ApplicationStatus.Accepted,
+        jobTitle: targetJob.title,
+        actorUserId: companyUser.userId,
+      });
+
+      expect(result.status).toBe(ApplicationStatus.Accepted);
+      expect(result.applicationId).toBe('app-1');
+    });
+
+    it('updates status to rejected and returns updated applicant detail', async () => {
+      (repository as any).findCompanyProfileByUserId = vi
+        .fn()
+        .mockResolvedValue(companyProfile);
+      (repository as any).findJobById = vi.fn().mockResolvedValue(targetJob);
+      (repository as any).updateApplicationStatus = vi
+        .fn()
+        .mockResolvedValue({ id: 'app-1', status: ApplicationStatus.Rejected });
+      (repository as any).findCompanyApplicantDetail = vi.fn().mockResolvedValue({
+        applicationId: 'app-1',
+        jobId: 'job-123',
+        studentId: 'student-profile-123',
+        fullName: 'สมชาย ใจดี',
+        university: 'มหาวิทยาลัยเกษตรศาสตร์',
+        major: 'วิทยาการคอมพิวเตอร์',
+        skills: ['Flutter'],
+        portfolioUrl: null,
+        resumeFileName: 'resume.pdf',
+        status: ApplicationStatus.Rejected,
+        coverLetter: 'อยากฝึกงานที่นี่มากครับ',
+        resumeObjectKey: 'resumes/somchai.pdf',
+        createdAt: new Date('2026-09-23T12:00:00Z'),
+        updatedAt: new Date('2026-09-23T13:00:00Z'),
+      });
+
+      const result = await service.updateApplicantStatus(
+        companyUser,
+        'job-123',
+        'app-1',
+        { status: ApplicationStatus.Rejected },
+      );
+
+      expect(
+        (repository as any).updateApplicationStatus,
+      ).toHaveBeenCalledWith({
+        jobId: 'job-123',
+        applicationId: 'app-1',
+        newStatus: ApplicationStatus.Rejected,
+        jobTitle: targetJob.title,
+        actorUserId: companyUser.userId,
+      });
+
+      expect(result.status).toBe(ApplicationStatus.Rejected);
+      expect(result.applicationId).toBe('app-1');
+    });
+
     it('throws NotFoundException if applicant detail cannot be found after update', async () => {
       (repository as any).findCompanyProfileByUserId = vi
         .fn()
         .mockResolvedValue(companyProfile);
       (repository as any).findJobById = vi.fn().mockResolvedValue(targetJob);
-      (repository as any).updateApplicationStatusToReviewing = vi
+      (repository as any).updateApplicationStatus = vi
         .fn()
         .mockResolvedValue({ id: 'app-1', status: ApplicationStatus.Reviewing });
       (repository as any).findCompanyApplicantDetail = vi.fn().mockResolvedValue(null);
@@ -649,3 +742,4 @@ describe('ApplicationsService', () => {
     });
   });
 });
+

@@ -156,7 +156,9 @@ export class ApplicationsController {
   }
 
   @Patch('company/jobs/:id/applications/:applicationId/status')
-  @ApiOperation({ summary: 'เปลี่ยนสถานะผู้สมัคร (เช่น Reviewing)' })
+  @ApiOperation({
+    summary: 'เปลี่ยนสถานะผู้สมัคร (Reviewing, Accepted, Rejected)',
+  })
   @ApiParam({ name: 'id', format: 'uuid', description: 'รหัสประกาศงาน' })
   @ApiParam({
     name: 'applicationId',
@@ -171,7 +173,8 @@ export class ApplicationsController {
   })
   @ApiResponse({
     status: 400,
-    description: 'เปลี่ยนสถานะได้เฉพาะจาก submitted เป็น reviewing',
+    description:
+      'การเปลี่ยนสถานะไม่ถูกต้อง, ยังไม่ได้เป็น Reviewing หรือใบสมัครอยู่ในสถานะสิ้นสุดแล้ว',
   })
   @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
   @ApiResponse({

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:gap/gap.dart';
 
+import '../theme/app_colors_extension.dart';
 import '../theme/app_tokens.dart';
 
 class InfoChip extends StatelessWidget {
@@ -10,11 +12,12 @@ class InfoChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.background,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AppColors.line),
+        border: Border.all(color: colors.border),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -22,8 +25,8 @@ class InfoChip extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (icon != null) ...[
-              Icon(icon, size: 14, color: AppColors.textSecondary),
-              const SizedBox(width: 4),
+              Icon(icon, size: 14, color: colors.mutedForeground),
+              const Gap(4),
             ],
             Text(
               label,

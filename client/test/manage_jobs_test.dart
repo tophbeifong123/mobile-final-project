@@ -1,3 +1,4 @@
+import 'package:client/core/error/app_exception.dart';
 import 'package:client/core/network/dio_client.dart';
 import 'package:client/core/storage/token_storage.dart';
 import 'package:client/core/theme/app_theme.dart';
@@ -38,9 +39,89 @@ void main() {
     expect(find.text('แก้ไข'), findsNWidgets(2));
     expect(find.text('ผู้สมัคร'), findsNWidgets(2));
   });
+
+  testWidgets('toggling switch calls setStatus with new status', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final mockRepo = _CompanyJobs();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+          companyJobRepositoryProvider.overrideWithValue(mockRepo),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: const ManageJobsScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Toggle job-1 from open to closed
+    final switch1 = find.byKey(const ValueKey('toggle-job-job-1'));
+    expect(switch1, findsOneWidget);
+    expect(tester.widget<Switch>(switch1).value, isTrue);
+
+    await tester.tap(switch1);
+    await tester.pumpAndSettle();
+
+    expect(mockRepo.lastSetStatusJobId, 'job-1');
+    expect(mockRepo.lastSetStatusValue, 'closed');
+
+    // Toggle job-2 from closed to open
+    final switch2 = find.byKey(const ValueKey('toggle-job-job-2'));
+    expect(switch2, findsOneWidget);
+    expect(tester.widget<Switch>(switch2).value, isFalse);
+
+    await tester.tap(switch2);
+    await tester.pumpAndSettle();
+
+    expect(mockRepo.lastSetStatusJobId, 'job-2');
+    expect(mockRepo.lastSetStatusValue, 'open');
+  });
+
+  testWidgets('shows snackbar when toggle status fails', (tester) async {
+    tester.view.physicalSize = const Size(390, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final mockRepo = _FailingCompanyJobs();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+          companyJobRepositoryProvider.overrideWithValue(mockRepo),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: const ManageJobsScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final switch1 = find.byKey(const ValueKey('toggle-job-job-1'));
+    await tester.tap(switch1);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SnackBar), findsOneWidget);
+    expect(find.text('เปลี่ยนสถานะไม่สำเร็จ'), findsOneWidget);
+  });
 }
 
 class _CompanyJobs implements CompanyJobRepository {
+  String? lastSetStatusJobId;
+  String? lastSetStatusValue;
+
   @override
   Future<List<CompanyJob>> fetchMine() async {
     return const [
@@ -84,8 +165,12 @@ class _CompanyJobs implements CompanyJobRepository {
   }
 
   @override
-  Future<void> setStatus({required String jobId, required String status}) {
-    throw UnimplementedError();
+  Future<void> setStatus({
+    required String jobId,
+    required String status,
+  }) async {
+    lastSetStatusJobId = jobId;
+    lastSetStatusValue = status;
   }
 
   @override
@@ -108,5 +193,15 @@ class _CompanyJobs implements CompanyJobRepository {
     required String status,
   }) {
     throw UnimplementedError();
+  }
+}
+
+class _FailingCompanyJobs extends _CompanyJobs {
+  @override
+  Future<void> setStatus({
+    required String jobId,
+    required String status,
+  }) async {
+    throw const AppException('เปลี่ยนสถานะไม่สำเร็จ');
   }
 }

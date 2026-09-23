@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/error/app_exception.dart';
+import '../../../../core/theme/app_colors_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
+import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_primary_button.dart';
+import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/loading_view.dart';
 import '../../../../core/widgets/page_heading.dart';
@@ -45,12 +51,14 @@ class _ProfileError extends ConsumerWidget {
       children: [
         Expanded(
           child: EmptyState(
-            icon: Icons.person_outline,
+            icon: LucideIcons.userX,
             title: 'โหลดโปรไฟล์ไม่ได้',
             message: message,
-            action: AppPrimaryButton(
+            action: AppButton(
+              variant: AppButtonVariant.outline,
+              size: AppButtonSize.sm,
               onPressed: onRetry,
-              child: const Text('ลองอีกครั้ง'),
+              text: 'ลองอีกครั้ง',
             ),
           ),
         ),
@@ -107,6 +115,8 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return Form(
       key: _formKey,
       child: ListView(
@@ -116,119 +126,102 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
             title: 'โปรไฟล์',
             subtitle: 'ชื่อ มหาวิทยาลัย สาขา ทักษะ และ Portfolio',
           ),
-          const SizedBox(height: 16),
-          TextFormField(
+          const Gap(16),
+          AppTextField(
             controller: _nameController,
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(
-              labelText: 'ชื่อ',
-              prefixIcon: Icon(Icons.person_outline),
-            ),
+            label: 'ชื่อ',
+            prefixIcon: const Icon(LucideIcons.user, size: 18),
             validator: _required,
           ),
-          const SizedBox(height: 12),
-          TextFormField(
+          const Gap(12),
+          AppTextField(
             controller: _universityController,
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(
-              labelText: 'มหาวิทยาลัย',
-              prefixIcon: Icon(Icons.school_outlined),
-            ),
+            label: 'มหาวิทยาลัย',
+            prefixIcon: const Icon(LucideIcons.graduationCap, size: 18),
             validator: _required,
           ),
-          const SizedBox(height: 12),
-          TextFormField(
+          const Gap(12),
+          AppTextField(
             controller: _majorController,
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(
-              labelText: 'สาขา',
-              prefixIcon: Icon(Icons.menu_book_outlined),
-            ),
+            label: 'สาขา',
+            prefixIcon: const Icon(LucideIcons.bookOpen, size: 18),
             validator: _required,
           ),
-          const SizedBox(height: 12),
-          TextFormField(
+          const Gap(12),
+          AppTextField(
             controller: _skillsController,
             textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(
-              labelText: 'ทักษะ',
-              hintText: 'คั่นด้วยจุลภาค เช่น Flutter, SQL',
-              prefixIcon: Icon(Icons.interests_outlined),
-            ),
+            label: 'ทักษะ',
+            hintText: 'คั่นด้วยจุลภาค เช่น Flutter, SQL',
+            prefixIcon: const Icon(LucideIcons.sparkles, size: 18),
           ),
-          const SizedBox(height: 12),
-          TextFormField(
+          const Gap(12),
+          AppTextField(
             controller: _portfolioController,
             keyboardType: TextInputType.url,
-            decoration: const InputDecoration(
-              labelText: 'Portfolio',
-              hintText: 'https://',
-              prefixIcon: Icon(Icons.link),
-            ),
+            label: 'Portfolio',
+            hintText: 'https://',
+            prefixIcon: const Icon(LucideIcons.link, size: 18),
             validator: _portfolio,
           ),
-          const SizedBox(height: 16),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.line),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.picture_as_pdf,
-                    color: widget.profile.resumeFileName != null
-                        ? AppColors.primary
-                        : AppColors.textSecondary,
+          const Gap(16),
+          AppCard(
+            child: Row(
+              children: [
+                Icon(
+                  LucideIcons.fileText,
+                  color: widget.profile.resumeFileName != null
+                      ? AppColors.primary
+                      : colors.mutedForeground,
+                  size: 24,
+                ),
+                const Gap(12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Resume',
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      const Gap(2),
+                      Text(
+                        widget.profile.resumeFileName ??
+                            'ยังไม่มี Resume ในระบบ',
+                        style:
+                            Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: widget.profile.resumeFileName != null
+                                      ? null
+                                      : colors.mutedForeground,
+                                ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Resume',
-                          style: Theme.of(context).textTheme.titleSmall,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          widget.profile.resumeFileName ??
-                              'ยังไม่มี Resume ในระบบ',
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: widget.profile.resumeFileName != null
-                                        ? null
-                                        : AppColors.textSecondary,
-                                  ),
-                        ),
-                      ],
-                    ),
+                ),
+                TextButton(
+                  onPressed: () => context.push('/student/resume'),
+                  child: Text(
+                    widget.profile.resumeFileName != null
+                        ? 'เปลี่ยน'
+                        : 'อัปโหลด',
                   ),
-                  TextButton(
-                    onPressed: () => context.push('/student/resume'),
-                    child: Text(
-                      widget.profile.resumeFileName != null
-                          ? 'เปลี่ยน'
-                          : 'อัปโหลด',
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
           if (_error != null) ...[
-            const SizedBox(height: 12),
+            const Gap(12),
             Text(
               _error!,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.error,
+                color: colors.destructive,
               ),
             ),
           ],
-          const SizedBox(height: 16),
+          const Gap(16),
           AppPrimaryButton(
             onPressed: _saving ? null : _save,
             child: Text(_saving ? 'กำลังบันทึก' : 'บันทึกโปรไฟล์'),

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:gap/gap.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../theme/app_tokens.dart';
+import 'app_card.dart';
 import 'info_chip.dart';
 
 class JobCard extends StatelessWidget {
@@ -23,47 +26,36 @@ class JobCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final chips = <Widget>[
-      InfoChip(label: province, icon: Icons.place_outlined),
+      InfoChip(label: province, icon: LucideIcons.mapPin),
       for (final detail in details)
         if (detail.trim().isNotEmpty) InfoChip(label: detail.trim()),
     ];
 
-    return Material(
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.line),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
+    return AppCard(
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _CompanyMark(name: companyName),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(title, style: textTheme.titleMedium),
-                        const SizedBox(height: 2),
-                        Text(companyName, style: textTheme.bodyMedium),
-                      ],
-                    ),
-                  ),
-                ],
+              _CompanyMark(name: companyName),
+              const Gap(12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title, style: textTheme.titleMedium),
+                    const Gap(2),
+                    Text(companyName, style: textTheme.bodyMedium),
+                  ],
+                ),
               ),
-              const SizedBox(height: 12),
-              Wrap(spacing: 8, runSpacing: 8, children: chips),
             ],
           ),
-        ),
+          const Gap(12),
+          Wrap(spacing: 8, runSpacing: 8, children: chips),
+        ],
       ),
     );
   }

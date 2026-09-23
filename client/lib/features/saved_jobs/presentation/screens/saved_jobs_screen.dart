@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../../../core/error/app_exception.dart';
 import '../../../../core/theme/app_tokens.dart';
-import '../../../../core/widgets/app_primary_button.dart';
+import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/job_card.dart';
-import '../../../../core/widgets/loading_view.dart';
 import '../../../../core/widgets/page_heading.dart';
 import '../../../jobs/presentation/job_labels.dart';
 import '../providers/saved_jobs_controller.dart';
@@ -32,25 +34,46 @@ class SavedJobsScreen extends ConsumerWidget {
             ),
             Expanded(
               child: saved.when(
-                loading: () => const LoadingView(label: 'กำลังโหลดงานที่บันทึก'),
+                skipLoadingOnReload: true,
+                loading: () => Skeletonizer(
+                  enabled: true,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(
+                      kPagePadding,
+                      8,
+                      kPagePadding,
+                      16,
+                    ),
+                    itemCount: 3,
+                    separatorBuilder: (context, index) => const Gap(12),
+                    itemBuilder: (context, index) => const JobCard(
+                      title: 'ตำแหน่งงานกำลังโหลด',
+                      companyName: 'บริษัทตัวอย่าง จำกัด',
+                      province: 'กรุงเทพฯ',
+                      details: ['On-site', 'IT & Software', 'มีเบี้ยเลี้ยง'],
+                    ),
+                  ),
+                ),
                 error: (error, _) => EmptyState(
-                  icon: Icons.bookmark_outline,
+                  icon: LucideIcons.bookmark,
                   title: 'โหลดงานที่บันทึกไม่ได้',
                   message: userVisibleError(error),
-                  action: AppPrimaryButton(
+                  action: AppButton(
+                    variant: AppButtonVariant.outline,
+                    size: AppButtonSize.sm,
                     onPressed: () => ref.invalidate(savedJobsProvider),
-                    child: const Text('ลองอีกครั้ง'),
+                    text: 'ลองอีกครั้ง',
                   ),
                 ),
                 data: (jobs) {
                   if (jobs.isEmpty) {
                     return EmptyState(
-                      icon: Icons.bookmark_outline,
+                      icon: LucideIcons.bookmark,
                       title: 'ยังไม่มีงานที่บันทึก',
                       message: 'เปิดรายละเอียดงานแล้วกดบันทึก งานนั้นจะมาอยู่ที่นี่',
-                      action: AppPrimaryButton(
+                      action: AppButton(
                         onPressed: () => context.go('/student/home'),
-                        child: const Text('ไปหน้าแรก'),
+                        text: 'ไปหน้าแรก',
                       ),
                     );
                   }
@@ -62,8 +85,7 @@ class SavedJobsScreen extends ConsumerWidget {
                       16,
                     ),
                     itemCount: jobs.length,
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(height: 12),
+                    separatorBuilder: (context, index) => const Gap(12),
                     itemBuilder: (context, index) {
                       final job = jobs[index];
                       return JobCard(

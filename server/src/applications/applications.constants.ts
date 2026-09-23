@@ -11,3 +11,8 @@ export const COMPANY_PROFILE_NOT_FOUND = 'ไม่พบโปรไฟล์�
 export const NOT_YOUR_JOB = 'เฉพาะบริษัท หรือไม่ใช่ประกาศของบริษัทนี้';
 export const ONLY_SUBMITTED_CAN_BE_REVIEWING =
   'เปลี่ยนสถานะเป็น Reviewing ได้เฉพาะใบสมัครที่อยู่ในสถานะ Submitted เท่านั้น';
+export const APPLICATION_TERMINAL_STATUS =
+  'ใบสมัครอยู่ในสถานะสิ้นสุดแล้ว ไม่สามารถเปลี่ยนสถานะได้อีก';
+export const MUST_BE_REVIEWING_BEFORE_DECISION =
+  'ต้องเปลี่ยนสถานะเป็น Reviewing ก่อนตัดสิน Accepted หรือ Rejected';
+export const INVALID_STATUS_TRANSITION = 'การเปลี่ยนสถานะไม่ถูกต้อง';

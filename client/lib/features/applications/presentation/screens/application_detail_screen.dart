@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/error/app_exception.dart';
 import '../../../../core/theme/app_tokens.dart';
-import '../../../../core/widgets/app_primary_button.dart';
+import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/info_chip.dart';
 import '../../../../core/widgets/loading_view.dart';
@@ -28,12 +31,14 @@ class ApplicationDetailScreen extends ConsumerWidget {
         child: applicationAsync.when(
           loading: () => const LoadingView(label: 'กำลังโหลดรายละเอียดใบสมัคร'),
           error: (error, _) => EmptyState(
-            icon: Icons.error_outline,
+            icon: LucideIcons.alertCircle,
             title: 'โหลดรายละเอียดใบสมัครไม่ได้',
             message: userVisibleError(error),
-            action: AppPrimaryButton(
+            action: AppButton(
+              variant: AppButtonVariant.outline,
+              size: AppButtonSize.sm,
               onPressed: () => ref.invalidate(applicationDetailProvider(applicationId)),
-              child: const Text('ลองอีกครั้ง'),
+              text: 'ลองอีกครั้ง',
             ),
           ),
           data: (app) => RefreshIndicator(
@@ -43,13 +48,13 @@ class ApplicationDetailScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(kPagePadding),
               children: [
                 _JobSummaryCard(application: app),
-                const SizedBox(height: 16),
+                const Gap(16),
                 _StatusTimelineCard(application: app),
-                const SizedBox(height: 16),
+                const Gap(16),
                 _CoverLetterCard(coverLetter: app.coverLetter),
-                const SizedBox(height: 16),
+                const Gap(16),
                 _ResumeCard(resumeObjectKey: app.resumeObjectKey),
-                const SizedBox(height: 16),
+                const Gap(16),
                 Center(
                   child: Text(
                     'รหัสใบสมัคร: ${app.id}',
@@ -76,67 +81,59 @@ class _JobSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    return Material(
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.line),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _CompanyMark(name: application.companyName),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(application.jobTitle, style: textTheme.titleMedium),
-                      const SizedBox(height: 2),
-                      Text(application.companyName, style: textTheme.bodyMedium),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                StatusChip(label: application.status.labelTh),
-                if (application.province != null && application.province!.isNotEmpty)
-                  InfoChip(label: application.province!, icon: Icons.place_outlined),
-                if (application.workMode != null && application.workMode!.isNotEmpty)
-                  InfoChip(label: _workModeText(application.workMode!)),
-                if (application.category != null && application.category!.isNotEmpty)
-                  InfoChip(label: application.category!),
-                if (application.hasAllowance != null)
-                  InfoChip(label: allowanceLabel(application.hasAllowance!)),
-              ],
-            ),
-            if (application.jobId != null) ...[
-              const SizedBox(height: 16),
-              OutlinedButton.icon(
-                onPressed: () => context.push('/student/jobs/${application.jobId}'),
-                icon: const Icon(Icons.arrow_outward, size: 16),
-                label: const Text('ดูประกาศงาน'),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(kMinTouchTarget),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _CompanyMark(name: application.companyName),
+              const Gap(12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(application.jobTitle, style: textTheme.titleMedium),
+                    const Gap(2),
+                    Text(application.companyName, style: textTheme.bodyMedium),
+                  ],
                 ),
               ),
             ],
+          ),
+          const Gap(12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              StatusChip(label: application.status.labelTh),
+              if (application.province != null && application.province!.isNotEmpty)
+                InfoChip(label: application.province!, icon: LucideIcons.mapPin),
+              if (application.workMode != null && application.workMode!.isNotEmpty)
+                InfoChip(label: _workModeText(application.workMode!)),
+              if (application.category != null && application.category!.isNotEmpty)
+                InfoChip(label: application.category!),
+              if (application.hasAllowance != null)
+                InfoChip(label: allowanceLabel(application.hasAllowance!)),
+            ],
+          ),
+          if (application.jobId != null) ...[
+            const Gap(16),
+            OutlinedButton.icon(
+              onPressed: () => context.push('/student/jobs/${application.jobId}'),
+              icon: const Icon(LucideIcons.arrowUpRight, size: 16),
+              label: const Text('ดูประกาศงาน'),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(kMinTouchTarget),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -164,7 +161,6 @@ class _StatusTimelineCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    // Timeline event lookup helper
     DateTime? eventDate(ApplicationStatus status) {
       for (final event in application.timeline) {
         if (event.toStatus == status) {
@@ -183,71 +179,63 @@ class _StatusTimelineCard extends StatelessWidget {
         application.status == ApplicationStatus.accepted ||
         application.status == ApplicationStatus.rejected;
 
-    return Material(
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.line),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('สถานะการสมัคร', style: textTheme.titleMedium),
-            const SizedBox(height: 4),
-            Text(
-              'ความคืบหน้าของใบสมัครนี้',
-              style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 16),
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('สถานะการสมัคร', style: textTheme.titleMedium),
+          const Gap(4),
+          Text(
+            'ความคืบหน้าของใบสมัครนี้',
+            style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+          ),
+          const Gap(16),
+          _TimelineStepItem(
+            title: 'ยื่นใบสมัครแล้ว',
+            description: 'ส่งใบสมัครและข้อมูลไปยังบริษัทแล้ว',
+            date: submittedDate,
+            state: isReviewingOrBeyond ? _StepState.completed : _StepState.current,
+            showLine: true,
+          ),
+          _TimelineStepItem(
+            title: 'กำลังพิจารณา',
+            description: isReviewingOrBeyond
+                ? 'บริษัทกำลังตรวจประวัติและ Resume'
+                : 'รอการตรวจสอบจากบริษัท',
+            date: reviewingDate,
+            state: (application.status == ApplicationStatus.accepted ||
+                    application.status == ApplicationStatus.rejected)
+                ? _StepState.completed
+                : application.status == ApplicationStatus.reviewing
+                    ? _StepState.current
+                    : _StepState.upcoming,
+            showLine: true,
+          ),
+          if (application.status == ApplicationStatus.accepted)
             _TimelineStepItem(
-              title: 'ยื่นใบสมัครแล้ว',
-              description: 'ส่งใบสมัครและข้อมูลไปยังบริษัทแล้ว',
-              date: submittedDate,
-              state: isReviewingOrBeyond ? _StepState.completed : _StepState.current,
-              showLine: true,
-            ),
+              title: 'ผ่านการคัดเลือก',
+              description: 'ยินดีด้วย คุณผ่านการคัดเลือกสำหรับตำแหน่งนี้',
+              date: acceptedDate,
+              state: _StepState.accepted,
+              showLine: false,
+            )
+          else if (application.status == ApplicationStatus.rejected)
             _TimelineStepItem(
-              title: 'กำลังพิจารณา',
-              description: isReviewingOrBeyond
-                  ? 'บริษัทกำลังตรวจประวัติและ Resume'
-                  : 'รอการตรวจสอบจากบริษัท',
-              date: reviewingDate,
-              state: (application.status == ApplicationStatus.accepted ||
-                      application.status == ApplicationStatus.rejected)
-                  ? _StepState.completed
-                  : application.status == ApplicationStatus.reviewing
-                      ? _StepState.current
-                      : _StepState.upcoming,
-              showLine: true,
+              title: 'ไม่ผ่านการคัดเลือก',
+              description: 'ขออภัย คุณไม่ผ่านการคัดเลือกสำหรับตำแหน่งนี้',
+              date: rejectedDate,
+              state: _StepState.rejected,
+              showLine: false,
+            )
+          else
+            const _TimelineStepItem(
+              title: 'ผลการคัดเลือก',
+              description: 'รอการตัดสินใจและประกาศผลจากบริษัท',
+              date: null,
+              state: _StepState.upcoming,
+              showLine: false,
             ),
-            if (application.status == ApplicationStatus.accepted)
-              _TimelineStepItem(
-                title: 'ผ่านการคัดเลือก',
-                description: 'ยินดีด้วย คุณผ่านการคัดเลือกสำหรับตำแหน่งนี้',
-                date: acceptedDate,
-                state: _StepState.accepted,
-                showLine: false,
-              )
-            else if (application.status == ApplicationStatus.rejected)
-              _TimelineStepItem(
-                title: 'ไม่ผ่านการคัดเลือก',
-                description: 'ขออภัย คุณไม่ผ่านการคัดเลือกสำหรับตำแหน่งนี้',
-                date: rejectedDate,
-                state: _StepState.rejected,
-                showLine: false,
-              )
-            else
-              const _TimelineStepItem(
-                title: 'ผลการคัดเลือก',
-                description: 'รอการตัดสินใจและประกาศผลจากบริษัท',
-                date: null,
-                state: _StepState.upcoming,
-                showLine: false,
-              ),
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -298,7 +286,7 @@ class _TimelineStepItem extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(width: 12),
+          const Gap(12),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.only(bottom: 20),
@@ -326,7 +314,7 @@ class _TimelineStepItem extends StatelessWidget {
                         ),
                     ],
                   ),
-                  const SizedBox(height: 2),
+                  const Gap(2),
                   Text(
                     description,
                     style: textTheme.bodySmall?.copyWith(
@@ -352,7 +340,7 @@ class _TimelineStepItem extends StatelessWidget {
             shape: BoxShape.circle,
             color: AppColors.primary,
           ),
-          child: const Icon(Icons.check, size: 12, color: Colors.white),
+          child: const Icon(LucideIcons.check, size: 12, color: Colors.white),
         );
       case _StepState.accepted:
         return Container(
@@ -362,7 +350,7 @@ class _TimelineStepItem extends StatelessWidget {
             shape: BoxShape.circle,
             color: AppColors.success,
           ),
-          child: const Icon(Icons.check, size: 12, color: Colors.white),
+          child: const Icon(LucideIcons.check, size: 12, color: Colors.white),
         );
       case _StepState.rejected:
         return Container(
@@ -372,7 +360,7 @@ class _TimelineStepItem extends StatelessWidget {
             shape: BoxShape.circle,
             color: Theme.of(context).colorScheme.error,
           ),
-          child: const Icon(Icons.close, size: 12, color: Colors.white),
+          child: const Icon(LucideIcons.x, size: 12, color: Colors.white),
         );
       case _StepState.current:
         return Container(
@@ -428,33 +416,25 @@ class _CoverLetterCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    return Material(
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.line),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.description_outlined, size: 20, color: AppColors.primary),
-                const SizedBox(width: 8),
-                Text('Cover Letter', style: textTheme.titleMedium),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              coverLetter.trim().isNotEmpty
-                  ? coverLetter.trim()
-                  : 'ไม่ได้ระบุ Cover Letter',
-              style: textTheme.bodyMedium?.copyWith(height: 1.6),
-            ),
-          ],
-        ),
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(LucideIcons.fileText, size: 20, color: AppColors.primary),
+              const Gap(8),
+              Text('Cover Letter', style: textTheme.titleMedium),
+            ],
+          ),
+          const Gap(12),
+          Text(
+            coverLetter.trim().isNotEmpty
+                ? coverLetter.trim()
+                : 'ไม่ได้ระบุ Cover Letter',
+            style: textTheme.bodyMedium?.copyWith(height: 1.6),
+          ),
+        ],
       ),
     );
   }
@@ -469,33 +449,25 @@ class _ResumeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    return Material(
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.line),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.picture_as_pdf, size: 20, color: AppColors.primary),
-                const SizedBox(width: 8),
-                Text('Resume ที่ใช้สมัคร', style: textTheme.titleMedium),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              resumeObjectKey != null
-                  ? 'สำเนา Resume ในระบบ ณ วันที่ยื่นใบสมัคร'
-                  : 'ยังไม่มี Resume ในใบสมัครนี้',
-              style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-            ),
-          ],
-        ),
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(LucideIcons.fileText, size: 20, color: AppColors.primary),
+              const Gap(8),
+              Text('Resume ที่ใช้สมัคร', style: textTheme.titleMedium),
+            ],
+          ),
+          const Gap(12),
+          Text(
+            resumeObjectKey != null
+                ? 'สำเนา Resume ในระบบ ณ วันที่ยื่นใบสมัคร'
+                : 'ยังไม่มี Resume ในใบสมัครนี้',
+            style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+          ),
+        ],
       ),
     );
   }

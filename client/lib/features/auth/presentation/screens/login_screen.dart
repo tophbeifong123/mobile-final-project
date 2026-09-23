@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../../core/theme/app_tokens.dart';
+import '../../../../core/theme/app_colors_extension.dart';
+import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_logo.dart';
-import '../../../../core/widgets/app_primary_button.dart';
+import '../../../../core/widgets/app_text_field.dart';
 import '../providers/auth_controller.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -55,6 +59,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final colors = context.colors;
+
     return Scaffold(
       body: SafeArea(
         child: Form(
@@ -63,85 +69,74 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             padding: const EdgeInsets.fromLTRB(20, 28, 20, 16),
             children: [
               const Center(child: AppLogo(size: 56)),
-              const SizedBox(height: 20),
+              const Gap(20),
               Text(
                 'ยินดีต้อนรับกลับมา!',
                 style: textTheme.headlineSmall,
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 8),
+              const Gap(8),
               Text(
                 'เข้าสู่ระบบเพื่อค้นหาโอกาสและติดตามใบสมัครของคุณ',
                 style: textTheme.bodyMedium,
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 24),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: AppShadows.clay,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    children: [
-                      TextFormField(
-                        controller: _emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        autofillHints: const [AutofillHints.email],
-                        decoration: const InputDecoration(
-                          labelText: 'อีเมล',
-                          prefixIcon: Icon(Icons.alternate_email),
+              const Gap(24),
+              AppCard(
+                padding: const EdgeInsets.all(20),
+                borderRadius: BorderRadius.circular(24),
+                child: Column(
+                  children: [
+                    AppTextField(
+                      controller: _emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      autofillHints: const [AutofillHints.email],
+                      label: 'อีเมล',
+                      hintText: 'name@example.com',
+                      prefixIcon: const Icon(LucideIcons.mail, size: 18),
+                      validator: (value) {
+                        final email = value?.trim() ?? '';
+                        if (email.isEmpty || !email.contains('@')) {
+                          return 'กรอกอีเมลให้ถูกต้อง';
+                        }
+                        return null;
+                      },
+                    ),
+                    const Gap(16),
+                    AppTextField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      autofillHints: const [AutofillHints.password],
+                      label: 'รหัสผ่าน',
+                      hintText: '••••••••',
+                      prefixIcon: const Icon(LucideIcons.lock, size: 18),
+                      suffixIcon: IconButton(
+                        tooltip: _obscurePassword ? 'แสดงรหัสผ่าน' : 'ซ่อนรหัสผ่าน',
+                        onPressed: () => setState(
+                          () => _obscurePassword = !_obscurePassword,
                         ),
-                        validator: (value) {
-                          final email = value?.trim() ?? '';
-                          if (email.isEmpty || !email.contains('@')) {
-                            return 'กรอกอีเมลให้ถูกต้อง';
-                          }
-                          return null;
-                        },
+                        icon: Icon(
+                          _obscurePassword ? LucideIcons.eye : LucideIcons.eyeOff,
+                          size: 18,
+                        ),
                       ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _passwordController,
-                        obscureText: _obscurePassword,
-                        autofillHints: const [AutofillHints.password],
-                        decoration: InputDecoration(
-                          labelText: 'รหัสผ่าน',
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          suffixIcon: IconButton(
-                            tooltip: _obscurePassword
-                                ? 'แสดงรหัสผ่าน'
-                                : 'ซ่อนรหัสผ่าน',
-                            onPressed: () => setState(
-                              () => _obscurePassword = !_obscurePassword,
-                            ),
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_outlined
-                                  : Icons.visibility_off_outlined,
-                            ),
-                          ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'กรอกรหัสผ่าน';
+                        }
+                        return null;
+                      },
+                    ),
+                    if (_error != null) ...[
+                      const Gap(16),
+                      Text(
+                        _error!,
+                        style: textTheme.bodyMedium?.copyWith(
+                          color: colors.destructive,
                         ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'กรอกรหัสผ่าน';
-                          }
-                          return null;
-                        },
                       ),
-                      if (_error != null) ...[
-                        const SizedBox(height: 16),
-                        Text(
-                          _error!,
-                          style: textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                        ),
-                      ],
                     ],
-                  ),
+                  ],
                 ),
               ),
             ],
@@ -155,28 +150,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              AppPrimaryButton(
+              AppButton(
                 onPressed: _submitting ? null : _submit,
-                child: _submitting
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text('เข้าสู่ระบบ'),
+                isLoading: _submitting,
+                isFullWidth: true,
+                text: 'เข้าสู่ระบบ',
               ),
-              const SizedBox(height: 4),
+              const Gap(4),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text('ยังไม่มีบัญชี?', style: textTheme.bodyMedium),
                   TextButton(
-                    onPressed: _submitting
-                        ? null
-                        : () => context.go('/register'),
+                    onPressed: _submitting ? null : () => context.go('/register'),
                     child: const Text('สมัครสมาชิก'),
                   ),
                 ],

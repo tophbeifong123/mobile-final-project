@@ -2,14 +2,18 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../../../core/error/app_exception.dart';
+import '../../../../core/theme/app_colors_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
-import '../../../../core/widgets/app_primary_button.dart';
+import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/job_card.dart';
-import '../../../../core/widgets/loading_view.dart';
 import '../../../../core/widgets/page_heading.dart';
 import '../../domain/entities/job.dart';
 import '../job_labels.dart';
@@ -45,6 +49,7 @@ class _JobFeedScreenState extends ConsumerState<JobFeedScreen> {
   Widget build(BuildContext context) {
     final filter = ref.watch(jobsControllerProvider);
     final feed = ref.watch(jobFeedProvider);
+
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -64,7 +69,7 @@ class _JobFeedScreenState extends ConsumerState<JobFeedScreen> {
                 trailing: IconButton(
                   tooltip: 'การแจ้งเตือน',
                   onPressed: () => context.push('/student/notifications'),
-                  icon: const Icon(Icons.notifications_outlined),
+                  icon: const Icon(LucideIcons.bell),
                 ),
               ),
             ),
@@ -85,7 +90,7 @@ class _JobFeedScreenState extends ConsumerState<JobFeedScreen> {
                       onSubmitted: _applySearchNow,
                       decoration: InputDecoration(
                         hintText: 'ค้นหางาน บริษัท หรือจังหวัด',
-                        prefixIcon: const Icon(Icons.search),
+                        prefixIcon: const Icon(LucideIcons.search, size: 20),
                         suffixIcon: _searchController.text.isEmpty
                             ? null
                             : IconButton(
@@ -95,12 +100,12 @@ class _JobFeedScreenState extends ConsumerState<JobFeedScreen> {
                                   _searchController.clear();
                                   _applySearchNow('');
                                 },
-                                icon: const Icon(Icons.close),
+                                icon: const Icon(LucideIcons.x, size: 18),
                               ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const Gap(8),
                   _FilterButton(
                     active: filter.hasFilters,
                     badgeCount: filter.filterCount,
@@ -109,14 +114,14 @@ class _JobFeedScreenState extends ConsumerState<JobFeedScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 12),
+            const Gap(12),
             SizedBox(
               height: 48,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: kPagePadding),
                 itemCount: _categories.length,
-                separatorBuilder: (context, index) => const SizedBox(width: 8),
+                separatorBuilder: (context, index) => const Gap(8),
                 itemBuilder: (context, index) {
                   final category = _categories[index];
                   return _CategoryChip(
@@ -206,13 +211,11 @@ class _FilterButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: active ? AppColors.primary : AppColors.line),
-      ),
-      clipBehavior: Clip.antiAlias,
+    final colors = context.colors;
+    return AppCard(
+      padding: EdgeInsets.zero,
+      borderColor: active ? AppColors.primary : colors.border,
+      borderRadius: BorderRadius.circular(12),
       child: Badge(
         isLabelVisible: badgeCount > 0,
         label: Text('$badgeCount'),
@@ -222,7 +225,8 @@ class _FilterButton extends StatelessWidget {
           tooltip: 'ตัวกรอง',
           onPressed: onPressed,
           icon: Icon(
-            Icons.tune,
+            LucideIcons.slidersHorizontal,
+            size: 20,
             color: active ? AppColors.primary : AppColors.textPrimary,
           ),
         ),
@@ -245,6 +249,8 @@ class _CategoryChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final colors = context.colors;
+
     return FilterChip(
       label: Text(label),
       selected: selected,
@@ -259,7 +265,7 @@ class _CategoryChip extends StatelessWidget {
         }
         return AppColors.surface;
       }),
-      side: BorderSide(color: selected ? AppColors.primary : AppColors.line),
+      side: BorderSide(color: selected ? AppColors.primary : colors.border),
       onSelected: onSelected,
     );
   }
@@ -275,20 +281,35 @@ class _FeedList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return feed.when(
       skipLoadingOnReload: true,
-      loading: () => const LoadingView(label: 'กำลังโหลดงาน'),
+      loading: () => Skeletonizer(
+        enabled: true,
+        child: ListView.separated(
+          padding: const EdgeInsets.fromLTRB(kPagePadding, 8, kPagePadding, 16),
+          itemCount: 4,
+          separatorBuilder: (context, index) => const Gap(12),
+          itemBuilder: (context, index) => const JobCard(
+            title: 'ตำแหน่งงานกำลังโหลด',
+            companyName: 'บริษัทตัวอย่าง จำกัด',
+            province: 'กรุงเทพฯ',
+            details: ['On-site', 'IT & Software', 'มีเบี้ยเลี้ยง'],
+          ),
+        ),
+      ),
       error: (error, _) => EmptyState(
-        icon: Icons.work_outline,
+        icon: LucideIcons.briefcase,
         title: 'โหลดงานไม่ได้',
         message: userVisibleError(error),
-        action: AppPrimaryButton(
+        action: AppButton(
+          variant: AppButtonVariant.outline,
+          size: AppButtonSize.sm,
           onPressed: () => ref.invalidate(jobFeedProvider),
-          child: const Text('ลองอีกครั้ง'),
+          text: 'ลองอีกครั้ง',
         ),
       ),
       data: (jobs) {
         if (jobs.isEmpty) {
           return EmptyState(
-            icon: Icons.work_outline,
+            icon: LucideIcons.briefcase,
             title: filter.hasCriteria
                 ? 'ไม่พบงานที่ตรงกับตัวกรอง'
                 : 'ยังไม่มีงานที่เปิดรับ',
@@ -300,7 +321,7 @@ class _FeedList extends ConsumerWidget {
         return ListView.separated(
           padding: const EdgeInsets.fromLTRB(kPagePadding, 8, kPagePadding, 16),
           itemCount: jobs.length,
-          separatorBuilder: (context, index) => const SizedBox(height: 12),
+          separatorBuilder: (context, index) => const Gap(12),
           itemBuilder: (context, index) {
             final job = jobs[index];
             return JobCard(

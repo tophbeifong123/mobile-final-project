@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../../../core/error/app_exception.dart';
+import '../../../../core/theme/app_colors_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
-import '../../../../core/widgets/app_primary_button.dart';
+import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/empty_state.dart';
-import '../../../../core/widgets/loading_view.dart';
 import '../../../../core/widgets/page_heading.dart';
 import '../../../../core/widgets/status_chip.dart';
 import '../../domain/entities/job_application.dart';
@@ -33,27 +37,66 @@ class MyApplicationsScreen extends ConsumerWidget {
             ),
             Expanded(
               child: applicationsAsync.when(
-                loading: () =>
-                    const LoadingView(label: 'กำลังโหลดรายการใบสมัคร'),
+                skipLoadingOnReload: true,
+                loading: () => Skeletonizer(
+                  enabled: true,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(
+                      kPagePadding,
+                      8,
+                      kPagePadding,
+                      16,
+                    ),
+                    itemCount: 3,
+                    separatorBuilder: (context, index) => const Gap(12),
+                    itemBuilder: (context, index) => const AppCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              CircleAvatar(radius: 20),
+                              Gap(12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('ตำแหน่งงานกำลังโหลด'),
+                                    Gap(2),
+                                    Text('บริษัทตัวอย่าง จำกัด'),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          Gap(12),
+                          Text('ยื่นใบสมัครแล้ว'),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
                 error: (error, _) => EmptyState(
-                  icon: Icons.assignment_outlined,
+                  icon: LucideIcons.fileText,
                   title: 'โหลดรายการใบสมัครไม่ได้',
                   message: userVisibleError(error),
-                  action: AppPrimaryButton(
+                  action: AppButton(
+                    variant: AppButtonVariant.outline,
+                    size: AppButtonSize.sm,
                     onPressed: () => ref.invalidate(myApplicationsProvider),
-                    child: const Text('ลองอีกครั้ง'),
+                    text: 'ลองอีกครั้ง',
                   ),
                 ),
                 data: (items) {
                   if (items.isEmpty) {
                     return EmptyState(
-                      icon: Icons.assignment_outlined,
+                      icon: LucideIcons.fileText,
                       title: 'ยังไม่มีใบสมัคร',
                       message:
                           'สมัครจากหน้ารายละเอียดงาน ใบสมัครใหม่จะขึ้นสถานะ Submitted',
-                      action: AppPrimaryButton(
+                      action: AppButton(
                         onPressed: () => context.go('/student/home'),
-                        child: const Text('ค้นหางานเพื่อสมัคร'),
+                        text: 'ค้นหางานเพื่อสมัคร',
                       ),
                     );
                   }
@@ -70,7 +113,7 @@ class MyApplicationsScreen extends ConsumerWidget {
                       ),
                       itemCount: items.length,
                       separatorBuilder: (context, index) =>
-                          const SizedBox(height: 12),
+                          const Gap(12),
                       itemBuilder: (context, index) {
                         final application = items[index];
                         return _ApplicationCard(
@@ -104,74 +147,64 @@ class _ApplicationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final colors = context.colors;
 
-    return Material(
-      color: AppColors.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.line),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
+    return AppCard(
+      onTap: onTap,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _CompanyMark(name: application.companyName),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          application.jobTitle,
-                          style: textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          application.companyName,
-                          style: textTheme.bodyMedium,
-                        ),
-                      ],
+              _CompanyMark(name: application.companyName),
+              const Gap(12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      application.jobTitle,
+                      style: textTheme.titleMedium,
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 12,
-                runSpacing: 8,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  StatusChip(label: application.status.labelTh),
-                  if (application.createdAt != null)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.calendar_today_outlined,
-                          size: 14,
-                          color: AppColors.textSecondary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'สมัครเมื่อ ${_formatDate(application.createdAt!)}',
-                          style: textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
+                    const Gap(2),
+                    Text(
+                      application.companyName,
+                      style: textTheme.bodyMedium,
                     ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
-        ),
+          const Gap(12),
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              StatusChip(label: application.status.labelTh),
+              if (application.createdAt != null)
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      LucideIcons.calendar,
+                      size: 14,
+                      color: colors.mutedForeground,
+                    ),
+                    const Gap(4),
+                    Text(
+                      'สมัครเมื่อ ${_formatDate(application.createdAt!)}',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: colors.mutedForeground,
+                      ),
+                    ),
+                  ],
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }
