@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
+import { ApplicationsModule } from './applications/applications.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { JobsModule } from './jobs/jobs.module.js';
 import { StorageModule } from './storage/storage.module.js';
@@ -30,6 +31,7 @@ import { StudentsModule } from './students/students.module.js';
     AuthModule,
     StudentsModule,
     JobsModule,
+    ApplicationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
