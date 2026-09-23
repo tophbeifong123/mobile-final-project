@@ -17,6 +17,7 @@ import {
   JOB_CLOSED,
   JOB_NOT_FOUND,
   NOT_YOUR_JOB,
+  ONLY_SUBMITTED_CAN_BE_REVIEWING,
   PROFILE_NOT_FOUND,
   RESUME_REQUIRED,
   STUDENT_ONLY,
@@ -506,6 +507,145 @@ describe('ApplicationsService', () => {
         createdAt: '2026-09-23T12:00:00.000Z',
         updatedAt: '2026-09-23T12:30:00.000Z',
       });
+    });
+  });
+
+  describe('updateApplicantStatus', () => {
+    const companyProfile = {
+      id: 'company-profile-456',
+      userId: 'company-user-456',
+      name: 'Tech Co',
+    };
+
+    const targetJob = {
+      id: 'job-123',
+      companyId: 'company-profile-456',
+      title: 'Frontend Intern',
+    };
+
+    it('rejects if role is not company', async () => {
+      await expect(
+        service.updateApplicantStatus(studentUser, 'job-123', 'app-1', {
+          status: ApplicationStatus.Reviewing,
+        }),
+      ).rejects.toThrow(new ForbiddenException(COMPANY_ONLY));
+    });
+
+    it('throws NotFoundException if company profile does not exist', async () => {
+      (repository as any).findCompanyProfileByUserId = vi
+        .fn()
+        .mockResolvedValue(null);
+
+      await expect(
+        service.updateApplicantStatus(companyUser, 'job-123', 'app-1', {
+          status: ApplicationStatus.Reviewing,
+        }),
+      ).rejects.toThrow(new NotFoundException(COMPANY_PROFILE_NOT_FOUND));
+    });
+
+    it('throws NotFoundException if job does not exist', async () => {
+      (repository as any).findCompanyProfileByUserId = vi
+        .fn()
+        .mockResolvedValue(companyProfile);
+      (repository as any).findJobById = vi.fn().mockResolvedValue(null);
+
+      await expect(
+        service.updateApplicantStatus(companyUser, 'job-123', 'app-1', {
+          status: ApplicationStatus.Reviewing,
+        }),
+      ).rejects.toThrow(new NotFoundException(JOB_NOT_FOUND));
+    });
+
+    it('throws ForbiddenException if job belongs to another company', async () => {
+      (repository as any).findCompanyProfileByUserId = vi
+        .fn()
+        .mockResolvedValue(companyProfile);
+      (repository as any).findJobById = vi.fn().mockResolvedValue({
+        id: 'job-123',
+        companyId: 'other-company-789',
+      });
+
+      await expect(
+        service.updateApplicantStatus(companyUser, 'job-123', 'app-1', {
+          status: ApplicationStatus.Reviewing,
+        }),
+      ).rejects.toThrow(new ForbiddenException(NOT_YOUR_JOB));
+    });
+
+    it('throws BadRequestException if requested status is not Reviewing', async () => {
+      (repository as any).findCompanyProfileByUserId = vi
+        .fn()
+        .mockResolvedValue(companyProfile);
+      (repository as any).findJobById = vi.fn().mockResolvedValue(targetJob);
+
+      await expect(
+        service.updateApplicantStatus(companyUser, 'job-123', 'app-1', {
+          status: ApplicationStatus.Accepted,
+        }),
+      ).rejects.toThrow(new BadRequestException(ONLY_SUBMITTED_CAN_BE_REVIEWING));
+    });
+
+    it('updates status to reviewing and returns updated applicant detail', async () => {
+      (repository as any).findCompanyProfileByUserId = vi
+        .fn()
+        .mockResolvedValue(companyProfile);
+      (repository as any).findJobById = vi.fn().mockResolvedValue(targetJob);
+      (repository as any).updateApplicationStatusToReviewing = vi
+        .fn()
+        .mockResolvedValue({ id: 'app-1', status: ApplicationStatus.Reviewing });
+      (repository as any).findCompanyApplicantDetail = vi.fn().mockResolvedValue({
+        applicationId: 'app-1',
+        jobId: 'job-123',
+        studentId: 'student-profile-123',
+        fullName: 'สมชาย ใจดี',
+        university: 'มหาวิทยาลัยเกษตรศาสตร์',
+        major: 'วิทยาการคอมพิวเตอร์',
+        skills: ['Flutter'],
+        portfolioUrl: null,
+        resumeFileName: 'resume.pdf',
+        status: ApplicationStatus.Reviewing,
+        coverLetter: 'อยากฝึกงานที่นี่มากครับ',
+        resumeObjectKey: 'resumes/somchai.pdf',
+        createdAt: new Date('2026-09-23T12:00:00Z'),
+        updatedAt: new Date('2026-09-23T12:45:00Z'),
+      });
+
+      const result = await service.updateApplicantStatus(
+        companyUser,
+        'job-123',
+        'app-1',
+        { status: ApplicationStatus.Reviewing },
+      );
+
+      expect(
+        (repository as any).updateApplicationStatusToReviewing,
+      ).toHaveBeenCalledWith({
+        jobId: 'job-123',
+        applicationId: 'app-1',
+        jobTitle: targetJob.title,
+        actorUserId: companyUser.userId,
+      });
+
+      expect(result.status).toBe(ApplicationStatus.Reviewing);
+      expect(result.applicationId).toBe('app-1');
+      expect(result.fullName).toBe('สมชาย ใจดี');
+    });
+
+    it('throws NotFoundException if applicant detail cannot be found after update', async () => {
+      (repository as any).findCompanyProfileByUserId = vi
+        .fn()
+        .mockResolvedValue(companyProfile);
+      (repository as any).findJobById = vi.fn().mockResolvedValue(targetJob);
+      (repository as any).updateApplicationStatusToReviewing = vi
+        .fn()
+        .mockResolvedValue({ id: 'app-1', status: ApplicationStatus.Reviewing });
+      (repository as any).findCompanyApplicantDetail = vi.fn().mockResolvedValue(null);
+
+      await expect(
+        service.updateApplicantStatus(companyUser, 'job-123', 'app-1', {
+          status: ApplicationStatus.Reviewing,
+        }),
+      ).rejects.toThrow(new NotFoundException(APPLICATION_NOT_FOUND));
     });
   });
 });

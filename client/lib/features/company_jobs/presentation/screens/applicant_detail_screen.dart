@@ -10,7 +10,7 @@ import '../../../../core/widgets/status_chip.dart';
 import '../../domain/entities/company_job.dart';
 import '../providers/company_jobs_controller.dart';
 
-class ApplicantDetailScreen extends ConsumerWidget {
+class ApplicantDetailScreen extends ConsumerStatefulWidget {
   const ApplicantDetailScreen({
     super.key,
     required this.jobId,
@@ -21,10 +21,50 @@ class ApplicantDetailScreen extends ConsumerWidget {
   final String applicationId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ApplicantDetailScreen> createState() =>
+      _ApplicantDetailScreenState();
+}
+
+class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
+  bool _isUpdating = false;
+
+  Future<void> _updateStatusToReviewing(Applicant applicant) async {
+    setState(() => _isUpdating = true);
+    try {
+      await ref
+          .read(companyJobsControllerProvider.notifier)
+          .updateApplicantStatus(
+            jobId: widget.jobId,
+            applicationId: widget.applicationId,
+            status: 'reviewing',
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('เปลี่ยนสถานะเป็น Reviewing แล้ว'),
+          backgroundColor: AppColors.primary,
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(userVisibleError(error)),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isUpdating = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final applicantAsync = ref.watch(
       companyApplicantDetailProvider(
-        (jobId: jobId, applicationId: applicationId),
+        (jobId: widget.jobId, applicationId: widget.applicationId),
       ),
     );
 
@@ -39,7 +79,7 @@ class ApplicantDetailScreen extends ConsumerWidget {
           action: AppPrimaryButton(
             onPressed: () => ref.invalidate(
               companyApplicantDetailProvider(
-                (jobId: jobId, applicationId: applicationId),
+                (jobId: widget.jobId, applicationId: widget.applicationId),
               ),
             ),
             child: const Text('ลองอีกครั้ง'),
@@ -49,7 +89,7 @@ class ApplicantDetailScreen extends ConsumerWidget {
           return RefreshIndicator(
             onRefresh: () => ref.refresh(
               companyApplicantDetailProvider(
-                (jobId: jobId, applicationId: applicationId),
+                (jobId: widget.jobId, applicationId: widget.applicationId),
               ).future,
             ),
             child: ListView(
@@ -76,9 +116,58 @@ class ApplicantDetailScreen extends ConsumerWidget {
           );
         },
       ),
+      bottomNavigationBar: applicantAsync.maybeWhen(
+        data: (applicant) {
+          if (applicant.status.trim().toLowerCase() != 'submitted') {
+            return null;
+          }
+          return SafeArea(
+            child: Container(
+              padding: const EdgeInsets.all(kPagePadding),
+              decoration: const BoxDecoration(
+                color: AppColors.surface,
+                border: Border(
+                  top: BorderSide(color: AppColors.line),
+                ),
+              ),
+              child: SizedBox(
+                width: double.infinity,
+                child: AppPrimaryButton(
+                  onPressed: _isUpdating
+                      ? null
+                      : () => _updateStatusToReviewing(applicant),
+                  child: _isUpdating
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.rate_review_outlined, size: 20),
+                              SizedBox(width: 8),
+                              Text('เปลี่ยนสถานะเป็น Reviewing'),
+                            ],
+                          ),
+                        ),
+                ),
+              ),
+            ),
+          );
+        },
+        orElse: () => null,
+      ),
     );
   }
 }
+
 
 class _ProfileHeaderCard extends StatelessWidget {
   const _ProfileHeaderCard({required this.applicant});

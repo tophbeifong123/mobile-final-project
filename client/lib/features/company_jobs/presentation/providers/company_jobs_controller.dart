@@ -59,6 +59,24 @@ class CompanyJobsController extends Notifier<void> {
   Future<void> remove(String jobId) {
     return ref.read(companyJobRepositoryProvider).remove(jobId);
   }
+
+  Future<void> updateApplicantStatus({
+    required String jobId,
+    required String applicationId,
+    required String status,
+  }) async {
+    await ref.read(companyJobRepositoryProvider).updateApplicantStatus(
+          jobId: jobId,
+          applicationId: applicationId,
+          status: status,
+        );
+    ref.invalidate(
+      companyApplicantDetailProvider(
+        (jobId: jobId, applicationId: applicationId),
+      ),
+    );
+    ref.invalidate(companyJobApplicantsProvider(jobId));
+  }
 }
 
 final companyJobsControllerProvider =

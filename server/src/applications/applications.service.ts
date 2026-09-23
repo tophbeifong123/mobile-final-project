@@ -13,17 +13,20 @@ import {
   COVER_LETTER_REQUIRED,
   JOB_NOT_FOUND,
   NOT_YOUR_JOB,
+  ONLY_SUBMITTED_CAN_BE_REVIEWING,
   PROFILE_NOT_FOUND,
   RESUME_REQUIRED,
   STUDENT_ONLY,
 } from './applications.constants.js';
 import { ApplicationsRepository } from './applications.repository.js';
+import { ApplicationStatus } from './application-status.js';
 import { ApplicantDetailDto } from './dto/applicant-detail.dto.js';
 import { ApplicationDetailDto } from './dto/application-detail.dto.js';
 import { ApplicationResponseDto } from './dto/application-response.dto.js';
 import { ApplyJobDto } from './dto/apply-job.dto.js';
 import { JobApplicantItemDto } from './dto/job-applicant-item.dto.js';
 import { MyApplicationItemDto } from './dto/my-application-item.dto.js';
+import { UpdateApplicationStatusDto } from './dto/update-application-status.dto.js';
 import { Application } from './entities/application.entity.js';
 
 @Injectable()
@@ -200,6 +203,68 @@ export class ApplicationsService {
     if (job.companyId !== companyProfile.id) {
       throw new ForbiddenException(NOT_YOUR_JOB);
     }
+
+    const detail =
+      await this.applicationsRepository.findCompanyApplicantDetail(
+        jobId,
+        applicationId,
+      );
+    if (!detail) {
+      throw new NotFoundException(APPLICATION_NOT_FOUND);
+    }
+
+    return {
+      applicationId: detail.applicationId,
+      jobId: detail.jobId,
+      fullName: detail.fullName,
+      university: detail.university,
+      major: detail.major,
+      skills: detail.skills,
+      portfolioUrl: detail.portfolioUrl,
+      resumeObjectKey: detail.resumeObjectKey,
+      resumeFileName: detail.resumeFileName,
+      status: detail.status,
+      coverLetter: detail.coverLetter,
+      createdAt: detail.createdAt.toISOString(),
+      updatedAt: detail.updatedAt.toISOString(),
+    };
+  }
+
+  async updateApplicantStatus(
+    user: AuthUser,
+    jobId: string,
+    applicationId: string,
+    dto: UpdateApplicationStatusDto,
+  ): Promise<ApplicantDetailDto> {
+    this.assertCompany(user);
+
+    const companyProfile =
+      await this.applicationsRepository.findCompanyProfileByUserId(
+        user.userId,
+      );
+    if (!companyProfile) {
+      throw new NotFoundException(COMPANY_PROFILE_NOT_FOUND);
+    }
+
+    const job = await this.applicationsRepository.findJobById(jobId);
+    if (!job) {
+      throw new NotFoundException(JOB_NOT_FOUND);
+    }
+
+    if (job.companyId !== companyProfile.id) {
+      throw new ForbiddenException(NOT_YOUR_JOB);
+    }
+
+    if (dto.status !== ApplicationStatus.Reviewing) {
+      throw new BadRequestException(ONLY_SUBMITTED_CAN_BE_REVIEWING);
+    }
+
+    await this.applicationsRepository.updateApplicationStatusToReviewing({
+      jobId,
+      applicationId,
+      jobTitle: job.title,
+      actorUserId: user.userId,
+    });
 
     const detail =
       await this.applicationsRepository.findCompanyApplicantDetail(

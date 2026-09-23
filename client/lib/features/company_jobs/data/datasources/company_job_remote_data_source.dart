@@ -152,11 +152,15 @@ class CompanyJobRemoteDataSource {
     required String jobId,
     required String applicationId,
     required String status,
-  }) {
-    throwNotConnected(
-      _dio,
-      '${ApiConstants.companyJobs}/$jobId/applications/$applicationId/status',
-    );
+  }) async {
+    try {
+      await _dio.patch<Map<String, dynamic>>(
+        '${ApiConstants.companyJobs}/$jobId/applications/$applicationId/status',
+        data: {'status': status},
+      );
+    } on DioException catch (error) {
+      throw mapCompanyJobError(error);
+    }
   }
 }
 
