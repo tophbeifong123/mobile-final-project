@@ -8,7 +8,11 @@ import { type AuthUser } from '../auth/auth-user.js';
 import { UserRole } from '../auth/user-role.js';
 import {
   APPLICATION_NOT_FOUND,
+  COMPANY_ONLY,
+  COMPANY_PROFILE_NOT_FOUND,
   COVER_LETTER_REQUIRED,
+  JOB_NOT_FOUND,
+  NOT_YOUR_JOB,
   PROFILE_NOT_FOUND,
   RESUME_REQUIRED,
   STUDENT_ONLY,
@@ -17,6 +21,7 @@ import { ApplicationsRepository } from './applications.repository.js';
 import { ApplicationDetailDto } from './dto/application-detail.dto.js';
 import { ApplicationResponseDto } from './dto/application-response.dto.js';
 import { ApplyJobDto } from './dto/apply-job.dto.js';
+import { JobApplicantItemDto } from './dto/job-applicant-item.dto.js';
 import { MyApplicationItemDto } from './dto/my-application-item.dto.js';
 import { Application } from './entities/application.entity.js';
 
@@ -134,9 +139,52 @@ export class ApplicationsService {
     return this.toResponseDto(application);
   }
 
+  async getJobApplicants(
+    user: AuthUser,
+    jobId: string,
+  ): Promise<JobApplicantItemDto[]> {
+    this.assertCompany(user);
+
+    const companyProfile =
+      await this.applicationsRepository.findCompanyProfileByUserId(
+        user.userId,
+      );
+    if (!companyProfile) {
+      throw new NotFoundException(COMPANY_PROFILE_NOT_FOUND);
+    }
+
+    const job = await this.applicationsRepository.findJobById(jobId);
+    if (!job) {
+      throw new NotFoundException(JOB_NOT_FOUND);
+    }
+
+    if (job.companyId !== companyProfile.id) {
+      throw new ForbiddenException(NOT_YOUR_JOB);
+    }
+
+    const applicants =
+      await this.applicationsRepository.listJobApplicants(jobId);
+
+    return applicants.map((app) => ({
+      applicationId: app.applicationId,
+      fullName: app.fullName,
+      university: app.university,
+      major: app.major,
+      status: app.status,
+      coverLetter: app.coverLetter,
+      createdAt: app.createdAt.toISOString(),
+    }));
+  }
+
   private assertStudent(user: AuthUser): void {
     if (user.role !== UserRole.Student) {
       throw new ForbiddenException(STUDENT_ONLY);
+    }
+  }
+
+  private assertCompany(user: AuthUser): void {
+    if (user.role !== UserRole.Company) {
+      throw new ForbiddenException(COMPANY_ONLY);
     }
   }
 

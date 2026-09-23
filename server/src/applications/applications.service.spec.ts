@@ -11,9 +11,12 @@ import { ApplicationStatus } from './application-status.js';
 import {
   ALREADY_APPLIED,
   APPLICATION_NOT_FOUND,
+  COMPANY_ONLY,
+  COMPANY_PROFILE_NOT_FOUND,
   COVER_LETTER_REQUIRED,
   JOB_CLOSED,
   JOB_NOT_FOUND,
+  NOT_YOUR_JOB,
   PROFILE_NOT_FOUND,
   RESUME_REQUIRED,
   STUDENT_ONLY,
@@ -289,6 +292,97 @@ describe('ApplicationsService', () => {
       expect(result.timeline[0].toStatus).toBe(ApplicationStatus.Submitted);
       expect(result.timeline[0].fromStatus).toBeNull();
       expect(result.timeline[0].createdAt).toBe('2026-09-23T10:00:00.000Z');
+    });
+  });
+
+  describe('getJobApplicants', () => {
+    const companyProfile = {
+      id: 'company-profile-456',
+      userId: 'company-user-456',
+      name: 'Tech Co',
+    };
+
+    const targetJob = {
+      id: 'job-123',
+      companyId: 'company-profile-456',
+      title: 'Frontend Intern',
+    };
+
+    it('rejects if role is not company', async () => {
+      await expect(
+        service.getJobApplicants(studentUser, 'job-123'),
+      ).rejects.toThrow(new ForbiddenException(COMPANY_ONLY));
+    });
+
+    it('throws NotFoundException if company profile does not exist', async () => {
+      (repository as any).findCompanyProfileByUserId = vi
+        .fn()
+        .mockResolvedValue(null);
+
+      await expect(
+        service.getJobApplicants(companyUser, 'job-123'),
+      ).rejects.toThrow(new NotFoundException(COMPANY_PROFILE_NOT_FOUND));
+    });
+
+    it('throws NotFoundException if job does not exist', async () => {
+      (repository as any).findCompanyProfileByUserId = vi
+        .fn()
+        .mockResolvedValue(companyProfile);
+      (repository as any).findJobById = vi.fn().mockResolvedValue(null);
+
+      await expect(
+        service.getJobApplicants(companyUser, 'job-123'),
+      ).rejects.toThrow(new NotFoundException(JOB_NOT_FOUND));
+    });
+
+    it('throws ForbiddenException if job belongs to another company', async () => {
+      (repository as any).findCompanyProfileByUserId = vi
+        .fn()
+        .mockResolvedValue(companyProfile);
+      (repository as any).findJobById = vi.fn().mockResolvedValue({
+        id: 'job-123',
+        companyId: 'other-company-789',
+      });
+
+      await expect(
+        service.getJobApplicants(companyUser, 'job-123'),
+      ).rejects.toThrow(new ForbiddenException(NOT_YOUR_JOB));
+    });
+
+    it('returns applicants for company job with full details', async () => {
+      (repository as any).findCompanyProfileByUserId = vi
+        .fn()
+        .mockResolvedValue(companyProfile);
+      (repository as any).findJobById = vi
+        .fn()
+        .mockResolvedValue(targetJob);
+      (repository as any).listJobApplicants = vi.fn().mockResolvedValue([
+        {
+          applicationId: 'app-1',
+          fullName: 'สมชาย ใจดี',
+          university: 'มหาวิทยาลัยเกษตรศาสตร์',
+          major: 'วิทยาการคอมพิวเตอร์',
+          status: ApplicationStatus.Submitted,
+          coverLetter: 'อยากฝึกงานที่นี่ครับ',
+          createdAt: new Date('2026-09-23T12:00:00Z'),
+        },
+      ]);
+
+      const result = await service.getJobApplicants(companyUser, 'job-123');
+
+      expect((repository as any).listJobApplicants).toHaveBeenCalledWith(
+        'job-123',
+      );
+      expect(result).toHaveLength(1);
+      expect(result[0]).toEqual({
+        applicationId: 'app-1',
+        fullName: 'สมชาย ใจดี',
+        university: 'มหาวิทยาลัยเกษตรศาสตร์',
+        major: 'วิทยาการคอมพิวเตอร์',
+        status: ApplicationStatus.Submitted,
+        coverLetter: 'อยากฝึกงานที่นี่ครับ',
+        createdAt: '2026-09-23T12:00:00.000Z',
+      });
     });
   });
 });

@@ -6,3 +6,6 @@ export const ALREADY_APPLIED = 'สมัครงานนี้ไปแล้
 export const PROFILE_NOT_FOUND = 'ไม่พบข้อมูลโปรไฟล์นักศึกษา';
 export const COVER_LETTER_REQUIRED = 'กรุณาระบุ Cover Letter';
 export const APPLICATION_NOT_FOUND = 'ไม่พบใบสมัคร';
+export const COMPANY_ONLY = 'เฉพาะบริษัทเท่านั้น';
+export const COMPANY_PROFILE_NOT_FOUND = 'ไม่พบโปรไฟล์บริษัท';
+export const NOT_YOUR_JOB = 'เฉพาะบริษัท หรือไม่ใช่ประกาศของบริษัทนี้';
