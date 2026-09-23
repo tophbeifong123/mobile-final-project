@@ -6,6 +6,7 @@ import '../../../../core/error/app_exception.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/app_primary_button.dart';
 import '../../../../core/widgets/status_chip.dart';
+import '../../../student_profile/presentation/providers/student_profile_controller.dart';
 import '../providers/resume_controller.dart';
 
 class ResumeUploadScreen extends ConsumerStatefulWidget {
@@ -24,6 +25,9 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final file = _file;
+    final profileAsync = ref.watch(studentProfileControllerProvider);
+    final currentResumeName = profileAsync.asData?.value.resumeFileName;
+
     return Scaffold(
       appBar: AppBar(title: const Text('อัปโหลด Resume')),
       body: ListView(
@@ -36,6 +40,33 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
             style: textTheme.bodyMedium,
           ),
           const SizedBox(height: 16),
+          if (currentResumeName != null && currentResumeName.isNotEmpty) ...[
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.check_circle_outline,
+                      color: AppColors.primary,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Resume ในระบบ', style: textTheme.labelMedium),
+                          const SizedBox(height: 2),
+                          Text(currentResumeName, style: textTheme.titleMedium),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
           DecoratedBox(
             decoration: BoxDecoration(
               color: AppColors.surface,
@@ -92,7 +123,7 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
                         children: [
                           Text(file.name, style: textTheme.titleMedium),
                           const SizedBox(height: 8),
-                          const StatusChip(label: 'ยังไม่อัปโหลด'),
+                          const StatusChip(label: 'พร้อมอัปโหลด'),
                         ],
                       ),
                     ),
@@ -160,15 +191,18 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
       _error = null;
     });
     try {
-      await ref
-          .read(resumeRepositoryProvider)
-          .uploadPdf(filePath: path, fileName: file.name);
+      await ref.read(resumeRepositoryProvider).uploadPdf(
+            filePath: path,
+            fileName: file.name,
+          );
+      ref.invalidate(studentProfileControllerProvider);
       if (!mounted) {
         return;
       }
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('อัปโหลด Resume แล้ว')));
+      setState(() => _file = null);
     } catch (error) {
       if (!mounted) {
         return;

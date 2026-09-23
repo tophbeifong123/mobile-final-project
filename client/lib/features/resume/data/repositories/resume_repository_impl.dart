@@ -11,10 +11,12 @@ class ResumeRepositoryImpl implements ResumeRepository {
   Future<ResumeFile> uploadPdf({
     required String filePath,
     required String fileName,
+    List<int>? bytes,
   }) async {
     final model = await _remote.uploadPdf(
       filePath: filePath,
       fileName: fileName,
+      bytes: bytes,
     );
     return model.toEntity();
   }
