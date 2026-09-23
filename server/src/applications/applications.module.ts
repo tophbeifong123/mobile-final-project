@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module.js';
+import { CompanyProfile } from '../auth/entities/company-profile.entity.js';
 import { StudentProfile } from '../auth/entities/student-profile.entity.js';
 import { Job } from '../jobs/entities/job.entity.js';
 import { ApplicationsController } from './applications.controller.js';
@@ -16,6 +17,7 @@ import { Application } from './entities/application.entity.js';
       Application,
       ApplicationStatusEvent,
       StudentProfile,
+      CompanyProfile,
       Job,
     ]),
   ],

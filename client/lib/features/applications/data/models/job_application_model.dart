@@ -7,6 +7,7 @@ class JobApplicationModel {
     required this.companyName,
     required this.status,
     required this.coverLetter,
+    this.createdAt,
   });
 
   factory JobApplicationModel.fromJson(Map<String, dynamic> json) {
@@ -16,6 +17,9 @@ class JobApplicationModel {
       companyName: json['companyName'] as String? ?? '',
       status: ApplicationStatus.values.byName(json['status'] as String),
       coverLetter: json['coverLetter'] as String? ?? '',
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'] as String)
+          : null,
     );
   }
 
@@ -24,6 +28,7 @@ class JobApplicationModel {
   final String companyName;
   final ApplicationStatus status;
   final String coverLetter;
+  final DateTime? createdAt;
 
   JobApplication toEntity() {
     return JobApplication(
@@ -32,6 +37,7 @@ class JobApplicationModel {
       companyName: companyName,
       status: status,
       coverLetter: coverLetter,
+      createdAt: createdAt,
     );
   }
 }

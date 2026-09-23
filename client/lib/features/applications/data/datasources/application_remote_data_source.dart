@@ -9,8 +9,20 @@ class ApplicationRemoteDataSource {
 
   final Dio _dio;
 
-  Future<List<JobApplicationModel>> fetchMine() {
-    throwNotConnected(_dio, ApiConstants.applications);
+  Future<List<JobApplicationModel>> fetchMine() async {
+    try {
+      final response = await _dio.get<List<dynamic>>(ApiConstants.applications);
+      final data = response.data;
+      if (data == null) {
+        throw const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
+      }
+      return data
+          .map((item) =>
+              JobApplicationModel.fromJson(item as Map<String, dynamic>))
+          .toList();
+    } on DioException catch (e) {
+      throw _mapApplicationError(e);
+    }
   }
 
   Future<JobApplicationModel> fetchDetail(String applicationId) {

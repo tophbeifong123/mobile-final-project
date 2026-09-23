@@ -244,6 +244,7 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
             coverLetter: _coverLetterController.text.trim(),
           );
       ref.invalidate(applicationsControllerProvider);
+      ref.invalidate(myApplicationsProvider);
       if (!mounted) {
         return;
       }
