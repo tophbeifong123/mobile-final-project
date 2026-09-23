@@ -30,4 +30,12 @@ class CompanyProfileModel {
       logoObjectKey: logoObjectKey,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'businessType': businessType,
+      'description': description,
+    };
+  }
 }

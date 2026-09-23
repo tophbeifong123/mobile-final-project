@@ -8,5 +8,6 @@ abstract class CompanyProfileRepository {
   Future<CompanyProfile> uploadLogo({
     required String filePath,
     required String fileName,
+    List<int>? bytes,
   });
 }

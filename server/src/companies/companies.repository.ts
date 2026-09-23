@@ -41,4 +41,26 @@ export class CompaniesRepository {
       totalApplicants,
     };
   }
+
+  async updateProfile(
+    id: string,
+    data: { name: string; businessType: string; description: string },
+  ): Promise<CompanyProfile | null> {
+    const repo = this.dataSource.getRepository(CompanyProfile);
+    await repo.update(id, {
+      name: data.name,
+      businessType: data.businessType,
+      description: data.description,
+    });
+    return repo.findOne({ where: { id } });
+  }
+
+  async updateLogoObjectKey(
+    id: string,
+    logoObjectKey: string,
+  ): Promise<CompanyProfile | null> {
+    const repo = this.dataSource.getRepository(CompanyProfile);
+    await repo.update(id, { logoObjectKey });
+    return repo.findOne({ where: { id } });
+  }
 }
