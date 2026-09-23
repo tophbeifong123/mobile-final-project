@@ -1,7 +1,18 @@
-import { Body, Controller, Get, Patch, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Patch,
+  Post,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
   ApiBody,
+  ApiConsumes,
   ApiOperation,
   ApiResponse,
   ApiTags,
@@ -9,6 +20,8 @@ import {
 import { type AuthUser } from '../auth/auth-user.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { type UploadedFilePayload } from '../storage/uploaded-file.interface.js';
+import { ResumeResponseDto } from './dto/resume-response.dto.js';
 import { StudentProfileDto } from './dto/student-profile.dto.js';
 import { UpdateStudentProfileDto } from './dto/update-student-profile.dto.js';
 import { StudentsService } from './students.service.js';
@@ -44,4 +57,41 @@ export class StudentsController {
   ): Promise<StudentProfileDto> {
     return this.studentsService.updateMine(user, dto);
   }
+
+  @Post('me/resume')
+  @ApiOperation({ summary: 'อัปโหลด Resume เป็น PDF' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'ไฟล์ Resume รูปแบบ PDF',
+        },
+      },
+      required: ['file'],
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    type: ResumeResponseDto,
+    description: 'อัปโหลดสำเร็จ',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'ไฟล์ไม่ใช่ PDF หรือไม่ได้เลือกไฟล์',
+  })
+  @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
+  @ApiResponse({ status: 403, description: 'เฉพาะนักศึกษา' })
+  @ApiResponse({ status: 404, description: 'ไม่พบโปรไฟล์' })
+  @UseInterceptors(FileInterceptor('file'))
+  uploadResume(
+    @CurrentUser() user: AuthUser,
+    @UploadedFile() file: UploadedFilePayload | undefined,
+  ): Promise<ResumeResponseDto> {
+    return this.studentsService.uploadResume(user, file);
+  }
 }
+

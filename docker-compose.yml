@@ -1,4 +1,4 @@
-﻿services:
+services:
   # NestJS Backend API
   server:
     build:
@@ -19,9 +19,18 @@
       - JWT_SECRET=supersecretjwtkey_change_me_in_production
       - JWT_ACCESS_EXPIRATION=15m
       - JWT_REFRESH_EXPIRATION=7d
+      - STORAGE_DRIVER=minio
+      - S3_ENDPOINT=http://minio:9000
+      - S3_REGION=us-east-1
+      - S3_BUCKET=internfinder
+      - S3_ACCESS_KEY=minioadmin
+      - S3_SECRET_KEY=minioadmin
+      - S3_FORCE_PATH_STYLE=true
     depends_on:
       postgres:
         condition: service_healthy
+      minio:
+        condition: service_started
     networks:
       - app-network
 
@@ -46,8 +55,26 @@
     networks:
       - app-network
 
+  # MinIO Object Storage
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: mobile_backend_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - app-network
+
 volumes:
   postgres_data:
+  minio_data:
 
 networks:
   app-network:

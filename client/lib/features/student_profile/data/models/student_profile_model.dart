@@ -7,6 +7,8 @@ class StudentProfileModel {
     required this.major,
     required this.skills,
     required this.portfolioUrl,
+    this.resumeFileName,
+    this.resumeObjectKey,
   });
 
   factory StudentProfileModel.fromJson(Map<String, dynamic> json) {
@@ -18,6 +20,8 @@ class StudentProfileModel {
           .map((skill) => skill as String)
           .toList(),
       portfolioUrl: json['portfolioUrl'] as String?,
+      resumeFileName: json['resumeFileName'] as String?,
+      resumeObjectKey: json['resumeObjectKey'] as String?,
     );
   }
 
@@ -26,6 +30,8 @@ class StudentProfileModel {
   final String major;
   final List<String> skills;
   final String? portfolioUrl;
+  final String? resumeFileName;
+  final String? resumeObjectKey;
 
   Map<String, dynamic> toJson() {
     return {
@@ -44,6 +50,8 @@ class StudentProfileModel {
       major: major,
       skills: skills,
       portfolioUrl: portfolioUrl,
+      resumeFileName: resumeFileName,
+      resumeObjectKey: resumeObjectKey,
     );
   }
 }

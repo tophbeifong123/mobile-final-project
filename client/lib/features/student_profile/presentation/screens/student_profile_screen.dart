@@ -167,6 +167,58 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
             ),
             validator: _portfolio,
           ),
+          const SizedBox(height: 16),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.line),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.picture_as_pdf,
+                    color: widget.profile.resumeFileName != null
+                        ? AppColors.primary
+                        : AppColors.textSecondary,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Resume',
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          widget.profile.resumeFileName ??
+                              'ยังไม่มี Resume ในระบบ',
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: widget.profile.resumeFileName != null
+                                        ? null
+                                        : AppColors.textSecondary,
+                                  ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () => context.push('/student/resume'),
+                    child: Text(
+                      widget.profile.resumeFileName != null
+                          ? 'เปลี่ยน'
+                          : 'อัปโหลด',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           if (_error != null) ...[
             const SizedBox(height: 12),
             Text(
@@ -180,10 +232,6 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
           AppPrimaryButton(
             onPressed: _saving ? null : _save,
             child: Text(_saving ? 'กำลังบันทึก' : 'บันทึกโปรไฟล์'),
-          ),
-          TextButton(
-            onPressed: () => context.push('/student/resume'),
-            child: const Text('อัปโหลด Resume'),
           ),
           TextButton(
             onPressed: () => ref.read(authControllerProvider.notifier).logout(),

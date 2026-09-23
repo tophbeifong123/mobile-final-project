@@ -5,6 +5,8 @@ class StudentProfile {
     required this.major,
     required this.skills,
     required this.portfolioUrl,
+    this.resumeFileName,
+    this.resumeObjectKey,
   });
 
   final String fullName;
@@ -12,4 +14,6 @@ class StudentProfile {
   final String major;
   final List<String> skills;
   final String? portfolioUrl;
+  final String? resumeFileName;
+  final String? resumeObjectKey;
 }

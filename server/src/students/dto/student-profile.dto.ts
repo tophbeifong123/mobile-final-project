@@ -15,4 +15,11 @@ export class StudentProfileDto {
 
   @ApiProperty({ nullable: true, example: 'https://example.com' })
   portfolioUrl: string | null;
+
+  @ApiProperty({ nullable: true, example: 'my_resume.pdf' })
+  resumeFileName: string | null;
+
+  @ApiProperty({ nullable: true, example: 'resumes/student-id/12345.pdf' })
+  resumeObjectKey: string | null;
 }
+

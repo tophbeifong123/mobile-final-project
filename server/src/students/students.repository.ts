@@ -37,4 +37,21 @@ export class StudentsRepository {
     profile.portfolioUrl = input.portfolioUrl;
     return profiles.save(profile);
   }
+
+  async updateResume(
+    userId: string,
+    objectKey: string,
+    fileName: string,
+  ): Promise<StudentProfile | null> {
+    const profiles = this.dataSource.getRepository(StudentProfile);
+    const profile = await profiles.findOne({ where: { userId } });
+    if (!profile) {
+      return null;
+    }
+
+    profile.resumeObjectKey = objectKey;
+    profile.resumeFileName = fileName;
+    return profiles.save(profile);
+  }
 }
+
