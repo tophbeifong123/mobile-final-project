@@ -192,4 +192,46 @@ describe('StudentsService', () => {
       expect(storage.put).not.toHaveBeenCalled();
     });
   });
+
+  describe('getResumeFile', () => {
+    it('returns buffer and fileName for student with uploaded resume', async () => {
+      repository.findByUserId.mockResolvedValue(stored);
+      const pdfBuffer = Buffer.from('%PDF-1.4 sample content');
+      storage.get.mockResolvedValue(pdfBuffer);
+
+      const result = await service.getResumeFile(student);
+
+      expect(result.buffer).toBe(pdfBuffer);
+      expect(result.fileName).toBe('resume.pdf');
+      expect(storage.get).toHaveBeenCalledWith('resumes/user-1/123.pdf');
+    });
+
+    it('throws NotFoundException if student has not uploaded a resume', async () => {
+      repository.findByUserId.mockResolvedValue({
+        ...stored,
+        resumeObjectKey: null,
+        resumeFileName: null,
+      });
+
+      await expect(service.getResumeFile(student)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      expect(storage.get).not.toHaveBeenCalled();
+    });
+
+    it('throws NotFoundException if resume file is not found in storage', async () => {
+      repository.findByUserId.mockResolvedValue(stored);
+      storage.get.mockResolvedValue(null);
+
+      await expect(service.getResumeFile(student)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+    });
+
+    it('rejects a company attempting to get student resume', async () => {
+      await expect(service.getResumeFile(company)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+    });
+  });
 });

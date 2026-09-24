@@ -132,6 +132,7 @@ Access token อายุสั้น Refresh token หมุนทุกคร�
 |---|---|---|
 | GET, PATCH | /api/students/me | Student Profile |
 | POST | /api/students/me/resume | Resume Upload |
+| GET | /api/students/me/resume/file | Resume Preview / Download |
 | GET | /api/jobs | Home / Job Feed |
 | GET | /api/jobs/:id | Job Detail |
 | POST, DELETE | /api/jobs/:id/save | Save จาก Job Detail |

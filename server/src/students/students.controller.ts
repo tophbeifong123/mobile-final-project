@@ -4,10 +4,12 @@ import {
   Get,
   Patch,
   Post,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { type Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
@@ -92,6 +94,25 @@ export class StudentsController {
     @UploadedFile() file: UploadedFilePayload | undefined,
   ): Promise<ResumeResponseDto> {
     return this.studentsService.uploadResume(user, file);
+  }
+
+  @Get('me/resume/file')
+  @ApiOperation({ summary: 'ดาวน์โหลดหรือดูไฟล์ Resume เป็น PDF' })
+  @ApiResponse({ status: 200, description: 'ไฟล์ PDF Resume' })
+  @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
+  @ApiResponse({ status: 403, description: 'เฉพาะนักศึกษา' })
+  @ApiResponse({ status: 404, description: 'ไม่พบไฟล์ Resume' })
+  async getResumeFile(
+    @CurrentUser() user: AuthUser,
+    @Res() res: Response,
+  ): Promise<void> {
+    const { buffer, fileName } = await this.studentsService.getResumeFile(user);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `inline; filename="${encodeURIComponent(fileName)}"`,
+    );
+    res.send(buffer);
   }
 }
 

@@ -18,6 +18,7 @@ const STUDENT_ONLY = 'เฉพาะนักศึกษาเท่านั�
 const PROFILE_NOT_FOUND = 'ไม่พบโปรไฟล์';
 const ONLY_PDF_ALLOWED = 'เลือกได้เฉพาะไฟล์ PDF เท่านั้น';
 const FILE_REQUIRED = 'กรุณาเลือกไฟล์ PDF';
+const RESUME_NOT_FOUND = 'ไม่พบไฟล์ Resume';
 
 @Injectable()
 export class StudentsService {
@@ -115,6 +116,27 @@ export class StudentsService {
     return {
       fileName: updated.resumeFileName ?? fileName,
       objectKey: updated.resumeObjectKey ?? objectKey,
+    };
+  }
+
+  async getResumeFile(
+    user: AuthUser,
+  ): Promise<{ buffer: Buffer; fileName: string }> {
+    this.assertStudent(user);
+    const profile = await this.studentsRepository.findByUserId(user.userId);
+    if (!profile) {
+      throw new NotFoundException(PROFILE_NOT_FOUND);
+    }
+    if (!profile.resumeObjectKey) {
+      throw new NotFoundException(RESUME_NOT_FOUND);
+    }
+    const buffer = await this.storageService.get(profile.resumeObjectKey);
+    if (!buffer) {
+      throw new NotFoundException(RESUME_NOT_FOUND);
+    }
+    return {
+      buffer,
+      fileName: profile.resumeFileName || 'resume.pdf',
     };
   }
 
