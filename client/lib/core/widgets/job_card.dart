@@ -18,9 +18,6 @@ class JobCard extends StatelessWidget {
     this.allowanceText,
     this.statusText,
     this.isNew = false,
-    this.onRemove,
-    this.onApply,
-    this.applyText,
   });
 
   final String title;
@@ -34,9 +31,6 @@ class JobCard extends StatelessWidget {
   final String? allowanceText;
   final String? statusText;
   final bool isNew;
-  final VoidCallback? onRemove;
-  final VoidCallback? onApply;
-  final String? applyText;
 
   Color _getCompanyColor(String name) {
     final initial = name.trim().isEmpty ? '' : name.trim().substring(0, 1).toUpperCase();
@@ -295,70 +289,6 @@ class JobCard extends StatelessWidget {
                 ),
               ],
             ),
-            if (onRemove != null || onApply != null) ...[
-              const Gap(10),
-              Row(
-                children: [
-                  if (onRemove != null) ...[
-                    GestureDetector(
-                      onTap: onRemove,
-                      child: Container(
-                        width: 42,
-                        height: 42,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: NeoColors.softRose,
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: NeoColors.inkSolid, width: 2),
-                          boxShadow: NeoShadows.elevation1,
-                        ),
-                        child: const Icon(
-                          Icons.delete_outline_rounded,
-                          size: 20,
-                          color: NeoColors.inkSolid,
-                        ),
-                      ),
-                    ),
-                    const Gap(8),
-                  ],
-                  if (onApply != null)
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: onApply,
-                        child: Container(
-                          height: 42,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: NeoColors.freshMint,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: NeoColors.inkSolid, width: 2),
-                            boxShadow: NeoShadows.elevation1,
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                applyText ?? 'สมัครทันที',
-                                style: const TextStyle(
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w800,
-                                  color: NeoColors.inkSolid,
-                                ),
-                              ),
-                              const Gap(6),
-                              const Icon(
-                                Icons.rocket_launch_rounded,
-                                size: 16,
-                                color: NeoColors.inkSolid,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ],
           ],
         ),
       ),

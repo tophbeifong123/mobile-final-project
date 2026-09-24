@@ -202,10 +202,8 @@ class _SavedJobsScreenState extends ConsumerState<SavedJobsScreen> {
                         ],
                         hasAllowance: job.hasAllowance,
                         isSaved: true,
+                        onBookmarkTap: () => _handleRemoveJob(job),
                         onTap: () => context.push('/student/jobs/${job.id}'),
-                        onApply: () => context.push('/student/jobs/${job.id}'),
-                        applyText: 'สมัครทันที',
-                        onRemove: () => _handleRemoveJob(job),
                       );
                     },
                   ),
