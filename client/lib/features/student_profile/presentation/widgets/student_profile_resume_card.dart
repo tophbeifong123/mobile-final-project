@@ -3,6 +3,7 @@ import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_tokens.dart';
+import 'resume_preview_modal.dart';
 
 /// Active Resume Card for Student Profile Screen matching Neo-Brutalist design
 class StudentProfileResumeCard extends StatelessWidget {
@@ -182,7 +183,13 @@ class StudentProfileResumeCard extends StatelessWidget {
                     if (hasResume) ...[
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: () => context.push('/student/resume'),
+                          onPressed: () {
+                            ResumePreviewModal.show(
+                              context,
+                              fileName: resumeFileName!,
+                              onReplace: () => context.push('/student/resume'),
+                            );
+                          },
                           style: OutlinedButton.styleFrom(
                             backgroundColor: NeoColors.pureWhite,
                             foregroundColor: NeoColors.inkSolid,
@@ -191,21 +198,30 @@ class StudentProfileResumeCard extends StatelessWidget {
                               width: 1.5,
                             ),
                             elevation: 0,
-                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 10,
+                            ),
+                            visualDensity: VisualDensity.compact,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
                           child: const Row(
+                            mainAxisSize: MainAxisSize.min,
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.visibility_rounded, size: 16),
-                              Gap(6),
-                              Text(
-                                'ดูตัวอย่าง',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w800,
+                              Icon(Icons.visibility_rounded, size: 15),
+                              Gap(4),
+                              Flexible(
+                                child: Text(
+                                  'ดูตัวอย่าง',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                  ),
                                 ),
                               ),
                             ],
@@ -225,26 +241,35 @@ class StudentProfileResumeCard extends StatelessWidget {
                             color: NeoColors.inkSolid,
                             width: 1.5,
                           ),
-                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 10,
+                          ),
+                          visualDensity: VisualDensity.compact,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
                         child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(
                               hasResume
                                   ? Icons.sync_rounded
                                   : Icons.upload_file_rounded,
-                              size: 16,
+                              size: 15,
                             ),
-                            const Gap(6),
-                            Text(
-                              hasResume ? 'เปลี่ยน' : 'อัปโหลด',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w800,
+                            const Gap(4),
+                            Flexible(
+                              child: Text(
+                                hasResume ? 'เปลี่ยน' : 'อัปโหลด',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w800,
+                                ),
                               ),
                             ),
                           ],

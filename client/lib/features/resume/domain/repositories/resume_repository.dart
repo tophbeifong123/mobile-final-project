@@ -6,4 +6,6 @@ abstract class ResumeRepository {
     required String fileName,
     List<int>? bytes,
   });
+
+  Future<List<int>> downloadResumePdf();
 }

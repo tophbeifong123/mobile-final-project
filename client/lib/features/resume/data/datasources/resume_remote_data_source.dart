@@ -53,6 +53,22 @@ class ResumeRemoteDataSource {
     }
   }
 
+  Future<List<int>> downloadResumePdf() async {
+    try {
+      final response = await _dio.get<List<int>>(
+        ApiConstants.studentResumeFile,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      final data = response.data;
+      if (data == null || data.isEmpty) {
+        throw const AppException('ไม่พบข้อมูลไฟล์ Resume');
+      }
+      return data;
+    } on DioException catch (e) {
+      throw _mapResumeError(e);
+    }
+  }
+
   AppException _mapResumeError(DioException error) {
     final data = error.response?.data;
     if (data is Map<String, dynamic> && data['message'] != null) {

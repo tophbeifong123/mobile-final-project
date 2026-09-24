@@ -117,7 +117,13 @@ void main() {
       find.widgetWithText(TextFormField, 'มหาวิทยาลัย'),
       'KMUTT',
     );
-    await tester.tap(find.text('บันทึกโปรไฟล์'));
+    final saveButton = find.text('บันทึกโปรไฟล์');
+    await tester.scrollUntilVisible(
+      saveButton,
+      100,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(saveButton);
     await tester.pumpAndSettle();
 
     expect(repository.lastSaved?.university, 'KMUTT');

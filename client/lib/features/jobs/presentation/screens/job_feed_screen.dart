@@ -52,8 +52,10 @@ class _JobFeedScreenState extends ConsumerState<JobFeedScreen> {
   Widget build(BuildContext context) {
     final filter = ref.watch(jobsControllerProvider);
     final feed = ref.watch(jobFeedProvider);
-    final studentProfile =
-        ref.watch(studentProfileControllerProvider).asData?.value;
+    final studentProfile = ref
+        .watch(studentProfileControllerProvider)
+        .asData
+        ?.value;
 
     return Scaffold(
       backgroundColor: NeoColors.paperCanvas,
@@ -108,8 +110,9 @@ class _JobFeedScreenState extends ConsumerState<JobFeedScreen> {
                     showCheckmark: false,
                     labelStyle: TextStyle(
                       fontSize: 12,
-                      fontWeight:
-                          isSelected ? FontWeight.w800 : FontWeight.w700,
+                      fontWeight: isSelected
+                          ? FontWeight.w800
+                          : FontWeight.w700,
                       color: isSelected ? Colors.white : NeoColors.inkSolid,
                     ),
                     backgroundColor: NeoColors.pureWhite,
@@ -141,86 +144,86 @@ class _JobFeedScreenState extends ConsumerState<JobFeedScreen> {
             const Gap(8),
 
             // Feed Section Header
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Flexible(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Flexible(
-                          child: Text(
-                            'งานฝึกงานมาใหม่',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w900,
-                              color: NeoColors.inkSolid,
-                              letterSpacing: -0.3,
-                            ),
-                          ),
-                        ),
-                        const Gap(6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 7,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: NeoColors.freshMint,
-                            borderRadius: BorderRadius.circular(999),
-                            border: Border.all(
-                              color: NeoColors.inkSolid,
-                              width: 1.5,
-                            ),
-                          ),
-                          child: const Text(
-                            'อัปเดตวันนี้',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              color: NeoColors.inkSolid,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Gap(8),
-                  GestureDetector(
-                    onTap: () {
-                      _searchDebounce?.cancel();
-                      _searchController.clear();
-                      ref
-                          .read(jobsControllerProvider.notifier)
-                          .apply(const JobFilter());
-                    },
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'ดูทั้งหมด',
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w800,
-                            color: NeoColors.electricIndigo,
-                          ),
-                        ),
-                        Gap(2),
-                        Icon(
-                          Icons.arrow_forward_rounded,
-                          size: 14,
-                          color: NeoColors.electricIndigo,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            // Padding(
+            //   padding: const EdgeInsets.symmetric(horizontal: 16),
+            //   child: Row(
+            //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            //     children: [
+            //       Flexible(
+            //         child: Row(
+            //           mainAxisSize: MainAxisSize.min,
+            //           children: [
+            //             const Flexible(
+            //               child: Text(
+            //                 'งานฝึกงานมาใหม่',
+            //                 maxLines: 1,
+            //                 overflow: TextOverflow.ellipsis,
+            //                 style: TextStyle(
+            //                   fontSize: 16,
+            //                   fontWeight: FontWeight.w900,
+            //                   color: NeoColors.inkSolid,
+            //                   letterSpacing: -0.3,
+            //                 ),
+            //               ),
+            //             ),
+            //             const Gap(6),
+            //             Container(
+            //               padding: const EdgeInsets.symmetric(
+            //                 horizontal: 7,
+            //                 vertical: 2,
+            //               ),
+            //               decoration: BoxDecoration(
+            //                 color: NeoColors.freshMint,
+            //                 borderRadius: BorderRadius.circular(999),
+            //                 border: Border.all(
+            //                   color: NeoColors.inkSolid,
+            //                   width: 1.5,
+            //                 ),
+            //               ),
+            //               child: const Text(
+            //                 'อัปเดตวันนี้',
+            //                 style: TextStyle(
+            //                   fontSize: 10,
+            //                   fontWeight: FontWeight.w800,
+            //                   color: NeoColors.inkSolid,
+            //                 ),
+            //               ),
+            //             ),
+            //           ],
+            //         ),
+            //       ),
+            //       const Gap(8),
+            //       GestureDetector(
+            //         onTap: () {
+            //           _searchDebounce?.cancel();
+            //           _searchController.clear();
+            //           ref
+            //               .read(jobsControllerProvider.notifier)
+            //               .apply(const JobFilter());
+            //         },
+            //         child: const Row(
+            //           mainAxisSize: MainAxisSize.min,
+            //           children: [
+            //             Text(
+            //               'ดูทั้งหมด',
+            //               style: TextStyle(
+            //                 fontSize: 12.5,
+            //                 fontWeight: FontWeight.w800,
+            //                 color: NeoColors.electricIndigo,
+            //               ),
+            //             ),
+            //             Gap(2),
+            //             Icon(
+            //               Icons.arrow_forward_rounded,
+            //               size: 14,
+            //               color: NeoColors.electricIndigo,
+            //             ),
+            //           ],
+            //         ),
+            //       ),
+            //     ],
+            //   ),
+            // ),
             const Gap(8),
 
             // Job Cards Stream

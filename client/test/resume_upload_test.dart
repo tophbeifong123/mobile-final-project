@@ -153,4 +153,9 @@ class _FakeResumeRepository implements ResumeRepository {
     lastUploaded = result;
     return result;
   }
+
+  @override
+  Future<List<int>> downloadResumePdf() async {
+    return [0x25, 0x50, 0x44, 0x46];
+  }
 }

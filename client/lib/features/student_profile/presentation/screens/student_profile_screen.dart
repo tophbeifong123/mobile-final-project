@@ -9,6 +9,7 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_primary_button.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/loading_view.dart';
+import '../../../../core/widgets/neo_button.dart';
 import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../../jobs/presentation/widgets/feed_top_bar.dart';
 import '../../domain/entities/student_profile.dart';
@@ -136,132 +137,102 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
   Widget build(BuildContext context) {
     return Form(
       key: _formKey,
-      child: Column(
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-              children: [
-                // Student Profile Card Hero
-                StudentProfileHeroCard(
-                  profile: widget.profile,
-                  onAvatarTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('คุณสามารถเปลี่ยนรูปโปรไฟล์ได้เร็วๆ นี้ 📸'),
+          // Student Profile Card Hero
+          StudentProfileHeroCard(
+            profile: widget.profile,
+            onAvatarTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content:
+                      Text('คุณสามารถเปลี่ยนรูปโปรไฟล์ได้เร็วๆ นี้ 📸'),
+                ),
+              );
+            },
+          ),
+          const Gap(14),
+
+          // Active Resume Card
+          StudentProfileResumeCard(
+            resumeFileName: widget.profile.resumeFileName,
+          ),
+          const Gap(14),
+
+          // General Information Card
+          StudentProfileInfoCard(
+            nameController: _nameController,
+            universityController: _universityController,
+            majorController: _majorController,
+            requiredValidator: _required,
+          ),
+          const Gap(14),
+
+          // Skills Section Card
+          StudentProfileSkillsCard(
+            controller: _skillsController,
+          ),
+          const Gap(14),
+
+          // Portfolio & Links Card
+          StudentProfileLinksCard(
+            controller: _portfolioController,
+            validator: _portfolio,
+          ),
+
+          if (_error != null) ...[
+            const Gap(12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: NeoColors.errorBg,
+                borderRadius: BorderRadius.circular(10),
+                border:
+                    Border.all(color: NeoColors.errorBorder, width: 1.5),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.error_outline_rounded,
+                    color: NeoColors.errorText,
+                    size: 18,
+                  ),
+                  const Gap(8),
+                  Expanded(
+                    child: Text(
+                      _error!,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: NeoColors.errorText,
                       ),
-                    );
-                  },
-                ),
-                const Gap(14),
-
-                // Active Resume Card
-                StudentProfileResumeCard(
-                  resumeFileName: widget.profile.resumeFileName,
-                ),
-                const Gap(14),
-
-                // General Information Card
-                StudentProfileInfoCard(
-                  nameController: _nameController,
-                  universityController: _universityController,
-                  majorController: _majorController,
-                  requiredValidator: _required,
-                ),
-                const Gap(14),
-
-                // Skills Section Card
-                StudentProfileSkillsCard(
-                  controller: _skillsController,
-                ),
-                const Gap(14),
-
-                // Portfolio & Links Card
-                StudentProfileLinksCard(
-                  controller: _portfolioController,
-                  validator: _portfolio,
-                ),
-
-                if (_error != null) ...[
-                  const Gap(12),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: NeoColors.errorBg,
-                      borderRadius: BorderRadius.circular(10),
-                      border:
-                          Border.all(color: NeoColors.errorBorder, width: 1.5),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.error_outline_rounded,
-                          color: NeoColors.errorText,
-                          size: 18,
-                        ),
-                        const Gap(8),
-                        Expanded(
-                          child: Text(
-                            _error!,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: NeoColors.errorText,
-                            ),
-                          ),
-                        ),
-                      ],
                     ),
                   ),
                 ],
-                const Gap(16),
-
-                // Logout Button
-                Center(
-                  child: TextButton.icon(
-                    onPressed: () =>
-                        ref.read(authControllerProvider.notifier).logout(),
-                    style: TextButton.styleFrom(
-                      foregroundColor: NeoColors.errorText,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                    ),
-                    icon: const Icon(Icons.logout_rounded, size: 18),
-                    label: const Text(
-                      'ออกจากระบบ',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Sticky Bottom Save Bar
-          Container(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-            decoration: const BoxDecoration(
-              color: NeoColors.paperCanvas,
-              border: Border(
-                top: BorderSide(color: NeoColors.inkSolid, width: 2),
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: NeoColors.inkSolid,
-                  offset: Offset(0, -2),
-                  blurRadius: 0,
-                ),
-              ],
             ),
-            child: AppPrimaryButton(
-              onPressed: _saving ? null : _save,
-              child: Text(_saving ? 'กำลังบันทึก' : 'บันทึกโปรไฟล์'),
+          ],
+          const Gap(24),
+
+          // Action Section at the bottom of the content
+          AppPrimaryButton(
+            onPressed: _saving ? null : _save,
+            child: Text(_saving ? 'กำลังบันทึก' : 'บันทึกโปรไฟล์'),
+          ),
+          const Gap(12),
+          NeoButton(
+            onPressed: () =>
+                ref.read(authControllerProvider.notifier).logout(),
+            text: 'ออกจากระบบ',
+            icon: const Icon(
+              Icons.logout_rounded,
+              size: 18,
+              color: NeoColors.errorText,
             ),
+            variant: NeoButtonVariant.destructive,
+            isFullWidth: true,
+            height: 48,
           ),
         ],
       ),
