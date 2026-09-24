@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/error/app_exception.dart';
-import '../../../../core/theme/app_colors_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/app_button.dart';
-import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_primary_button.dart';
-import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/loading_view.dart';
-import '../../../../core/widgets/page_heading.dart';
 import '../../../auth/presentation/providers/auth_controller.dart';
+import '../../../jobs/presentation/widgets/feed_top_bar.dart';
 import '../../domain/entities/student_profile.dart';
 import '../providers/student_profile_controller.dart';
+import '../widgets/student_profile_hero_card.dart';
+import '../widgets/student_profile_info_card.dart';
+import '../widgets/student_profile_links_card.dart';
+import '../widgets/student_profile_resume_card.dart';
+import '../widgets/student_profile_skills_card.dart';
 
 class StudentProfileScreen extends ConsumerWidget {
   const StudentProfileScreen({super.key});
@@ -24,15 +25,28 @@ class StudentProfileScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(studentProfileControllerProvider);
+
     return Scaffold(
+      backgroundColor: NeoColors.paperCanvas,
       body: SafeArea(
-        child: profile.when(
-          loading: () => const LoadingView(label: 'กำลังโหลดโปรไฟล์'),
-          error: (error, _) => _ProfileError(
-            message: userVisibleError(error),
-            onRetry: () => ref.invalidate(studentProfileControllerProvider),
-          ),
-          data: (value) => _ProfileForm(profile: value),
+        child: Column(
+          children: [
+            // Top App Bar
+            const FeedTopBar(subtitle: '7. โปรไฟล์นักศึกษา (Student Profile)'),
+
+            // Content Area
+            Expanded(
+              child: profile.when(
+                loading: () => const LoadingView(label: 'กำลังโหลดโปรไฟล์'),
+                error: (error, _) => _ProfileError(
+                  message: userVisibleError(error),
+                  onRetry: () =>
+                      ref.invalidate(studentProfileControllerProvider),
+                ),
+                data: (value) => _ProfileForm(profile: value),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -62,9 +76,14 @@ class _ProfileError extends ConsumerWidget {
             ),
           ),
         ),
-        TextButton(
+        TextButton.icon(
           onPressed: () => ref.read(authControllerProvider.notifier).logout(),
-          child: const Text('ออกจากระบบ'),
+          style: TextButton.styleFrom(foregroundColor: NeoColors.errorText),
+          icon: const Icon(Icons.logout_rounded, size: 18),
+          label: const Text(
+            'ออกจากระบบ',
+            style: TextStyle(fontWeight: FontWeight.w800),
+          ),
         ),
       ],
     );
@@ -115,120 +134,134 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
-
     return Form(
       key: _formKey,
-      child: ListView(
-        padding: const EdgeInsets.all(kPagePadding),
+      child: Column(
         children: [
-          const PageHeading(
-            title: 'โปรไฟล์',
-            subtitle: 'ชื่อ มหาวิทยาลัย สาขา ทักษะ และ Portfolio',
-          ),
-          const Gap(16),
-          AppTextField(
-            controller: _nameController,
-            textInputAction: TextInputAction.next,
-            label: 'ชื่อ',
-            prefixIcon: const Icon(LucideIcons.user, size: 18),
-            validator: _required,
-          ),
-          const Gap(12),
-          AppTextField(
-            controller: _universityController,
-            textInputAction: TextInputAction.next,
-            label: 'มหาวิทยาลัย',
-            prefixIcon: const Icon(LucideIcons.graduationCap, size: 18),
-            validator: _required,
-          ),
-          const Gap(12),
-          AppTextField(
-            controller: _majorController,
-            textInputAction: TextInputAction.next,
-            label: 'สาขา',
-            prefixIcon: const Icon(LucideIcons.bookOpen, size: 18),
-            validator: _required,
-          ),
-          const Gap(12),
-          AppTextField(
-            controller: _skillsController,
-            textInputAction: TextInputAction.next,
-            label: 'ทักษะ',
-            hintText: 'คั่นด้วยจุลภาค เช่น Flutter, SQL',
-            prefixIcon: const Icon(LucideIcons.sparkles, size: 18),
-          ),
-          const Gap(12),
-          AppTextField(
-            controller: _portfolioController,
-            keyboardType: TextInputType.url,
-            label: 'Portfolio',
-            hintText: 'https://',
-            prefixIcon: const Icon(LucideIcons.link, size: 18),
-            validator: _portfolio,
-          ),
-          const Gap(16),
-          AppCard(
-            child: Row(
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
               children: [
-                Icon(
-                  LucideIcons.fileText,
-                  color: widget.profile.resumeFileName != null
-                      ? AppColors.primary
-                      : colors.mutedForeground,
-                  size: 24,
+                // Student Profile Card Hero
+                StudentProfileHeroCard(
+                  profile: widget.profile,
+                  onAvatarTap: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('คุณสามารถเปลี่ยนรูปโปรไฟล์ได้เร็วๆ นี้ 📸'),
+                      ),
+                    );
+                  },
                 ),
-                const Gap(12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Resume',
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                      const Gap(2),
-                      Text(
-                        widget.profile.resumeFileName ??
-                            'ยังไม่มี Resume ในระบบ',
-                        style:
-                            Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: widget.profile.resumeFileName != null
-                                      ? null
-                                      : colors.mutedForeground,
-                                ),
-                      ),
-                    ],
+                const Gap(14),
+
+                // Active Resume Card
+                StudentProfileResumeCard(
+                  resumeFileName: widget.profile.resumeFileName,
+                ),
+                const Gap(14),
+
+                // General Information Card
+                StudentProfileInfoCard(
+                  nameController: _nameController,
+                  universityController: _universityController,
+                  majorController: _majorController,
+                  requiredValidator: _required,
+                ),
+                const Gap(14),
+
+                // Skills Section Card
+                StudentProfileSkillsCard(
+                  controller: _skillsController,
+                ),
+                const Gap(14),
+
+                // Portfolio & Links Card
+                StudentProfileLinksCard(
+                  controller: _portfolioController,
+                  validator: _portfolio,
+                ),
+
+                if (_error != null) ...[
+                  const Gap(12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: NeoColors.errorBg,
+                      borderRadius: BorderRadius.circular(10),
+                      border:
+                          Border.all(color: NeoColors.errorBorder, width: 1.5),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.error_outline_rounded,
+                          color: NeoColors.errorText,
+                          size: 18,
+                        ),
+                        const Gap(8),
+                        Expanded(
+                          child: Text(
+                            _error!,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: NeoColors.errorText,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                TextButton(
-                  onPressed: () => context.push('/student/resume'),
-                  child: Text(
-                    widget.profile.resumeFileName != null
-                        ? 'เปลี่ยน'
-                        : 'อัปโหลด',
+                ],
+                const Gap(16),
+
+                // Logout Button
+                Center(
+                  child: TextButton.icon(
+                    onPressed: () =>
+                        ref.read(authControllerProvider.notifier).logout(),
+                    style: TextButton.styleFrom(
+                      foregroundColor: NeoColors.errorText,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                    ),
+                    icon: const Icon(Icons.logout_rounded, size: 18),
+                    label: const Text(
+                      'ออกจากระบบ',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          if (_error != null) ...[
-            const Gap(12),
-            Text(
-              _error!,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: colors.destructive,
+
+          // Sticky Bottom Save Bar
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+            decoration: const BoxDecoration(
+              color: NeoColors.paperCanvas,
+              border: Border(
+                top: BorderSide(color: NeoColors.inkSolid, width: 2),
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: NeoColors.inkSolid,
+                  offset: Offset(0, -2),
+                  blurRadius: 0,
+                ),
+              ],
             ),
-          ],
-          const Gap(16),
-          AppPrimaryButton(
-            onPressed: _saving ? null : _save,
-            child: Text(_saving ? 'กำลังบันทึก' : 'บันทึกโปรไฟล์'),
-          ),
-          TextButton(
-            onPressed: () => ref.read(authControllerProvider.notifier).logout(),
-            child: const Text('ออกจากระบบ'),
+            child: AppPrimaryButton(
+              onPressed: _saving ? null : _save,
+              child: Text(_saving ? 'กำลังบันทึก' : 'บันทึกโปรไฟล์'),
+            ),
           ),
         ],
       ),
@@ -248,8 +281,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
       return null;
     }
     final uri = Uri.tryParse(trimmed);
-    final allowed =
-        uri != null &&
+    final allowed = uri != null &&
         (uri.scheme == 'http' || uri.scheme == 'https') &&
         uri.host.isNotEmpty;
     if (!allowed) {
@@ -283,9 +315,9 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('บันทึกโปรไฟล์แล้ว')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('บันทึกโปรไฟล์แล้ว')),
+      );
     } catch (error) {
       if (!mounted) {
         return;
