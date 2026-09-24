@@ -31,12 +31,11 @@ class JobFeedScreen extends ConsumerStatefulWidget {
 }
 
 class _JobFeedScreenState extends ConsumerState<JobFeedScreen> {
-  static const _categories = [
-    'ทั้งหมด',
-    'IT & Software',
-    'Design & UX/UI',
-    'Marketing',
-    'Data',
+  static const _filterModes = <({WorkMode? mode, String label})>[
+    (mode: null, label: 'ทั้งหมด'),
+    (mode: WorkMode.remote, label: 'Online'),
+    (mode: WorkMode.onSite, label: 'Onsite'),
+    (mode: WorkMode.hybrid, label: 'Hybrid'),
   ];
 
   final _searchController = TextEditingController();
@@ -88,23 +87,23 @@ class _JobFeedScreenState extends ConsumerState<JobFeedScreen> {
             ),
             const Gap(8),
 
-            // Horizontal Category Pills
+            // Horizontal WorkMode Filter Pills
             SizedBox(
               height: 38,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: _categories.length,
+                itemCount: _filterModes.length,
                 separatorBuilder: (context, index) => const Gap(8),
                 itemBuilder: (context, index) {
-                  final category = _categories[index];
-                  final isAll = category == 'ทั้งหมด';
+                  final item = _filterModes[index];
+                  final isAll = item.mode == null;
                   final isSelected = isAll
-                      ? (filter.category == null || filter.category!.isEmpty)
-                      : filter.category == category;
+                      ? filter.workMode == null
+                      : filter.workMode == item.mode;
 
                   return FilterChip(
-                    label: Text(category),
+                    label: Text(item.label),
                     selected: isSelected,
                     showCheckmark: false,
                     labelStyle: TextStyle(
@@ -127,11 +126,11 @@ class _JobFeedScreenState extends ConsumerState<JobFeedScreen> {
                     shadowColor: NeoColors.inkSolid,
                     onSelected: (selected) {
                       if (isAll) {
-                        _replaceFilter(clearCategory: true);
+                        _replaceFilter(clearWorkMode: true);
                       } else {
                         _replaceFilter(
-                          category: selected ? category : null,
-                          clearCategory: !selected,
+                          workMode: selected ? item.mode : null,
+                          clearWorkMode: !selected,
                         );
                       }
                     },
@@ -250,6 +249,8 @@ class _JobFeedScreenState extends ConsumerState<JobFeedScreen> {
 
   void _replaceFilter({
     String? search,
+    WorkMode? workMode,
+    bool clearWorkMode = false,
     String? category,
     bool clearCategory = false,
     int? page,
@@ -261,7 +262,7 @@ class _JobFeedScreenState extends ConsumerState<JobFeedScreen> {
           JobFilter(
             search: search ?? current.search,
             province: current.province,
-            workMode: current.workMode,
+            workMode: clearWorkMode ? null : workMode ?? current.workMode,
             category: clearCategory ? null : category ?? current.category,
             hasAllowance: current.hasAllowance,
             page: page ?? current.page,
