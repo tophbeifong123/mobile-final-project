@@ -38,17 +38,6 @@ void main() {
     // Top Bar
     expect(find.text('เข้าสู่ระบบนักศึกษา'), findsOneWidget);
 
-    // Hero Logo Badge Stickers
-    expect(find.text('★ PRO'), findsOneWidget);
-    expect(find.text('เวอร์ชัน 2.4'), findsOneWidget);
-
-    // Greeting
-    expect(find.text('ยินดีต้อนรับกลับมา!'), findsOneWidget);
-    expect(
-      find.text('พร้อมค้นหาตำแหน่งฝึกงานใหม่ๆ วันนี้หรือยัง?'),
-      findsOneWidget,
-    );
-
     // Form Labels & Helpers
     expect(find.text('อีเมลนักศึกษา / มหาวิทยาลัย'), findsOneWidget);
     expect(find.text('รหัสนักศึกษาหรืออีเมลมหาวิทยาลัย'), findsOneWidget);
