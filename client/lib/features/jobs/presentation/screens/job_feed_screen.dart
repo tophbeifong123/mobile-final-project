@@ -8,16 +8,19 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
 import '../../../../core/error/app_exception.dart';
-import '../../../../core/theme/app_colors_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/app_button.dart';
-import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/job_card.dart';
-import '../../../../core/widgets/page_heading.dart';
+import '../../../saved_jobs/presentation/providers/saved_jobs_controller.dart';
+import '../../../student_profile/presentation/providers/student_profile_controller.dart';
 import '../../domain/entities/job.dart';
 import '../job_labels.dart';
 import '../providers/jobs_controller.dart';
+import '../widgets/feed_greeting_header.dart';
+import '../widgets/feed_pagination_bar.dart';
+import '../widgets/feed_search_bar.dart';
+import '../widgets/feed_top_bar.dart';
 import '../widgets/job_filter_sheet.dart';
 
 class JobFeedScreen extends ConsumerStatefulWidget {
@@ -29,6 +32,7 @@ class JobFeedScreen extends ConsumerStatefulWidget {
 
 class _JobFeedScreenState extends ConsumerState<JobFeedScreen> {
   static const _categories = [
+    'ทั้งหมด',
     'IT & Software',
     'Design & UX/UI',
     'Marketing',
@@ -49,94 +53,178 @@ class _JobFeedScreenState extends ConsumerState<JobFeedScreen> {
   Widget build(BuildContext context) {
     final filter = ref.watch(jobsControllerProvider);
     final feed = ref.watch(jobFeedProvider);
+    final studentProfile =
+        ref.watch(studentProfileControllerProvider).asData?.value;
 
     return Scaffold(
+      backgroundColor: NeoColors.paperCanvas,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                kPagePadding,
-                8,
-                kPagePadding,
-                0,
-              ),
-              child: PageHeading(
-                eyebrow: 'InternFinder',
-                title: 'สวัสดี',
-                subtitle: 'ค้นหาที่ฝึกงานที่เปิดรับ',
-                trailing: IconButton(
-                  tooltip: 'การแจ้งเตือน',
-                  onPressed: () => context.push('/student/notifications'),
-                  icon: const Icon(LucideIcons.bell),
-                ),
-              ),
+            // Top App Bar
+            const FeedTopBar(),
+
+            // Greeting Header (Dynamic from student profile)
+            FeedGreetingHeader(
+              name: studentProfile?.fullName,
+              university: studentProfile?.university,
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                kPagePadding,
-                16,
-                kPagePadding,
-                0,
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _searchController,
-                      textInputAction: TextInputAction.search,
-                      onChanged: _queueSearch,
-                      onSubmitted: _applySearchNow,
-                      decoration: InputDecoration(
-                        hintText: 'ค้นหางาน บริษัท หรือจังหวัด',
-                        prefixIcon: const Icon(LucideIcons.search, size: 20),
-                        suffixIcon: _searchController.text.isEmpty
-                            ? null
-                            : IconButton(
-                                tooltip: 'ล้างคำค้น',
-                                onPressed: () {
-                                  _searchDebounce?.cancel();
-                                  _searchController.clear();
-                                  _applySearchNow('');
-                                },
-                                icon: const Icon(LucideIcons.x, size: 18),
-                              ),
-                      ),
-                    ),
-                  ),
-                  const Gap(8),
-                  _FilterButton(
-                    active: filter.hasFilters,
-                    badgeCount: filter.filterCount,
-                    onPressed: () => _openFilter(filter),
-                  ),
-                ],
-              ),
+            const Gap(2),
+
+            // Search Bar & Filter Button
+            FeedSearchBar(
+              controller: _searchController,
+              onChanged: _queueSearch,
+              onSubmitted: _applySearchNow,
+              onClear: () {
+                _searchDebounce?.cancel();
+                _searchController.clear();
+                _applySearchNow('');
+              },
+              onFilterTap: () => _openFilter(filter),
+              hasActiveFilters: filter.hasFilters,
+              badgeCount: filter.filterCount,
             ),
-            const Gap(12),
+            const Gap(8),
+
+            // Horizontal Category Pills
             SizedBox(
-              height: 48,
+              height: 38,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: kPagePadding),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: _categories.length,
                 separatorBuilder: (context, index) => const Gap(8),
                 itemBuilder: (context, index) {
                   final category = _categories[index];
-                  return _CategoryChip(
-                    label: category,
-                    selected: filter.category == category,
+                  final isAll = category == 'ทั้งหมด';
+                  final isSelected = isAll
+                      ? (filter.category == null || filter.category!.isEmpty)
+                      : filter.category == category;
+
+                  return FilterChip(
+                    label: Text(category),
+                    selected: isSelected,
+                    showCheckmark: false,
+                    labelStyle: TextStyle(
+                      fontSize: 12,
+                      fontWeight:
+                          isSelected ? FontWeight.w800 : FontWeight.w700,
+                      color: isSelected ? Colors.white : NeoColors.inkSolid,
+                    ),
+                    backgroundColor: NeoColors.pureWhite,
+                    selectedColor: NeoColors.inkSolid,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(999),
+                      side: const BorderSide(
+                        color: NeoColors.inkSolid,
+                        width: 1.8,
+                      ),
+                    ),
+                    elevation: 1.5,
+                    pressElevation: 1,
+                    shadowColor: NeoColors.inkSolid,
                     onSelected: (selected) {
-                      _replaceFilter(
-                        category: selected ? category : null,
-                        clearCategory: !selected,
-                      );
+                      if (isAll) {
+                        _replaceFilter(clearCategory: true);
+                      } else {
+                        _replaceFilter(
+                          category: selected ? category : null,
+                          clearCategory: !selected,
+                        );
+                      }
                     },
                   );
                 },
               ),
             ),
+            const Gap(8),
+
+            // Feed Section Header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Flexible(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Flexible(
+                          child: Text(
+                            'งานฝึกงานมาใหม่',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              color: NeoColors.inkSolid,
+                              letterSpacing: -0.3,
+                            ),
+                          ),
+                        ),
+                        const Gap(6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 7,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: NeoColors.freshMint,
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: NeoColors.inkSolid,
+                              width: 1.5,
+                            ),
+                          ),
+                          child: const Text(
+                            'อัปเดตวันนี้',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              color: NeoColors.inkSolid,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Gap(8),
+                  GestureDetector(
+                    onTap: () {
+                      _searchDebounce?.cancel();
+                      _searchController.clear();
+                      ref
+                          .read(jobsControllerProvider.notifier)
+                          .apply(const JobFilter());
+                    },
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'ดูทั้งหมด',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w800,
+                            color: NeoColors.electricIndigo,
+                          ),
+                        ),
+                        Gap(2),
+                        Icon(
+                          Icons.arrow_forward_rounded,
+                          size: 14,
+                          color: NeoColors.electricIndigo,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Gap(8),
+
+            // Job Cards Stream
             Expanded(
               child: _FeedList(feed: feed, filter: filter),
             ),
@@ -164,6 +252,7 @@ class _JobFeedScreenState extends ConsumerState<JobFeedScreen> {
     String? search,
     String? category,
     bool clearCategory = false,
+    int? page,
   }) {
     final current = ref.read(jobsControllerProvider);
     ref
@@ -175,6 +264,7 @@ class _JobFeedScreenState extends ConsumerState<JobFeedScreen> {
             workMode: current.workMode,
             category: clearCategory ? null : category ?? current.category,
             hasAllowance: current.hasAllowance,
+            page: page ?? current.page,
           ),
         );
   }
@@ -198,79 +288,6 @@ class _JobFeedScreenState extends ConsumerState<JobFeedScreen> {
   }
 }
 
-class _FilterButton extends StatelessWidget {
-  const _FilterButton({
-    required this.active,
-    this.badgeCount = 0,
-    required this.onPressed,
-  });
-
-  final bool active;
-  final int badgeCount;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = context.colors;
-    return AppCard(
-      padding: EdgeInsets.zero,
-      borderColor: active ? AppColors.primary : colors.border,
-      borderRadius: BorderRadius.circular(12),
-      child: Badge(
-        isLabelVisible: badgeCount > 0,
-        label: Text('$badgeCount'),
-        backgroundColor: AppColors.primary,
-        textColor: Colors.white,
-        child: IconButton(
-          tooltip: 'ตัวกรอง',
-          onPressed: onPressed,
-          icon: Icon(
-            LucideIcons.slidersHorizontal,
-            size: 20,
-            color: active ? AppColors.primary : AppColors.textPrimary,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CategoryChip extends StatelessWidget {
-  const _CategoryChip({
-    required this.label,
-    required this.selected,
-    required this.onSelected,
-  });
-
-  final String label;
-  final bool selected;
-  final ValueChanged<bool> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final colors = context.colors;
-
-    return FilterChip(
-      label: Text(label),
-      selected: selected,
-      showCheckmark: false,
-      labelStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-        color: selected ? scheme.onPrimary : AppColors.textPrimary,
-        fontWeight: FontWeight.w600,
-      ),
-      color: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.selected)) {
-          return AppColors.primary;
-        }
-        return AppColors.surface;
-      }),
-      side: BorderSide(color: selected ? AppColors.primary : colors.border),
-      onSelected: onSelected,
-    );
-  }
-}
-
 class _FeedList extends ConsumerWidget {
   const _FeedList({required this.feed, required this.filter});
 
@@ -279,12 +296,15 @@ class _FeedList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final savedJobs = ref.watch(savedJobsProvider).asData?.value ?? [];
+    final savedJobIds = savedJobs.map((s) => s.id).toSet();
+
     return feed.when(
       skipLoadingOnReload: true,
       loading: () => Skeletonizer(
         enabled: true,
         child: ListView.separated(
-          padding: const EdgeInsets.fromLTRB(kPagePadding, 8, kPagePadding, 16),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
           itemCount: 4,
           separatorBuilder: (context, index) => const Gap(12),
           itemBuilder: (context, index) => const JobCard(
@@ -318,24 +338,55 @@ class _FeedList extends ConsumerWidget {
                 : 'เมื่อมีประกาศสถานะ Open จะเห็นชื่องาน บริษัท จังหวัด รูปแบบงาน หมวดงาน และเบี้ยเลี้ยง',
           );
         }
-        return ListView.separated(
-          padding: const EdgeInsets.fromLTRB(kPagePadding, 8, kPagePadding, 16),
-          itemCount: jobs.length,
-          separatorBuilder: (context, index) => const Gap(12),
-          itemBuilder: (context, index) {
-            final job = jobs[index];
-            return JobCard(
-              title: job.title,
-              companyName: job.companyName,
-              province: job.province,
-              details: [
-                workModeLabel(job.workMode),
-                job.category,
-                allowanceLabel(job.hasAllowance),
-              ],
-              onTap: () => context.push('/student/jobs/${job.id}'),
-            );
-          },
+
+        return ListView(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+          children: [
+            for (int i = 0; i < jobs.length; i++) ...[
+              if (i > 0) const Gap(12),
+              Builder(
+                builder: (context) {
+                  final job = jobs[i];
+                  final isSaved = savedJobIds.contains(job.id);
+                  return JobCard(
+                    title: job.title,
+                    companyName: job.companyName,
+                    province: job.province,
+                    details: [
+                      workModeLabel(job.workMode),
+                      job.category,
+                      allowanceLabel(job.hasAllowance),
+                    ],
+                    hasAllowance: job.hasAllowance,
+                    isSaved: isSaved,
+                    isNew: i == 0,
+                    onBookmarkTap: () async {
+                      final repository = ref.read(jobRepositoryProvider);
+                      try {
+                        if (isSaved) {
+                          await repository.unsave(job.id);
+                        } else {
+                          await repository.save(job.id);
+                        }
+                        ref.invalidate(savedJobsProvider);
+                      } catch (_) {}
+                    },
+                    onTap: () => context.push('/student/jobs/${job.id}'),
+                  );
+                },
+              ),
+            ],
+            // Pagination Bar
+            FeedPaginationBar(
+              currentPage: filter.page,
+              totalItems: jobs.length,
+              onPageSelected: (page) {
+                ref
+                    .read(jobsControllerProvider.notifier)
+                    .apply(filter.copyWith(page: page));
+              },
+            ),
+          ],
         );
       },
     );
