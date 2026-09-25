@@ -11,6 +11,8 @@ import '../../../../core/widgets/app_primary_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/loading_view.dart';
+import '../../../../core/widgets/neo_button.dart';
+import '../../../../core/widgets/skill_picker_sheet.dart';
 import '../../../jobs/domain/entities/job.dart';
 import '../../../jobs/presentation/job_labels.dart';
 import '../../domain/entities/company_job.dart';
@@ -67,6 +69,7 @@ class _JobFormState extends ConsumerState<_JobForm> {
   late WorkMode _workMode;
   late bool _hasAllowance;
   late int _version;
+  late List<String> _skills;
   String? _error;
   bool _submitting = false;
   bool _deleting = false;
@@ -89,6 +92,7 @@ class _JobFormState extends ConsumerState<_JobForm> {
     _workMode = job == null ? WorkMode.hybrid : workModeFromApi(job.workMode);
     _hasAllowance = job?.hasAllowance ?? false;
     _version = job?.version ?? 1;
+    _skills = List<String>.from(job?.skills ?? const []);
   }
 
   @override
@@ -192,6 +196,103 @@ class _JobFormState extends ConsumerState<_JobForm> {
               label: 'คุณสมบัติ',
               validator: _required,
             ),
+            const Gap(12),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: NeoColors.pureWhite,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                boxShadow: const [
+                  BoxShadow(
+                    color: NeoColors.inkSolid,
+                    offset: Offset(2, 2),
+                    blurRadius: 0,
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(LucideIcons.sparkles, size: 16, color: NeoColors.inkSolid),
+                          Gap(6),
+                          Text(
+                            'ทักษะที่ต้องการ (Skills)',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800,
+                              color: NeoColors.inkSolid,
+                            ),
+                          ),
+                        ],
+                      ),
+                      NeoButton(
+                        onPressed: _busy ? null : _openSkillPicker,
+                        text: _skills.isEmpty ? '+ เลือกทักษะ' : 'แก้ไข (${_skills.length})',
+                        variant: NeoButtonVariant.primary,
+                        height: 32,
+                        icon: const Icon(LucideIcons.plus, size: 14, color: Colors.white),
+                      ),
+                    ],
+                  ),
+                  if (_skills.isNotEmpty) ...[
+                    const Gap(10),
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        for (final skill in _skills)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: NeoColors.surfaceCream,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: NeoColors.inkSolid, width: 1.2),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  skill,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: NeoColors.inkSolid,
+                                  ),
+                                ),
+                                const Gap(6),
+                                GestureDetector(
+                                  onTap: _busy ? null : () => setState(() => _skills.remove(skill)),
+                                  child: const Icon(
+                                    LucideIcons.x,
+                                    size: 14,
+                                    color: NeoColors.inkSolid,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ] else ...[
+                    const Gap(6),
+                    const Text(
+                      'ยังไม่ได้ระบุทักษะ (ช่วยให้นักศึกษาค้นหาประกาศเจอง่ายขึ้น)',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: NeoColors.subtleInk,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
             if (_error != null) ...[
               const Gap(12),
               Text(
@@ -228,6 +329,18 @@ class _JobFormState extends ConsumerState<_JobForm> {
     );
   }
 
+  Future<void> _openSkillPicker() async {
+    final selected = await SkillPickerSheet.show(
+      context,
+      selectedSkills: _skills,
+      title: 'เลือกทักษะที่ต้องการ',
+      subtitle: 'เลือกทักษะที่เหมาะกับตำแหน่งงานนี้',
+    );
+    if (selected != null && mounted) {
+      setState(() => _skills = selected);
+    }
+  }
+
   String get _submitLabel {
     if (widget.job != null) {
       return _submitting ? 'กำลังบันทึก' : 'บันทึกประกาศ';
@@ -251,6 +364,7 @@ class _JobFormState extends ConsumerState<_JobForm> {
       category: _categoryController.text.trim(),
       hasAllowance: _hasAllowance,
       requirements: _requirementsController.text.trim(),
+      skills: _skills,
     );
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/app_primary_button.dart';
+import '../../../../core/widgets/skill_picker_sheet.dart';
 import '../../domain/entities/job.dart';
 import '../job_labels.dart';
 
@@ -28,12 +29,14 @@ class _JobFilterSheetState extends State<JobFilterSheet> {
   );
   WorkMode? _workMode;
   bool? _hasAllowance;
+  late List<String> _skills;
 
   @override
   void initState() {
     super.initState();
     _workMode = widget.initial.workMode;
     _hasAllowance = widget.initial.hasAllowance;
+    _skills = List<String>.from(widget.initial.skills);
   }
 
   @override
@@ -155,6 +158,88 @@ class _JobFilterSheetState extends State<JobFilterSheet> {
                 ],
               ),
               const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('ทักษะ (Skills)', style: textTheme.titleMedium),
+                  if (_skills.isNotEmpty)
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                      ),
+                      onPressed: () => setState(() => _skills.clear()),
+                      child: const Text('ล้างทักษะ'),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              if (_skills.isNotEmpty) ...[
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    for (final skill in _skills)
+                      Chip(
+                        label: Text(skill),
+                        deleteIcon: const Icon(Icons.close, size: 16),
+                        onDeleted: () {
+                          setState(() => _skills.remove(skill));
+                        },
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+              ],
+              OutlinedButton.icon(
+                onPressed: () async {
+                  final result = await SkillPickerSheet.show(
+                    context,
+                    selectedSkills: _skills,
+                    title: 'กรองด้วยทักษะ (Filter by Skills)',
+                    subtitle: 'ค้นหาและเลือกทักษะที่ต้องการกรอง',
+                  );
+                  if (result != null && mounted) {
+                    setState(() => _skills = result);
+                  }
+                },
+                icon: const Icon(Icons.add, size: 18),
+                label: Text(
+                  _skills.isEmpty
+                      ? 'เลือกทักษะที่ต้องการกรอง'
+                      : 'แก้ไขทักษะ (${_skills.length})',
+                ),
+              ),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: [
+                  for (final topSkill in [
+                    'Flutter',
+                    'React',
+                    'Figma',
+                    'Python',
+                    'SQL',
+                  ])
+                    ActionChip(
+                      label: Text(topSkill),
+                      avatar: _skills.contains(topSkill)
+                          ? const Icon(Icons.check, size: 16)
+                          : null,
+                      onPressed: () {
+                        setState(() {
+                          if (_skills.contains(topSkill)) {
+                            _skills.remove(topSkill);
+                          } else {
+                            _skills.add(topSkill);
+                          }
+                        });
+                      },
+                    ),
+                ],
+              ),
+              const SizedBox(height: 16),
               AppPrimaryButton(
                 onPressed: () => widget.onApply(_currentFilter()),
                 child: const Text('ใช้ตัวกรอง'),
@@ -179,6 +264,7 @@ class _JobFilterSheetState extends State<JobFilterSheet> {
       workMode: _workMode,
       category: _emptyToNull(_category.text),
       hasAllowance: _hasAllowance,
+      skills: _skills,
     );
   }
 

@@ -60,6 +60,7 @@ class CompanyJobRemoteDataSource {
           'category': posting.category,
           'hasAllowance': posting.hasAllowance,
           'requirements': posting.requirements,
+          'skills': posting.skills,
         },
       );
       final data = response.data;
@@ -88,6 +89,7 @@ class CompanyJobRemoteDataSource {
           'category': posting.category,
           'hasAllowance': posting.hasAllowance,
           'requirements': posting.requirements,
+          'skills': posting.skills,
           'version': version,
         },
       );

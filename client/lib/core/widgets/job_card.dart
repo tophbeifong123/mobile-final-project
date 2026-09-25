@@ -11,6 +11,7 @@ class JobCard extends StatelessWidget {
     required this.companyName,
     required this.province,
     this.details = const [],
+    this.skills = const [],
     this.onTap,
     this.isSaved = false,
     this.onBookmarkTap,
@@ -24,6 +25,7 @@ class JobCard extends StatelessWidget {
   final String companyName;
   final String province;
   final List<String> details;
+  final List<String> skills;
   final VoidCallback? onTap;
   final bool isSaved;
   final VoidCallback? onBookmarkTap;
@@ -236,6 +238,49 @@ class JobCard extends StatelessWidget {
                     ),
               ],
             ),
+            if (skills.isNotEmpty) ...[
+              const Gap(6),
+              Wrap(
+                spacing: 5,
+                runSpacing: 4,
+                children: [
+                  for (final skill in skills.take(3))
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: NeoColors.surfaceCream,
+                        borderRadius: BorderRadius.circular(5),
+                        border: Border.all(color: NeoColors.inkSolid, width: 1),
+                      ),
+                      child: Text(
+                        skill,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          color: NeoColors.inkSolid,
+                        ),
+                      ),
+                    ),
+                  if (skills.length > 3)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: NeoColors.paperCanvas,
+                        borderRadius: BorderRadius.circular(5),
+                        border: Border.all(color: NeoColors.inkSolid, width: 1),
+                      ),
+                      child: Text(
+                        '+${skills.length - 3}',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w800,
+                          color: NeoColors.subtleInk,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
             const Gap(8),
             // Dashed Divider
             SizedBox(

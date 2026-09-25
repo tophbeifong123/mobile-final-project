@@ -200,6 +200,7 @@ class _SavedJobsScreenState extends ConsumerState<SavedJobsScreen> {
                           job.category,
                           allowanceLabel(job.hasAllowance),
                         ],
+                        skills: job.skills,
                         hasAllowance: job.hasAllowance,
                         isSaved: true,
                         onBookmarkTap: () => _handleRemoveJob(job),

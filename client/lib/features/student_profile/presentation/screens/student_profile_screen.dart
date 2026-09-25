@@ -105,7 +105,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
   late final TextEditingController _nameController;
   late final TextEditingController _universityController;
   late final TextEditingController _majorController;
-  late final TextEditingController _skillsController;
+  late List<String> _skills;
   late final TextEditingController _portfolioController;
   String? _error;
   bool _saving = false;
@@ -117,7 +117,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
     _nameController = TextEditingController(text: profile.fullName);
     _universityController = TextEditingController(text: profile.university);
     _majorController = TextEditingController(text: profile.major);
-    _skillsController = TextEditingController(text: profile.skills.join(', '));
+    _skills = List<String>.from(profile.skills);
     _portfolioController = TextEditingController(
       text: profile.portfolioUrl ?? '',
     );
@@ -128,7 +128,6 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
     _nameController.dispose();
     _universityController.dispose();
     _majorController.dispose();
-    _skillsController.dispose();
     _portfolioController.dispose();
     super.dispose();
   }
@@ -171,7 +170,8 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
 
           // Skills Section Card
           StudentProfileSkillsCard(
-            controller: _skillsController,
+            skills: _skills,
+            onChanged: (updated) => setState(() => _skills = updated),
           ),
           const Gap(14),
 
@@ -274,11 +274,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
       fullName: _nameController.text.trim(),
       university: _universityController.text.trim(),
       major: _majorController.text.trim(),
-      skills: _skillsController.text
-          .split(',')
-          .map((skill) => skill.trim())
-          .where((skill) => skill.isNotEmpty)
-          .toList(),
+      skills: _skills,
       portfolioUrl: portfolio.isEmpty ? null : portfolio,
     );
     try {

@@ -21,6 +21,7 @@ class JobPosting {
     required this.category,
     required this.hasAllowance,
     required this.requirements,
+    this.skills = const [],
   });
 
   final String title;
@@ -30,6 +31,7 @@ class JobPosting {
   final String category;
   final bool hasAllowance;
   final String requirements;
+  final List<String> skills;
 }
 
 class CreatedJob {
@@ -51,6 +53,7 @@ class EditableJob {
     required this.requirements,
     required this.status,
     required this.version,
+    this.skills = const [],
   });
 
   final String id;
@@ -63,6 +66,7 @@ class EditableJob {
   final String requirements;
   final String status;
   final int version;
+  final List<String> skills;
 }
 
 class Applicant {

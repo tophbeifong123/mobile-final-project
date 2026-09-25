@@ -42,6 +42,9 @@ export class Job {
   @Column({ type: 'text' })
   requirements: string;
 
+  @Column('text', { array: true, default: () => "ARRAY[]::text[]" })
+  skills: string[];
+
   @Column({
     type: 'enum',
     enum: JobStatus,

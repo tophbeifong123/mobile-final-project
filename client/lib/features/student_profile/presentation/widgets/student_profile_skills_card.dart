@@ -1,134 +1,56 @@
 import 'package:flutter/material.dart';
 import 'package:gap/gap.dart';
 
+import '../../../../core/constants/preset_skills.dart';
 import '../../../../core/theme/app_tokens.dart';
-import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/skill_picker_sheet.dart';
 
-/// Interactive Skills Card for Student Profile Screen matching Neo-Brutalism
-class StudentProfileSkillsCard extends StatefulWidget {
+/// Interactive Skills Card for Student Profile Screen matching LinkedIn Light + Neo-Brutalism
+class StudentProfileSkillsCard extends StatelessWidget {
   const StudentProfileSkillsCard({
     super.key,
-    required this.controller,
+    required this.skills,
+    required this.onChanged,
   });
 
-  final TextEditingController controller;
-
-  @override
-  State<StudentProfileSkillsCard> createState() =>
-      _StudentProfileSkillsCardState();
-}
-
-class _StudentProfileSkillsCardState extends State<StudentProfileSkillsCard> {
-  late final TextEditingController _newSkillController;
-
-  @override
-  void initState() {
-    super.initState();
-    _newSkillController = TextEditingController();
-    widget.controller.addListener(_onControllerChanged);
-  }
-
-  @override
-  void dispose() {
-    widget.controller.removeListener(_onControllerChanged);
-    _newSkillController.dispose();
-    super.dispose();
-  }
-
-  void _onControllerChanged() {
-    if (mounted) setState(() {});
-  }
-
-  List<String> get _skills {
-    return widget.controller.text
-        .split(',')
-        .map((s) => s.trim())
-        .where((s) => s.isNotEmpty)
-        .toList();
-  }
+  final List<String> skills;
+  final ValueChanged<List<String>> onChanged;
 
   void _removeSkill(int index) {
-    final list = _skills;
-    if (index >= 0 && index < list.length) {
-      list.removeAt(index);
-      widget.controller.text = list.join(', ');
+    if (index >= 0 && index < skills.length) {
+      final updated = List<String>.from(skills)..removeAt(index);
+      onChanged(updated);
     }
   }
 
   void _addSkill(String skill) {
     final trimmed = skill.trim();
     if (trimmed.isEmpty) return;
-    final list = _skills;
-    if (!list.contains(trimmed)) {
-      list.add(trimmed);
-      widget.controller.text = list.join(', ');
+    if (!skills.any((s) => s.toLowerCase() == trimmed.toLowerCase())) {
+      final updated = List<String>.from(skills)..add(trimmed);
+      onChanged(updated);
     }
   }
 
-  void _showAddSkillDialog() {
-    _newSkillController.clear();
-    showDialog<void>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          backgroundColor: NeoColors.pureWhite,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: NeoColors.inkSolid, width: 2),
-          ),
-          title: const Row(
-            children: [
-              Icon(Icons.add_circle_outline_rounded, color: NeoColors.inkSolid),
-              Gap(8),
-              Text(
-                'เพิ่มทักษะใหม่',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: NeoColors.inkSolid,
-                ),
-              ),
-            ],
-          ),
-          content: TextField(
-            controller: _newSkillController,
-            autofocus: true,
-            decoration: const InputDecoration(
-              hintText: 'เช่น Flutter, React, Figma',
-            ),
-            onSubmitted: (value) {
-              _addSkill(value);
-              Navigator.of(dialogContext).pop();
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('ยกเลิก'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                _addSkill(_newSkillController.text);
-                Navigator.of(dialogContext).pop();
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: NeoColors.electricIndigo,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text('เพิ่มทักษะ'),
-            ),
-          ],
-        );
-      },
+  Future<void> _openSkillPicker(BuildContext context) async {
+    final result = await SkillPickerSheet.show(
+      context,
+      selectedSkills: skills,
+      title: 'ทักษะและความสามารถ (Skills)',
+      subtitle: 'เลือกทักษะที่ตรงกับคุณเพื่อเพิ่มโอกาสในการจับคู่งานฝึกงาน',
     );
+    if (result != null) {
+      onChanged(result);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final skills = _skills;
+    // Quick suggestions from presets not yet added
+    final quickSuggestions = PresetSkills.all
+        .where((s) => !skills.any((existing) => existing.toLowerCase() == s.toLowerCase()))
+        .take(6)
+        .toList();
 
     return Container(
       decoration: BoxDecoration(
@@ -193,99 +115,19 @@ class _StudentProfileSkillsCardState extends State<StudentProfileSkillsCard> {
                 ),
               ),
               const Gap(8),
-              const Text(
-                'แตะ ✕ เพื่อลบ',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: NeoColors.subtleInk,
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: NeoColors.butterYellow,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: NeoColors.inkSolid, width: 1.5),
                 ),
-              ),
-            ],
-          ),
-          const Gap(12),
-
-          // Pills Container
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (int i = 0; i < skills.length; i++)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: NeoColors.surfaceCream,
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: NeoColors.inkSolid, width: 1.5),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: NeoColors.inkSolid,
-                        offset: Offset(1.5, 1.5),
-                        blurRadius: 0,
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        skills[i],
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: NeoColors.inkSolid,
-                        ),
-                      ),
-                      const Gap(6),
-                      GestureDetector(
-                        onTap: () => _removeSkill(i),
-                        child: const Icon(
-                          Icons.close_rounded,
-                          size: 14,
-                          color: NeoColors.subtleInk,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-              // Add Skill Button
-              GestureDetector(
-                onTap: _showAddSkillDialog,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: NeoColors.butterYellow,
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: NeoColors.inkSolid, width: 1.5),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: NeoColors.inkSolid,
-                        offset: Offset(1.5, 1.5),
-                        blurRadius: 0,
-                      ),
-                    ],
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.add_rounded, size: 15, color: NeoColors.inkSolid),
-                      Gap(4),
-                      Text(
-                        'เพิ่มทักษะ',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: NeoColors.inkSolid,
-                        ),
-                      ),
-                    ],
+                child: Text(
+                  '${skills.length} ทักษะ',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w800,
+                    color: NeoColors.inkSolid,
                   ),
                 ),
               ),
@@ -293,13 +135,190 @@ class _StudentProfileSkillsCardState extends State<StudentProfileSkillsCard> {
           ),
           const Gap(12),
 
-          // Standard AppTextField to support direct editing & tests
-          AppTextField(
-            controller: widget.controller,
-            label: 'ทักษะ',
-            hintText: 'คั่นด้วยจุลภาค เช่น Flutter, SQL',
-            prefixIcon: const Icon(Icons.code_rounded, size: 18),
-          ),
+          // Selected Skills Badges
+          if (skills.isEmpty)
+            GestureDetector(
+              onTap: () => _openSkillPicker(context),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: NeoColors.surfaceCream,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: NeoColors.subtleInk,
+                    width: 1.5,
+                    style: BorderStyle.solid,
+                  ),
+                ),
+                child: const Column(
+                  children: [
+                    Icon(
+                      Icons.add_circle_outline_rounded,
+                      size: 28,
+                      color: NeoColors.subtleInk,
+                    ),
+                    Gap(6),
+                    Text(
+                      'ยังไม่ได้เพิ่มทักษะ',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: NeoColors.inkSolid,
+                      ),
+                    ),
+                    Gap(2),
+                    Text(
+                      'แตะที่นี่เพื่อเลือกทักษะจากคำแนะนำ หรือเพิ่มทักษะใหม่',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: NeoColors.subtleInk,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (int i = 0; i < skills.length; i++)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: NeoColors.surfaceCream,
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: NeoColors.inkSolid,
+                          offset: Offset(1.5, 1.5),
+                          blurRadius: 0,
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          skills[i],
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w800,
+                            color: NeoColors.inkSolid,
+                          ),
+                        ),
+                        const Gap(6),
+                        GestureDetector(
+                          onTap: () => _removeSkill(i),
+                          child: const Icon(
+                            Icons.close_rounded,
+                            size: 14,
+                            color: NeoColors.subtleInk,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                // Add Skill Button
+                GestureDetector(
+                  onTap: () => _openSkillPicker(context),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: NeoColors.butterYellow,
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: NeoColors.inkSolid,
+                          offset: Offset(1.5, 1.5),
+                          blurRadius: 0,
+                        ),
+                      ],
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.add_rounded, size: 15, color: NeoColors.inkSolid),
+                        Gap(4),
+                        Text(
+                          'เพิ่มทักษะ',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                            color: NeoColors.inkSolid,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+          // Quick Preset Suggestions
+          if (quickSuggestions.isNotEmpty) ...[
+            const Gap(14),
+            const Text(
+              'คำแนะนำสำหรับคุณ:',
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+                color: NeoColors.subtleInk,
+              ),
+            ),
+            const Gap(6),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final suggestion in quickSuggestions)
+                  GestureDetector(
+                    onTap: () => _addSkill(suggestion),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: NeoColors.pureWhite,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: NeoColors.subtleInk.withValues(alpha: 0.5),
+                          width: 1,
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.add, size: 12, color: NeoColors.subtleInk),
+                          const Gap(3),
+                          Text(
+                            suggestion,
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: NeoColors.subtleInk,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
         ],
       ),
     );

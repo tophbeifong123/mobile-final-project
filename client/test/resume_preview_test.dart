@@ -54,7 +54,8 @@ void main() {
 
     // Tap "ดูตัวอย่าง"
     await tester.tap(find.text('ดูตัวอย่าง'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
     // Verify modal is open and displays resume info
     expect(find.text('ตัวอย่างเรซูเม่ (PDF Preview)'), findsOneWidget);
@@ -63,7 +64,8 @@ void main() {
 
     // Tap "ปิด"
     await tester.tap(find.text('ปิด'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
     // Verify modal is dismissed
     expect(find.text('ตัวอย่างเรซูเม่ (PDF Preview)'), findsNothing);

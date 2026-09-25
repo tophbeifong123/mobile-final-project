@@ -52,6 +52,7 @@ export class JobsService {
       category: dto.category.trim(),
       hasAllowance: dto.hasAllowance,
       requirements: dto.requirements.trim(),
+      skills: dto.skills ?? [],
     });
     return toDto(job);
   }
@@ -71,6 +72,7 @@ export class JobsService {
       workMode: query.workMode,
       category: query.category,
       hasAllowance: query.hasAllowance,
+      skills: query.skills,
       page,
       limit,
     });
@@ -176,6 +178,7 @@ export class JobsService {
         category: dto.category.trim(),
         hasAllowance: dto.hasAllowance,
         requirements: dto.requirements.trim(),
+        skills: dto.skills ?? [],
       });
       if (!updated) {
         throw new NotFoundException(JOB_NOT_FOUND);
@@ -259,6 +262,7 @@ function toDto(job: {
   category: string;
   hasAllowance: boolean;
   requirements: string;
+  skills?: string[];
   status: JobStatus;
   version: number;
 }): JobDto {
@@ -271,6 +275,7 @@ function toDto(job: {
   dto.category = job.category;
   dto.hasAllowance = job.hasAllowance;
   dto.requirements = job.requirements;
+  dto.skills = job.skills ?? [];
   dto.status = job.status;
   dto.version = job.version;
   return dto;
@@ -286,6 +291,7 @@ function toDetail(
     category: string;
     hasAllowance: boolean;
     requirements: string;
+    skills?: string[];
     status: JobStatus;
     companyName: string;
     businessType: string;
@@ -302,6 +308,7 @@ function toDetail(
   dto.category = job.category;
   dto.hasAllowance = job.hasAllowance;
   dto.requirements = job.requirements;
+  dto.skills = job.skills ?? [];
   dto.status = job.status;
   dto.companyName = job.companyName;
   dto.businessType = job.businessType;
@@ -332,6 +339,7 @@ function toFeedItem(job: {
   workMode: JobFeedItemDto['workMode'];
   category: string;
   hasAllowance: boolean;
+  skills?: string[];
   status: JobStatus;
 }): JobFeedItemDto {
   const dto = new JobFeedItemDto();
@@ -342,6 +350,7 @@ function toFeedItem(job: {
   dto.workMode = job.workMode;
   dto.category = job.category;
   dto.hasAllowance = job.hasAllowance;
+  dto.skills = job.skills ?? [];
   dto.status = job.status;
   return dto;
 }

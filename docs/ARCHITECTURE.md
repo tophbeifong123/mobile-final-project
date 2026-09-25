@@ -143,7 +143,7 @@ Access token อายุสั้น Refresh token หมุนทุกคร�
 | GET | /api/notifications | Notifications |
 | GET | /api/notifications/stream | ช่อง SSE ของแจ้งเตือน |
 
-`GET /api/jobs` รับ `search`, `province`, `workMode`, `category`, `hasAllowance` และคืนเฉพาะงานสถานะ `open`
+`GET /api/jobs` รับ `search`, `province`, `workMode`, `category`, `hasAllowance`, `skills` (กรองด้วย PostgreSQL array overlap operator) และคืนเฉพาะงานสถานะ `open`
 
 Route `GET /api/jobs/saved` ต้องประกาศก่อน `GET /api/jobs/:id` เพื่อไม่ให้คำว่า `saved` ถูกจับเป็น id
 

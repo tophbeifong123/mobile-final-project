@@ -10,6 +10,7 @@ class SavedJob {
     required this.category,
     required this.hasAllowance,
     required this.status,
+    this.skills = const [],
   });
 
   final String id;
@@ -20,4 +21,5 @@ class SavedJob {
   final String category;
   final bool hasAllowance;
   final JobStatus status;
+  final List<String> skills;
 }

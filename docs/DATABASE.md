@@ -110,6 +110,7 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | category | varchar | หมวดงาน |
 | has_allowance | boolean | มีเบี้ยเลี้ยงหรือไม่ |
 | requirements | text | คุณสมบัติ |
+| skills | text[] | ทักษะที่เปิดรับ |
 | status | job_status | ค่าเริ่มต้น `open` |
 | version | int | optimistic lock, เริ่มที่ 1 |
 | created_at | timestamptz | |

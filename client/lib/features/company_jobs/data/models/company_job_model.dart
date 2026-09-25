@@ -62,6 +62,7 @@ class EditableJobModel {
     required this.requirements,
     required this.status,
     required this.version,
+    this.skills = const [],
   });
 
   factory EditableJobModel.fromJson(Map<String, dynamic> json) {
@@ -76,6 +77,10 @@ class EditableJobModel {
       requirements: json['requirements'] as String? ?? '',
       status: json['status'] as String? ?? 'open',
       version: json['version'] as int? ?? 1,
+      skills: (json['skills'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
     );
   }
 
@@ -89,6 +94,7 @@ class EditableJobModel {
   final String requirements;
   final String status;
   final int version;
+  final List<String> skills;
 
   EditableJob toEntity() {
     return EditableJob(
@@ -102,6 +108,7 @@ class EditableJobModel {
       requirements: requirements,
       status: status,
       version: version,
+      skills: skills,
     );
   }
 }

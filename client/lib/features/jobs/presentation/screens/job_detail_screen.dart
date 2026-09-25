@@ -146,6 +146,54 @@ class _JobBody extends StatelessWidget {
         _SectionCard(title: 'รายละเอียดงาน', body: job.description),
         const Gap(12),
         _SectionCard(title: 'คุณสมบัติ', body: job.requirements),
+        if (job.skills.isNotEmpty) ...[
+          const Gap(12),
+          AppCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('ทักษะที่ต้องการ', style: textTheme.titleMedium),
+                const Gap(10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final skill in job.skills)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: NeoColors.surfaceCream,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: NeoColors.inkSolid,
+                            width: 1.5,
+                          ),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: NeoColors.inkSolid,
+                              offset: Offset(1.5, 1.5),
+                              blurRadius: 0,
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          skill,
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: NeoColors.inkSolid,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
         const Gap(12),
         AppCard(
           child: Column(

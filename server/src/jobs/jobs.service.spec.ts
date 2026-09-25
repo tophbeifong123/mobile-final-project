@@ -77,6 +77,7 @@ describe('JobsService', () => {
       category: 'IT',
       hasAllowance: true,
       requirements: 'ใช้ Flutter ได้',
+      skills: [],
     });
     expect(result.status).toBe(JobStatus.Open);
     expect(result.version).toBe(1);
@@ -156,6 +157,42 @@ describe('JobsService', () => {
     expect(result.totalPages).toBe(1);
     expect(result.items[0]?.status).toBe(JobStatus.Open);
     expect(result.items[0]?.companyName).toBe('InternFinder');
+  });
+
+  it('filters open jobs by skills', async () => {
+    repository.findOpen.mockResolvedValue({
+      items: [
+        {
+          id: 'job-1',
+          title: 'Flutter Developer',
+          companyName: 'InternFinder',
+          province: 'สงขลา',
+          workMode: WorkMode.Hybrid,
+          category: 'IT',
+          hasAllowance: true,
+          skills: ['Flutter', 'Dart'],
+          status: JobStatus.Open,
+        },
+      ],
+      total: 1,
+    });
+    const query = new JobFeedQueryDto();
+    query.skills = ['Flutter', 'Dart'];
+
+    const result = await service.listOpen(student, query);
+
+    expect(repository.findOpen).toHaveBeenCalledWith({
+      search: undefined,
+      province: undefined,
+      workMode: undefined,
+      category: undefined,
+      hasAllowance: undefined,
+      skills: ['Flutter', 'Dart'],
+      page: 1,
+      limit: 20,
+    });
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]?.skills).toEqual(['Flutter', 'Dart']);
   });
 
   it('rejects a company reading the student feed', async () => {
@@ -353,6 +390,7 @@ describe('JobsService', () => {
       category: 'IT',
       hasAllowance: false,
       requirements: 'ใช้ Flutter ได้',
+      skills: [],
     });
     expect(result.version).toBe(2);
   });

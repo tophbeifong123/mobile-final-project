@@ -361,6 +361,7 @@ class _FeedList extends ConsumerWidget {
                       job.category,
                       allowanceLabel(job.hasAllowance),
                     ],
+                    skills: job.skills,
                     hasAllowance: job.hasAllowance,
                     isSaved: isSaved,
                     isNew: i == 0,
