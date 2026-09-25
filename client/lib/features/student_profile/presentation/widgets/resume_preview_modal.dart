@@ -1,9 +1,11 @@
-import 'dart:typed_data';
+import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:pdfx/pdfx.dart';
 
 import '../../../../core/error/app_exception.dart';
@@ -12,7 +14,7 @@ import '../../../../core/widgets/neo_button.dart';
 import '../../../resume/presentation/providers/resume_controller.dart';
 
 /// Neo-Brutalist Resume PDF Preview Modal Dialog
-class ResumePreviewModal extends ConsumerStatefulWidget {
+class ResumePreviewModal extends ConsumerWidget {
   const ResumePreviewModal({
     super.key,
     required this.fileName,
@@ -29,6 +31,7 @@ class ResumePreviewModal extends ConsumerStatefulWidget {
   }) {
     return showDialog<void>(
       context: context,
+      barrierDismissible: true,
       barrierColor: Colors.black.withValues(alpha: 0.6),
       builder: (context) => ResumePreviewModal(
         fileName: fileName,
@@ -38,37 +41,7 @@ class ResumePreviewModal extends ConsumerStatefulWidget {
   }
 
   @override
-  ConsumerState<ResumePreviewModal> createState() => _ResumePreviewModalState();
-}
-
-class _ResumePreviewModalState extends ConsumerState<ResumePreviewModal> {
-  PdfController? _pdfController;
-  List<int>? _lastBytes;
-  Object? _docError;
-
-  @override
-  void dispose() {
-    _pdfController?.dispose();
-    super.dispose();
-  }
-
-  void _initPdfController(List<int> bytes) {
-    if (_lastBytes == bytes && _pdfController != null) return;
-    _lastBytes = bytes;
-    _pdfController?.dispose();
-    _docError = null;
-    try {
-      _pdfController = PdfController(
-        document: PdfDocument.openData(Uint8List.fromList(bytes)),
-      );
-    } catch (e) {
-      _pdfController = null;
-      _docError = e;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final pdfBytesAsync = ref.watch(resumePdfBytesProvider);
 
     return Dialog(
@@ -102,12 +75,14 @@ class _ResumePreviewModalState extends ConsumerState<ResumePreviewModal> {
                 // Main Preview Canvas
                 Expanded(
                   child: pdfBytesAsync.when(
-                    loading: () => _buildLoadingState(),
-                    error: (err, _) => _buildErrorState(err),
-                    data: (bytes) {
-                      _initPdfController(bytes);
-                      return _buildPdfViewer(bytes);
-                    },
+                    loading: () => const _PdfLoadingView(
+                      message: 'กำลังดาวน์โหลดเอกสาร PDF...',
+                    ),
+                    error: (err, _) => _buildErrorState(ref, err),
+                    data: (bytes) => _PdfViewerCanvas(
+                      bytes: bytes,
+                      fileName: fileName,
+                    ),
                   ),
                 ),
 
@@ -160,7 +135,7 @@ class _ResumePreviewModalState extends ConsumerState<ResumePreviewModal> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  widget.fileName,
+                  fileName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -181,41 +156,6 @@ class _ResumePreviewModalState extends ConsumerState<ResumePreviewModal> {
             ),
           ),
           const Gap(8),
-          // Page Indicator Pill (if PDF controller is ready)
-          if (_pdfController != null)
-            PdfPageNumber(
-              controller: _pdfController!,
-              builder: (context, loadingState, page, pagesCount) {
-                if (pagesCount == null || pagesCount == 0) {
-                  return const SizedBox.shrink();
-                }
-                return Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  margin: const EdgeInsets.only(right: 8),
-                  decoration: BoxDecoration(
-                    color: NeoColors.pureWhite,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: NeoColors.inkSolid, width: 1.5),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: NeoColors.inkSolid,
-                        offset: Offset(1, 1),
-                        blurRadius: 0,
-                      ),
-                    ],
-                  ),
-                  child: Text(
-                    '$page / $pagesCount',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                      color: NeoColors.inkSolid,
-                    ),
-                  ),
-                );
-              },
-            ),
           // Close Icon Button
           GestureDetector(
             onTap: () => Navigator.of(context).pop(),
@@ -246,55 +186,8 @@ class _ResumePreviewModalState extends ConsumerState<ResumePreviewModal> {
     );
   }
 
-  Widget _buildLoadingState() {
-    return Container(
-      color: NeoColors.paperCanvas,
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: NeoColors.butterYellow,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: NeoColors.inkSolid, width: 2),
-                boxShadow: const [
-                  BoxShadow(
-                    color: NeoColors.inkSolid,
-                    offset: Offset(2, 2),
-                    blurRadius: 0,
-                  ),
-                ],
-              ),
-              child: const Center(
-                child: SizedBox(
-                  width: 26,
-                  height: 26,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.8,
-                    color: NeoColors.inkSolid,
-                  ),
-                ),
-              ),
-            ),
-            const Gap(14),
-            const Text(
-              'กำลังโหลดตัวอย่างเอกสาร...',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w800,
-                color: NeoColors.inkSolid,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _buildErrorState(Object error) {
+  Widget _buildErrorState(WidgetRef ref, Object error) {
     return Container(
       color: NeoColors.paperCanvas,
       padding: const EdgeInsets.all(24),
@@ -347,81 +240,6 @@ class _ResumePreviewModalState extends ConsumerState<ResumePreviewModal> {
     );
   }
 
-  Widget _buildPdfViewer(List<int> bytes) {
-    if (_docError != null || _pdfController == null) {
-      // Fallback for headless environments or rendering issues
-      return Container(
-        color: NeoColors.paperCanvas,
-        padding: const EdgeInsets.all(24),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: NeoColors.freshMint,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: NeoColors.inkSolid, width: 2),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: NeoColors.inkSolid,
-                      offset: Offset(2.5, 2.5),
-                      blurRadius: 0,
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.check_circle_outline_rounded,
-                  size: 32,
-                  color: NeoColors.inkSolid,
-                ),
-              ),
-              const Gap(14),
-              Text(
-                widget.fileName,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                  color: NeoColors.inkSolid,
-                ),
-              ),
-              const Gap(4),
-              Text(
-                'ขนาดไฟล์: ${(bytes.length / 1024).toStringAsFixed(1)} KB (พร้อมใช้งาน)',
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: NeoColors.subtleInk,
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      color: NeoColors.surfaceCream,
-      child: PdfView(
-        controller: _pdfController!,
-        scrollDirection: Axis.vertical,
-        backgroundDecoration: const BoxDecoration(
-          color: NeoColors.surfaceCream,
-        ),
-        onDocumentError: (error) {
-          if (mounted) {
-            setState(() {
-              _docError = error;
-              _pdfController = null;
-            });
-          }
-        },
-      ),
-    );
-  }
-
   Widget _buildFooter(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -451,8 +269,8 @@ class _ResumePreviewModalState extends ConsumerState<ResumePreviewModal> {
             child: NeoButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                if (widget.onReplace != null) {
-                  widget.onReplace!();
+                if (onReplace != null) {
+                  onReplace!();
                 } else {
                   context.push('/student/resume');
                 }
@@ -468,3 +286,278 @@ class _ResumePreviewModalState extends ConsumerState<ResumePreviewModal> {
     );
   }
 }
+
+/// Dedicated PDF Viewer Canvas that isolates the PdfController lifecycle
+class _PdfViewerCanvas extends StatefulWidget {
+  const _PdfViewerCanvas({
+    required this.bytes,
+    required this.fileName,
+  });
+
+  final List<int> bytes;
+  final String fileName;
+
+  @override
+  State<_PdfViewerCanvas> createState() => _PdfViewerCanvasState();
+}
+
+class _PdfViewerCanvasState extends State<_PdfViewerCanvas> {
+  late final PdfController _controller;
+  Object? _renderError;
+  File? _tempFile;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = PdfController(
+      document: _openDocument(widget.bytes),
+    );
+  }
+
+  // Support both Web (in-memory openData via pdf.js) and Native (temp file openFile
+  // to avoid Android IPC 64KB pipe-buffer limit)
+  Future<PdfDocument> _openDocument(List<int> bytes) async {
+    if (kIsWeb) {
+      return PdfDocument.openData(Uint8List.fromList(bytes));
+    }
+
+    try {
+      final tempDir = await getTemporaryDirectory();
+      final tempPath =
+          '${tempDir.path}/resume_preview_${DateTime.now().millisecondsSinceEpoch}.pdf';
+      _tempFile = File(tempPath);
+      await _tempFile!.writeAsBytes(bytes, flush: true);
+      return await PdfDocument.openFile(tempPath);
+    } catch (_) {
+      // Fallback to in-memory openData if filesystem is restricted or unavailable
+      return await PdfDocument.openData(Uint8List.fromList(bytes));
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    if (!kIsWeb) {
+      _tempFile?.delete().ignore();
+    }
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_renderError != null) {
+      return _buildFallbackInfo(error: _renderError);
+    }
+
+    return Container(
+      color: NeoColors.surfaceCream,
+      child: Stack(
+        children: [
+          PdfView(
+            controller: _controller,
+            scrollDirection: Axis.vertical,
+            backgroundDecoration: const BoxDecoration(
+              color: NeoColors.surfaceCream,
+            ),
+            builders: PdfViewBuilders<DefaultBuilderOptions>(
+              options: const DefaultBuilderOptions(),
+              documentLoaderBuilder: (context) => const _PdfLoadingView(
+                message: 'กำลังจัดเตรียมเอกสาร PDF...',
+              ),
+              pageLoaderBuilder: (context) => const Center(
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.2,
+                    color: NeoColors.inkSolid,
+                  ),
+                ),
+              ),
+              errorBuilder: (context, error) {
+                return _buildFallbackInfo(error: error);
+              },
+            ),
+            onDocumentError: (error) {
+              if (mounted) {
+                setState(() {
+                  _renderError = error;
+                });
+              }
+            },
+          ),
+          // Floating Page Indicator Pill at bottom right
+          Positioned(
+            right: 12,
+            bottom: 12,
+            child: PdfPageNumber(
+              controller: _controller,
+              builder: (context, loadingState, page, pagesCount) {
+                if (pagesCount == null || pagesCount == 0) {
+                  return const SizedBox.shrink();
+                }
+                return Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: NeoColors.pureWhite,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: NeoColors.inkSolid,
+                        offset: Offset(1.5, 1.5),
+                        blurRadius: 0,
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    'หน้า $page / $pagesCount',
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w800,
+                      color: NeoColors.inkSolid,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFallbackInfo({Object? error}) {
+    final sizeKb = (widget.bytes.length / 1024).toStringAsFixed(1);
+    return Container(
+      color: NeoColors.paperCanvas,
+      padding: const EdgeInsets.all(24),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: NeoColors.freshMint,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: NeoColors.inkSolid, width: 2),
+                boxShadow: const [
+                  BoxShadow(
+                    color: NeoColors.inkSolid,
+                    offset: Offset(2.5, 2.5),
+                    blurRadius: 0,
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.picture_as_pdf_rounded,
+                size: 32,
+                color: NeoColors.inkSolid,
+              ),
+            ),
+            const Gap(16),
+            Text(
+              widget.fileName,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+                color: NeoColors.inkSolid,
+              ),
+            ),
+            const Gap(6),
+            Text(
+              'ขนาดไฟล์: $sizeKb KB (พร้อมใช้งานในระบบ)',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: NeoColors.subtleInk,
+              ),
+            ),
+            if (error != null) ...[
+              const Gap(10),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: NeoColors.surfaceCream,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: NeoColors.inkSolid, width: 1),
+                ),
+                child: Text(
+                  'ระบบดาวน์โหลดไฟล์สมบูรณ์แล้ว แต่ไม่สามารถเรนเดอร์ในอุปกรณ์นี้ได้',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: NeoColors.subtleInk,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Unified Neo-Brutalist Loading Indicator for both download and document preparation
+class _PdfLoadingView extends StatelessWidget {
+  const _PdfLoadingView({
+    this.message = 'กำลังโหลดเอกสาร PDF...',
+  });
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: NeoColors.paperCanvas,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                color: NeoColors.butterYellow,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: NeoColors.inkSolid, width: 2),
+                boxShadow: const [
+                  BoxShadow(
+                    color: NeoColors.inkSolid,
+                    offset: Offset(2, 2),
+                    blurRadius: 0,
+                  ),
+                ],
+              ),
+              child: const Center(
+                child: SizedBox(
+                  width: 26,
+                  height: 26,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.8,
+                    color: NeoColors.inkSolid,
+                  ),
+                ),
+              ),
+            ),
+            const Gap(14),
+            Text(
+              message,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: NeoColors.inkSolid,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+

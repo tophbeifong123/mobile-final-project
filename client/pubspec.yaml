@@ -45,6 +45,7 @@ dependencies:
   google_fonts: ^8.2.1
   lucide_icons_flutter: ^3.1.20
   pdfx: ^2.11.0
+  path_provider: ^2.1.0
 
 dev_dependencies:
   flutter_test:
