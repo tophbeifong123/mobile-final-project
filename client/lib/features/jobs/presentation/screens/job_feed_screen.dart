@@ -10,6 +10,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import '../../../../core/error/app_exception.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_toast.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/job_card.dart';
 import '../../../saved_jobs/presentation/providers/saved_jobs_controller.dart';
@@ -370,11 +371,31 @@ class _FeedList extends ConsumerWidget {
                       try {
                         if (isSaved) {
                           await repository.unsave(job.id);
+                          ref.invalidate(savedJobsProvider);
+                          if (context.mounted) {
+                            AppToast.info(
+                              context,
+                              'ลบ "${job.title}" ออกจากรายการแล้ว',
+                            );
+                          }
                         } else {
                           await repository.save(job.id);
+                          ref.invalidate(savedJobsProvider);
+                          if (context.mounted) {
+                            AppToast.success(
+                              context,
+                              'บันทึก "${job.title}" แล้ว',
+                            );
+                          }
                         }
-                        ref.invalidate(savedJobsProvider);
-                      } catch (_) {}
+                      } catch (_) {
+                        if (context.mounted) {
+                          AppToast.error(
+                            context,
+                            'เกิดข้อผิดพลาด กรุณาลองอีกครั้ง',
+                          );
+                        }
+                      }
                     },
                     onTap: () => context.push('/student/jobs/${job.id}'),
                   );
