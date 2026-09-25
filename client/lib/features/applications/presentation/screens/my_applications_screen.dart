@@ -176,13 +176,6 @@ class _ApplicationsTopBar extends StatelessWidget {
             label: 'การแจ้งเตือน',
             onTap: () => context.push('/student/notifications'),
           ),
-          const Gap(8),
-          _TopBarAction(
-            icon: Icons.person_outline_rounded,
-            label: 'โปรไฟล์',
-            onTap: () => context.go('/student/profile'),
-            compact: true,
-          ),
         ],
       ),
     );
@@ -194,13 +187,11 @@ class _TopBarAction extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
-    this.compact = false,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -209,21 +200,21 @@ class _TopBarAction extends StatelessWidget {
       label: label,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(compact ? 20 : 12),
+        borderRadius: BorderRadius.circular(12),
         child: Container(
-          width: compact ? 36 : 42,
+          width: 42,
           height: 42,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: compact ? NeoColors.electricIndigo : NeoColors.surfaceCream,
-            borderRadius: BorderRadius.circular(compact ? 20 : 12),
+            color: NeoColors.surfaceCream,
+            borderRadius: BorderRadius.circular(12),
             border: Border.all(color: NeoColors.inkSolid, width: 1.5),
-            boxShadow: compact ? null : NeoShadows.elevation1,
+            boxShadow: NeoShadows.elevation1,
           ),
           child: Icon(
             icon,
-            size: compact ? 20 : 22,
-            color: compact ? NeoColors.pureWhite : NeoColors.inkSolid,
+            size: 22,
+            color: NeoColors.inkSolid,
           ),
         ),
       ),
