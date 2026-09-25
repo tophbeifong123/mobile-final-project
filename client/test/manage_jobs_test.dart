@@ -32,29 +32,24 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Flutter Intern'), findsOneWidget);
-    expect(find.text('เปิดรับ'), findsOneWidget);
+    expect(find.text('เปิดรับสมัคร'), findsOneWidget);
     expect(find.text('งานที่ปิดแล้ว'), findsOneWidget);
-    expect(find.text('ปิดรับ'), findsOneWidget);
-    expect(find.text('ผู้สมัคร 0 คน'), findsNWidgets(2));
+    expect(find.text('ปิดรับสมัคร'), findsOneWidget);
     expect(find.text('แก้ไข'), findsNWidgets(2));
     expect(find.text('ผู้สมัคร'), findsNWidgets(2));
   });
 
-  testWidgets('toggling switch calls setStatus with new status', (
-    tester,
-  ) async {
+  testWidgets('filter tab shows only matching jobs', (tester) async {
     tester.view.physicalSize = const Size(390, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final mockRepo = _CompanyJobs();
-
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
-          companyJobRepositoryProvider.overrideWithValue(mockRepo),
+          companyJobRepositoryProvider.overrideWithValue(_CompanyJobs()),
         ],
         child: MaterialApp(
           theme: AppTheme.lightTheme,
@@ -64,42 +59,29 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Toggle job-1 from open to closed
-    final switch1 = find.byKey(const ValueKey('toggle-job-job-1'));
-    expect(switch1, findsOneWidget);
-    expect(tester.widget<Switch>(switch1).value, isTrue);
+    // Both jobs visible on "ทั้งหมด" tab
+    expect(find.text('Flutter Intern'), findsOneWidget);
+    expect(find.text('งานที่ปิดแล้ว'), findsOneWidget);
 
-    await tester.tap(switch1);
+    // Tap "เปิดรับสมัคร" filter tab
+    await tester.tap(find.text('เปิดรับสมัคร').first);
     await tester.pumpAndSettle();
 
-    expect(mockRepo.lastSetStatusJobId, 'job-1');
-    expect(mockRepo.lastSetStatusValue, 'closed');
-
-    // Toggle job-2 from closed to open
-    final switch2 = find.byKey(const ValueKey('toggle-job-job-2'));
-    expect(switch2, findsOneWidget);
-    expect(tester.widget<Switch>(switch2).value, isFalse);
-
-    await tester.tap(switch2);
-    await tester.pumpAndSettle();
-
-    expect(mockRepo.lastSetStatusJobId, 'job-2');
-    expect(mockRepo.lastSetStatusValue, 'open');
+    expect(find.text('Flutter Intern'), findsOneWidget);
+    expect(find.text('งานที่ปิดแล้ว'), findsNothing);
   });
 
-  testWidgets('shows snackbar when toggle status fails', (tester) async {
+  testWidgets('shows error state when loading fails', (tester) async {
     tester.view.physicalSize = const Size(390, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    final mockRepo = _FailingCompanyJobs();
-
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
-          companyJobRepositoryProvider.overrideWithValue(mockRepo),
+          companyJobRepositoryProvider.overrideWithValue(_FailingCompanyJobs()),
         ],
         child: MaterialApp(
           theme: AppTheme.lightTheme,
@@ -109,12 +91,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final switch1 = find.byKey(const ValueKey('toggle-job-job-1'));
-    await tester.tap(switch1);
-    await tester.pumpAndSettle();
-
-    expect(find.byType(SnackBar), findsOneWidget);
-    expect(find.text('เปลี่ยนสถานะไม่สำเร็จ'), findsOneWidget);
+    expect(find.text('โหลดประกาศไม่ได้'), findsOneWidget);
+    expect(find.text('ลองอีกครั้ง'), findsOneWidget);
   });
 }
 
@@ -129,13 +107,17 @@ class _CompanyJobs implements CompanyJobRepository {
         id: 'job-1',
         title: 'Flutter Intern',
         status: 'open',
+        workMode: 'hybrid',
         applicantCount: 0,
+        pendingApplicantCount: 0,
       ),
       CompanyJob(
         id: 'job-2',
         title: 'งานที่ปิดแล้ว',
         status: 'closed',
+        workMode: 'on_site',
         applicantCount: 0,
+        pendingApplicantCount: 0,
       ),
     ];
   }
@@ -198,10 +180,7 @@ class _CompanyJobs implements CompanyJobRepository {
 
 class _FailingCompanyJobs extends _CompanyJobs {
   @override
-  Future<void> setStatus({
-    required String jobId,
-    required String status,
-  }) async {
-    throw const AppException('เปลี่ยนสถานะไม่สำเร็จ');
+  Future<List<CompanyJob>> fetchMine() async {
+    throw const AppException('โหลดประกาศไม่ได้');
   }
 }

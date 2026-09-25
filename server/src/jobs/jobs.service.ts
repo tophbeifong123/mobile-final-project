@@ -18,7 +18,7 @@ import { PaginationQueryDto } from '../common/dto/pagination-query.dto.js';
 import { toPaginatedResult } from '../common/dto/paginated-result.js';
 import { UpdateJobDto } from './dto/update-job.dto.js';
 import { UpdateJobStatusDto } from './dto/update-job-status.dto.js';
-import { JobStatus } from './job-enums.js';
+import { JobStatus, WorkMode } from './job-enums.js';
 import { JobsRepository, JobVersionConflictError } from './jobs.repository.js';
 
 const COMPANY_ONLY = 'เฉพาะบริษัทเท่านั้น';
@@ -321,13 +321,19 @@ function toCompanyItem(job: {
   id: string;
   title: string;
   status: JobStatus;
+  workMode: WorkMode;
   applicantCount: number;
+  pendingApplicantCount: number;
+  deadline: Date | null;
 }): CompanyJobItemDto {
   const dto = new CompanyJobItemDto();
   dto.id = job.id;
   dto.title = job.title;
   dto.status = job.status;
+  dto.workMode = job.workMode;
   dto.applicantCount = job.applicantCount;
+  dto.pendingApplicantCount = job.pendingApplicantCount;
+  dto.deadline = job.deadline;
   return dto;
 }
 
