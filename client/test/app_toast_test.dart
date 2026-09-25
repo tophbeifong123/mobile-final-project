@@ -33,7 +33,9 @@ void main() {
     // Tap to show toast
     await tester.tap(find.text('Show Toast'));
     await tester.pump(); // Start animation
-    await tester.pump(const Duration(milliseconds: 300)); // Finish entrance animation
+    await tester.pump(
+      const Duration(milliseconds: 300),
+    ); // Finish entrance animation
 
     expect(find.byType(AppToastOverlayWidget), findsOneWidget);
     expect(find.text('ตำแหน่งฝึกงานใหม่พร้อมให้คุณสมัครแล้ว'), findsOneWidget);
@@ -49,52 +51,55 @@ void main() {
 
     // Auto dismiss after duration
     await tester.pump(const Duration(milliseconds: 2800)); // Trigger timer
-    await tester.pump(const Duration(milliseconds: 300)); // Finish exit animation
+    await tester.pump(
+      const Duration(milliseconds: 300),
+    ); // Finish exit animation
     expect(find.byType(AppToastOverlayWidget), findsNothing);
   });
 
-  testWidgets('renders AppToast with top padding when SafeArea / StatusBar is present', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      MediaQuery(
-        data: const MediaQueryData(padding: EdgeInsets.only(top: 44.0)),
-        child: MaterialApp(
-          home: Scaffold(
-            body: Builder(
-              builder: (context) => Center(
-                child: ElevatedButton(
-                  onPressed: () {
-                    AppToast.info(context, 'บันทึกสำเร็จ');
-                  },
-                  child: const Text('Show Info'),
+  testWidgets(
+    'renders AppToast with top padding when SafeArea / StatusBar is present',
+    (tester) async {
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(padding: EdgeInsets.only(top: 44.0)),
+          child: MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => Center(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      AppToast.info(context, 'บันทึกสำเร็จ');
+                    },
+                    child: const Text('Show Info'),
+                  ),
                 ),
               ),
             ),
           ),
         ),
-      ),
-    );
+      );
 
-    await tester.tap(find.text('Show Info'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.text('Show Info'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
-    expect(find.byType(AppToastOverlayWidget), findsOneWidget);
+      expect(find.byType(AppToastOverlayWidget), findsOneWidget);
 
-    final positionFinder = find.byType(Positioned);
-    final positionedWidgets = tester.widgetList<Positioned>(positionFinder);
-    final toastPositioned = positionedWidgets.firstWhere(
-      (p) => p.child is Center,
-    );
-    // With top padding 44, top should be 44 + 16 = 60.0
-    expect(toastPositioned.top, 60.0);
+      final positionFinder = find.byType(Positioned);
+      final positionedWidgets = tester.widgetList<Positioned>(positionFinder);
+      final toastPositioned = positionedWidgets.firstWhere(
+        (p) => p.child is Center,
+      );
+      // With top padding 44, top should be 44 + 16 = 60.0
+      expect(toastPositioned.top, 60.0);
 
-    // Dismiss manually
-    AppToast.dismiss(immediate: true);
-    await tester.pump();
-    expect(find.byType(AppToastOverlayWidget), findsNothing);
-  });
+      // Dismiss manually
+      AppToast.dismiss(immediate: true);
+      await tester.pump();
+      expect(find.byType(AppToastOverlayWidget), findsNothing);
+    },
+  );
 
   testWidgets('tap on close button dismisses AppToast', (tester) async {
     await tester.pumpWidget(
@@ -123,7 +128,9 @@ void main() {
     // Tap close button icon
     await tester.tap(find.byIcon(Icons.close_rounded));
     await tester.pump(); // Start reverse animation
-    await tester.pump(const Duration(milliseconds: 250)); // Finish exit animation
+    await tester.pump(
+      const Duration(milliseconds: 250),
+    ); // Finish exit animation
 
     expect(find.byType(AppToastOverlayWidget), findsNothing);
   });

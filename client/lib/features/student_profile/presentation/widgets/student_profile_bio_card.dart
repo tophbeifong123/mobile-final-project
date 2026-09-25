@@ -5,10 +5,7 @@ import '../../../../core/theme/app_tokens.dart';
 
 /// Bio / About Me Card for Student Profile Screen
 class StudentProfileBioCard extends StatelessWidget {
-  const StudentProfileBioCard({
-    super.key,
-    required this.bioController,
-  });
+  const StudentProfileBioCard({super.key, required this.bioController});
 
   final TextEditingController bioController;
 
@@ -100,15 +97,24 @@ class StudentProfileBioCard extends StatelessWidget {
               contentPadding: const EdgeInsets.all(12),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: NeoColors.inkSolid, width: 1.5),
+                borderSide: const BorderSide(
+                  color: NeoColors.inkSolid,
+                  width: 1.5,
+                ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: NeoColors.mutedInk, width: 1.5),
+                borderSide: const BorderSide(
+                  color: NeoColors.mutedInk,
+                  width: 1.5,
+                ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: NeoColors.inkSolid, width: 2),
+                borderSide: const BorderSide(
+                  color: NeoColors.inkSolid,
+                  width: 2,
+                ),
               ),
             ),
           ),

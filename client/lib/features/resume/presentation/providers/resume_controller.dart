@@ -20,9 +20,9 @@ final resumeControllerProvider = NotifierProvider<ResumeController, void>(
   ResumeController.new,
 );
 
-final resumePdfBytesProvider =
-    FutureProvider.autoDispose<List<int>>((ref) async {
+final resumePdfBytesProvider = FutureProvider.autoDispose<List<int>>((
+  ref,
+) async {
   final repo = ref.watch(resumeRepositoryProvider);
   return repo.downloadResumePdf();
 });
-

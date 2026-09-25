@@ -59,7 +59,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       _error = null;
     });
 
-    final error = await ref.read(authControllerProvider.notifier).register(
+    final error = await ref
+        .read(authControllerProvider.notifier)
+        .register(
           email: _emailController.text.trim(),
           password: _passwordController.text,
           role: _role,
@@ -126,7 +128,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                                   fontFamily: 'Mitr',
                                                 ),
                                                 children: [
-                                                  TextSpan(text: 'เริ่มต้นกับ '),
+                                                  TextSpan(
+                                                    text: 'เริ่มต้นกับ ',
+                                                  ),
                                                   TextSpan(
                                                     text: 'InternMatch',
                                                     style: TextStyle(
@@ -233,8 +237,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                       tooltip: _obscurePassword
                                           ? 'แสดงรหัสผ่าน'
                                           : 'ซ่อนรหัสผ่าน',
-                                      onPressed: () => setState(() =>
-                                          _obscurePassword = !_obscurePassword),
+                                      onPressed: () => setState(
+                                        () => _obscurePassword =
+                                            !_obscurePassword,
+                                      ),
                                       icon: Icon(
                                         _obscurePassword
                                             ? Icons.visibility_outlined
@@ -271,9 +277,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                       tooltip: _obscureConfirmPassword
                                           ? 'แสดงรหัสผ่าน'
                                           : 'ซ่อนรหัสผ่าน',
-                                      onPressed: () => setState(() =>
-                                          _obscureConfirmPassword =
-                                              !_obscureConfirmPassword),
+                                      onPressed: () => setState(
+                                        () => _obscureConfirmPassword =
+                                            !_obscureConfirmPassword,
+                                      ),
                                       icon: Icon(
                                         _obscureConfirmPassword
                                             ? Icons.visibility_outlined
@@ -300,8 +307,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       GestureDetector(
-                                        onTap: () => setState(() =>
-                                            _agreedToTerms = !_agreedToTerms),
+                                        onTap: () => setState(
+                                          () =>
+                                              _agreedToTerms = !_agreedToTerms,
+                                        ),
                                         child: Container(
                                           width: 22,
                                           height: 22,
@@ -310,8 +319,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                             color: _agreedToTerms
                                                 ? NeoColors.inkSolid
                                                 : NeoColors.pureWhite,
-                                            borderRadius:
-                                                BorderRadius.circular(6),
+                                            borderRadius: BorderRadius.circular(
+                                              6,
+                                            ),
                                             border: Border.all(
                                               color: NeoColors.inkSolid,
                                               width: 2.2,
@@ -338,7 +348,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                             ),
                                             children: [
                                               const TextSpan(
-                                                  text: 'ฉันยอมรับ '),
+                                                text: 'ฉันยอมรับ ',
+                                              ),
                                               TextSpan(
                                                 text: 'ข้อกำหนดการให้บริการ',
                                                 style: const TextStyle(
@@ -349,10 +360,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                                 ),
                                                 recognizer: TapGestureRecognizer()
                                                   ..onTap = () => _showNotice(
-                                                      'ข้อกำหนดการให้บริการ InternMatch'),
+                                                    'ข้อกำหนดการให้บริการ InternMatch',
+                                                  ),
                                               ),
                                               const TextSpan(
-                                                  text: ' และรับทราบ '),
+                                                text: ' และรับทราบ ',
+                                              ),
                                               TextSpan(
                                                 text: 'นโยบายความเป็นส่วนตัว',
                                                 style: const TextStyle(
@@ -363,7 +376,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                                 ),
                                                 recognizer: TapGestureRecognizer()
                                                   ..onTap = () => _showNotice(
-                                                      'นโยบายความเป็นส่วนตัว InternMatch'),
+                                                    'นโยบายความเป็นส่วนตัว InternMatch',
+                                                  ),
                                               ),
                                             ],
                                           ),
@@ -382,8 +396,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                       ),
                                       decoration: BoxDecoration(
                                         color: NeoColors.errorBg,
-                                        borderRadius:
-                                            BorderRadius.circular(10),
+                                        borderRadius: BorderRadius.circular(10),
                                         border: Border.all(
                                           color: NeoColors.errorBorder,
                                           width: 1.8,

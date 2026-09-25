@@ -5,11 +5,7 @@ import '../../../../core/theme/app_tokens.dart';
 
 /// Greeting Header Section for Student Job Feed
 class FeedGreetingHeader extends StatelessWidget {
-  const FeedGreetingHeader({
-    super.key,
-    this.name,
-    this.university,
-  });
+  const FeedGreetingHeader({super.key, this.name, this.university});
 
   final String? name;
   final String? university;
@@ -111,10 +107,7 @@ class FeedGreetingHeader extends StatelessWidget {
                       ),
                     ],
                     const Gap(4),
-                    const Text(
-                      '✨',
-                      style: TextStyle(fontSize: 16),
-                    ),
+                    const Text('✨', style: TextStyle(fontSize: 16)),
                   ],
                 ),
                 const Gap(2),

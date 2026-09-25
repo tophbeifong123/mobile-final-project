@@ -24,10 +24,7 @@ class RoleSegmentedToggle extends StatelessWidget {
       decoration: BoxDecoration(
         color: NeoColors.pureWhite,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: NeoColors.inkSolid,
-          width: 2.2,
-        ),
+        border: Border.all(color: NeoColors.inkSolid, width: 2.2),
       ),
       child: Row(
         children: [
@@ -97,11 +94,7 @@ class _RoleTabItem extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 16,
-              color: NeoColors.inkSolid,
-            ),
+            Icon(icon, size: 16, color: NeoColors.inkSolid),
             const Gap(6),
             Flexible(
               child: Text(

@@ -50,10 +50,7 @@ class SplashScreen extends StatelessWidget {
                 child: LinearProgressIndicator(minHeight: 6),
               ),
               const Gap(12),
-              Text(
-                'กำลังตรวจสอบการเข้าสู่ระบบ',
-                style: textTheme.bodyMedium,
-              ),
+              Text('กำลังตรวจสอบการเข้าสู่ระบบ', style: textTheme.bodyMedium),
               const Spacer(),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,

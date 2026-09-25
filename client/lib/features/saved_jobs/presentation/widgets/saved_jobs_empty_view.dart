@@ -9,7 +9,8 @@ class SavedJobsEmptyView extends StatelessWidget {
   const SavedJobsEmptyView({
     super.key,
     this.title = 'ยังไม่มีงานที่คุณบันทึกไว้',
-    this.message = 'ลองสำรวจตำแหน่งงานฝึกงานที่น่าสนใจแล้วกดเซฟไว้เพื่อสมัครภายหลัง!',
+    this.message =
+        'ลองสำรวจตำแหน่งงานฝึกงานที่น่าสนใจแล้วกดเซฟไว้เพื่อสมัครภายหลัง!',
     this.actionText = 'ค้นหาตำแหน่งงาน',
     this.onAction,
   });

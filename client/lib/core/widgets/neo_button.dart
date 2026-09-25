@@ -4,13 +4,7 @@ import 'package:gap/gap.dart';
 import '../theme/app_tokens.dart';
 
 /// Button variant for Neo-Brutalist design
-enum NeoButtonVariant {
-  primary,
-  secondary,
-  destructive,
-  outline,
-  surface,
-}
+enum NeoButtonVariant { primary, secondary, destructive, outline, surface }
 
 /// First-class Neo-Brutalist Action Button matching project design system.
 ///
@@ -31,9 +25,9 @@ class NeoButton extends StatefulWidget {
     this.backgroundColor,
     this.foregroundColor,
   }) : assert(
-          text != null || child != null,
-          'Either text or child must be provided',
-        );
+         text != null || child != null,
+         'Either text or child must be provided',
+       );
 
   final VoidCallback? onPressed;
   final String? text;

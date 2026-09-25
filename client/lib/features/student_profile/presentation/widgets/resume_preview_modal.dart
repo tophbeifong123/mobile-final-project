@@ -15,11 +15,7 @@ import '../../../resume/presentation/providers/resume_controller.dart';
 
 /// Neo-Brutalist Resume PDF Preview Modal Dialog
 class ResumePreviewModal extends ConsumerWidget {
-  const ResumePreviewModal({
-    super.key,
-    required this.fileName,
-    this.onReplace,
-  });
+  const ResumePreviewModal({super.key, required this.fileName, this.onReplace});
 
   final String fileName;
   final VoidCallback? onReplace;
@@ -33,10 +29,8 @@ class ResumePreviewModal extends ConsumerWidget {
       context: context,
       barrierDismissible: true,
       barrierColor: Colors.black.withValues(alpha: 0.6),
-      builder: (context) => ResumePreviewModal(
-        fileName: fileName,
-        onReplace: onReplace,
-      ),
+      builder: (context) =>
+          ResumePreviewModal(fileName: fileName, onReplace: onReplace),
     );
   }
 
@@ -49,10 +43,7 @@ class ResumePreviewModal extends ConsumerWidget {
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            maxWidth: 580,
-            maxHeight: 740,
-          ),
+          constraints: const BoxConstraints(maxWidth: 580, maxHeight: 740),
           child: Container(
             decoration: BoxDecoration(
               color: NeoColors.pureWhite,
@@ -79,10 +70,8 @@ class ResumePreviewModal extends ConsumerWidget {
                       message: 'กำลังดาวน์โหลดเอกสาร PDF...',
                     ),
                     error: (err, _) => _buildErrorState(ref, err),
-                    data: (bytes) => _PdfViewerCanvas(
-                      bytes: bytes,
-                      fileName: fileName,
-                    ),
+                    data: (bytes) =>
+                        _PdfViewerCanvas(bytes: bytes, fileName: fileName),
                   ),
                 ),
 
@@ -101,9 +90,7 @@ class ResumePreviewModal extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: const BoxDecoration(
         color: NeoColors.butterYellow,
-        border: Border(
-          bottom: BorderSide(color: NeoColors.inkSolid, width: 2),
-        ),
+        border: Border(bottom: BorderSide(color: NeoColors.inkSolid, width: 2)),
       ),
       child: Row(
         children: [
@@ -186,7 +173,6 @@ class ResumePreviewModal extends ConsumerWidget {
     );
   }
 
-
   Widget _buildErrorState(WidgetRef ref, Object error) {
     return Container(
       color: NeoColors.paperCanvas,
@@ -245,9 +231,7 @@ class ResumePreviewModal extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: const BoxDecoration(
         color: NeoColors.paperCanvas,
-        border: Border(
-          top: BorderSide(color: NeoColors.inkSolid, width: 2),
-        ),
+        border: Border(top: BorderSide(color: NeoColors.inkSolid, width: 2)),
       ),
       child: Row(
         children: [
@@ -289,10 +273,7 @@ class ResumePreviewModal extends ConsumerWidget {
 
 /// Dedicated PDF Viewer Canvas that isolates the PdfController lifecycle
 class _PdfViewerCanvas extends StatefulWidget {
-  const _PdfViewerCanvas({
-    required this.bytes,
-    required this.fileName,
-  });
+  const _PdfViewerCanvas({required this.bytes, required this.fileName});
 
   final List<int> bytes;
   final String fileName;
@@ -309,9 +290,7 @@ class _PdfViewerCanvasState extends State<_PdfViewerCanvas> {
   @override
   void initState() {
     super.initState();
-    _controller = PdfController(
-      document: _openDocument(widget.bytes),
-    );
+    _controller = PdfController(document: _openDocument(widget.bytes));
   }
 
   // Support both Web (in-memory openData via pdf.js) and Native (temp file openFile
@@ -361,9 +340,8 @@ class _PdfViewerCanvasState extends State<_PdfViewerCanvas> {
             ),
             builders: PdfViewBuilders<DefaultBuilderOptions>(
               options: const DefaultBuilderOptions(),
-              documentLoaderBuilder: (context) => const _PdfLoadingView(
-                message: 'กำลังจัดเตรียมเอกสาร PDF...',
-              ),
+              documentLoaderBuilder: (context) =>
+                  const _PdfLoadingView(message: 'กำลังจัดเตรียมเอกสาร PDF...'),
               pageLoaderBuilder: (context) => const Center(
                 child: SizedBox(
                   width: 24,
@@ -397,7 +375,10 @@ class _PdfViewerCanvasState extends State<_PdfViewerCanvas> {
                   return const SizedBox.shrink();
                 }
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
                   decoration: BoxDecoration(
                     color: NeoColors.pureWhite,
                     borderRadius: BorderRadius.circular(20),
@@ -479,7 +460,10 @@ class _PdfViewerCanvasState extends State<_PdfViewerCanvas> {
             if (error != null) ...[
               const Gap(10),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: NeoColors.surfaceCream,
                   borderRadius: BorderRadius.circular(8),
@@ -505,9 +489,7 @@ class _PdfViewerCanvasState extends State<_PdfViewerCanvas> {
 
 /// Unified Neo-Brutalist Loading Indicator for both download and document preparation
 class _PdfLoadingView extends StatelessWidget {
-  const _PdfLoadingView({
-    this.message = 'กำลังโหลดเอกสาร PDF...',
-  });
+  const _PdfLoadingView({this.message = 'กำลังโหลดเอกสาร PDF...'});
 
   final String message;
 
@@ -560,4 +542,3 @@ class _PdfLoadingView extends StatelessWidget {
     );
   }
 }
-

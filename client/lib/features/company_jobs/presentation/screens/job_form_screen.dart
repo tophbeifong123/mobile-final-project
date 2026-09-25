@@ -219,7 +219,11 @@ class _JobFormState extends ConsumerState<_JobForm> {
                     children: [
                       const Row(
                         children: [
-                          Icon(LucideIcons.sparkles, size: 16, color: NeoColors.inkSolid),
+                          Icon(
+                            LucideIcons.sparkles,
+                            size: 16,
+                            color: NeoColors.inkSolid,
+                          ),
                           Gap(6),
                           Text(
                             'ทักษะที่ต้องการ (Skills)',
@@ -233,10 +237,16 @@ class _JobFormState extends ConsumerState<_JobForm> {
                       ),
                       NeoButton(
                         onPressed: _busy ? null : _openSkillPicker,
-                        text: _skills.isEmpty ? '+ เลือกทักษะ' : 'แก้ไข (${_skills.length})',
+                        text: _skills.isEmpty
+                            ? '+ เลือกทักษะ'
+                            : 'แก้ไข (${_skills.length})',
                         variant: NeoButtonVariant.primary,
                         height: 32,
-                        icon: const Icon(LucideIcons.plus, size: 14, color: Colors.white),
+                        icon: const Icon(
+                          LucideIcons.plus,
+                          size: 14,
+                          color: Colors.white,
+                        ),
                       ),
                     ],
                   ),
@@ -248,11 +258,17 @@ class _JobFormState extends ConsumerState<_JobForm> {
                       children: [
                         for (final skill in _skills)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
                             decoration: BoxDecoration(
                               color: NeoColors.surfaceCream,
                               borderRadius: BorderRadius.circular(8),
-                              border: Border.all(color: NeoColors.inkSolid, width: 1.2),
+                              border: Border.all(
+                                color: NeoColors.inkSolid,
+                                width: 1.2,
+                              ),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -267,7 +283,11 @@ class _JobFormState extends ConsumerState<_JobForm> {
                                 ),
                                 const Gap(6),
                                 GestureDetector(
-                                  onTap: _busy ? null : () => setState(() => _skills.remove(skill)),
+                                  onTap: _busy
+                                      ? null
+                                      : () => setState(
+                                          () => _skills.remove(skill),
+                                        ),
                                   child: const Icon(
                                     LucideIcons.x,
                                     size: 14,

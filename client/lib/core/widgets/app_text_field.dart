@@ -73,7 +73,10 @@ class AppTextField extends StatelessWidget {
 
     final disabledBorder = OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: colors.border.withValues(alpha: 0.5), width: 1),
+      borderSide: BorderSide(
+        color: colors.border.withValues(alpha: 0.5),
+        width: 1,
+      ),
     );
 
     return TextFormField(
@@ -106,14 +109,19 @@ class AppTextField extends StatelessWidget {
           fontWeight: FontWeight.w600,
         ),
         hintText: hintText,
-        hintStyle: textTheme.bodyMedium?.copyWith(color: colors.mutedForeground),
+        hintStyle: textTheme.bodyMedium?.copyWith(
+          color: colors.mutedForeground,
+        ),
         helperText: helperText,
         errorText: errorText,
         prefixIcon: prefixIcon,
         suffixIcon: suffixIcon,
         filled: true,
         fillColor: enabled ? Colors.white : colors.muted.withValues(alpha: 0.3),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 12,
+        ),
         border: border,
         enabledBorder: border,
         focusedBorder: focusedBorder,

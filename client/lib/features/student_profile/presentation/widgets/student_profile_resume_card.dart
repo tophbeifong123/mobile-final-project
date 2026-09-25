@@ -7,10 +7,7 @@ import 'resume_preview_modal.dart';
 
 /// Active Resume Card for Student Profile Screen matching Neo-Brutalist design
 class StudentProfileResumeCard extends StatelessWidget {
-  const StudentProfileResumeCard({
-    super.key,
-    required this.resumeFileName,
-  });
+  const StudentProfileResumeCard({super.key, required this.resumeFileName});
 
   final String? resumeFileName;
 
@@ -48,8 +45,10 @@ class StudentProfileResumeCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: NeoColors.freshMint,
                         borderRadius: BorderRadius.circular(6),
-                        border:
-                            Border.all(color: NeoColors.inkSolid, width: 1.5),
+                        border: Border.all(
+                          color: NeoColors.inkSolid,
+                          width: 1.5,
+                        ),
                         boxShadow: const [
                           BoxShadow(
                             color: NeoColors.inkSolid,

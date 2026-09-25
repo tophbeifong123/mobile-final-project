@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -175,7 +177,11 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(kPagePadding),
               children: [
-                _ProfileHeaderCard(applicant: applicant),
+                _ProfileHeaderCard(
+                  applicant: applicant,
+                  jobId: widget.jobId,
+                  applicationId: widget.applicationId,
+                ),
                 if (applicant.bio.trim().isNotEmpty) ...[
                   const SizedBox(height: 16),
                   _BioCard(bio: applicant.bio.trim()),
@@ -317,10 +323,16 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
   }
 }
 
-class _ProfileHeaderCard extends StatelessWidget {
-  const _ProfileHeaderCard({required this.applicant});
+class _ProfileHeaderCard extends ConsumerWidget {
+  const _ProfileHeaderCard({
+    required this.applicant,
+    required this.jobId,
+    required this.applicationId,
+  });
 
   final Applicant applicant;
+  final String jobId;
+  final String applicationId;
 
   String _displayStatus(String status) {
     switch (status.trim().toLowerCase()) {
@@ -347,8 +359,15 @@ class _ProfileHeaderCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
+    final avatarBytesAsync = ref.watch(
+      applicantAvatarBytesProvider((
+        jobId: jobId,
+        applicationId: applicationId,
+        avatarKey: applicant.avatarObjectKey,
+      )),
+    );
 
     return AppCard(
       child: Column(
@@ -357,18 +376,50 @@ class _ProfileHeaderCard extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const SizedBox(
+              ClipRRect(
+                borderRadius: BorderRadius.circular(26),
+                child: Container(
                   width: 52,
                   height: 52,
-                  child: Icon(
-                    Icons.person_outline_rounded,
-                    color: AppColors.primary,
-                    size: 28,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: avatarBytesAsync.when(
+                    data: (bytes) {
+                      if (bytes != null && bytes.isNotEmpty) {
+                        return Image.memory(
+                          Uint8List.fromList(bytes),
+                          width: 52,
+                          height: 52,
+                          fit: BoxFit.cover,
+                        );
+                      }
+                      return const Center(
+                        child: Icon(
+                          Icons.person_outline_rounded,
+                          color: AppColors.primary,
+                          size: 28,
+                        ),
+                      );
+                    },
+                    loading: () => const Center(
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                    error: (error, stack) => const Center(
+                      child: Icon(
+                        Icons.person_outline_rounded,
+                        color: AppColors.primary,
+                        size: 28,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -472,7 +523,10 @@ class _BioCard extends StatelessWidget {
               ),
               const Gap(8),
               Expanded(
-                child: Text('เกี่ยวกับฉัน (About Me)', style: textTheme.titleMedium),
+                child: Text(
+                  'เกี่ยวกับฉัน (About Me)',
+                  style: textTheme.titleMedium,
+                ),
               ),
             ],
           ),
@@ -590,7 +644,10 @@ class _ContactLinksCard extends StatelessWidget {
             itemBuilder: (context, index) {
               final c = contacts[index];
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.04),
                   borderRadius: BorderRadius.circular(8),
@@ -681,7 +738,10 @@ class _PortfolioProjectsCard extends StatelessWidget {
               ),
               const Gap(8),
               Expanded(
-                child: Text('ผลงานและโปรเจกต์ (Portfolio)', style: textTheme.titleMedium),
+                child: Text(
+                  'ผลงานและโปรเจกต์ (Portfolio)',
+                  style: textTheme.titleMedium,
+                ),
               ),
             ],
           ),

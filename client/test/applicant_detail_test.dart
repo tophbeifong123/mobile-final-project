@@ -84,7 +84,10 @@ void main() {
 
       expect(find.text('Resume ที่ใช้สมัคร'), findsOneWidget);
       expect(find.text('somchai-resume.pdf'), findsOneWidget);
-      expect(find.text('สำเนา Resume ในระบบ ณ วันที่ยื่นใบสมัคร'), findsOneWidget);
+      expect(
+        find.text('สำเนา Resume ในระบบ ณ วันที่ยื่นใบสมัคร'),
+        findsOneWidget,
+      );
 
       expect(find.text('Cover Letter'), findsOneWidget);
       expect(
@@ -94,66 +97,67 @@ void main() {
     },
   );
 
-  testWidgets('shows error state when fetching applicant detail fails and retry works', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets(
+    'shows error state when fetching applicant detail fails and retry works',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    final fakeRepo = _FakeCompanyJobRepository(
-      error: const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'),
-    );
+      final fakeRepo = _FakeCompanyJobRepository(
+        error: const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'),
+      );
 
-    final router = GoRouter(
-      initialLocation: '/company/jobs/job-1/applicants/app-1',
-      routes: [
-        GoRoute(
-          path: '/company/jobs/:jobId/applicants/:applicationId',
-          builder: (context, state) => ApplicantDetailScreen(
-            jobId: state.pathParameters['jobId']!,
-            applicationId: state.pathParameters['applicationId']!,
+      final router = GoRouter(
+        initialLocation: '/company/jobs/job-1/applicants/app-1',
+        routes: [
+          GoRoute(
+            path: '/company/jobs/:jobId/applicants/:applicationId',
+            builder: (context, state) => ApplicantDetailScreen(
+              jobId: state.pathParameters['jobId']!,
+              applicationId: state.pathParameters['applicationId']!,
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+            companyJobRepositoryProvider.overrideWithValue(fakeRepo),
+          ],
+          child: MaterialApp.router(
+            theme: AppTheme.lightTheme,
+            routerConfig: router,
           ),
         ),
-      ],
-    );
-    addTearDown(router.dispose);
+      );
+      await tester.pumpAndSettle();
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
-          companyJobRepositoryProvider.overrideWithValue(fakeRepo),
-        ],
-        child: MaterialApp.router(
-          theme: AppTheme.lightTheme,
-          routerConfig: router,
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      expect(find.text('โหลดข้อมูลผู้สมัครไม่ได้'), findsOneWidget);
+      expect(find.text('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'), findsOneWidget);
+      expect(find.text('ลองอีกครั้ง'), findsOneWidget);
 
-    expect(find.text('โหลดข้อมูลผู้สมัครไม่ได้'), findsOneWidget);
-    expect(find.text('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'), findsOneWidget);
-    expect(find.text('ลองอีกครั้ง'), findsOneWidget);
+      fakeRepo.error = null;
+      fakeRepo.applicant = const Applicant(
+        applicationId: 'app-1',
+        fullName: 'สุดา ขยันดี',
+        university: 'มหิดล',
+        major: 'เทคโนโลยีสารสนเทศ',
+        status: 'reviewing',
+        coverLetter: 'ขอโอกาสฝึกงานด้วยค่ะ',
+      );
 
-    fakeRepo.error = null;
-    fakeRepo.applicant = const Applicant(
-      applicationId: 'app-1',
-      fullName: 'สุดา ขยันดี',
-      university: 'มหิดล',
-      major: 'เทคโนโลยีสารสนเทศ',
-      status: 'reviewing',
-      coverLetter: 'ขอโอกาสฝึกงานด้วยค่ะ',
-    );
+      await tester.tap(find.text('ลองอีกครั้ง'));
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text('ลองอีกครั้ง'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('สุดา ขยันดี'), findsOneWidget);
-    expect(find.text('กำลังพิจารณา'), findsOneWidget);
-  });
+      expect(find.text('สุดา ขยันดี'), findsOneWidget);
+      expect(find.text('กำลังพิจารณา'), findsOneWidget);
+    },
+  );
 
   testWidgets(
     'shows action button when status is submitted and transitions to reviewing upon tap',
@@ -221,68 +225,67 @@ void main() {
     },
   );
 
-  testWidgets(
-    'shows error snackbar when changing status to reviewing fails',
-    (tester) async {
-      tester.view.physicalSize = const Size(390, 844);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets('shows error snackbar when changing status to reviewing fails', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
 
-      final applicant = Applicant(
-        applicationId: 'app-1',
-        fullName: 'สมชาย ใจดี',
-        university: 'มหาวิทยาลัยเกษตรศาสตร์',
-        major: 'วิทยาการคอมพิวเตอร์',
-        status: 'submitted',
-        coverLetter: 'มีความสนใจและพร้อมจะเรียนรู้งานอย่างเต็มที่ครับ',
-        skills: const ['Flutter'],
-        createdAt: DateTime(2026, 9, 23, 14, 0),
-      );
+    final applicant = Applicant(
+      applicationId: 'app-1',
+      fullName: 'สมชาย ใจดี',
+      university: 'มหาวิทยาลัยเกษตรศาสตร์',
+      major: 'วิทยาการคอมพิวเตอร์',
+      status: 'submitted',
+      coverLetter: 'มีความสนใจและพร้อมจะเรียนรู้งานอย่างเต็มที่ครับ',
+      skills: const ['Flutter'],
+      createdAt: DateTime(2026, 9, 23, 14, 0),
+    );
 
-      final fakeRepo = _FakeCompanyJobRepository(
-        applicant: applicant,
-        updateError: const AppException('เกิดข้อผิดพลาดในการเปลี่ยนสถานะ'),
-      );
+    final fakeRepo = _FakeCompanyJobRepository(
+      applicant: applicant,
+      updateError: const AppException('เกิดข้อผิดพลาดในการเปลี่ยนสถานะ'),
+    );
 
-      final router = GoRouter(
-        initialLocation: '/company/jobs/job-1/applicants/app-1',
-        routes: [
-          GoRoute(
-            path: '/company/jobs/:jobId/applicants/:applicationId',
-            builder: (context, state) => ApplicantDetailScreen(
-              jobId: state.pathParameters['jobId']!,
-              applicationId: state.pathParameters['applicationId']!,
-            ),
-          ),
-        ],
-      );
-      addTearDown(router.dispose);
-
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
-            companyJobRepositoryProvider.overrideWithValue(fakeRepo),
-          ],
-          child: MaterialApp.router(
-            theme: AppTheme.lightTheme,
-            routerConfig: router,
+    final router = GoRouter(
+      initialLocation: '/company/jobs/job-1/applicants/app-1',
+      routes: [
+        GoRoute(
+          path: '/company/jobs/:jobId/applicants/:applicationId',
+          builder: (context, state) => ApplicantDetailScreen(
+            jobId: state.pathParameters['jobId']!,
+            applicationId: state.pathParameters['applicationId']!,
           ),
         ),
-      );
-      await tester.pumpAndSettle();
+      ],
+    );
+    addTearDown(router.dispose);
 
-      expect(find.text('เปลี่ยนสถานะเป็น Reviewing'), findsOneWidget);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+          companyJobRepositoryProvider.overrideWithValue(fakeRepo),
+        ],
+        child: MaterialApp.router(
+          theme: AppTheme.lightTheme,
+          routerConfig: router,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
 
-      await tester.tap(find.text('เปลี่ยนสถานะเป็น Reviewing'));
-      await tester.pump();
-      await tester.pumpAndSettle();
+    expect(find.text('เปลี่ยนสถานะเป็น Reviewing'), findsOneWidget);
 
-      expect(find.text('เกิดข้อผิดพลาดในการเปลี่ยนสถานะ'), findsOneWidget);
-      expect(find.text('เปลี่ยนสถานะเป็น Reviewing'), findsOneWidget);
-    },
-  );
+    await tester.tap(find.text('เปลี่ยนสถานะเป็น Reviewing'));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(find.text('เกิดข้อผิดพลาดในการเปลี่ยนสถานะ'), findsOneWidget);
+    expect(find.text('เปลี่ยนสถานะเป็น Reviewing'), findsOneWidget);
+  });
 
   testWidgets(
     'shows Accept and Reject buttons when status is reviewing and cancels when dialog is cancelled',
@@ -350,150 +353,148 @@ void main() {
     },
   );
 
-  testWidgets(
-    'confirms Accept and transitions status to accepted',
-    (tester) async {
-      tester.view.physicalSize = const Size(390, 844);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets('confirms Accept and transitions status to accepted', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
 
-      final applicant = Applicant(
-        applicationId: 'app-1',
-        fullName: 'สมชาย ใจดี',
-        university: 'มหาวิทยาลัยเกษตรศาสตร์',
-        major: 'วิทยาการคอมพิวเตอร์',
-        status: 'reviewing',
-        coverLetter: 'มีความสนใจและพร้อมจะเรียนรู้งานอย่างเต็มที่ครับ',
-        skills: const ['Flutter'],
-        createdAt: DateTime(2026, 9, 23, 14, 0),
-      );
+    final applicant = Applicant(
+      applicationId: 'app-1',
+      fullName: 'สมชาย ใจดี',
+      university: 'มหาวิทยาลัยเกษตรศาสตร์',
+      major: 'วิทยาการคอมพิวเตอร์',
+      status: 'reviewing',
+      coverLetter: 'มีความสนใจและพร้อมจะเรียนรู้งานอย่างเต็มที่ครับ',
+      skills: const ['Flutter'],
+      createdAt: DateTime(2026, 9, 23, 14, 0),
+    );
 
-      final fakeRepo = _FakeCompanyJobRepository(applicant: applicant);
+    final fakeRepo = _FakeCompanyJobRepository(applicant: applicant);
 
-      final router = GoRouter(
-        initialLocation: '/company/jobs/job-1/applicants/app-1',
-        routes: [
-          GoRoute(
-            path: '/company/jobs/:jobId/applicants/:applicationId',
-            builder: (context, state) => ApplicantDetailScreen(
-              jobId: state.pathParameters['jobId']!,
-              applicationId: state.pathParameters['applicationId']!,
-            ),
-          ),
-        ],
-      );
-      addTearDown(router.dispose);
-
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
-            companyJobRepositoryProvider.overrideWithValue(fakeRepo),
-          ],
-          child: MaterialApp.router(
-            theme: AppTheme.lightTheme,
-            routerConfig: router,
+    final router = GoRouter(
+      initialLocation: '/company/jobs/job-1/applicants/app-1',
+      routes: [
+        GoRoute(
+          path: '/company/jobs/:jobId/applicants/:applicationId',
+          builder: (context, state) => ApplicantDetailScreen(
+            jobId: state.pathParameters['jobId']!,
+            applicationId: state.pathParameters['applicationId']!,
           ),
         ),
-      );
-      await tester.pumpAndSettle();
+      ],
+    );
+    addTearDown(router.dispose);
 
-      await tester.tap(find.text('ตอบรับ (Accept)'));
-      await tester.pumpAndSettle();
-
-      // Find confirm button in dialog (the FilledButton)
-      final dialogConfirmButton = find.descendant(
-        of: find.byType(AlertDialog),
-        matching: find.text('ตอบรับ (Accept)'),
-      );
-      await tester.tap(dialogConfirmButton);
-      await tester.pump();
-      await tester.pumpAndSettle();
-
-      expect(fakeRepo.updateCallCount, 1);
-      expect(fakeRepo.updatedJobId, 'job-1');
-      expect(fakeRepo.updatedApplicationId, 'app-1');
-      expect(fakeRepo.updatedStatus, 'accepted');
-
-      expect(find.text('ตอบรับผู้สมัคร (Accepted) สำเร็จแล้ว'), findsOneWidget);
-      expect(find.text('ผ่านการคัดเลือก'), findsOneWidget);
-      expect(find.text('ตอบรับ (Accept)'), findsNothing);
-      expect(find.text('ปฏิเสธ (Reject)'), findsNothing);
-    },
-  );
-
-  testWidgets(
-    'confirms Reject and transitions status to rejected',
-    (tester) async {
-      tester.view.physicalSize = const Size(390, 844);
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-
-      final applicant = Applicant(
-        applicationId: 'app-1',
-        fullName: 'สมชาย ใจดี',
-        university: 'มหาวิทยาลัยเกษตรศาสตร์',
-        major: 'วิทยาการคอมพิวเตอร์',
-        status: 'reviewing',
-        coverLetter: 'มีความสนใจและพร้อมจะเรียนรู้งานอย่างเต็มที่ครับ',
-        skills: const ['Flutter'],
-        createdAt: DateTime(2026, 9, 23, 14, 0),
-      );
-
-      final fakeRepo = _FakeCompanyJobRepository(applicant: applicant);
-
-      final router = GoRouter(
-        initialLocation: '/company/jobs/job-1/applicants/app-1',
-        routes: [
-          GoRoute(
-            path: '/company/jobs/:jobId/applicants/:applicationId',
-            builder: (context, state) => ApplicantDetailScreen(
-              jobId: state.pathParameters['jobId']!,
-              applicationId: state.pathParameters['applicationId']!,
-            ),
-          ),
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+          companyJobRepositoryProvider.overrideWithValue(fakeRepo),
         ],
-      );
-      addTearDown(router.dispose);
+        child: MaterialApp.router(
+          theme: AppTheme.lightTheme,
+          routerConfig: router,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
-            companyJobRepositoryProvider.overrideWithValue(fakeRepo),
-          ],
-          child: MaterialApp.router(
-            theme: AppTheme.lightTheme,
-            routerConfig: router,
+    await tester.tap(find.text('ตอบรับ (Accept)'));
+    await tester.pumpAndSettle();
+
+    // Find confirm button in dialog (the FilledButton)
+    final dialogConfirmButton = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.text('ตอบรับ (Accept)'),
+    );
+    await tester.tap(dialogConfirmButton);
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(fakeRepo.updateCallCount, 1);
+    expect(fakeRepo.updatedJobId, 'job-1');
+    expect(fakeRepo.updatedApplicationId, 'app-1');
+    expect(fakeRepo.updatedStatus, 'accepted');
+
+    expect(find.text('ตอบรับผู้สมัคร (Accepted) สำเร็จแล้ว'), findsOneWidget);
+    expect(find.text('ผ่านการคัดเลือก'), findsOneWidget);
+    expect(find.text('ตอบรับ (Accept)'), findsNothing);
+    expect(find.text('ปฏิเสธ (Reject)'), findsNothing);
+  });
+
+  testWidgets('confirms Reject and transitions status to rejected', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final applicant = Applicant(
+      applicationId: 'app-1',
+      fullName: 'สมชาย ใจดี',
+      university: 'มหาวิทยาลัยเกษตรศาสตร์',
+      major: 'วิทยาการคอมพิวเตอร์',
+      status: 'reviewing',
+      coverLetter: 'มีความสนใจและพร้อมจะเรียนรู้งานอย่างเต็มที่ครับ',
+      skills: const ['Flutter'],
+      createdAt: DateTime(2026, 9, 23, 14, 0),
+    );
+
+    final fakeRepo = _FakeCompanyJobRepository(applicant: applicant);
+
+    final router = GoRouter(
+      initialLocation: '/company/jobs/job-1/applicants/app-1',
+      routes: [
+        GoRoute(
+          path: '/company/jobs/:jobId/applicants/:applicationId',
+          builder: (context, state) => ApplicantDetailScreen(
+            jobId: state.pathParameters['jobId']!,
+            applicationId: state.pathParameters['applicationId']!,
           ),
         ),
-      );
-      await tester.pumpAndSettle();
+      ],
+    );
+    addTearDown(router.dispose);
 
-      await tester.tap(find.text('ปฏิเสธ (Reject)'));
-      await tester.pumpAndSettle();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+          companyJobRepositoryProvider.overrideWithValue(fakeRepo),
+        ],
+        child: MaterialApp.router(
+          theme: AppTheme.lightTheme,
+          routerConfig: router,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
 
-      final dialogConfirmButton = find.descendant(
-        of: find.byType(AlertDialog),
-        matching: find.text('ปฏิเสธ (Reject)'),
-      );
-      await tester.tap(dialogConfirmButton);
-      await tester.pump();
-      await tester.pumpAndSettle();
+    await tester.tap(find.text('ปฏิเสธ (Reject)'));
+    await tester.pumpAndSettle();
 
-      expect(fakeRepo.updateCallCount, 1);
-      expect(fakeRepo.updatedJobId, 'job-1');
-      expect(fakeRepo.updatedApplicationId, 'app-1');
-      expect(fakeRepo.updatedStatus, 'rejected');
+    final dialogConfirmButton = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.text('ปฏิเสธ (Reject)'),
+    );
+    await tester.tap(dialogConfirmButton);
+    await tester.pump();
+    await tester.pumpAndSettle();
 
-      expect(find.text('ปฏิเสธผู้สมัคร (Rejected) สำเร็จแล้ว'), findsOneWidget);
-      expect(find.text('ไม่ผ่านการคัดเลือก'), findsOneWidget);
-      expect(find.text('ตอบรับ (Accept)'), findsNothing);
-      expect(find.text('ปฏิเสธ (Reject)'), findsNothing);
-    },
-  );
+    expect(fakeRepo.updateCallCount, 1);
+    expect(fakeRepo.updatedJobId, 'job-1');
+    expect(fakeRepo.updatedApplicationId, 'app-1');
+    expect(fakeRepo.updatedStatus, 'rejected');
+
+    expect(find.text('ปฏิเสธผู้สมัคร (Rejected) สำเร็จแล้ว'), findsOneWidget);
+    expect(find.text('ไม่ผ่านการคัดเลือก'), findsOneWidget);
+    expect(find.text('ตอบรับ (Accept)'), findsNothing);
+    expect(find.text('ปฏิเสธ (Reject)'), findsNothing);
+  });
 
   testWidgets(
     'shows no action buttons when status is already accepted or rejected',
@@ -574,10 +575,7 @@ void main() {
             label: 'เบอร์ส่วนตัว',
             value: '0812345678',
           ),
-          ContactLink(
-            platform: 'line',
-            value: '@meena_dev',
-          ),
+          ContactLink(platform: 'line', value: '@meena_dev'),
         ],
         portfolioLinks: const [
           PortfolioLink(
@@ -624,7 +622,10 @@ void main() {
 
       // Check Bio Card
       expect(find.text('เกี่ยวกับฉัน (About Me)'), findsOneWidget);
-      expect(find.text('นักศึกษาที่รักการเรียนรู้เทคโนโลยีใหม่ๆ'), findsOneWidget);
+      expect(
+        find.text('นักศึกษาที่รักการเรียนรู้เทคโนโลยีใหม่ๆ'),
+        findsOneWidget,
+      );
 
       // Check Contact Channels Card
       expect(find.text('ช่องทางการติดต่อ'), findsOneWidget);
@@ -634,19 +635,17 @@ void main() {
       // Check Portfolio Projects Card
       expect(find.text('ผลงานและโปรเจกต์ (Portfolio)'), findsOneWidget);
       expect(find.text('InternFinder App'), findsOneWidget);
-      expect(find.text('https://github.com/example/internfinder'), findsOneWidget);
+      expect(
+        find.text('https://github.com/example/internfinder'),
+        findsOneWidget,
+      );
       expect(find.text('ระบบค้นหาที่ฝึกงาน'), findsOneWidget);
     },
   );
 }
 
-
 class _FakeCompanyJobRepository implements CompanyJobRepository {
-  _FakeCompanyJobRepository({
-    this.applicant,
-    this.error,
-    this.updateError,
-  });
+  _FakeCompanyJobRepository({this.applicant, this.error, this.updateError});
 
   Applicant? applicant;
   AppException? error;
@@ -672,7 +671,8 @@ class _FakeCompanyJobRepository implements CompanyJobRepository {
   Future<List<CompanyJob>> fetchMine() async => [];
 
   @override
-  Future<EditableJob> fetchOne(String jobId) async => throw UnimplementedError();
+  Future<EditableJob> fetchOne(String jobId) async =>
+      throw UnimplementedError();
 
   @override
   Future<CreatedJob> create(JobPosting posting) async =>
@@ -683,14 +683,16 @@ class _FakeCompanyJobRepository implements CompanyJobRepository {
     required String jobId,
     required JobPosting posting,
     required int version,
-  }) async =>
-      throw UnimplementedError();
+  }) async => throw UnimplementedError();
 
   @override
   Future<void> remove(String jobId) async {}
 
   @override
-  Future<void> setStatus({required String jobId, required String status}) async {}
+  Future<void> setStatus({
+    required String jobId,
+    required String status,
+  }) async {}
 
   @override
   Future<void> updateApplicantStatus({
@@ -720,4 +722,3 @@ class _FakeCompanyJobRepository implements CompanyJobRepository {
     }
   }
 }
-

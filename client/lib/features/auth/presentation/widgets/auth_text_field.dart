@@ -132,16 +132,9 @@ class AuthTextField extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: badgeColor,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: NeoColors.inkSolid,
-                        width: 1.5,
-                      ),
+                      border: Border.all(color: NeoColors.inkSolid, width: 1.5),
                     ),
-                    child: Icon(
-                      badgeIcon,
-                      size: 18,
-                      color: NeoColors.inkSolid,
-                    ),
+                    child: Icon(badgeIcon, size: 18, color: NeoColors.inkSolid),
                   ),
                 ),
               ),

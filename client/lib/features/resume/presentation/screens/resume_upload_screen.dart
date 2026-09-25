@@ -42,7 +42,9 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
           const Gap(4),
           Text(
             'ต้องมี Resume เป็น PDF ก่อนสมัครงาน',
-            style: textTheme.bodyMedium?.copyWith(color: colors.mutedForeground),
+            style: textTheme.bodyMedium?.copyWith(
+              color: colors.mutedForeground,
+            ),
           ),
           const Gap(16),
           if (currentResumeName != null && currentResumeName.isNotEmpty) ...[
@@ -130,9 +132,7 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
             const Gap(12),
             Text(
               _error!,
-              style: textTheme.bodyMedium?.copyWith(
-                color: colors.destructive,
-              ),
+              style: textTheme.bodyMedium?.copyWith(color: colors.destructive),
             ),
           ],
         ],
@@ -192,11 +192,9 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
         setState(() => _error = 'เลือกไฟล์จากเครื่องเพื่ออัปโหลด');
         return;
       }
-      await ref.read(resumeRepositoryProvider).uploadPdf(
-            filePath: path ?? '',
-            fileName: file.name,
-            bytes: bytes,
-          );
+      await ref
+          .read(resumeRepositoryProvider)
+          .uploadPdf(filePath: path ?? '', fileName: file.name, bytes: bytes);
       ref.invalidate(studentProfileControllerProvider);
       if (!mounted) {
         return;

@@ -123,19 +123,18 @@ class _SavedJobsScreenState extends ConsumerState<SavedJobsScreen> {
         : allJobs.where((j) => j.workMode == _selectedMode).toList();
 
     // Compute filter pill item counts
-    final onlineCount =
-        allJobs.where((j) => j.workMode == WorkMode.remote).length;
-    final onSiteCount =
-        allJobs.where((j) => j.workMode == WorkMode.onSite).length;
-    final hybridCount =
-        allJobs.where((j) => j.workMode == WorkMode.hybrid).length;
+    final onlineCount = allJobs
+        .where((j) => j.workMode == WorkMode.remote)
+        .length;
+    final onSiteCount = allJobs
+        .where((j) => j.workMode == WorkMode.onSite)
+        .length;
+    final hybridCount = allJobs
+        .where((j) => j.workMode == WorkMode.hybrid)
+        .length;
 
     final filterItems = [
-      WorkModeFilterItem(
-        mode: null,
-        label: 'ทั้งหมด',
-        count: allJobs.length,
-      ),
+      WorkModeFilterItem(mode: null, label: 'ทั้งหมด', count: allJobs.length),
       WorkModeFilterItem(
         mode: WorkMode.remote,
         label: 'Online',

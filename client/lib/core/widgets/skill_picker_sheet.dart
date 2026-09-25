@@ -101,7 +101,8 @@ class _SkillPickerSheetState extends State<SkillPickerSheet> {
       category: _selectedCategory,
     );
 
-    final showCustomAddButton = _searchQuery.isNotEmpty &&
+    final showCustomAddButton =
+        _searchQuery.isNotEmpty &&
         !filteredPresets.any(
           (s) => s.toLowerCase() == _searchQuery.toLowerCase(),
         );
@@ -200,7 +201,11 @@ class _SkillPickerSheetState extends State<SkillPickerSheet> {
                 ],
               ),
             ),
-            const Divider(color: NeoColors.inkSolid, height: 1.5, thickness: 1.5),
+            const Divider(
+              color: NeoColors.inkSolid,
+              height: 1.5,
+              thickness: 1.5,
+            ),
 
             // Search Bar
             Padding(

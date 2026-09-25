@@ -8,10 +8,7 @@ class GoogleGIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      size: Size(size, size),
-      painter: _GoogleGLogoPainter(),
-    );
+    return CustomPaint(size: Size(size, size), painter: _GoogleGLogoPainter());
   }
 }
 
@@ -78,7 +75,11 @@ class _GoogleGLogoPainter extends CustomPainter {
 
 /// Official GitHub Octocat Silhouette Icon
 class GitHubIcon extends StatelessWidget {
-  const GitHubIcon({super.key, this.size = 20, this.color = const Color(0xFF18181B)});
+  const GitHubIcon({
+    super.key,
+    this.size = 20,
+    this.color = const Color(0xFF18181B),
+  });
 
   final double size;
   final Color color;

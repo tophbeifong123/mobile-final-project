@@ -78,7 +78,8 @@ class EditableJobModel {
       requirements: json['requirements'] as String? ?? '',
       status: json['status'] as String? ?? 'open',
       version: json['version'] as int? ?? 1,
-      skills: (json['skills'] as List<dynamic>?)
+      skills:
+          (json['skills'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const [],
@@ -129,6 +130,7 @@ class ApplicantModel {
     this.portfolioUrl,
     this.resumeObjectKey,
     this.resumeFileName,
+    this.avatarObjectKey,
     this.createdAt,
   });
 
@@ -147,16 +149,19 @@ class ApplicantModel {
           const [],
       bio: json['bio'] as String? ?? '',
       contactLinks: (json['contactLinks'] as List<dynamic>? ?? const [])
-          .map((item) =>
-              ContactLinkModel.fromJson(item as Map<String, dynamic>))
+          .map(
+            (item) => ContactLinkModel.fromJson(item as Map<String, dynamic>),
+          )
           .toList(),
       portfolioLinks: (json['portfolioLinks'] as List<dynamic>? ?? const [])
-          .map((item) =>
-              PortfolioLinkModel.fromJson(item as Map<String, dynamic>))
+          .map(
+            (item) => PortfolioLinkModel.fromJson(item as Map<String, dynamic>),
+          )
           .toList(),
       portfolioUrl: json['portfolioUrl'] as String?,
       resumeObjectKey: json['resumeObjectKey'] as String?,
       resumeFileName: json['resumeFileName'] as String?,
+      avatarObjectKey: json['avatarObjectKey'] as String?,
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'] as String)
           : null,
@@ -176,6 +181,7 @@ class ApplicantModel {
   final String? portfolioUrl;
   final String? resumeObjectKey;
   final String? resumeFileName;
+  final String? avatarObjectKey;
   final DateTime? createdAt;
 
   Applicant toEntity() {
@@ -193,6 +199,7 @@ class ApplicantModel {
       portfolioUrl: portfolioUrl,
       resumeObjectKey: resumeObjectKey,
       resumeFileName: resumeFileName,
+      avatarObjectKey: avatarObjectKey,
       createdAt: createdAt,
     );
   }

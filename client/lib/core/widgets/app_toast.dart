@@ -2,12 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 /// Toast types supported by the Neo-Brutalist design system.
-enum AppToastType {
-  info,
-  success,
-  error,
-  warning,
-}
+enum AppToastType { info, success, error, warning }
 
 /// A top-floating Neo-Brutalist Toast notification.
 ///
@@ -32,23 +27,20 @@ class AppToast {
   }) {
     dismiss(immediate: true);
 
-    final overlay = Overlay.maybeOf(context, rootOverlay: true) ??
-        Overlay.maybeOf(context);
+    final overlay =
+        Overlay.maybeOf(context, rootOverlay: true) ?? Overlay.maybeOf(context);
     if (overlay == null) {
       // Fallback if no Overlay is accessible
       ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-        SnackBar(
-          content: Text(message),
-          behavior: SnackBarBehavior.floating,
-        ),
+        SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
       );
       return;
     }
 
     final topPadding = MediaQuery.maybeOf(context)?.padding.top ?? 0.0;
     // Position floating right under the top safe area / status bar
-    final resolvedTop = topOffset ??
-        (topPadding > 0 ? (topPadding + 16.0) : 20.0);
+    final resolvedTop =
+        topOffset ?? (topPadding > 0 ? (topPadding + 16.0) : 20.0);
 
     late final OverlayEntry entry;
     entry = OverlayEntry(
@@ -232,16 +224,14 @@ class AppToastWidgetState extends State<AppToastOverlayWidget>
       reverseCurve: Curves.easeIn,
     );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, -0.45),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeOutBack,
-        reverseCurve: Curves.easeInCubic,
-      ),
-    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, -0.45), end: Offset.zero).animate(
+          CurvedAnimation(
+            parent: _controller,
+            curve: Curves.easeOutBack,
+            reverseCurve: Curves.easeInCubic,
+          ),
+        );
 
     _controller.forward();
   }
@@ -343,11 +333,7 @@ class AppToastWidgetState extends State<AppToastOverlayWidget>
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: inkSolid, width: 1.8),
                           ),
-                          child: Icon(
-                            _iconData,
-                            size: 18,
-                            color: inkSolid,
-                          ),
+                          child: Icon(_iconData, size: 18, color: inkSolid),
                         ),
                         const SizedBox(width: 12),
 
@@ -418,18 +404,34 @@ extension AppToastContextX on BuildContext {
   }
 
   void showSuccessToast(String message, {Duration? duration}) {
-    AppToast.success(this, message, duration: duration ?? const Duration(milliseconds: 2800));
+    AppToast.success(
+      this,
+      message,
+      duration: duration ?? const Duration(milliseconds: 2800),
+    );
   }
 
   void showErrorToast(String message, {Duration? duration}) {
-    AppToast.error(this, message, duration: duration ?? const Duration(milliseconds: 3200));
+    AppToast.error(
+      this,
+      message,
+      duration: duration ?? const Duration(milliseconds: 3200),
+    );
   }
 
   void showInfoToast(String message, {Duration? duration}) {
-    AppToast.info(this, message, duration: duration ?? const Duration(milliseconds: 2800));
+    AppToast.info(
+      this,
+      message,
+      duration: duration ?? const Duration(milliseconds: 2800),
+    );
   }
 
   void showWarningToast(String message, {Duration? duration}) {
-    AppToast.warning(this, message, duration: duration ?? const Duration(milliseconds: 3000));
+    AppToast.warning(
+      this,
+      message,
+      duration: duration ?? const Duration(milliseconds: 3000),
+    );
   }
 }

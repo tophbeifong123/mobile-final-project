@@ -38,6 +38,7 @@ class StudentProfile {
     required this.portfolioUrl,
     this.resumeFileName,
     this.resumeObjectKey,
+    this.avatarObjectKey,
   });
 
   final String fullName;
@@ -50,6 +51,7 @@ class StudentProfile {
   final String? portfolioUrl;
   final String? resumeFileName;
   final String? resumeObjectKey;
+  final String? avatarObjectKey;
 
   StudentProfile copyWith({
     String? fullName,
@@ -62,6 +64,7 @@ class StudentProfile {
     String? portfolioUrl,
     String? resumeFileName,
     String? resumeObjectKey,
+    String? avatarObjectKey,
   }) {
     return StudentProfile(
       fullName: fullName ?? this.fullName,
@@ -74,6 +77,7 @@ class StudentProfile {
       portfolioUrl: portfolioUrl ?? this.portfolioUrl,
       resumeFileName: resumeFileName ?? this.resumeFileName,
       resumeObjectKey: resumeObjectKey ?? this.resumeObjectKey,
+      avatarObjectKey: avatarObjectKey ?? this.avatarObjectKey,
     );
   }
 }

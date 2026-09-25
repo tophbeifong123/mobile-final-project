@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
@@ -15,10 +16,9 @@ import '../../../jobs/presentation/widgets/feed_top_bar.dart';
 import '../../domain/entities/student_profile.dart';
 import '../providers/student_profile_controller.dart';
 import '../widgets/student_profile_bio_card.dart';
-import '../widgets/student_profile_contacts_card.dart';
 import '../widgets/student_profile_hero_card.dart';
 import '../widgets/student_profile_info_card.dart';
-import '../widgets/student_profile_portfolio_card.dart';
+import '../widgets/student_profile_links_card.dart';
 import '../widgets/student_profile_resume_card.dart';
 import '../widgets/student_profile_skills_card.dart';
 
@@ -109,8 +109,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
   late final TextEditingController _majorController;
   late final TextEditingController _bioController;
   late List<String> _skills;
-  late List<ContactLink> _contacts;
-  late List<PortfolioLink> _portfolios;
+  late List<ContactLink> _links;
   String? _error;
   bool _saving = false;
 
@@ -123,15 +122,32 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
     _majorController = TextEditingController(text: profile.major);
     _bioController = TextEditingController(text: profile.bio);
     _skills = List<String>.from(profile.skills);
-    _contacts = List<ContactLink>.from(profile.contactLinks);
-    _portfolios = List<PortfolioLink>.from(profile.portfolioLinks);
-    if (_portfolios.isEmpty &&
-        profile.portfolioUrl != null &&
-        profile.portfolioUrl!.isNotEmpty) {
-      _portfolios.add(PortfolioLink(
-        title: 'Portfolio Link',
-        url: profile.portfolioUrl!,
-      ));
+    _links = List<ContactLink>.from(profile.contactLinks);
+
+    final existingUrls = _links.map((l) => l.value).toSet();
+    for (final p in profile.portfolioLinks) {
+      if (p.url.isNotEmpty && !existingUrls.contains(p.url)) {
+        _links.add(
+          ContactLink(
+            platform: 'portfolio',
+            label: p.title.isNotEmpty ? p.title : null,
+            value: p.url,
+          ),
+        );
+        existingUrls.add(p.url);
+      }
+    }
+    if (profile.portfolioUrl != null &&
+        profile.portfolioUrl!.isNotEmpty &&
+        !existingUrls.contains(profile.portfolioUrl!)) {
+      _links.add(
+        ContactLink(
+          platform: 'portfolio',
+          label: 'Portfolio',
+          value: profile.portfolioUrl!,
+        ),
+      );
+      existingUrls.add(profile.portfolioUrl!);
     }
   }
 
@@ -151,27 +167,23 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
-          // Student Profile Card Hero
+          // 1. Profile: Student Profile Card Hero
           StudentProfileHeroCard(
             profile: widget.profile,
-            onAvatarTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content:
-                      Text('คุณสามารถเปลี่ยนรูปโปรไฟล์ได้เร็วๆ นี้ 📸'),
-                ),
-              );
-            },
+            onAvatarTap: _handleAvatarTap,
           ),
           const Gap(14),
 
-          // Active Resume Card
+          // Profile: Active Resume Card
           StudentProfileResumeCard(
             resumeFileName: widget.profile.resumeFileName,
           ),
           const Gap(14),
+          // 2. เกี่ยวกับฉัน (About Me / Bio Card)
+          StudentProfileBioCard(bioController: _bioController),
+          const Gap(14),
 
-          // General Information Card
+          // 3. ข้อมูลทั่วไป (General Information Card)
           StudentProfileInfoCard(
             nameController: _nameController,
             universityController: _universityController,
@@ -180,30 +192,17 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
           ),
           const Gap(14),
 
-          // About Me (Bio) Card
-          StudentProfileBioCard(
-            bioController: _bioController,
-          ),
-          const Gap(14),
-
-          // Skills Section Card
+          // 4. ทักษะ (Skills Section Card)
           StudentProfileSkillsCard(
             skills: _skills,
             onChanged: (updated) => setState(() => _skills = updated),
           ),
           const Gap(14),
 
-          // Contact Channels Card
-          StudentProfileContactsCard(
-            contacts: _contacts,
-            onChanged: (updated) => setState(() => _contacts = updated),
-          ),
-          const Gap(14),
-
-          // Portfolio Projects Card
-          StudentProfilePortfolioCard(
-            portfolios: _portfolios,
-            onChanged: (updated) => setState(() => _portfolios = updated),
+          // 5. ผลงานและช่องทางติดต่อ (Unified Links Card)
+          StudentProfileLinksCard(
+            links: _links,
+            onChanged: (updated) => setState(() => _links = updated),
           ),
 
           if (_error != null) ...[
@@ -213,8 +212,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
               decoration: BoxDecoration(
                 color: NeoColors.errorBg,
                 borderRadius: BorderRadius.circular(10),
-                border:
-                    Border.all(color: NeoColors.errorBorder, width: 1.5),
+                border: Border.all(color: NeoColors.errorBorder, width: 1.5),
               ),
               child: Row(
                 children: [
@@ -247,8 +245,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
           ),
           const Gap(12),
           NeoButton(
-            onPressed: () =>
-                ref.read(authControllerProvider.notifier).logout(),
+            onPressed: () => ref.read(authControllerProvider.notifier).logout(),
             text: 'ออกจากระบบ',
             icon: const Icon(
               Icons.logout_rounded,
@@ -262,6 +259,383 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
         ],
       ),
     );
+  }
+
+  void _handleAvatarTap() {
+    final hasAvatar =
+        widget.profile.avatarObjectKey != null &&
+        widget.profile.avatarObjectKey!.isNotEmpty;
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (bottomSheetCtx) {
+        return Container(
+          decoration: BoxDecoration(
+            color: NeoColors.pureWhite,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            border: Border.all(color: NeoColors.inkSolid, width: 2),
+            boxShadow: const [
+              BoxShadow(
+                color: NeoColors.inkSolid,
+                offset: Offset(0, -4),
+                blurRadius: 0,
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Top Bar with Title and Neo 'X' button
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'รูปโปรไฟล์ (Profile Avatar)',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: NeoColors.inkSolid,
+                      ),
+                    ),
+                  ),
+                  const Gap(8),
+                  InkWell(
+                    onTap: () => Navigator.of(bottomSheetCtx).pop(),
+                    borderRadius: BorderRadius.circular(6),
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        color: NeoColors.surfaceCream,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(
+                          color: NeoColors.inkSolid,
+                          width: 1.5,
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.close_rounded,
+                        size: 16,
+                        color: NeoColors.inkSolid,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const Gap(16),
+              // Option 1: Select new photo
+              InkWell(
+                onTap: () {
+                  Navigator.of(bottomSheetCtx).pop();
+                  _pickAndUploadAvatar();
+                },
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: NeoColors.surfaceCream,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: NeoColors.butterYellow,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: NeoColors.inkSolid,
+                            width: 1.5,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.add_photo_alternate_rounded,
+                          size: 20,
+                          color: NeoColors.inkSolid,
+                        ),
+                      ),
+                      const Gap(12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              hasAvatar
+                                  ? 'เปลี่ยนรูปภาพใหม่'
+                                  : 'เลือกรูปโปรไฟล์',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: NeoColors.inkSolid,
+                              ),
+                            ),
+                            const Gap(2),
+                            const Text(
+                              'รองรับไฟล์ JPG, PNG, WEBP, SVG, GIF',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: NeoColors.subtleInk,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        color: NeoColors.inkSolid,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (hasAvatar) ...[
+                const Gap(10),
+                // Option 2: Remove avatar
+                InkWell(
+                  onTap: () {
+                    Navigator.of(bottomSheetCtx).pop();
+                    _confirmDeleteAvatar();
+                  },
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: NeoColors.errorBg,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: NeoColors.errorBorder,
+                        width: 1.5,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: NeoColors.pureWhite,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: NeoColors.errorBorder,
+                              width: 1.5,
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.delete_outline_rounded,
+                            size: 20,
+                            color: NeoColors.errorText,
+                          ),
+                        ),
+                        const Gap(12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'ลบรูปโปรไฟล์',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w800,
+                                  color: NeoColors.errorText,
+                                ),
+                              ),
+                              Gap(2),
+                              Text(
+                                'กลับไปใช้ตัวอักษรเริ่มต้นแทนรูปภาพ',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: NeoColors.errorText,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickAndUploadAvatar() async {
+    try {
+      final file = await FilePicker.pickFile(
+        type: FileType.custom,
+        allowedExtensions: const ['png', 'jpg', 'jpeg', 'webp', 'svg', 'gif'],
+      );
+      if (file == null) return;
+
+      final ext = file.extension?.toLowerCase() ?? '';
+      const allowed = ['png', 'jpg', 'jpeg', 'webp', 'svg', 'gif'];
+      if (!allowed.contains(ext) &&
+          !allowed.any((e) => file.name.toLowerCase().endsWith('.$e'))) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('เลือกได้เฉพาะไฟล์รูปภาพ (PNG, JPG, WEBP, SVG, GIF)'),
+            backgroundColor: NeoColors.errorText,
+          ),
+        );
+        return;
+      }
+
+      List<int>? bytes;
+      try {
+        bytes = await file.readAsBytes();
+      } catch (_) {
+        bytes = null;
+      }
+
+      final path = file.path;
+      if ((path == null || path.isEmpty) && (bytes == null || bytes.isEmpty)) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('ไม่สามารถอ่านไฟล์รูปภาพที่เลือกได้'),
+            backgroundColor: NeoColors.errorText,
+          ),
+        );
+        return;
+      }
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Colors.white,
+                ),
+              ),
+              Gap(12),
+              Text('กำลังอัปโหลดรูปโปรไฟล์...'),
+            ],
+          ),
+          duration: Duration(seconds: 2),
+        ),
+      );
+
+      final updated = await ref
+          .read(studentProfileControllerProvider.notifier)
+          .uploadAvatar(
+            filePath: path ?? '',
+            fileName: file.name,
+            bytes: bytes,
+          );
+
+      ref.invalidate(studentAvatarBytesProvider(updated.avatarObjectKey));
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('อัปเดตรูปโปรไฟล์สำเร็จแล้ว 📸')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(userVisibleError(error)),
+          backgroundColor: NeoColors.errorText,
+        ),
+      );
+    }
+  }
+
+  Future<void> _confirmDeleteAvatar() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: NeoColors.pureWhite,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: NeoColors.inkSolid, width: 2),
+        ),
+        title: const Text(
+          'ยืนยันการลบรูปโปรไฟล์',
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+            color: NeoColors.inkSolid,
+          ),
+        ),
+        content: const Text(
+          'คุณต้องการลบรูปโปรไฟล์นี้หรือไม่? ระบบจะเปลี่ยนไปใช้ตัวอักษรแทน',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            color: NeoColors.subtleInk,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogCtx).pop(false),
+            child: const Text(
+              'ยกเลิก',
+              style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: NeoColors.mutedInk,
+              ),
+            ),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: NeoColors.errorText,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () => Navigator.of(dialogCtx).pop(true),
+            child: const Text(
+              'ลบรูปโปรไฟล์',
+              style: TextStyle(fontWeight: FontWeight.w800),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    try {
+      final oldKey = widget.profile.avatarObjectKey;
+      await ref.read(studentProfileControllerProvider.notifier).deleteAvatar();
+      if (oldKey != null) {
+        ref.invalidate(studentAvatarBytesProvider(oldKey));
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('ลบรูปโปรไฟล์แล้ว')));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(userVisibleError(error)),
+          backgroundColor: NeoColors.errorText,
+        ),
+      );
+    }
   }
 
   String? _required(String? value) {
@@ -279,24 +653,48 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
       _saving = true;
       _error = null;
     });
+    final portfolioLinks = _links
+        .where((l) => LinkPlatformHelper.platforms[l.platform]?.isUrl ?? false)
+        .map(
+          (l) => PortfolioLink(
+            title: (l.label != null && l.label!.isNotEmpty)
+                ? l.label!
+                : (LinkPlatformHelper.platforms[l.platform]?.name ??
+                      l.platform),
+            url: l.value,
+          ),
+        )
+        .toList();
+
+    final firstUrl =
+        _links
+            .where(
+              (l) => LinkPlatformHelper.platforms[l.platform]?.isUrl ?? false,
+            )
+            .map((l) => l.value)
+            .firstOrNull ??
+        widget.profile.portfolioUrl;
+
     final profile = StudentProfile(
       fullName: _nameController.text.trim(),
       university: _universityController.text.trim(),
       major: _majorController.text.trim(),
       skills: _skills,
       bio: _bioController.text.trim(),
-      contactLinks: _contacts,
-      portfolioLinks: _portfolios,
-      portfolioUrl: _portfolios.isNotEmpty ? _portfolios.first.url : null,
+      contactLinks: _links,
+      portfolioLinks: portfolioLinks,
+      portfolioUrl: firstUrl,
+      resumeFileName: widget.profile.resumeFileName,
+      resumeObjectKey: widget.profile.resumeObjectKey,
     );
     try {
       await ref.read(studentProfileControllerProvider.notifier).save(profile);
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('บันทึกโปรไฟล์แล้ว')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('บันทึกโปรไฟล์แล้ว')));
     } catch (error) {
       if (!mounted) {
         return;

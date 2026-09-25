@@ -11,61 +11,62 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('renders Neo-Brutalist login screen with all elements matching design', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(390, 950);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets(
+    'renders Neo-Brutalist login screen with all elements matching design',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 950);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    final fakeAuthRepo = _FakeAuthRepository();
+      final fakeAuthRepo = _FakeAuthRepository();
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
-          authRepositoryProvider.overrideWithValue(fakeAuthRepo),
-        ],
-        child: MaterialApp(
-          theme: AppTheme.lightTheme,
-          home: const LoginScreen(),
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+            authRepositoryProvider.overrideWithValue(fakeAuthRepo),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: const LoginScreen(),
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    // Top Bar
-    expect(find.text('เข้าสู่ระบบนักศึกษา'), findsOneWidget);
+      // Top Bar
+      expect(find.text('เข้าสู่ระบบนักศึกษา'), findsOneWidget);
 
-    // Form Labels & Helpers
-    expect(find.text('อีเมลนักศึกษา / มหาวิทยาลัย'), findsOneWidget);
-    expect(find.text('รหัสนักศึกษาหรืออีเมลมหาวิทยาลัย'), findsOneWidget);
-    expect(find.text('รหัสผ่าน'), findsOneWidget);
-    expect(find.text('ลืมรหัส PIN?'), findsOneWidget);
+      // Form Labels & Helpers
+      expect(find.text('อีเมลนักศึกษา / มหาวิทยาลัย'), findsOneWidget);
+      expect(find.text('รหัสนักศึกษาหรืออีเมลมหาวิทยาลัย'), findsOneWidget);
+      expect(find.text('รหัสผ่าน'), findsOneWidget);
+      expect(find.text('ลืมรหัส PIN?'), findsOneWidget);
 
-    // Checkbox & Forgot Password
-    expect(find.text('จดจำฉันไว้ในระบบ'), findsOneWidget);
-    expect(find.text('ลืมรหัสผ่าน?'), findsOneWidget);
+      // Checkbox & Forgot Password
+      expect(find.text('จดจำฉันไว้ในระบบ'), findsOneWidget);
+      expect(find.text('ลืมรหัสผ่าน?'), findsOneWidget);
 
-    // Action button
-    expect(find.text('เข้าสู่ระบบ'), findsOneWidget);
+      // Action button
+      expect(find.text('เข้าสู่ระบบ'), findsOneWidget);
 
-    // Divider
-    expect(find.text('หรือเข้าสู่ระบบด้วย'), findsOneWidget);
+      // Divider
+      expect(find.text('หรือเข้าสู่ระบบด้วย'), findsOneWidget);
 
-    // Social buttons
-    expect(find.text('Google'), findsOneWidget);
-    expect(find.text('GitHub'), findsOneWidget);
+      // Social buttons
+      expect(find.text('Google'), findsOneWidget);
+      expect(find.text('GitHub'), findsOneWidget);
 
-    // Bottom prompt & partner badge
-    expect(find.text('ยังไม่มีบัญชีผู้ใช้?'), findsOneWidget);
-    expect(find.text('ลงทะเบียนสมาชิก'), findsOneWidget);
-    expect(
-      find.text('เชื่อมต่อกับระบบมหาวิทยาลัยพันธมิตรกว่า 250+ แห่ง'),
-      findsOneWidget,
-    );
-  });
+      // Bottom prompt & partner badge
+      expect(find.text('ยังไม่มีบัญชีผู้ใช้?'), findsOneWidget);
+      expect(find.text('ลงทะเบียนสมาชิก'), findsOneWidget);
+      expect(
+        find.text('เชื่อมต่อกับระบบมหาวิทยาลัยพันธมิตรกว่า 250+ แห่ง'),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets('validates required fields on submit', (tester) async {
     tester.view.physicalSize = const Size(390, 950);
@@ -102,7 +103,9 @@ void main() {
     final emailErrorTop = tester.getTopLeft(find.text('กรอกอีเมลให้ถูกต้อง'));
     expect(emailErrorTop.dy, greaterThan(emailFieldCenter.dy));
 
-    final passwordFieldCenter = tester.getCenter(find.byType(TextFormField).last);
+    final passwordFieldCenter = tester.getCenter(
+      find.byType(TextFormField).last,
+    );
     final passwordErrorTop = tester.getTopLeft(find.text('กรอกรหัสผ่าน'));
     expect(passwordErrorTop.dy, greaterThan(passwordFieldCenter.dy));
   });
@@ -182,36 +185,43 @@ void main() {
     expect(find.byIcon(Icons.visibility_off_outlined), findsOneWidget);
   });
 
-  testWidgets('shows top toast notice when tapping forgot PIN or unreleased features', (
-    tester,
-  ) async {
-    final fakeAuthRepo = _FakeAuthRepository();
+  testWidgets(
+    'shows top toast notice when tapping forgot PIN or unreleased features',
+    (tester) async {
+      final fakeAuthRepo = _FakeAuthRepository();
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
-          authRepositoryProvider.overrideWithValue(fakeAuthRepo),
-        ],
-        child: MaterialApp(
-          theme: AppTheme.lightTheme,
-          home: const LoginScreen(),
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+            authRepositoryProvider.overrideWithValue(fakeAuthRepo),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: const LoginScreen(),
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text('ลืมรหัส PIN?'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.text('ลืมรหัส PIN?'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
-    expect(find.text('ระบบรีเซ็ต PIN กำลังอยู่ระหว่างการพัฒนา'), findsOneWidget);
+      expect(
+        find.text('ระบบรีเซ็ต PIN กำลังอยู่ระหว่างการพัฒนา'),
+        findsOneWidget,
+      );
 
-    // Dismiss toast
-    await tester.pump(const Duration(milliseconds: 2800));
-    await tester.pump(const Duration(milliseconds: 300));
-    expect(find.text('ระบบรีเซ็ต PIN กำลังอยู่ระหว่างการพัฒนา'), findsNothing);
-  });
+      // Dismiss toast
+      await tester.pump(const Duration(milliseconds: 2800));
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(
+        find.text('ระบบรีเซ็ต PIN กำลังอยู่ระหว่างการพัฒนา'),
+        findsNothing,
+      );
+    },
+  );
 }
 
 class _FakeAuthRepository implements AuthRepository {

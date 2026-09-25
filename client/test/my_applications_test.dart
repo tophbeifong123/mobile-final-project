@@ -59,82 +59,85 @@ void main() {
     expect(find.text('หน้าแรก'), findsOneWidget);
   });
 
-  testWidgets('my applications lists submitted applications with details and navigation', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets(
+    'my applications lists submitted applications with details and navigation',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    final apps = [
-      JobApplication(
-        id: 'app-1',
-        jobTitle: 'Flutter Developer Intern',
-        companyName: 'TechCorp Co., Ltd.',
-        status: ApplicationStatus.submitted,
-        coverLetter: 'Interested in Flutter',
-        createdAt: DateTime(2026, 9, 23, 10, 0),
-      ),
-      JobApplication(
-        id: 'app-2',
-        jobTitle: 'Backend Engineer Intern',
-        companyName: 'DevHub Inc.',
-        status: ApplicationStatus.reviewing,
-        coverLetter: 'Interested in NestJS',
-        createdAt: DateTime(2026, 9, 20, 14, 30),
-      ),
-    ];
-
-    final router = GoRouter(
-      initialLocation: '/student/applications',
-      routes: [
-        GoRoute(
-          path: '/student/applications',
-          builder: (context, state) => const MyApplicationsScreen(),
-          routes: [
-            GoRoute(
-              path: ':applicationId',
-              builder: (context, state) => Scaffold(
-                body: Text('รายละเอียดใบสมัคร ${state.pathParameters['applicationId']}'),
-              ),
-            ),
-          ],
+      final apps = [
+        JobApplication(
+          id: 'app-1',
+          jobTitle: 'Flutter Developer Intern',
+          companyName: 'TechCorp Co., Ltd.',
+          status: ApplicationStatus.submitted,
+          coverLetter: 'Interested in Flutter',
+          createdAt: DateTime(2026, 9, 23, 10, 0),
         ),
-      ],
-    );
-    addTearDown(router.dispose);
+        JobApplication(
+          id: 'app-2',
+          jobTitle: 'Backend Engineer Intern',
+          companyName: 'DevHub Inc.',
+          status: ApplicationStatus.reviewing,
+          coverLetter: 'Interested in NestJS',
+          createdAt: DateTime(2026, 9, 20, 14, 30),
+        ),
+      ];
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
-          applicationRepositoryProvider.overrideWithValue(
-            _FakeApplicationRepository(applications: apps),
+      final router = GoRouter(
+        initialLocation: '/student/applications',
+        routes: [
+          GoRoute(
+            path: '/student/applications',
+            builder: (context, state) => const MyApplicationsScreen(),
+            routes: [
+              GoRoute(
+                path: ':applicationId',
+                builder: (context, state) => Scaffold(
+                  body: Text(
+                    'รายละเอียดใบสมัคร ${state.pathParameters['applicationId']}',
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
-        child: MaterialApp.router(
-          theme: AppTheme.lightTheme,
-          routerConfig: router,
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+            applicationRepositoryProvider.overrideWithValue(
+              _FakeApplicationRepository(applications: apps),
+            ),
+          ],
+          child: MaterialApp.router(
+            theme: AppTheme.lightTheme,
+            routerConfig: router,
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('Flutter Developer Intern'), findsOneWidget);
-    expect(find.text('TechCorp Co., Ltd.'), findsOneWidget);
-    expect(find.text('ยื่นใบสมัครแล้ว'), findsOneWidget);
-    expect(find.text('สมัครเมื่อ 23/09/2026'), findsOneWidget);
+      expect(find.text('Flutter Developer Intern'), findsOneWidget);
+      expect(find.text('TechCorp Co., Ltd.'), findsOneWidget);
+      expect(find.text('ยื่นใบสมัครแล้ว'), findsOneWidget);
+      expect(find.text('สมัครเมื่อ 23/09/2026'), findsOneWidget);
 
-    expect(find.text('Backend Engineer Intern'), findsOneWidget);
-    expect(find.text('DevHub Inc.'), findsOneWidget);
-    expect(find.text('กำลังพิจารณา'), findsOneWidget);
-    expect(find.text('สมัครเมื่อ 20/09/2026'), findsOneWidget);
+      expect(find.text('Backend Engineer Intern'), findsOneWidget);
+      expect(find.text('DevHub Inc.'), findsOneWidget);
+      expect(find.text('กำลังพิจารณา'), findsOneWidget);
+      expect(find.text('สมัครเมื่อ 20/09/2026'), findsOneWidget);
 
-    await tester.tap(find.text('Flutter Developer Intern'));
-    await tester.pumpAndSettle();
-    expect(find.text('รายละเอียดใบสมัคร app-1'), findsOneWidget);
-  });
+      await tester.tap(find.text('Flutter Developer Intern'));
+      await tester.pumpAndSettle();
+      expect(find.text('รายละเอียดใบสมัคร app-1'), findsOneWidget);
+    },
+  );
 
   testWidgets('my applications shows error state and retries on press', (
     tester,
@@ -197,10 +200,7 @@ void main() {
 }
 
 class _FakeApplicationRepository implements ApplicationRepository {
-  _FakeApplicationRepository({
-    this.applications = const [],
-    this.error,
-  });
+  _FakeApplicationRepository({this.applications = const [], this.error});
 
   List<JobApplication> applications;
   AppException? error;

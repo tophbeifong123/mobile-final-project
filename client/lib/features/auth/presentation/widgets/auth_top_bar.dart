@@ -4,10 +4,7 @@ import '../../../../core/theme/app_tokens.dart';
 
 /// Reusable Neo-Brutalist Top Navigation Bar for Auth screens
 class AuthTopBar extends StatelessWidget {
-  const AuthTopBar({
-    super.key,
-    required this.title,
-  });
+  const AuthTopBar({super.key, required this.title});
 
   final String title;
 

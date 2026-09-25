@@ -35,7 +35,9 @@ class JobCard extends StatelessWidget {
   final bool isNew;
 
   Color _getCompanyColor(String name) {
-    final initial = name.trim().isEmpty ? '' : name.trim().substring(0, 1).toUpperCase();
+    final initial = name.trim().isEmpty
+        ? ''
+        : name.trim().substring(0, 1).toUpperCase();
     return switch (initial) {
       'B' => NeoColors.freshMint,
       'L' => NeoColors.pastelCoral,
@@ -50,12 +52,17 @@ class JobCard extends StatelessWidget {
   Color _getTagColor(String tag) {
     final lower = tag.toLowerCase();
     if (lower.contains('hybrid')) return NeoColors.softLilac;
-    if (lower.contains('remote') || lower.contains('online')) return NeoColors.skyBlue;
-    if (lower.contains('on-site') || lower.contains('onsite')) return NeoColors.paperCanvas;
+    if (lower.contains('remote') || lower.contains('online'))
+      return NeoColors.skyBlue;
+    if (lower.contains('on-site') || lower.contains('onsite'))
+      return NeoColors.paperCanvas;
     if (lower.contains('มีเบี้ยเลี้ยง')) return NeoColors.butterYellow;
     if (lower.contains('ไม่มีเบี้ยเลี้ยง')) return NeoColors.paperCanvas;
-    if (lower.contains('figma') || lower.contains('design')) return NeoColors.freshMint;
-    if (lower.contains('react') || lower.contains('flutter') || lower.contains('sql')) {
+    if (lower.contains('figma') || lower.contains('design'))
+      return NeoColors.freshMint;
+    if (lower.contains('react') ||
+        lower.contains('flutter') ||
+        lower.contains('sql')) {
       return NeoColors.skyBlue;
     }
     return NeoColors.freshMint;
@@ -128,11 +135,17 @@ class JobCard extends StatelessWidget {
                           if (isNew) ...[
                             const Gap(6),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 5,
+                                vertical: 1,
+                              ),
                               decoration: BoxDecoration(
                                 color: NeoColors.pastelCoral,
                                 borderRadius: BorderRadius.circular(4),
-                                border: Border.all(color: NeoColors.inkSolid, width: 1),
+                                border: Border.all(
+                                  color: NeoColors.inkSolid,
+                                  width: 1,
+                                ),
                               ),
                               child: const Text(
                                 'ใหม่',
@@ -198,13 +211,17 @@ class JobCard extends StatelessWidget {
                     margin: const EdgeInsets.only(left: 6),
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: isSaved ? NeoColors.butterYellow : NeoColors.paperCanvas,
+                      color: isSaved
+                          ? NeoColors.butterYellow
+                          : NeoColors.paperCanvas,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: NeoColors.inkSolid, width: 1.8),
                       boxShadow: NeoShadows.elevation1,
                     ),
                     child: Icon(
-                      isSaved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                      isSaved
+                          ? Icons.bookmark_rounded
+                          : Icons.bookmark_border_rounded,
                       size: 18,
                       color: NeoColors.inkSolid,
                     ),
@@ -221,11 +238,17 @@ class JobCard extends StatelessWidget {
                 for (final detail in details)
                   if (detail.trim().isNotEmpty)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: _getTagColor(detail),
                         borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: NeoColors.inkSolid, width: 1.2),
+                        border: Border.all(
+                          color: NeoColors.inkSolid,
+                          width: 1.2,
+                        ),
                       ),
                       child: Text(
                         detail.trim(),
@@ -246,7 +269,10 @@ class JobCard extends StatelessWidget {
                 children: [
                   for (final skill in skills.take(3))
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: NeoColors.surfaceCream,
                         borderRadius: BorderRadius.circular(5),
@@ -263,7 +289,10 @@ class JobCard extends StatelessWidget {
                     ),
                   if (skills.length > 3)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: NeoColors.paperCanvas,
                         borderRadius: BorderRadius.circular(5),
@@ -295,14 +324,22 @@ class JobCard extends StatelessWidget {
               children: [
                 Flexible(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
-                      color: (hasAllowance ?? true) ? NeoColors.butterYellow : NeoColors.paperCanvas,
+                      color: (hasAllowance ?? true)
+                          ? NeoColors.butterYellow
+                          : NeoColors.paperCanvas,
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                     ),
                     child: Text(
-                      allowanceText ?? ((hasAllowance ?? true) ? 'มีเบี้ยเลี้ยง' : 'ไม่มีเบี้ยเลี้ยง'),
+                      allowanceText ??
+                          ((hasAllowance ?? true)
+                              ? 'มีเบี้ยเลี้ยง'
+                              : 'ไม่มีเบี้ยเลี้ยง'),
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 11,

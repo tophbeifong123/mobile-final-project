@@ -192,70 +192,68 @@ void main() {
     },
   );
 
-  testWidgets('shows error state when fetching notifications fails and retry works', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets(
+    'shows error state when fetching notifications fails and retry works',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    final fakeRepo = _FakeNotificationRepository(
-      error: const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'),
-    );
+      final fakeRepo = _FakeNotificationRepository(
+        error: const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'),
+      );
 
-    final router = GoRouter(
-      initialLocation: '/student/notifications',
-      routes: [
-        GoRoute(
-          path: '/student/notifications',
-          builder: (context, state) => const NotificationsScreen(),
-        ),
-      ],
-    );
-    addTearDown(router.dispose);
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
-          notificationRepositoryProvider.overrideWithValue(fakeRepo),
+      final router = GoRouter(
+        initialLocation: '/student/notifications',
+        routes: [
+          GoRoute(
+            path: '/student/notifications',
+            builder: (context, state) => const NotificationsScreen(),
+          ),
         ],
-        child: MaterialApp.router(
-          theme: AppTheme.lightTheme,
-          routerConfig: router,
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+            notificationRepositoryProvider.overrideWithValue(fakeRepo),
+          ],
+          child: MaterialApp.router(
+            theme: AppTheme.lightTheme,
+            routerConfig: router,
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('โหลดการแจ้งเตือนไม่ได้'), findsOneWidget);
-    expect(find.text('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'), findsOneWidget);
-    expect(find.text('ลองอีกครั้ง'), findsOneWidget);
+      expect(find.text('โหลดการแจ้งเตือนไม่ได้'), findsOneWidget);
+      expect(find.text('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'), findsOneWidget);
+      expect(find.text('ลองอีกครั้ง'), findsOneWidget);
 
-    fakeRepo.error = null;
-    fakeRepo.notifications = [
-      AppNotification(
-        id: 'n-recovered',
-        applicationId: 'app-rec',
-        message: 'การแจ้งเตือนหลัง retry',
-        isRead: true,
-        createdAt: DateTime(2026, 9, 23, 16, 0),
-      ),
-    ];
+      fakeRepo.error = null;
+      fakeRepo.notifications = [
+        AppNotification(
+          id: 'n-recovered',
+          applicationId: 'app-rec',
+          message: 'การแจ้งเตือนหลัง retry',
+          isRead: true,
+          createdAt: DateTime(2026, 9, 23, 16, 0),
+        ),
+      ];
 
-    await tester.tap(find.text('ลองอีกครั้ง'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('ลองอีกครั้ง'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('การแจ้งเตือนหลัง retry'), findsOneWidget);
-  });
+      expect(find.text('การแจ้งเตือนหลัง retry'), findsOneWidget);
+    },
+  );
 }
 
 class _FakeNotificationRepository implements NotificationRepository {
-  _FakeNotificationRepository({
-    this.notifications = const [],
-    this.error,
-  });
+  _FakeNotificationRepository({this.notifications = const [], this.error});
 
   List<AppNotification> notifications;
   AppException? error;

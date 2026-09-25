@@ -208,10 +208,7 @@ class _JobBody extends StatelessWidget {
                 label: 'เบี้ยเลี้ยง',
                 value: allowanceLabel(job.hasAllowance),
               ),
-              _DetailRow(
-                label: 'สถานะ',
-                value: jobStatusLabel(job.status),
-              ),
+              _DetailRow(label: 'สถานะ', value: jobStatusLabel(job.status)),
             ],
           ),
         ),
@@ -330,7 +327,9 @@ class _DetailRow extends StatelessWidget {
             width: 120,
             child: Text(
               label,
-              style: textTheme.bodyMedium?.copyWith(color: colors.mutedForeground),
+              style: textTheme.bodyMedium?.copyWith(
+                color: colors.mutedForeground,
+              ),
             ),
           ),
           Expanded(child: Text(value, style: textTheme.bodyLarge)),

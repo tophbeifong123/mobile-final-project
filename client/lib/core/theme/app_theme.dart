@@ -25,9 +25,7 @@ class AppTheme {
       colorScheme: scheme,
       scaffoldBackgroundColor: AppColors.background,
       textTheme: textTheme,
-      extensions: const [
-        AppColorsExtension.light,
-      ],
+      extensions: const [AppColorsExtension.light],
       appBarTheme: AppBarTheme(
         centerTitle: true,
         elevation: 0,
@@ -61,26 +59,27 @@ class AppTheme {
         focusedErrorBorder: _fieldBorder(scheme.error, width: 1.5),
       ),
       filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          minimumSize: const Size.fromHeight(kMinTouchTarget),
-          foregroundColor: Colors.white,
-          disabledForegroundColor: Colors.white,
-          elevation: 0,
-          textStyle: textTheme.labelLarge,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ).copyWith(
-          backgroundColor: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.disabled)) {
-              return const Color(0xFFC7D2FE);
-            }
-            if (states.contains(WidgetState.pressed)) {
-              return AppColors.primaryPressed;
-            }
-            return AppColors.primary;
-          }),
-        ),
+        style:
+            FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(kMinTouchTarget),
+              foregroundColor: Colors.white,
+              disabledForegroundColor: Colors.white,
+              elevation: 0,
+              textStyle: textTheme.labelLarge,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ).copyWith(
+              backgroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.disabled)) {
+                  return const Color(0xFFC7D2FE);
+                }
+                if (states.contains(WidgetState.pressed)) {
+                  return AppColors.primaryPressed;
+                }
+                return AppColors.primary;
+              }),
+            ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(

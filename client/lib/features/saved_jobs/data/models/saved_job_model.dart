@@ -24,7 +24,8 @@ class SavedJobModel {
       category: json['category'] as String,
       hasAllowance: json['hasAllowance'] as bool,
       status: JobStatus.values.byName(json['status'] as String),
-      skills: (json['skills'] as List<dynamic>?)
+      skills:
+          (json['skills'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const [],

@@ -41,12 +41,7 @@ class ContactLinkModel {
   }
 
   ContactLink toEntity() {
-    return ContactLink(
-      id: id,
-      platform: platform,
-      label: label,
-      value: value,
-    );
+    return ContactLink(id: id, platform: platform, label: label, value: value);
   }
 }
 
@@ -113,6 +108,7 @@ class StudentProfileModel {
     required this.portfolioUrl,
     this.resumeFileName,
     this.resumeObjectKey,
+    this.avatarObjectKey,
   });
 
   factory StudentProfileModel.fromJson(Map<String, dynamic> json) {
@@ -125,16 +121,19 @@ class StudentProfileModel {
           .toList(),
       bio: json['bio'] as String? ?? '',
       contactLinks: (json['contactLinks'] as List<dynamic>? ?? const [])
-          .map((item) =>
-              ContactLinkModel.fromJson(item as Map<String, dynamic>))
+          .map(
+            (item) => ContactLinkModel.fromJson(item as Map<String, dynamic>),
+          )
           .toList(),
       portfolioLinks: (json['portfolioLinks'] as List<dynamic>? ?? const [])
-          .map((item) =>
-              PortfolioLinkModel.fromJson(item as Map<String, dynamic>))
+          .map(
+            (item) => PortfolioLinkModel.fromJson(item as Map<String, dynamic>),
+          )
           .toList(),
       portfolioUrl: json['portfolioUrl'] as String?,
       resumeFileName: json['resumeFileName'] as String?,
       resumeObjectKey: json['resumeObjectKey'] as String?,
+      avatarObjectKey: json['avatarObjectKey'] as String?,
     );
   }
 
@@ -154,6 +153,7 @@ class StudentProfileModel {
       portfolioUrl: entity.portfolioUrl,
       resumeFileName: entity.resumeFileName,
       resumeObjectKey: entity.resumeObjectKey,
+      avatarObjectKey: entity.avatarObjectKey,
     );
   }
 
@@ -167,6 +167,7 @@ class StudentProfileModel {
   final String? portfolioUrl;
   final String? resumeFileName;
   final String? resumeObjectKey;
+  final String? avatarObjectKey;
 
   Map<String, dynamic> toJson() {
     return {
@@ -178,6 +179,7 @@ class StudentProfileModel {
       'contactLinks': contactLinks.map((c) => c.toJson()).toList(),
       'portfolioLinks': portfolioLinks.map((p) => p.toJson()).toList(),
       'portfolioUrl': portfolioUrl,
+      if (avatarObjectKey != null) 'avatarObjectKey': avatarObjectKey,
     };
   }
 
@@ -193,6 +195,7 @@ class StudentProfileModel {
       portfolioUrl: portfolioUrl,
       resumeFileName: resumeFileName,
       resumeObjectKey: resumeObjectKey,
+      avatarObjectKey: avatarObjectKey,
     );
   }
 }

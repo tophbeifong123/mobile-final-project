@@ -53,86 +53,90 @@ void main() {
   );
 
   testWidgets(
-      'apply job screen shows warning banner and disables submit when student has no resume',
-      (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
-          studentProfileRepositoryProvider.overrideWithValue(
-            _FakeStudentProfileRepository(profileWithoutResume),
+    'apply job screen shows warning banner and disables submit when student has no resume',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+            studentProfileRepositoryProvider.overrideWithValue(
+              _FakeStudentProfileRepository(profileWithoutResume),
+            ),
+            jobRepositoryProvider.overrideWithValue(
+              _FakeJobRepository(sampleJob),
+            ),
+            applicationRepositoryProvider.overrideWithValue(
+              _FakeApplicationRepository(),
+            ),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: const ApplyJobScreen(jobId: 'job-123'),
           ),
-          jobRepositoryProvider.overrideWithValue(
-            _FakeJobRepository(sampleJob),
-          ),
-          applicationRepositoryProvider.overrideWithValue(
-            _FakeApplicationRepository(),
-          ),
-        ],
-        child: MaterialApp(
-          theme: AppTheme.lightTheme,
-          home: const ApplyJobScreen(jobId: 'job-123'),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('ยังไม่มี Resume ในระบบ'), findsOneWidget);
-    expect(find.text('อัปโหลด Resume'), findsOneWidget);
+      expect(find.text('ยังไม่มี Resume ในระบบ'), findsOneWidget);
+      expect(find.text('อัปโหลด Resume'), findsOneWidget);
 
-    final submitButton = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'ยืนยันสมัคร'),
-    );
-    expect(submitButton.onPressed, isNull);
-  });
+      final submitButton = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'ยืนยันสมัคร'),
+      );
+      expect(submitButton.onPressed, isNull);
+    },
+  );
 
   testWidgets(
-      'apply job screen shows resume ready and submits cover letter successfully',
-      (tester) async {
-    final fakeAppRepo = _FakeApplicationRepository();
+    'apply job screen shows resume ready and submits cover letter successfully',
+    (tester) async {
+      final fakeAppRepo = _FakeApplicationRepository();
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
-          studentProfileRepositoryProvider.overrideWithValue(
-            _FakeStudentProfileRepository(profileWithResume),
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+            studentProfileRepositoryProvider.overrideWithValue(
+              _FakeStudentProfileRepository(profileWithResume),
+            ),
+            jobRepositoryProvider.overrideWithValue(
+              _FakeJobRepository(sampleJob),
+            ),
+            applicationRepositoryProvider.overrideWithValue(fakeAppRepo),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: const ApplyJobScreen(jobId: 'job-123'),
           ),
-          jobRepositoryProvider.overrideWithValue(
-            _FakeJobRepository(sampleJob),
-          ),
-          applicationRepositoryProvider.overrideWithValue(fakeAppRepo),
-        ],
-        child: MaterialApp(
-          theme: AppTheme.lightTheme,
-          home: const ApplyJobScreen(jobId: 'job-123'),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('Flutter Developer Intern'), findsOneWidget);
-    expect(find.text('Tech Co'), findsOneWidget);
-    expect(find.text('Resume ที่จะใช้'), findsOneWidget);
-    expect(find.text('my_resume.pdf'), findsOneWidget);
+      expect(find.text('Flutter Developer Intern'), findsOneWidget);
+      expect(find.text('Tech Co'), findsOneWidget);
+      expect(find.text('Resume ที่จะใช้'), findsOneWidget);
+      expect(find.text('my_resume.pdf'), findsOneWidget);
 
-    final submitButton = tester.widget<FilledButton>(
-      find.widgetWithText(FilledButton, 'ยืนยันสมัคร'),
-    );
-    expect(submitButton.onPressed, isNotNull);
+      final submitButton = tester.widget<FilledButton>(
+        find.widgetWithText(FilledButton, 'ยืนยันสมัคร'),
+      );
+      expect(submitButton.onPressed, isNotNull);
 
-    // Enter cover letter
-    await tester.enterText(
-      find.byType(TextFormField),
-      'ผมสนใจร่วมงานกับบริษัท Tech Co มากครับ',
-    );
-    await tester.tap(find.widgetWithText(FilledButton, 'ยืนยันสมัคร'));
-    await tester.pumpAndSettle();
+      // Enter cover letter
+      await tester.enterText(
+        find.byType(TextFormField),
+        'ผมสนใจร่วมงานกับบริษัท Tech Co มากครับ',
+      );
+      await tester.tap(find.widgetWithText(FilledButton, 'ยืนยันสมัคร'));
+      await tester.pumpAndSettle();
 
-    expect(fakeAppRepo.appliedJobId, 'job-123');
-    expect(fakeAppRepo.appliedCoverLetter,
-        'ผมสนใจร่วมงานกับบริษัท Tech Co มากครับ');
-  });
+      expect(fakeAppRepo.appliedJobId, 'job-123');
+      expect(
+        fakeAppRepo.appliedCoverLetter,
+        'ผมสนใจร่วมงานกับบริษัท Tech Co มากครับ',
+      );
+    },
+  );
 
   testWidgets('validates empty cover letter', (tester) async {
     final fakeAppRepo = _FakeApplicationRepository();
@@ -174,6 +178,16 @@ class _FakeStudentProfileRepository implements StudentProfileRepository {
 
   @override
   Future<StudentProfile> update(StudentProfile profile) async => profile;
+
+  @override
+  Future<StudentProfile> uploadAvatar({
+    required String filePath,
+    required String fileName,
+    List<int>? bytes,
+  }) async => profile;
+
+  @override
+  Future<StudentProfile> deleteAvatar() async => profile;
 }
 
 class _FakeJobRepository implements JobRepository {

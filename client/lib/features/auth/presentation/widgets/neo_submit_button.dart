@@ -58,10 +58,7 @@ class NeoSubmitButton extends StatelessWidget {
                   letterSpacing: -0.3,
                 ),
               ),
-              if (trailingIcon != null) ...[
-                const Gap(8),
-                trailingIcon!,
-              ],
+              if (trailingIcon != null) ...[const Gap(8), trailingIcon!],
             ],
           ],
         ),

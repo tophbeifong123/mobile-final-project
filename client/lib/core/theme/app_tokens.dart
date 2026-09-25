@@ -66,11 +66,7 @@ abstract final class NeoShadows {
   ];
 
   static const List<BoxShadow> elevation2 = [
-    BoxShadow(
-      color: NeoColors.inkSolid,
-      offset: Offset(3, 3),
-      blurRadius: 0,
-    ),
+    BoxShadow(color: NeoColors.inkSolid, offset: Offset(3, 3), blurRadius: 0),
   ];
 
   static const List<BoxShadow> elevation3 = [

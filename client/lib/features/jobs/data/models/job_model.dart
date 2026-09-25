@@ -23,7 +23,8 @@ class JobModel {
       category: json['category'] as String,
       hasAllowance: json['hasAllowance'] as bool,
       status: JobStatus.values.byName(json['status'] as String),
-      skills: (json['skills'] as List<dynamic>?)
+      skills:
+          (json['skills'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const [],
@@ -88,7 +89,8 @@ class JobDetailModel {
       businessType: json['businessType'] as String? ?? '',
       companyDescription: json['companyDescription'] as String? ?? '',
       saved: json['saved'] as bool? ?? false,
-      skills: (json['skills'] as List<dynamic>?)
+      skills:
+          (json['skills'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const [],

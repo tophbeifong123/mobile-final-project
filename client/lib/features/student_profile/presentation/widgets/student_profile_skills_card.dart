@@ -48,7 +48,11 @@ class StudentProfileSkillsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     // Quick suggestions from presets not yet added
     final quickSuggestions = PresetSkills.all
-        .where((s) => !skills.any((existing) => existing.toLowerCase() == s.toLowerCase()))
+        .where(
+          (s) => !skills.any(
+            (existing) => existing.toLowerCase() == s.toLowerCase(),
+          ),
+        )
         .take(6)
         .toList();
 
@@ -82,8 +86,10 @@ class StudentProfileSkillsCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: NeoColors.softLilac,
                         borderRadius: BorderRadius.circular(6),
-                        border:
-                            Border.all(color: NeoColors.inkSolid, width: 1.5),
+                        border: Border.all(
+                          color: NeoColors.inkSolid,
+                          width: 1.5,
+                        ),
                         boxShadow: const [
                           BoxShadow(
                             color: NeoColors.inkSolid,
@@ -141,7 +147,10 @@ class StudentProfileSkillsCard extends StatelessWidget {
               onTap: () => _openSkillPicker(context),
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 20,
+                  horizontal: 16,
+                ),
                 decoration: BoxDecoration(
                   color: NeoColors.surfaceCream,
                   borderRadius: BorderRadius.circular(12),
@@ -250,7 +259,11 @@ class StudentProfileSkillsCard extends StatelessWidget {
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.add_rounded, size: 15, color: NeoColors.inkSolid),
+                        Icon(
+                          Icons.add_rounded,
+                          size: 15,
+                          color: NeoColors.inkSolid,
+                        ),
                         Gap(4),
                         Text(
                           'เพิ่มทักษะ',
@@ -302,7 +315,11 @@ class StudentProfileSkillsCard extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.add, size: 12, color: NeoColors.subtleInk),
+                          const Icon(
+                            Icons.add,
+                            size: 12,
+                            color: NeoColors.subtleInk,
+                          ),
                           const Gap(3),
                           Text(
                             suggestion,

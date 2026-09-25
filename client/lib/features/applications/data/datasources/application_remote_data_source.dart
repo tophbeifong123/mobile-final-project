@@ -17,8 +17,10 @@ class ApplicationRemoteDataSource {
         throw const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
       }
       return data
-          .map((item) =>
-              JobApplicationModel.fromJson(item as Map<String, dynamic>))
+          .map(
+            (item) =>
+                JobApplicationModel.fromJson(item as Map<String, dynamic>),
+          )
           .toList();
     } on DioException catch (e) {
       throw _mapApplicationError(e);
@@ -64,12 +66,15 @@ class ApplicationRemoteDataSource {
     if (data is Map<String, dynamic> && data['message'] != null) {
       final msg = data['message'];
       if (msg is String) return AppException(msg);
-      if (msg is List && msg.isNotEmpty) return AppException(msg.first.toString());
+      if (msg is List && msg.isNotEmpty)
+        return AppException(msg.first.toString());
     }
 
     switch (error.response?.statusCode) {
       case 400:
-        return const AppException('ข้อมูลการสมัครไม่ถูกต้อง หรือยังไม่มี Resume');
+        return const AppException(
+          'ข้อมูลการสมัครไม่ถูกต้อง หรือยังไม่มี Resume',
+        );
       case 401:
         return const AppException('กรุณาเข้าสู่ระบบใหม่');
       case 403:

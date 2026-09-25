@@ -13,63 +13,66 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  testWidgets('tapping ดูตัวอย่าง opens ResumePreviewModal and closing dismisses it', (tester) async {
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets(
+    'tapping ดูตัวอย่าง opens ResumePreviewModal and closing dismisses it',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    final fakeStudentRepo = _FakeStudentProfileRepository(
-      profile: const StudentProfile(
-        fullName: 'กวินทร์ รัตนวงศ์',
-        university: 'มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี',
-        major: 'วิทยาการคอมพิวเตอร์',
-        skills: ['Flutter', 'Dart'],
-        portfolioUrl: 'https://github.com/kawin-rat',
-        resumeFileName: 'my_resume.pdf',
-        resumeObjectKey: 'resumes/user-1/my_resume.pdf',
-      ),
-    );
-
-    final fakeResumeRepo = _FakeResumeRepository();
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
-          studentProfileRepositoryProvider.overrideWithValue(fakeStudentRepo),
-          resumeRepositoryProvider.overrideWithValue(fakeResumeRepo),
-        ],
-        child: MaterialApp(
-          theme: AppTheme.lightTheme,
-          home: const StudentProfileScreen(),
+      final fakeStudentRepo = _FakeStudentProfileRepository(
+        profile: const StudentProfile(
+          fullName: 'กวินทร์ รัตนวงศ์',
+          university: 'มหาวิทยาลัยเทคโนโลยีพระจอมเกล้าธนบุรี',
+          major: 'วิทยาการคอมพิวเตอร์',
+          skills: ['Flutter', 'Dart'],
+          portfolioUrl: 'https://github.com/kawin-rat',
+          resumeFileName: 'my_resume.pdf',
+          resumeObjectKey: 'resumes/user-1/my_resume.pdf',
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
 
-    // Verify resume card shows file name and preview button
-    expect(find.text('my_resume.pdf'), findsOneWidget);
-    expect(find.text('ดูตัวอย่าง'), findsOneWidget);
+      final fakeResumeRepo = _FakeResumeRepository();
 
-    // Tap "ดูตัวอย่าง"
-    await tester.tap(find.text('ดูตัวอย่าง'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+            studentProfileRepositoryProvider.overrideWithValue(fakeStudentRepo),
+            resumeRepositoryProvider.overrideWithValue(fakeResumeRepo),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: const StudentProfileScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    // Verify modal is open and displays resume info
-    expect(find.text('ตัวอย่างเรซูเม่ (PDF Preview)'), findsOneWidget);
-    expect(find.text('ปิด'), findsOneWidget);
-    expect(find.text('เปลี่ยนไฟล์'), findsOneWidget);
+      // Verify resume card shows file name and preview button
+      expect(find.text('my_resume.pdf'), findsOneWidget);
+      expect(find.text('ดูตัวอย่าง'), findsOneWidget);
 
-    // Tap "ปิด"
-    await tester.tap(find.text('ปิด'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+      // Tap "ดูตัวอย่าง"
+      await tester.tap(find.text('ดูตัวอย่าง'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
 
-    // Verify modal is dismissed
-    expect(find.text('ตัวอย่างเรซูเม่ (PDF Preview)'), findsNothing);
-  });
+      // Verify modal is open and displays resume info
+      expect(find.text('ตัวอย่างเรซูเม่ (PDF Preview)'), findsOneWidget);
+      expect(find.text('ปิด'), findsOneWidget);
+      expect(find.text('เปลี่ยนไฟล์'), findsOneWidget);
+
+      // Tap "ปิด"
+      await tester.tap(find.text('ปิด'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      // Verify modal is dismissed
+      expect(find.text('ตัวอย่างเรซูเม่ (PDF Preview)'), findsNothing);
+    },
+  );
 }
 
 class _FakeStudentProfileRepository implements StudentProfileRepository {
@@ -85,6 +88,16 @@ class _FakeStudentProfileRepository implements StudentProfileRepository {
     profile = updated;
     return updated;
   }
+
+  @override
+  Future<StudentProfile> uploadAvatar({
+    required String filePath,
+    required String fileName,
+    List<int>? bytes,
+  }) async => profile;
+
+  @override
+  Future<StudentProfile> deleteAvatar() async => profile;
 }
 
 class _FakeResumeRepository implements ResumeRepository {
@@ -94,10 +107,7 @@ class _FakeResumeRepository implements ResumeRepository {
     required String fileName,
     List<int>? bytes,
   }) async {
-    return ResumeFile(
-      fileName: fileName,
-      objectKey: 'resumes/$fileName',
-    );
+    return ResumeFile(fileName: fileName, objectKey: 'resumes/$fileName');
   }
 
   @override

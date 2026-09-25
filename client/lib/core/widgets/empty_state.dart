@@ -62,10 +62,7 @@ class EmptyState extends StatelessWidget {
                 color: AppColors.textSecondary,
               ),
             ),
-            if (action != null) ...[
-              const Gap(16),
-              action!,
-            ],
+            if (action != null) ...[const Gap(16), action!],
           ],
         ),
       ),

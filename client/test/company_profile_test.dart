@@ -169,42 +169,43 @@ void main() {
     expect(find.text('บันทึกโปรไฟล์แล้ว'), findsOneWidget);
   });
 
-  testWidgets('shows error state when fetching company profile fails and retry works', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(390, 900);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets(
+    'shows error state when fetching company profile fails and retry works',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    final repo = _FailingCompanyProfileRepository(profile: mockProfile);
+      final repo = _FailingCompanyProfileRepository(profile: mockProfile);
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
-          companyProfileRepositoryProvider.overrideWithValue(repo),
-        ],
-        child: MaterialApp(
-          theme: AppTheme.lightTheme,
-          home: const CompanyProfileScreen(),
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+            companyProfileRepositoryProvider.overrideWithValue(repo),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: const CompanyProfileScreen(),
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('โหลดโปรไฟล์บริษัทไม่ได้'), findsOneWidget);
-    expect(find.text('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'), findsOneWidget);
-    expect(find.text('ลองอีกครั้ง'), findsOneWidget);
-    expect(find.text('ออกจากระบบ'), findsOneWidget);
+      expect(find.text('โหลดโปรไฟล์บริษัทไม่ได้'), findsOneWidget);
+      expect(find.text('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'), findsOneWidget);
+      expect(find.text('ลองอีกครั้ง'), findsOneWidget);
+      expect(find.text('ออกจากระบบ'), findsOneWidget);
 
-    repo.shouldFail = false;
-    await tester.tap(find.text('ลองอีกครั้ง'));
-    await tester.pumpAndSettle();
+      repo.shouldFail = false;
+      await tester.tap(find.text('ลองอีกครั้ง'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('โปรไฟล์บริษัท'), findsOneWidget);
-    expect(find.text('Tech Solutions Co.'), findsOneWidget);
-  });
+      expect(find.text('โปรไฟล์บริษัท'), findsOneWidget);
+      expect(find.text('Tech Solutions Co.'), findsOneWidget);
+    },
+  );
 }
 
 class _FakeCompanyProfileRepository implements CompanyProfileRepository {

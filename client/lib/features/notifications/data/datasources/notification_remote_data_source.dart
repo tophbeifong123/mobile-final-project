@@ -11,14 +11,18 @@ class NotificationRemoteDataSource {
 
   Future<List<AppNotificationModel>> fetchAll() async {
     try {
-      final response = await _dio.get<List<dynamic>>(ApiConstants.notifications);
+      final response = await _dio.get<List<dynamic>>(
+        ApiConstants.notifications,
+      );
       final data = response.data;
       if (data == null) {
         throw const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
       }
       return data
-          .map((item) =>
-              AppNotificationModel.fromJson(item as Map<String, dynamic>))
+          .map(
+            (item) =>
+                AppNotificationModel.fromJson(item as Map<String, dynamic>),
+          )
           .toList();
     } on DioException catch (e) {
       throw _mapNotificationError(e);
@@ -45,7 +49,8 @@ class NotificationRemoteDataSource {
     if (data is Map<String, dynamic> && data['message'] != null) {
       final msg = data['message'];
       if (msg is String) return AppException(msg);
-      if (msg is List && msg.isNotEmpty) return AppException(msg.first.toString());
+      if (msg is List && msg.isNotEmpty)
+        return AppException(msg.first.toString());
     }
 
     switch (error.response?.statusCode) {

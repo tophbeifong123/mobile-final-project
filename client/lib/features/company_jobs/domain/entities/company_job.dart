@@ -86,6 +86,7 @@ class Applicant {
     this.portfolioUrl,
     this.resumeObjectKey,
     this.resumeFileName,
+    this.avatarObjectKey,
     this.createdAt,
   });
 
@@ -102,5 +103,6 @@ class Applicant {
   final String? portfolioUrl;
   final String? resumeObjectKey;
   final String? resumeFileName;
+  final String? avatarObjectKey;
   final DateTime? createdAt;
 }

@@ -5,10 +5,7 @@ import '../../../../core/theme/app_tokens.dart';
 
 /// Reusable Neo-Brutalist Password Strength Visualizer
 class PasswordStrengthBar extends StatelessWidget {
-  const PasswordStrengthBar({
-    super.key,
-    required this.password,
-  });
+  const PasswordStrengthBar({super.key, required this.password});
 
   final String password;
 
@@ -65,10 +62,10 @@ class PasswordStrengthBar extends StatelessWidget {
               decoration: BoxDecoration(
                 color: i <= strength
                     ? (strength == 1
-                        ? NeoColors.errorBorder
-                        : strength == 2
-                            ? const Color(0xFFF59E0B)
-                            : const Color(0xFF10B981))
+                          ? NeoColors.errorBorder
+                          : strength == 2
+                          ? const Color(0xFFF59E0B)
+                          : const Color(0xFF10B981))
                     : NeoColors.pureWhite,
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(

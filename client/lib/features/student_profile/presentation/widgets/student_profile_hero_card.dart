@@ -1,11 +1,15 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 
 import '../../../../core/theme/app_tokens.dart';
 import '../../domain/entities/student_profile.dart';
+import '../providers/student_profile_controller.dart';
 
 /// Hero Card for Student Profile Screen matching Neo-Brutalist design
-class StudentProfileHeroCard extends StatelessWidget {
+class StudentProfileHeroCard extends ConsumerWidget {
   const StudentProfileHeroCard({
     super.key,
     required this.profile,
@@ -16,7 +20,11 @@ class StudentProfileHeroCard extends StatelessWidget {
   final VoidCallback? onAvatarTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final avatarBytesAsync = ref.watch(
+      studentAvatarBytesProvider(profile.avatarObjectKey),
+    );
+
     return Container(
       decoration: BoxDecoration(
         color: NeoColors.pureWhite,
@@ -70,33 +78,71 @@ class StudentProfileHeroCard extends StatelessWidget {
                     Stack(
                       clipBehavior: Clip.none,
                       children: [
-                        Container(
-                          width: 68,
-                          height: 68,
-                          decoration: BoxDecoration(
-                            color: NeoColors.skyBlue,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(
-                              color: NeoColors.inkSolid,
-                              width: 2,
-                            ),
-                            boxShadow: const [
-                              BoxShadow(
+                        GestureDetector(
+                          onTap: onAvatarTap,
+                          child: Container(
+                            width: 68,
+                            height: 68,
+                            decoration: BoxDecoration(
+                              color: NeoColors.skyBlue,
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
                                 color: NeoColors.inkSolid,
-                                offset: Offset(2, 2),
-                                blurRadius: 0,
+                                width: 2,
                               ),
-                            ],
-                          ),
-                          child: Center(
-                            child: Text(
-                              profile.fullName.isNotEmpty
-                                  ? profile.fullName.characters.first
-                                  : 'S',
-                              style: const TextStyle(
-                                fontSize: 30,
-                                fontWeight: FontWeight.w900,
-                                color: NeoColors.inkSolid,
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: NeoColors.inkSolid,
+                                  offset: Offset(2, 2),
+                                  blurRadius: 0,
+                                ),
+                              ],
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: avatarBytesAsync.when(
+                              data: (bytes) {
+                                if (bytes != null && bytes.isNotEmpty) {
+                                  return Image.memory(
+                                    Uint8List.fromList(bytes),
+                                    width: 68,
+                                    height: 68,
+                                    fit: BoxFit.cover,
+                                  );
+                                }
+                                return Center(
+                                  child: Text(
+                                    profile.fullName.isNotEmpty
+                                        ? profile.fullName.characters.first
+                                        : 'S',
+                                    style: const TextStyle(
+                                      fontSize: 30,
+                                      fontWeight: FontWeight.w900,
+                                      color: NeoColors.inkSolid,
+                                    ),
+                                  ),
+                                );
+                              },
+                              loading: () => const Center(
+                                child: SizedBox(
+                                  width: 22,
+                                  height: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    color: NeoColors.inkSolid,
+                                  ),
+                                ),
+                              ),
+                              error: (error, stack) => Center(
+                                child: Text(
+                                  profile.fullName.isNotEmpty
+                                      ? profile.fullName.characters.first
+                                      : 'S',
+                                  style: const TextStyle(
+                                    fontSize: 30,
+                                    fontWeight: FontWeight.w900,
+                                    color: NeoColors.inkSolid,
+                                  ),
+                                ),
                               ),
                             ),
                           ),

@@ -42,7 +42,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _error = null;
     });
 
-    final error = await ref.read(authControllerProvider.notifier).login(
+    final error = await ref
+        .read(authControllerProvider.notifier)
+        .login(
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
@@ -144,14 +146,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                             tooltip: _obscurePassword
                                                 ? 'แสดงรหัสผ่าน'
                                                 : 'ซ่อนรหัสผ่าน',
-                                            onPressed: () => setState(() =>
-                                                _obscurePassword =
-                                                    !_obscurePassword),
+                                            onPressed: () => setState(
+                                              () => _obscurePassword =
+                                                  !_obscurePassword,
+                                            ),
                                             icon: Icon(
                                               _obscurePassword
                                                   ? Icons.visibility_outlined
                                                   : Icons
-                                                      .visibility_off_outlined,
+                                                        .visibility_off_outlined,
                                               size: 20,
                                               color: NeoColors.inkSolid,
                                             ),
@@ -176,8 +179,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                           children: [
                                             Flexible(
                                               child: GestureDetector(
-                                                onTap: () => setState(() =>
-                                                    _rememberMe = !_rememberMe),
+                                                onTap: () => setState(
+                                                  () => _rememberMe =
+                                                      !_rememberMe,
+                                                ),
                                                 child: Row(
                                                   mainAxisSize:
                                                       MainAxisSize.min,
@@ -188,12 +193,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                                       decoration: BoxDecoration(
                                                         color: _rememberMe
                                                             ? NeoColors
-                                                                .freshMint
+                                                                  .freshMint
                                                             : NeoColors
-                                                                .pureWhite,
+                                                                  .pureWhite,
                                                         borderRadius:
-                                                            BorderRadius
-                                                                .circular(5),
+                                                            BorderRadius.circular(
+                                                              5,
+                                                            ),
                                                         border: Border.all(
                                                           color: NeoColors
                                                               .inkSolid,

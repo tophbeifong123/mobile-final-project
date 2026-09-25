@@ -40,24 +40,22 @@ class AppCard extends StatelessWidget {
 
     Widget content = Material(
       color: bg,
-      shape: RoundedRectangleBorder(
-        borderRadius: radius,
-        side: border,
-      ),
+      shape: RoundedRectangleBorder(borderRadius: radius, side: border),
       clipBehavior: clipBehavior,
       child: InkWell(
         onTap: onTap,
-        borderRadius: radius is BorderRadius ? radius : BorderRadius.circular(16),
-        child: padding != null ? Padding(padding: padding!, child: child) : child,
+        borderRadius: radius is BorderRadius
+            ? radius
+            : BorderRadius.circular(16),
+        child: padding != null
+            ? Padding(padding: padding!, child: child)
+            : child,
       ),
     );
 
     if (shadows != null && shadows!.isNotEmpty) {
       content = DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: radius,
-          boxShadow: shadows,
-        ),
+        decoration: BoxDecoration(borderRadius: radius, boxShadow: shadows),
         child: content,
       );
     }

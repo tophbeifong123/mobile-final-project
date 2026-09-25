@@ -63,8 +63,12 @@ class JobApplicationModel {
     final rawTimeline = json['timeline'] as List<dynamic>?;
     final timeline = rawTimeline != null
         ? rawTimeline
-            .map((item) => TimelineEventModel.fromJson(item as Map<String, dynamic>).toEntity())
-            .toList()
+              .map(
+                (item) => TimelineEventModel.fromJson(
+                  item as Map<String, dynamic>,
+                ).toEntity(),
+              )
+              .toList()
         : <TimelineEvent>[];
 
     return JobApplicationModel(

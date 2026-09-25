@@ -88,10 +88,7 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
               ),
               const Gap(16),
             ] else ...[
-              Text(
-                'รหัสประกาศ ${widget.jobId}',
-                style: textTheme.bodySmall,
-              ),
+              Text('รหัสประกาศ ${widget.jobId}', style: textTheme.bodySmall),
               const Gap(12),
             ],
             if (!hasResume) ...[
@@ -220,7 +217,9 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
       _error = null;
     });
     try {
-      await ref.read(applicationRepositoryProvider).apply(
+      await ref
+          .read(applicationRepositoryProvider)
+          .apply(
             jobId: widget.jobId,
             coverLetter: _coverLetterController.text.trim(),
           );

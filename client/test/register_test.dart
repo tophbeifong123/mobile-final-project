@@ -12,66 +12,74 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   testWidgets(
-      'renders Neo-Brutalist register screen with all elements matching design',
-      (tester) async {
-    tester.view.physicalSize = const Size(390, 1100);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+    'renders Neo-Brutalist register screen with all elements matching design',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 1100);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    final fakeAuthRepo = _FakeAuthRepository();
+      final fakeAuthRepo = _FakeAuthRepository();
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
-          authRepositoryProvider.overrideWithValue(fakeAuthRepo),
-        ],
-        child: MaterialApp(
-          theme: AppTheme.lightTheme,
-          home: const RegisterScreen(),
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+            authRepositoryProvider.overrideWithValue(fakeAuthRepo),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: const RegisterScreen(),
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    // Top App Bar
-    expect(find.text('ลงทะเบียนสมาชิก'), findsOneWidget);
+      // Top App Bar
+      expect(find.text('ลงทะเบียนสมาชิก'), findsOneWidget);
 
-    // Hero Section
-    expect(find.text('ค้นหาและสมัครงานฝึกงานในฝันกับสตาร์ทอัพ\nและเทคคอมพานีชั้นนำ'), findsOneWidget);
+      // Hero Section
+      expect(
+        find.text(
+          'ค้นหาและสมัครงานฝึกงานในฝันกับสตาร์ทอัพ\nและเทคคอมพานีชั้นนำ',
+        ),
+        findsOneWidget,
+      );
 
-    // Role switcher
-    expect(find.text('นักศึกษา'), findsOneWidget);
-    expect(find.text('บริษัท / องค์กร'), findsOneWidget);
+      // Role switcher
+      expect(find.text('นักศึกษา'), findsOneWidget);
+      expect(find.text('บริษัท / องค์กร'), findsOneWidget);
 
-    // Field headers
-    expect(find.text('ชื่อ - นามสกุล'), findsOneWidget);
-    expect(find.text('ตรงตามบัตร/รหัสนักศึกษา'), findsOneWidget);
-    expect(find.text('อีเมลมหาวิทยาลัย'), findsOneWidget);
-    expect(find.text('ตั้งรหัสผ่าน'), findsOneWidget);
-    expect(find.text('อย่างน้อย 8 ตัวอักษร'), findsOneWidget);
-    expect(find.text('ยืนยันรหัสผ่าน'), findsOneWidget);
+      // Field headers
+      expect(find.text('ชื่อ - นามสกุล'), findsOneWidget);
+      expect(find.text('ตรงตามบัตร/รหัสนักศึกษา'), findsOneWidget);
+      expect(find.text('อีเมลมหาวิทยาลัย'), findsOneWidget);
+      expect(find.text('ตั้งรหัสผ่าน'), findsOneWidget);
+      expect(find.text('อย่างน้อย 8 ตัวอักษร'), findsOneWidget);
+      expect(find.text('ยืนยันรหัสผ่าน'), findsOneWidget);
 
-    // Password strength
-    expect(find.text('ระดับความปลอดภัย: '), findsOneWidget);
-    expect(find.text('ยังไม่ปลอดภัย'), findsOneWidget);
+      // Password strength
+      expect(find.text('ระดับความปลอดภัย: '), findsOneWidget);
+      expect(find.text('ยังไม่ปลอดภัย'), findsOneWidget);
 
-    // Submit button
-    expect(find.text('สร้างบัญชีผู้ใช้'), findsOneWidget);
+      // Submit button
+      expect(find.text('สร้างบัญชีผู้ใช้'), findsOneWidget);
 
-    // Divider
-    expect(find.text('หรือลงทะเบียนด้วย'), findsOneWidget);
+      // Divider
+      expect(find.text('หรือลงทะเบียนด้วย'), findsOneWidget);
 
-    // Social buttons
-    expect(find.text('Google'), findsOneWidget);
-    expect(find.text('SSO มหาวิทยาลัย'), findsOneWidget);
+      // Social buttons
+      expect(find.text('Google'), findsOneWidget);
+      expect(find.text('SSO มหาวิทยาลัย'), findsOneWidget);
 
-    // Footer
-    expect(find.text('เข้าสู่ระบบ'), findsOneWidget);
-  });
+      // Footer
+      expect(find.text('เข้าสู่ระบบ'), findsOneWidget);
+    },
+  );
 
-  testWidgets('switching role updates email and name label context', (tester) async {
+  testWidgets('switching role updates email and name label context', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(390, 1100);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -169,14 +177,19 @@ void main() {
     // Submit without checking terms
     await tester.tap(find.text('สร้างบัญชีผู้ใช้'));
     await tester.pump();
-    expect(find.text('กรุณายอมรับข้อกำหนดการให้บริการและนโยบายความเป็นส่วนตัว'), findsOneWidget);
+    expect(
+      find.text('กรุณายอมรับข้อกำหนดการให้บริการและนโยบายความเป็นส่วนตัว'),
+      findsOneWidget,
+    );
     expect(fakeAuthRepo.registerCalls, 0);
 
     // Allow toast timer to complete
     await tester.pump(const Duration(seconds: 4));
   });
 
-  testWidgets('successfully registers student when valid and terms checked', (tester) async {
+  testWidgets('successfully registers student when valid and terms checked', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(390, 1100);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -213,7 +226,10 @@ void main() {
       final widget = element.widget as GestureDetector;
       if (widget.child is Container) {
         final container = widget.child as Container;
-        if (container.constraints?.maxWidth == 22 || (container.decoration is BoxDecoration && (container.decoration as BoxDecoration).borderRadius == BorderRadius.circular(6))) {
+        if (container.constraints?.maxWidth == 22 ||
+            (container.decoration is BoxDecoration &&
+                (container.decoration as BoxDecoration).borderRadius ==
+                    BorderRadius.circular(6))) {
           await tester.tap(find.byWidget(widget));
           break;
         }

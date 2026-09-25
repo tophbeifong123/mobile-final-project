@@ -189,73 +189,71 @@ void main() {
     expect(find.text('Applicant Detail: job-99 / app-123'), findsOneWidget);
   });
 
-  testWidgets('shows error state when fetching applicants fails and retry works', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets(
+    'shows error state when fetching applicants fails and retry works',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    final fakeRepo = _FakeCompanyJobRepository(
-      error: const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'),
-    );
+      final fakeRepo = _FakeCompanyJobRepository(
+        error: const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'),
+      );
 
-    final router = GoRouter(
-      initialLocation: '/company/jobs/job-1/applicants',
-      routes: [
-        GoRoute(
-          path: '/company/jobs/:jobId/applicants',
-          builder: (context, state) =>
-              ApplicantsScreen(jobId: state.pathParameters['jobId']!),
-        ),
-      ],
-    );
-    addTearDown(router.dispose);
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
-          companyJobRepositoryProvider.overrideWithValue(fakeRepo),
+      final router = GoRouter(
+        initialLocation: '/company/jobs/job-1/applicants',
+        routes: [
+          GoRoute(
+            path: '/company/jobs/:jobId/applicants',
+            builder: (context, state) =>
+                ApplicantsScreen(jobId: state.pathParameters['jobId']!),
+          ),
         ],
-        child: MaterialApp.router(
-          theme: AppTheme.lightTheme,
-          routerConfig: router,
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+            companyJobRepositoryProvider.overrideWithValue(fakeRepo),
+          ],
+          child: MaterialApp.router(
+            theme: AppTheme.lightTheme,
+            routerConfig: router,
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('โหลดรายชื่อผู้สมัครไม่ได้'), findsOneWidget);
-    expect(find.text('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'), findsOneWidget);
-    expect(find.text('ลองอีกครั้ง'), findsOneWidget);
+      expect(find.text('โหลดรายชื่อผู้สมัครไม่ได้'), findsOneWidget);
+      expect(find.text('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้'), findsOneWidget);
+      expect(find.text('ลองอีกครั้ง'), findsOneWidget);
 
-    fakeRepo.error = null;
-    fakeRepo.applicants = [
-      const Applicant(
-        applicationId: 'app-recovered',
-        fullName: 'กิตติศักดิ์ ชัยชนะ',
-        university: 'สจล.',
-        major: 'ไอที',
-        status: 'accepted',
-        coverLetter: 'สำเร็จแล้วครับ',
-      ),
-    ];
+      fakeRepo.error = null;
+      fakeRepo.applicants = [
+        const Applicant(
+          applicationId: 'app-recovered',
+          fullName: 'กิตติศักดิ์ ชัยชนะ',
+          university: 'สจล.',
+          major: 'ไอที',
+          status: 'accepted',
+          coverLetter: 'สำเร็จแล้วครับ',
+        ),
+      ];
 
-    await tester.tap(find.text('ลองอีกครั้ง'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('ลองอีกครั้ง'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('กิตติศักดิ์ ชัยชนะ'), findsOneWidget);
-    expect(find.text('ผ่านการคัดเลือก'), findsOneWidget);
-  });
+      expect(find.text('กิตติศักดิ์ ชัยชนะ'), findsOneWidget);
+      expect(find.text('ผ่านการคัดเลือก'), findsOneWidget);
+    },
+  );
 }
 
 class _FakeCompanyJobRepository implements CompanyJobRepository {
-  _FakeCompanyJobRepository({
-    this.applicants = const [],
-    this.error,
-  });
+  _FakeCompanyJobRepository({this.applicants = const [], this.error});
 
   List<Applicant> applicants;
   AppException? error;
@@ -270,7 +268,8 @@ class _FakeCompanyJobRepository implements CompanyJobRepository {
   Future<List<CompanyJob>> fetchMine() async => [];
 
   @override
-  Future<EditableJob> fetchOne(String jobId) async => throw UnimplementedError();
+  Future<EditableJob> fetchOne(String jobId) async =>
+      throw UnimplementedError();
 
   @override
   Future<CreatedJob> create(JobPosting posting) async =>
@@ -281,21 +280,22 @@ class _FakeCompanyJobRepository implements CompanyJobRepository {
     required String jobId,
     required JobPosting posting,
     required int version,
-  }) async =>
-      throw UnimplementedError();
+  }) async => throw UnimplementedError();
 
   @override
   Future<void> remove(String jobId) async {}
 
   @override
-  Future<void> setStatus({required String jobId, required String status}) async {}
+  Future<void> setStatus({
+    required String jobId,
+    required String status,
+  }) async {}
 
   @override
   Future<Applicant> fetchApplicant({
     required String jobId,
     required String applicationId,
-  }) async =>
-      throw UnimplementedError();
+  }) async => throw UnimplementedError();
 
   @override
   Future<void> updateApplicantStatus({

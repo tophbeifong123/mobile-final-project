@@ -5,10 +5,7 @@ import '../../../../core/theme/app_tokens.dart';
 
 /// Hero Header for Saved Jobs Screen
 class SavedJobsHeader extends StatelessWidget {
-  const SavedJobsHeader({
-    super.key,
-    required this.count,
-  });
+  const SavedJobsHeader({super.key, required this.count});
 
   final int count;
 

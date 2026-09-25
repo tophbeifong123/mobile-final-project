@@ -18,10 +18,8 @@ class NotificationsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final notificationsAsync = ref.watch(notificationsProvider);
 
-    final unreadCount = notificationsAsync.asData?.value
-            .where((n) => !n.isRead)
-            .length ??
-        0;
+    final unreadCount =
+        notificationsAsync.asData?.value.where((n) => !n.isRead).length ?? 0;
 
     return Scaffold(
       backgroundColor: NeoColors.paperCanvas,
@@ -79,9 +77,7 @@ class _NotiTopBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: const BoxDecoration(
         color: NeoColors.paperCanvas,
-        border: Border(
-          bottom: BorderSide(color: NeoColors.inkSolid, width: 2),
-        ),
+        border: Border(bottom: BorderSide(color: NeoColors.inkSolid, width: 2)),
       ),
       child: Row(
         children: [
@@ -195,10 +191,7 @@ class _NotiList extends StatelessWidget {
 // ─── Notification Card ────────────────────────────────────────────────────────
 
 class _NotificationCard extends StatelessWidget {
-  const _NotificationCard({
-    required this.notification,
-    required this.onTap,
-  });
+  const _NotificationCard({required this.notification, required this.onTap});
 
   final AppNotification notification;
   final VoidCallback onTap;
@@ -510,10 +503,7 @@ class _NotiEmptyView extends StatelessWidget {
 // ─── Error State ──────────────────────────────────────────────────────────────
 
 class _NotiErrorView extends StatelessWidget {
-  const _NotiErrorView({
-    required this.message,
-    required this.onRetry,
-  });
+  const _NotiErrorView({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;

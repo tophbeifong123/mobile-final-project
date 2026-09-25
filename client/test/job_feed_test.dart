@@ -66,10 +66,7 @@ void main() {
     expect(find.text('Marketing Trainee'), findsOneWidget);
     expect(find.text('On-site'), findsOneWidget);
     expect(
-      find.descendant(
-        of: find.byType(JobCard),
-        matching: find.text('Hybrid'),
-      ),
+      find.descendant(of: find.byType(JobCard), matching: find.text('Hybrid')),
       findsOneWidget,
     );
     expect(find.text('Remote'), findsOneWidget);
