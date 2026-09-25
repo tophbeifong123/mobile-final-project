@@ -60,14 +60,13 @@ class _ProfileError extends ConsumerWidget {
             ),
           ),
         ),
-        TextButton(
+        TextButton.icon(
           onPressed: () => ref.read(authControllerProvider.notifier).logout(),
-          child: const Text(
+          style: TextButton.styleFrom(foregroundColor: NeoColors.errorText),
+          icon: const Icon(Icons.logout_rounded, size: 18),
+          label: const Text(
             'ออกจากระบบ',
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              color: NeoColors.errorText,
-            ),
+            style: TextStyle(fontWeight: FontWeight.w800),
           ),
         ),
       ],
@@ -1187,16 +1186,17 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
           textAlign: TextAlign.center,
         ),
         const Gap(16),
-        TextButton(
+        NeoButton(
           onPressed: () => ref.read(authControllerProvider.notifier).logout(),
-          child: const Text(
-            'ออกจากระบบ',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: NeoColors.errorText,
-            ),
+          text: 'ออกจากระบบ',
+          icon: const Icon(
+            Icons.logout_rounded,
+            size: 18,
+            color: NeoColors.errorText,
           ),
+          variant: NeoButtonVariant.destructive,
+          isFullWidth: true,
+          height: 48,
         ),
       ],
     );
