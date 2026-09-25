@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsString, MaxLength, MinLength } from 'class-validator';
+import { IsArray, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 function trimString({ value }: { value: unknown }): unknown {
   return typeof value === 'string' ? value.trim() : value;
@@ -25,4 +25,34 @@ export class UpdateCompanyProfileDto {
   @Transform(trimString)
   @IsString()
   description: string;
+
+  @ApiProperty({ example: 'https://www.bitkub.com', required: false })
+  @IsOptional()
+  @Transform(trimString)
+  @IsString()
+  @MaxLength(1024)
+  websiteUrl?: string;
+
+  @ApiProperty({ example: 'FYI Center กรุงเทพฯ', required: false })
+  @IsOptional()
+  @Transform(trimString)
+  @IsString()
+  location?: string;
+
+  @ApiProperty({ example: '201-500 คน', required: false })
+  @IsOptional()
+  @Transform(trimString)
+  @IsString()
+  @MaxLength(100)
+  companySize?: string;
+
+  @ApiProperty({
+    example: ['💻 MacBook Pro ประจำตำแหน่ง', '🍱 ขนมและเครื่องดื่มฟรีไม่อั้น'],
+    type: [String],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  perks?: string[];
 }

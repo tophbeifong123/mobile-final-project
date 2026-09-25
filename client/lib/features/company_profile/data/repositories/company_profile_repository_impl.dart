@@ -15,12 +15,7 @@ class CompanyProfileRepositoryImpl implements CompanyProfileRepository {
 
   @override
   Future<CompanyProfile> update(CompanyProfile profile) async {
-    final model = CompanyProfileModel(
-      name: profile.name,
-      businessType: profile.businessType,
-      description: profile.description,
-      logoObjectKey: profile.logoObjectKey,
-    );
+    final model = CompanyProfileModel.fromEntity(profile);
     return (await _remote.update(model)).toEntity();
   }
 
@@ -35,6 +30,32 @@ class CompanyProfileRepositoryImpl implements CompanyProfileRepository {
       fileName: fileName,
       bytes: bytes,
     );
+    return model.toEntity();
+  }
+
+  @override
+  Future<CompanyProfile> deleteLogo() async {
+    final model = await _remote.deleteLogo();
+    return model.toEntity();
+  }
+
+  @override
+  Future<CompanyProfile> uploadCover({
+    required String filePath,
+    required String fileName,
+    List<int>? bytes,
+  }) async {
+    final model = await _remote.uploadCover(
+      filePath: filePath,
+      fileName: fileName,
+      bytes: bytes,
+    );
+    return model.toEntity();
+  }
+
+  @override
+  Future<CompanyProfile> deleteCover() async {
+    final model = await _remote.deleteCover();
     return model.toEntity();
   }
 }

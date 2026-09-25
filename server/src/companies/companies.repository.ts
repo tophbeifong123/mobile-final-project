@@ -44,23 +44,46 @@ export class CompaniesRepository {
 
   async updateProfile(
     id: string,
-    data: { name: string; businessType: string; description: string },
+    data: {
+      name: string;
+      businessType: string;
+      description: string;
+      websiteUrl?: string;
+      location?: string;
+      companySize?: string;
+      perks?: string[];
+    },
   ): Promise<CompanyProfile | null> {
     const repo = this.dataSource.getRepository(CompanyProfile);
-    await repo.update(id, {
+    const updateData: Partial<CompanyProfile> = {
       name: data.name,
       businessType: data.businessType,
       description: data.description,
-    });
+    };
+    if (data.websiteUrl !== undefined) updateData.websiteUrl = data.websiteUrl;
+    if (data.location !== undefined) updateData.location = data.location;
+    if (data.companySize !== undefined) updateData.companySize = data.companySize;
+    if (data.perks !== undefined) updateData.perks = data.perks;
+
+    await repo.update(id, updateData);
     return repo.findOne({ where: { id } });
   }
 
   async updateLogoObjectKey(
     id: string,
-    logoObjectKey: string,
+    logoObjectKey: string | null,
   ): Promise<CompanyProfile | null> {
     const repo = this.dataSource.getRepository(CompanyProfile);
     await repo.update(id, { logoObjectKey });
+    return repo.findOne({ where: { id } });
+  }
+
+  async updateCoverObjectKey(
+    id: string,
+    coverObjectKey: string | null,
+  ): Promise<CompanyProfile | null> {
+    const repo = this.dataSource.getRepository(CompanyProfile);
+    await repo.update(id, { coverObjectKey });
     return repo.findOne({ where: { id } });
   }
 }

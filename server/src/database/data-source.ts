@@ -11,6 +11,7 @@ import { SavedJob } from '../jobs/entities/saved-job.entity.js';
 import { Notification } from '../notifications/entities/notification.entity.js';
 import { AddAvatarToStudentProfiles1759200000000 } from './migrations/1759200000000-add-avatar-to-student-profiles.js';
 import { AddBioContactsPortfoliosToStudentProfiles1759100000000 } from './migrations/1759100000000-add-bio-contacts-portfolios-to-student-profiles.js';
+import { AddDetailsAndCoverToCompanyProfiles1759300000000 } from './migrations/1759300000000-add-details-and-cover-to-company-profiles.js';
 import { AddSkillsToJobs1759000000000 } from './migrations/1759000000000-add-skills-to-jobs.js';
 import { CreateApplicationsTables1758800000000 } from './migrations/1758800000000-create-applications-tables.js';
 import { CreateAuthTables1758556800000 } from './migrations/1758556800000-create-auth-tables.js';
@@ -46,5 +47,6 @@ export const AppDataSource = new DataSource({
     AddSkillsToJobs1759000000000,
     AddBioContactsPortfoliosToStudentProfiles1759100000000,
     AddAvatarToStudentProfiles1759200000000,
+    AddDetailsAndCoverToCompanyProfiles1759300000000,
   ],
 });
