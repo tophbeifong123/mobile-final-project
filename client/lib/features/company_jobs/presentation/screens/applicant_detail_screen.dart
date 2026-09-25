@@ -12,6 +12,7 @@ import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/loading_view.dart';
 import '../../../../core/widgets/status_chip.dart';
 import '../../domain/entities/company_job.dart';
+import 'package:client/features/student_profile/domain/entities/student_profile.dart';
 import '../providers/company_jobs_controller.dart';
 
 class ApplicantDetailScreen extends ConsumerStatefulWidget {
@@ -175,9 +176,20 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
               padding: const EdgeInsets.all(kPagePadding),
               children: [
                 _ProfileHeaderCard(applicant: applicant),
+                if (applicant.bio.trim().isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  _BioCard(bio: applicant.bio.trim()),
+                ],
                 const SizedBox(height: 16),
                 _SkillsCard(skills: applicant.skills),
-                if (applicant.portfolioUrl != null &&
+                if (applicant.contactLinks.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  _ContactLinksCard(contacts: applicant.contactLinks),
+                ],
+                if (applicant.portfolioLinks.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  _PortfolioProjectsCard(portfolios: applicant.portfolioLinks),
+                ] else if (applicant.portfolioUrl != null &&
                     applicant.portfolioUrl!.trim().isNotEmpty) ...[
                   const SizedBox(height: 16),
                   _PortfolioCard(url: applicant.portfolioUrl!.trim()),
@@ -438,6 +450,46 @@ class _ProfileHeaderCard extends StatelessWidget {
   }
 }
 
+class _BioCard extends StatelessWidget {
+  const _BioCard({required this.bio});
+
+  final String bio;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.format_quote_rounded,
+                size: 20,
+                color: AppColors.primary,
+              ),
+              const Gap(8),
+              Expanded(
+                child: Text('เกี่ยวกับฉัน (About Me)', style: textTheme.titleMedium),
+              ),
+            ],
+          ),
+          const Gap(10),
+          Text(
+            bio,
+            style: textTheme.bodyMedium?.copyWith(
+              height: 1.5,
+              color: AppColors.textPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _SkillsCard extends StatelessWidget {
   const _SkillsCard({required this.skills});
 
@@ -497,6 +549,201 @@ class _SkillsCard extends StatelessWidget {
                 );
               }).toList(),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ContactLinksCard extends StatelessWidget {
+  const _ContactLinksCard({required this.contacts});
+
+  final List<ContactLink> contacts;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.alternate_email_rounded,
+                size: 20,
+                color: AppColors.primary,
+              ),
+              const Gap(8),
+              Expanded(
+                child: Text('ช่องทางการติดต่อ', style: textTheme.titleMedium),
+              ),
+            ],
+          ),
+          const Gap(12),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: contacts.length,
+            separatorBuilder: (_, _) => const Gap(8),
+            itemBuilder: (context, index) {
+              final c = contacts[index];
+              return Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.04),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.line),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      _platformIcon(c.platform),
+                      size: 18,
+                      color: AppColors.primary,
+                    ),
+                    const Gap(10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (c.label != null && c.label!.isNotEmpty)
+                            Text(
+                              c.label!,
+                              style: textTheme.bodySmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          SelectableText(
+                            c.value,
+                            style: textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  IconData _platformIcon(String platform) {
+    switch (platform.toLowerCase()) {
+      case 'phone':
+        return Icons.phone_rounded;
+      case 'email':
+        return Icons.email_rounded;
+      case 'line':
+        return Icons.chat_bubble_rounded;
+      case 'github':
+        return Icons.code_rounded;
+      case 'linkedin':
+        return Icons.work_rounded;
+      case 'facebook':
+        return Icons.facebook_rounded;
+      case 'instagram':
+        return Icons.camera_alt_rounded;
+      case 'website':
+        return Icons.language_rounded;
+      default:
+        return Icons.link_rounded;
+    }
+  }
+}
+
+class _PortfolioProjectsCard extends StatelessWidget {
+  const _PortfolioProjectsCard({required this.portfolios});
+
+  final List<PortfolioLink> portfolios;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.folder_special_rounded,
+                size: 20,
+                color: AppColors.primary,
+              ),
+              const Gap(8),
+              Expanded(
+                child: Text('ผลงานและโปรเจกต์ (Portfolio)', style: textTheme.titleMedium),
+              ),
+            ],
+          ),
+          const Gap(12),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: portfolios.length,
+            separatorBuilder: (_, _) => const Gap(10),
+            itemBuilder: (context, index) {
+              final p = portfolios[index];
+              return Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.04),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.line),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.rocket_launch_rounded,
+                          size: 16,
+                          color: AppColors.primary,
+                        ),
+                        const Gap(6),
+                        Expanded(
+                          child: Text(
+                            p.title,
+                            style: textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const Gap(4),
+                    SelectableText(
+                      p.url,
+                      style: textTheme.bodySmall?.copyWith(
+                        color: AppColors.primary,
+                        decoration: TextDecoration.underline,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (p.description != null && p.description!.isNotEmpty) ...[
+                      const Gap(4),
+                      Text(
+                        p.description!,
+                        style: textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            },
+          ),
         ],
       ),
     );

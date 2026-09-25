@@ -2,12 +2,29 @@ import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { StudentProfile } from '../auth/entities/student-profile.entity.js';
 
+export interface ContactLinkRecord {
+  id?: string;
+  platform: string;
+  label?: string;
+  value: string;
+}
+
+export interface PortfolioLinkRecord {
+  id?: string;
+  title: string;
+  url: string;
+  description?: string;
+}
+
 export interface StudentProfileUpdate {
   fullName: string;
   university: string;
   major: string;
   skills: string[];
-  portfolioUrl: string | null;
+  bio?: string;
+  contactLinks?: ContactLinkRecord[];
+  portfolioLinks?: PortfolioLinkRecord[];
+  portfolioUrl?: string | null;
 }
 
 @Injectable()
@@ -34,7 +51,18 @@ export class StudentsRepository {
     profile.university = input.university;
     profile.major = input.major;
     profile.skills = input.skills;
-    profile.portfolioUrl = input.portfolioUrl;
+    if (input.bio !== undefined) {
+      profile.bio = input.bio;
+    }
+    if (input.contactLinks !== undefined) {
+      profile.contactLinks = input.contactLinks;
+    }
+    if (input.portfolioLinks !== undefined) {
+      profile.portfolioLinks = input.portfolioLinks;
+    }
+    if (input.portfolioUrl !== undefined) {
+      profile.portfolioUrl = input.portfolioUrl;
+    }
     return profiles.save(profile);
   }
 

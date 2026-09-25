@@ -4,6 +4,7 @@ import 'package:client/core/storage/token_storage.dart';
 import 'package:client/core/theme/app_theme.dart';
 import 'package:client/features/company_jobs/domain/entities/company_job.dart';
 import 'package:client/features/company_jobs/domain/repositories/company_job_repository.dart';
+import 'package:client/features/student_profile/domain/entities/student_profile.dart';
 import 'package:client/features/company_jobs/presentation/providers/company_jobs_controller.dart';
 import 'package:client/features/company_jobs/presentation/screens/applicant_detail_screen.dart';
 import 'package:flutter/material.dart';
@@ -547,6 +548,94 @@ void main() {
       expect(find.text('ตอบรับ (Accept)'), findsNothing);
       expect(find.text('ปฏิเสธ (Reject)'), findsNothing);
       expect(find.text('เปลี่ยนสถานะเป็น Reviewing'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'applicant detail renders bio, contact channels, and portfolio projects cards',
+    (tester) async {
+      tester.view.physicalSize = const Size(400, 2400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final applicant = Applicant(
+        applicationId: 'app-bio-1',
+        fullName: 'มีนา เพ็งชัย',
+        university: 'มหาวิทยาลัยสงขลานครินทร์',
+        major: 'วิทยาการคอมพิวเตอร์',
+        status: 'submitted',
+        coverLetter: 'อยากฝึกงานด้าน Flutter ครับ',
+        skills: const ['Flutter', 'Node.js'],
+        bio: 'นักศึกษาที่รักการเรียนรู้เทคโนโลยีใหม่ๆ',
+        contactLinks: const [
+          ContactLink(
+            platform: 'phone',
+            label: 'เบอร์ส่วนตัว',
+            value: '0812345678',
+          ),
+          ContactLink(
+            platform: 'line',
+            value: '@meena_dev',
+          ),
+        ],
+        portfolioLinks: const [
+          PortfolioLink(
+            title: 'InternFinder App',
+            url: 'https://github.com/example/internfinder',
+            description: 'ระบบค้นหาที่ฝึกงาน',
+          ),
+        ],
+        portfolioUrl: 'https://github.com/example/internfinder',
+        resumeFileName: 'meena-resume.pdf',
+        resumeObjectKey: 'resumes/meena.pdf',
+        createdAt: DateTime(2026, 9, 23, 14, 0),
+      );
+
+      final fakeRepo = _FakeCompanyJobRepository(applicant: applicant);
+
+      final router = GoRouter(
+        initialLocation: '/company/jobs/job-1/applicants/app-bio-1',
+        routes: [
+          GoRoute(
+            path: '/company/jobs/:jobId/applicants/:applicationId',
+            builder: (context, state) => ApplicantDetailScreen(
+              jobId: state.pathParameters['jobId']!,
+              applicationId: state.pathParameters['applicationId']!,
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+            companyJobRepositoryProvider.overrideWithValue(fakeRepo),
+          ],
+          child: MaterialApp.router(
+            theme: AppTheme.lightTheme,
+            routerConfig: router,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Check Bio Card
+      expect(find.text('เกี่ยวกับฉัน (About Me)'), findsOneWidget);
+      expect(find.text('นักศึกษาที่รักการเรียนรู้เทคโนโลยีใหม่ๆ'), findsOneWidget);
+
+      // Check Contact Channels Card
+      expect(find.text('ช่องทางการติดต่อ'), findsOneWidget);
+      expect(find.text('0812345678'), findsOneWidget);
+      expect(find.text('@meena_dev'), findsOneWidget);
+
+      // Check Portfolio Projects Card
+      expect(find.text('ผลงานและโปรเจกต์ (Portfolio)'), findsOneWidget);
+      expect(find.text('InternFinder App'), findsOneWidget);
+      expect(find.text('https://github.com/example/internfinder'), findsOneWidget);
+      expect(find.text('ระบบค้นหาที่ฝึกงาน'), findsOneWidget);
     },
   );
 }

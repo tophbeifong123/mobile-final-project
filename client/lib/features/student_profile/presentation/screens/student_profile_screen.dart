@@ -14,9 +14,11 @@ import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../../jobs/presentation/widgets/feed_top_bar.dart';
 import '../../domain/entities/student_profile.dart';
 import '../providers/student_profile_controller.dart';
+import '../widgets/student_profile_bio_card.dart';
+import '../widgets/student_profile_contacts_card.dart';
 import '../widgets/student_profile_hero_card.dart';
 import '../widgets/student_profile_info_card.dart';
-import '../widgets/student_profile_links_card.dart';
+import '../widgets/student_profile_portfolio_card.dart';
 import '../widgets/student_profile_resume_card.dart';
 import '../widgets/student_profile_skills_card.dart';
 
@@ -105,8 +107,10 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
   late final TextEditingController _nameController;
   late final TextEditingController _universityController;
   late final TextEditingController _majorController;
+  late final TextEditingController _bioController;
   late List<String> _skills;
-  late final TextEditingController _portfolioController;
+  late List<ContactLink> _contacts;
+  late List<PortfolioLink> _portfolios;
   String? _error;
   bool _saving = false;
 
@@ -117,10 +121,18 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
     _nameController = TextEditingController(text: profile.fullName);
     _universityController = TextEditingController(text: profile.university);
     _majorController = TextEditingController(text: profile.major);
+    _bioController = TextEditingController(text: profile.bio);
     _skills = List<String>.from(profile.skills);
-    _portfolioController = TextEditingController(
-      text: profile.portfolioUrl ?? '',
-    );
+    _contacts = List<ContactLink>.from(profile.contactLinks);
+    _portfolios = List<PortfolioLink>.from(profile.portfolioLinks);
+    if (_portfolios.isEmpty &&
+        profile.portfolioUrl != null &&
+        profile.portfolioUrl!.isNotEmpty) {
+      _portfolios.add(PortfolioLink(
+        title: 'Portfolio Link',
+        url: profile.portfolioUrl!,
+      ));
+    }
   }
 
   @override
@@ -128,7 +140,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
     _nameController.dispose();
     _universityController.dispose();
     _majorController.dispose();
-    _portfolioController.dispose();
+    _bioController.dispose();
     super.dispose();
   }
 
@@ -168,6 +180,12 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
           ),
           const Gap(14),
 
+          // About Me (Bio) Card
+          StudentProfileBioCard(
+            bioController: _bioController,
+          ),
+          const Gap(14),
+
           // Skills Section Card
           StudentProfileSkillsCard(
             skills: _skills,
@@ -175,10 +193,17 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
           ),
           const Gap(14),
 
-          // Portfolio & Links Card
-          StudentProfileLinksCard(
-            controller: _portfolioController,
-            validator: _portfolio,
+          // Contact Channels Card
+          StudentProfileContactsCard(
+            contacts: _contacts,
+            onChanged: (updated) => setState(() => _contacts = updated),
+          ),
+          const Gap(14),
+
+          // Portfolio Projects Card
+          StudentProfilePortfolioCard(
+            portfolios: _portfolios,
+            onChanged: (updated) => setState(() => _portfolios = updated),
           ),
 
           if (_error != null) ...[
@@ -246,21 +271,6 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
     return null;
   }
 
-  String? _portfolio(String? value) {
-    final trimmed = value?.trim() ?? '';
-    if (trimmed.isEmpty) {
-      return null;
-    }
-    final uri = Uri.tryParse(trimmed);
-    final allowed = uri != null &&
-        (uri.scheme == 'http' || uri.scheme == 'https') &&
-        uri.host.isNotEmpty;
-    if (!allowed) {
-      return 'ใส่ลิงก์ที่ขึ้นต้นด้วย https://';
-    }
-    return null;
-  }
-
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -269,13 +279,15 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
       _saving = true;
       _error = null;
     });
-    final portfolio = _portfolioController.text.trim();
     final profile = StudentProfile(
       fullName: _nameController.text.trim(),
       university: _universityController.text.trim(),
       major: _majorController.text.trim(),
       skills: _skills,
-      portfolioUrl: portfolio.isEmpty ? null : portfolio,
+      bio: _bioController.text.trim(),
+      contactLinks: _contacts,
+      portfolioLinks: _portfolios,
+      portfolioUrl: _portfolios.isNotEmpty ? _portfolios.first.url : null,
     );
     try {
       await ref.read(studentProfileControllerProvider.notifier).save(profile);

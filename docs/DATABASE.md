@@ -76,7 +76,10 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | university | varchar | |
 | major | varchar | สาขา |
 | skills | text[] | ทักษะ |
-| portfolio_url | varchar | null ได้ |
+| bio | text | ข้อมูลเกี่ยวกับฉัน / แนะนำตัว |
+| contact_links | jsonb | รายการช่องทางติดต่อ (phone, line, linkedin ฯลฯ) |
+| portfolio_links | jsonb | รายการผลงาน/โปรเจกต์ (title, url, description) |
+| portfolio_url | varchar | null ได้ (backward-compatible) |
 | resume_object_key | varchar | คีย์ไฟล์ใน MinIO, null ได้จนกว่าจะอัปโหลด |
 | resume_file_name | varchar | ชื่อไฟล์ที่ผู้ใช้เลือก |
 | created_at | timestamptz | |

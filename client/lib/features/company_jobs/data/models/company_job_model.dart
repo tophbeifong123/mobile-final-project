@@ -1,4 +1,5 @@
 import '../../domain/entities/company_job.dart';
+import 'package:client/features/student_profile/data/models/student_profile_model.dart';
 
 class CompanyJobModel {
   const CompanyJobModel({
@@ -122,6 +123,9 @@ class ApplicantModel {
     required this.status,
     required this.coverLetter,
     this.skills = const [],
+    this.bio = '',
+    this.contactLinks = const [],
+    this.portfolioLinks = const [],
     this.portfolioUrl,
     this.resumeObjectKey,
     this.resumeFileName,
@@ -141,6 +145,15 @@ class ApplicantModel {
               ?.map((e) => e.toString())
               .toList() ??
           const [],
+      bio: json['bio'] as String? ?? '',
+      contactLinks: (json['contactLinks'] as List<dynamic>? ?? const [])
+          .map((item) =>
+              ContactLinkModel.fromJson(item as Map<String, dynamic>))
+          .toList(),
+      portfolioLinks: (json['portfolioLinks'] as List<dynamic>? ?? const [])
+          .map((item) =>
+              PortfolioLinkModel.fromJson(item as Map<String, dynamic>))
+          .toList(),
       portfolioUrl: json['portfolioUrl'] as String?,
       resumeObjectKey: json['resumeObjectKey'] as String?,
       resumeFileName: json['resumeFileName'] as String?,
@@ -157,6 +170,9 @@ class ApplicantModel {
   final String status;
   final String coverLetter;
   final List<String> skills;
+  final String bio;
+  final List<ContactLinkModel> contactLinks;
+  final List<PortfolioLinkModel> portfolioLinks;
   final String? portfolioUrl;
   final String? resumeObjectKey;
   final String? resumeFileName;
@@ -171,6 +187,9 @@ class ApplicantModel {
       status: status,
       coverLetter: coverLetter,
       skills: skills,
+      bio: bio,
+      contactLinks: contactLinks.map((c) => c.toEntity()).toList(),
+      portfolioLinks: portfolioLinks.map((p) => p.toEntity()).toList(),
       portfolioUrl: portfolioUrl,
       resumeObjectKey: resumeObjectKey,
       resumeFileName: resumeFileName,

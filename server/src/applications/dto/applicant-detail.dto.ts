@@ -1,4 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { ContactLinkDto } from '../../students/dto/contact-link.dto.js';
+import { PortfolioLinkDto } from '../../students/dto/portfolio-link.dto.js';
 import { ApplicationStatus } from '../application-status.js';
 
 export class ApplicantDetailDto {
@@ -40,6 +42,24 @@ export class ApplicantDetailDto {
     description: 'ทักษะความสามารถ',
   })
   skills: string[];
+
+  @ApiProperty({
+    example: 'นักศึกษาชั้นปีที่ 4 มุ่งมั่นหาประสบการณ์ฝึกงานด้าน Flutter & Node.js',
+    description: 'เกี่ยวกับฉัน (Bio)',
+  })
+  bio: string;
+
+  @ApiProperty({
+    type: () => [ContactLinkDto],
+    description: 'ช่องทางการติดต่อ',
+  })
+  contactLinks: ContactLinkDto[];
+
+  @ApiProperty({
+    type: () => [PortfolioLinkDto],
+    description: 'ผลงานและโปรเจกต์',
+  })
+  portfolioLinks: PortfolioLinkDto[];
 
   @ApiProperty({
     example: 'https://github.com/somchai',

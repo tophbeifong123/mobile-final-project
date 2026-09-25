@@ -1,3 +1,5 @@
+import 'package:client/features/student_profile/domain/entities/student_profile.dart';
+
 class CompanyJob {
   const CompanyJob({
     required this.id,
@@ -78,6 +80,9 @@ class Applicant {
     required this.status,
     required this.coverLetter,
     this.skills = const [],
+    this.bio = '',
+    this.contactLinks = const [],
+    this.portfolioLinks = const [],
     this.portfolioUrl,
     this.resumeObjectKey,
     this.resumeFileName,
@@ -91,6 +96,9 @@ class Applicant {
   final String status;
   final String coverLetter;
   final List<String> skills;
+  final String bio;
+  final List<ContactLink> contactLinks;
+  final List<PortfolioLink> portfolioLinks;
   final String? portfolioUrl;
   final String? resumeObjectKey;
   final String? resumeFileName;

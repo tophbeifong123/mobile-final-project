@@ -41,6 +41,30 @@ export class StudentsService {
     dto: UpdateStudentProfileDto,
   ): Promise<StudentProfileDto> {
     this.assertStudent(user);
+
+    const contactLinks = dto.contactLinks
+      ? dto.contactLinks.map((item) => ({
+          id: item.id || randomUUID(),
+          platform: item.platform.trim(),
+          label: item.label?.trim() || undefined,
+          value: item.value.trim(),
+        }))
+      : undefined;
+
+    const portfolioLinks = dto.portfolioLinks
+      ? dto.portfolioLinks.map((item) => ({
+          id: item.id || randomUUID(),
+          title: item.title.trim(),
+          url: item.url.trim(),
+          description: item.description?.trim() || undefined,
+        }))
+      : undefined;
+
+    let portfolioUrl = dto.portfolioUrl?.trim() || null;
+    if (!portfolioUrl && portfolioLinks && portfolioLinks.length > 0) {
+      portfolioUrl = portfolioLinks[0].url;
+    }
+
     const saved = await this.studentsRepository.updateByUserId(user.userId, {
       fullName: dto.fullName.trim(),
       university: dto.university.trim(),
@@ -48,7 +72,10 @@ export class StudentsService {
       skills: dto.skills
         .map((skill) => skill.trim())
         .filter((skill) => skill.length > 0),
-      portfolioUrl: dto.portfolioUrl?.trim() || null,
+      bio: dto.bio !== undefined ? dto.bio.trim() : undefined,
+      contactLinks,
+      portfolioLinks,
+      portfolioUrl,
     });
     if (!saved) {
       throw new NotFoundException(PROFILE_NOT_FOUND);
@@ -152,6 +179,19 @@ function toDto(profile: {
   university: string;
   major: string;
   skills: string[];
+  bio?: string | null;
+  contactLinks?: Array<{
+    id?: string;
+    platform: string;
+    label?: string;
+    value: string;
+  }> | null;
+  portfolioLinks?: Array<{
+    id?: string;
+    title: string;
+    url: string;
+    description?: string;
+  }> | null;
   portfolioUrl: string | null;
   resumeFileName?: string | null;
   resumeObjectKey?: string | null;
@@ -161,6 +201,19 @@ function toDto(profile: {
   dto.university = profile.university;
   dto.major = profile.major;
   dto.skills = profile.skills;
+  dto.bio = profile.bio ?? '';
+  dto.contactLinks = (profile.contactLinks ?? []).map((c) => ({
+    id: c.id,
+    platform: c.platform,
+    label: c.label,
+    value: c.value,
+  }));
+  dto.portfolioLinks = (profile.portfolioLinks ?? []).map((p) => ({
+    id: p.id,
+    title: p.title,
+    url: p.url,
+    description: p.description,
+  }));
   dto.portfolioUrl = profile.portfolioUrl;
   dto.resumeFileName = profile.resumeFileName ?? null;
   dto.resumeObjectKey = profile.resumeObjectKey ?? null;

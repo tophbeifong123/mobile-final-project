@@ -279,25 +279,32 @@ class _NotificationCard extends StatelessWidget {
                     ],
                   ),
                   const Gap(8),
-                  Row(
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 4,
                     children: [
                       // Timestamp
                       if (notification.createdAt != null) ...[
-                        Icon(
-                          LucideIcons.clock3,
-                          size: 12,
-                          color: NeoColors.subtleInk,
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              LucideIcons.clock3,
+                              size: 12,
+                              color: NeoColors.subtleInk,
+                            ),
+                            const Gap(4),
+                            Text(
+                              _formatDateTime(notification.createdAt!),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: NeoColors.subtleInk,
+                              ),
+                            ),
+                          ],
                         ),
-                        const Gap(4),
-                        Text(
-                          _formatDateTime(notification.createdAt!),
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: NeoColors.subtleInk,
-                          ),
-                        ),
-                        const Gap(8),
                       ],
                       // Read status chip
                       Container(
@@ -480,7 +487,7 @@ class _NotiEmptyView extends StatelessWidget {
                     ),
                     const Gap(8),
                     const Text(
-                      'จะแสดงเมื่อบริษัทเปลี่ยนสถานะใบสมัคร\nกดเพื่อเปิดรายละเอียดใบสมัครนั้น',
+                      'จะแสดงเมื่อบริษัทเปลี่ยนสถานะใบสมัคร พร้อมเวลาและสถานะว่าอ่านแล้วหรือยัง กดแล้วเปิดรายละเอียดใบสมัคร',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 13,

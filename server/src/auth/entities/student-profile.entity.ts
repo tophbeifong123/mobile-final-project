@@ -26,6 +26,33 @@ export class StudentProfile {
   @Column({ type: 'text', array: true, default: () => "'{}'" })
   skills: string[];
 
+  @Column({ type: 'text', default: '' })
+  bio: string;
+
+  @Column({
+    name: 'contact_links',
+    type: 'jsonb',
+    default: () => "'[]'::jsonb",
+  })
+  contactLinks: Array<{
+    id?: string;
+    platform: string;
+    label?: string;
+    value: string;
+  }>;
+
+  @Column({
+    name: 'portfolio_links',
+    type: 'jsonb',
+    default: () => "'[]'::jsonb",
+  })
+  portfolioLinks: Array<{
+    id?: string;
+    title: string;
+    url: string;
+    description?: string;
+  }>;
+
   @Column({
     name: 'portfolio_url',
     type: 'varchar',

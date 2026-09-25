@@ -15,13 +15,7 @@ class StudentProfileRepositoryImpl implements StudentProfileRepository {
 
   @override
   Future<StudentProfile> update(StudentProfile profile) async {
-    final model = StudentProfileModel(
-      fullName: profile.fullName,
-      university: profile.university,
-      major: profile.major,
-      skills: profile.skills,
-      portfolioUrl: profile.portfolioUrl,
-    );
+    final model = StudentProfileModel.fromEntity(profile);
     return (await _remote.update(model)).toEntity();
   }
 }
