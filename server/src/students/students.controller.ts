@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Patch,
   Post,
@@ -113,6 +114,72 @@ export class StudentsController {
       `inline; filename="${encodeURIComponent(fileName)}"`,
     );
     res.send(buffer);
+  }
+
+  @Post('me/avatar')
+  @ApiOperation({ summary: 'อัปโหลดรูปโปรไฟล์นักศึกษา' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'ไฟล์รูปภาพโปรไฟล์ (PNG, JPG, WEBP, SVG, GIF)',
+        },
+      },
+      required: ['file'],
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    type: StudentProfileDto,
+    description: 'อัปโหลดรูปโปรไฟล์สำเร็จ',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'ไฟล์ไม่ใช่รูปภาพ หรือไม่ได้เลือกไฟล์',
+  })
+  @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
+  @ApiResponse({ status: 403, description: 'เฉพาะนักศึกษา' })
+  @ApiResponse({ status: 404, description: 'ไม่พบโปรไฟล์' })
+  @UseInterceptors(FileInterceptor('file'))
+  uploadAvatar(
+    @CurrentUser() user: AuthUser,
+    @UploadedFile() file: UploadedFilePayload | undefined,
+  ): Promise<StudentProfileDto> {
+    return this.studentsService.uploadAvatar(user, file);
+  }
+
+  @Get('me/avatar')
+  @ApiOperation({ summary: 'ดาวน์โหลดหรือดูรูปโปรไฟล์นักศึกษา' })
+  @ApiResponse({ status: 200, description: 'ไฟล์รูปภาพโปรไฟล์' })
+  @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
+  @ApiResponse({ status: 403, description: 'เฉพาะนักศึกษา' })
+  @ApiResponse({ status: 404, description: 'ไม่พบรูปโปรไฟล์' })
+  async getAvatarFile(
+    @CurrentUser() user: AuthUser,
+    @Res() res: Response,
+  ): Promise<void> {
+    const { buffer, mimeType } = await this.studentsService.getAvatarFile(user);
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Cache-Control', 'private, max-age=3600');
+    res.send(buffer);
+  }
+
+  @Delete('me/avatar')
+  @ApiOperation({ summary: 'ลบรูปโปรไฟล์นักศึกษา' })
+  @ApiResponse({
+    status: 200,
+    type: StudentProfileDto,
+    description: 'ลบรูปโปรไฟล์สำเร็จ',
+  })
+  @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
+  @ApiResponse({ status: 403, description: 'เฉพาะนักศึกษา' })
+  @ApiResponse({ status: 404, description: 'ไม่พบโปรไฟล์' })
+  deleteAvatar(@CurrentUser() user: AuthUser): Promise<StudentProfileDto> {
+    return this.studentsService.deleteAvatar(user);
   }
 }
 

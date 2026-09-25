@@ -81,5 +81,19 @@ export class StudentsRepository {
     profile.resumeFileName = fileName;
     return profiles.save(profile);
   }
+
+  async updateAvatar(
+    userId: string,
+    objectKey: string | null,
+  ): Promise<StudentProfile | null> {
+    const profiles = this.dataSource.getRepository(StudentProfile);
+    const profile = await profiles.findOne({ where: { userId } });
+    if (!profile) {
+      return null;
+    }
+
+    profile.avatarObjectKey = objectKey;
+    return profiles.save(profile);
+  }
 }
 

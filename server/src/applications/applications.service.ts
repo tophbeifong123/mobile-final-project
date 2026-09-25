@@ -219,6 +219,30 @@ export class ApplicationsService {
     return this.toApplicantDetailDto(detail);
   }
 
+  async getApplicantAvatar(
+    user: AuthUser,
+    jobId: string,
+    applicationId: string,
+  ): Promise<{ buffer: Buffer; mimeType: string }> {
+    this.assertCompany(user);
+    const detail = await this.getApplicantDetail(user, jobId, applicationId);
+    if (!detail.avatarObjectKey) {
+      throw new NotFoundException('ไม่พบรูปโปรไฟล์ผู้สมัคร');
+    }
+    const buffer = await this.storageService.get(detail.avatarObjectKey);
+    if (!buffer) {
+      throw new NotFoundException('ไม่พบรูปโปรไฟล์ผู้สมัคร');
+    }
+    const ext = detail.avatarObjectKey.split('.').pop()?.toLowerCase();
+    let mimeType = 'image/png';
+    if (ext === 'jpg' || ext === 'jpeg') mimeType = 'image/jpeg';
+    else if (ext === 'webp') mimeType = 'image/webp';
+    else if (ext === 'svg') mimeType = 'image/svg+xml';
+    else if (ext === 'gif') mimeType = 'image/gif';
+
+    return { buffer, mimeType };
+  }
+
   async updateApplicantStatus(
     user: AuthUser,
     jobId: string,
@@ -298,6 +322,7 @@ export class ApplicationsService {
       portfolioUrl: detail.portfolioUrl,
       resumeObjectKey: detail.resumeObjectKey,
       resumeFileName: detail.resumeFileName,
+      avatarObjectKey: detail.avatarObjectKey,
       status: detail.status,
       coverLetter: detail.coverLetter,
       createdAt: detail.createdAt.toISOString(),

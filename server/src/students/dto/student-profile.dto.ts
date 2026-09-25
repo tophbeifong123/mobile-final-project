@@ -52,5 +52,11 @@ export class StudentProfileDto {
 
   @ApiProperty({ nullable: true, example: 'resumes/student-id/12345.pdf' })
   resumeObjectKey: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    example: 'student-avatars/student-id/12345.png',
+  })
+  avatarObjectKey: string | null;
 }
 

@@ -16,6 +16,7 @@ describe('StudentsService', () => {
     findByUserId: vi.fn(),
     updateByUserId: vi.fn(),
     updateResume: vi.fn(),
+    updateAvatar: vi.fn(),
   };
 
   const storage = {
@@ -230,6 +231,130 @@ describe('StudentsService', () => {
 
     it('rejects a company attempting to get student resume', async () => {
       await expect(service.getResumeFile(company)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+    });
+  });
+
+  describe('uploadAvatar', () => {
+    const validPngFile: UploadedFilePayload = {
+      buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+      originalname: 'profile.png',
+      mimetype: 'image/png',
+      size: 8,
+    };
+
+    it('rejects a company uploading avatar', async () => {
+      await expect(service.uploadAvatar(company, validPngFile)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+    });
+
+    it('rejects upload if file is missing', async () => {
+      await expect(service.uploadAvatar(student, undefined)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+    });
+
+    it('rejects non-image files', async () => {
+      const textFile: UploadedFilePayload = {
+        buffer: Buffer.from('hello world'),
+        originalname: 'doc.txt',
+        mimetype: 'text/plain',
+        size: 11,
+      };
+      await expect(service.uploadAvatar(student, textFile)).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+    });
+
+    it('uploads valid image, replaces old avatar, and returns updated profile', async () => {
+      repository.findByUserId.mockResolvedValue({
+        ...stored,
+        avatarObjectKey: 'student-avatars/user-1/old.png',
+      });
+      storage.put.mockResolvedValue(undefined);
+      storage.delete.mockResolvedValue(undefined);
+      repository.updateAvatar.mockImplementation((_, key) =>
+        Promise.resolve({
+          ...stored,
+          avatarObjectKey: key,
+        }),
+      );
+
+      const result = await service.uploadAvatar(student, validPngFile);
+
+      expect(storage.delete).toHaveBeenCalledWith('student-avatars/user-1/old.png');
+      expect(storage.put).toHaveBeenCalledWith(
+        expect.stringContaining('student-avatars/user-1/'),
+        validPngFile.buffer,
+        'image/png',
+      );
+      expect(repository.updateAvatar).toHaveBeenCalled();
+      expect(result.avatarObjectKey).toContain('student-avatars/user-1/');
+    });
+  });
+
+  describe('getAvatarFile', () => {
+    it('returns buffer and mimeType when avatar exists', async () => {
+      repository.findByUserId.mockResolvedValue({
+        ...stored,
+        avatarObjectKey: 'student-avatars/user-1/pic.png',
+      });
+      const imgBuffer = Buffer.from('fake image');
+      storage.get.mockResolvedValue(imgBuffer);
+
+      const result = await service.getAvatarFile(student);
+
+      expect(result.buffer).toBe(imgBuffer);
+      expect(result.mimeType).toBe('image/png');
+    });
+
+    it('throws NotFoundException if student has no avatar', async () => {
+      repository.findByUserId.mockResolvedValue({
+        ...stored,
+        avatarObjectKey: null,
+      });
+
+      await expect(service.getAvatarFile(student)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+    });
+
+    it('throws NotFoundException if file is not in storage', async () => {
+      repository.findByUserId.mockResolvedValue({
+        ...stored,
+        avatarObjectKey: 'student-avatars/user-1/pic.png',
+      });
+      storage.get.mockResolvedValue(null);
+
+      await expect(service.getAvatarFile(student)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('deleteAvatar', () => {
+    it('deletes avatar from storage and sets avatar to null', async () => {
+      repository.findByUserId.mockResolvedValue({
+        ...stored,
+        avatarObjectKey: 'student-avatars/user-1/pic.png',
+      });
+      storage.delete.mockResolvedValue(undefined);
+      repository.updateAvatar.mockResolvedValue({
+        ...stored,
+        avatarObjectKey: null,
+      });
+
+      const result = await service.deleteAvatar(student);
+
+      expect(storage.delete).toHaveBeenCalledWith('student-avatars/user-1/pic.png');
+      expect(repository.updateAvatar).toHaveBeenCalledWith('user-1', null);
+      expect(result.avatarObjectKey).toBeNull();
+    });
+
+    it('rejects company', async () => {
+      await expect(service.deleteAvatar(company)).rejects.toBeInstanceOf(
         ForbiddenException,
       );
     });

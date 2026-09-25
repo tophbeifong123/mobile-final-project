@@ -102,6 +102,7 @@ export interface CompanyApplicantDetailRecord {
   }>;
   portfolioUrl: string | null;
   resumeFileName: string | null;
+  avatarObjectKey: string | null;
   status: ApplicationStatus;
   coverLetter: string;
   resumeObjectKey: string;
@@ -363,6 +364,7 @@ export class ApplicationsRepository {
       portfolioLinks: Array.isArray(student?.portfolioLinks) ? student.portfolioLinks : [],
       portfolioUrl: student?.portfolioUrl ?? null,
       resumeFileName: student?.resumeFileName ?? null,
+      avatarObjectKey: student?.avatarObjectKey ?? null,
       status: application.status,
       coverLetter: application.coverLetter,
       resumeObjectKey: application.resumeObjectKey,

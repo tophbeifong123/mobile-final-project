@@ -70,6 +70,14 @@ export class StudentProfile {
   resumeObjectKey: string | null;
 
   @Column({
+    name: 'avatar_object_key',
+    type: 'varchar',
+    length: 1024,
+    nullable: true,
+  })
+  avatarObjectKey: string | null;
+
+  @Column({
     name: 'resume_file_name',
     type: 'varchar',
     length: 255,

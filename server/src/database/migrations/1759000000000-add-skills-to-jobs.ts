@@ -5,10 +5,10 @@ export class AddSkillsToJobs1759000000000 implements MigrationInterface {
 
   async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `ALTER TABLE "jobs" ADD COLUMN "skills" text[] NOT NULL DEFAULT '{}'`,
+      `ALTER TABLE "jobs" ADD COLUMN IF NOT EXISTS "skills" text[] NOT NULL DEFAULT '{}'`,
     );
     await queryRunner.query(
-      `CREATE INDEX "IDX_jobs_skills" ON "jobs" USING GIN ("skills")`,
+      `CREATE INDEX IF NOT EXISTS "IDX_jobs_skills" ON "jobs" USING GIN ("skills")`,
     );
   }
 
