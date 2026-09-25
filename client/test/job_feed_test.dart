@@ -5,6 +5,7 @@ import 'package:client/features/jobs/domain/entities/job.dart';
 import 'package:client/features/jobs/domain/repositories/job_repository.dart';
 import 'package:client/features/jobs/presentation/providers/jobs_controller.dart';
 import 'package:client/features/jobs/presentation/screens/job_feed_screen.dart';
+import 'package:client/core/widgets/job_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -64,7 +65,10 @@ void main() {
     expect(find.text('UI/UX Designer Intern'), findsOneWidget);
     expect(find.text('Marketing Trainee'), findsOneWidget);
     expect(find.text('On-site'), findsOneWidget);
-    expect(find.text('Hybrid'), findsOneWidget);
+    expect(
+      find.descendant(of: find.byType(JobCard), matching: find.text('Hybrid')),
+      findsOneWidget,
+    );
     expect(find.text('Remote'), findsOneWidget);
   });
 
@@ -93,23 +97,23 @@ void main() {
   });
 
   testWidgets(
-    'tapping category chip filters jobs by category and unselecting clears it',
+    'tapping work mode chip filters jobs by work mode and unselecting clears it',
     (tester) async {
       await tester.pumpWidget(buildScreen(_FilteringJobRepository(sampleJobs)));
       await tester.pumpAndSettle();
 
-      // Tap Marketing chip
-      final marketingChip = find.widgetWithText(FilterChip, 'Marketing');
-      expect(marketingChip, findsOneWidget);
-      await tester.tap(marketingChip);
+      // Tap Online chip
+      final onlineChip = find.widgetWithText(FilterChip, 'Online');
+      expect(onlineChip, findsOneWidget);
+      await tester.tap(onlineChip);
       await tester.pumpAndSettle();
 
       expect(find.text('Marketing Trainee'), findsOneWidget);
       expect(find.text('Flutter Intern'), findsNothing);
       expect(find.text('UI/UX Designer Intern'), findsNothing);
 
-      // Untap Marketing chip
-      await tester.tap(marketingChip);
+      // Untap Online chip
+      await tester.tap(onlineChip);
       await tester.pumpAndSettle();
 
       expect(find.text('Flutter Intern'), findsOneWidget);

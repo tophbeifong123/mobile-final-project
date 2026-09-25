@@ -23,7 +23,9 @@ class ApplicationDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final applicationAsync = ref.watch(applicationDetailProvider(applicationId));
+    final applicationAsync = ref.watch(
+      applicationDetailProvider(applicationId),
+    );
 
     return Scaffold(
       appBar: AppBar(title: const Text('รายละเอียดใบสมัคร')),
@@ -37,12 +39,14 @@ class ApplicationDetailScreen extends ConsumerWidget {
             action: AppButton(
               variant: AppButtonVariant.outline,
               size: AppButtonSize.sm,
-              onPressed: () => ref.invalidate(applicationDetailProvider(applicationId)),
+              onPressed: () =>
+                  ref.invalidate(applicationDetailProvider(applicationId)),
               text: 'ลองอีกครั้ง',
             ),
           ),
           data: (app) => RefreshIndicator(
-            onRefresh: () => ref.refresh(applicationDetailProvider(applicationId).future),
+            onRefresh: () =>
+                ref.refresh(applicationDetailProvider(applicationId).future),
             child: ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(kPagePadding),
@@ -59,8 +63,8 @@ class ApplicationDetailScreen extends ConsumerWidget {
                   child: Text(
                     'รหัสใบสมัคร: ${app.id}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
+                      color: AppColors.textSecondary,
+                    ),
                   ),
                 ),
               ],
@@ -109,11 +113,17 @@ class _JobSummaryCard extends StatelessWidget {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               StatusChip(label: application.status.labelTh),
-              if (application.province != null && application.province!.isNotEmpty)
-                InfoChip(label: application.province!, icon: LucideIcons.mapPin),
-              if (application.workMode != null && application.workMode!.isNotEmpty)
+              if (application.province != null &&
+                  application.province!.isNotEmpty)
+                InfoChip(
+                  label: application.province!,
+                  icon: LucideIcons.mapPin,
+                ),
+              if (application.workMode != null &&
+                  application.workMode!.isNotEmpty)
                 InfoChip(label: _workModeText(application.workMode!)),
-              if (application.category != null && application.category!.isNotEmpty)
+              if (application.category != null &&
+                  application.category!.isNotEmpty)
                 InfoChip(label: application.category!),
               if (application.hasAllowance != null)
                 InfoChip(label: allowanceLabel(application.hasAllowance!)),
@@ -122,7 +132,8 @@ class _JobSummaryCard extends StatelessWidget {
           if (application.jobId != null) ...[
             const Gap(16),
             OutlinedButton.icon(
-              onPressed: () => context.push('/student/jobs/${application.jobId}'),
+              onPressed: () =>
+                  context.push('/student/jobs/${application.jobId}'),
               icon: const Icon(LucideIcons.arrowUpRight, size: 16),
               label: const Text('ดูประกาศงาน'),
               style: OutlinedButton.styleFrom(
@@ -170,12 +181,14 @@ class _StatusTimelineCard extends StatelessWidget {
       return null;
     }
 
-    final submittedDate = eventDate(ApplicationStatus.submitted) ?? application.createdAt;
+    final submittedDate =
+        eventDate(ApplicationStatus.submitted) ?? application.createdAt;
     final reviewingDate = eventDate(ApplicationStatus.reviewing);
     final acceptedDate = eventDate(ApplicationStatus.accepted);
     final rejectedDate = eventDate(ApplicationStatus.rejected);
 
-    final isReviewingOrBeyond = application.status == ApplicationStatus.reviewing ||
+    final isReviewingOrBeyond =
+        application.status == ApplicationStatus.reviewing ||
         application.status == ApplicationStatus.accepted ||
         application.status == ApplicationStatus.rejected;
 
@@ -187,14 +200,18 @@ class _StatusTimelineCard extends StatelessWidget {
           const Gap(4),
           Text(
             'ความคืบหน้าของใบสมัครนี้',
-            style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+            style: textTheme.bodySmall?.copyWith(
+              color: AppColors.textSecondary,
+            ),
           ),
           const Gap(16),
           _TimelineStepItem(
             title: 'ยื่นใบสมัครแล้ว',
             description: 'ส่งใบสมัครและข้อมูลไปยังบริษัทแล้ว',
             date: submittedDate,
-            state: isReviewingOrBeyond ? _StepState.completed : _StepState.current,
+            state: isReviewingOrBeyond
+                ? _StepState.completed
+                : _StepState.current,
             showLine: true,
           ),
           _TimelineStepItem(
@@ -203,12 +220,13 @@ class _StatusTimelineCard extends StatelessWidget {
                 ? 'บริษัทกำลังตรวจประวัติและ Resume'
                 : 'รอการตรวจสอบจากบริษัท',
             date: reviewingDate,
-            state: (application.status == ApplicationStatus.accepted ||
+            state:
+                (application.status == ApplicationStatus.accepted ||
                     application.status == ApplicationStatus.rejected)
                 ? _StepState.completed
                 : application.status == ApplicationStatus.reviewing
-                    ? _StepState.current
-                    : _StepState.upcoming,
+                ? _StepState.current
+                : _StepState.upcoming,
             showLine: true,
           ),
           if (application.status == ApplicationStatus.accepted)
@@ -275,7 +293,8 @@ class _TimelineStepItem extends StatelessWidget {
                   Expanded(
                     child: Container(
                       width: 2,
-                      color: (state == _StepState.completed ||
+                      color:
+                          (state == _StepState.completed ||
                               state == _StepState.current ||
                               state == _StepState.accepted ||
                               state == _StepState.rejected)
@@ -422,7 +441,11 @@ class _CoverLetterCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(LucideIcons.fileText, size: 20, color: AppColors.primary),
+              const Icon(
+                LucideIcons.fileText,
+                size: 20,
+                color: AppColors.primary,
+              ),
               const Gap(8),
               Text('Cover Letter', style: textTheme.titleMedium),
             ],
@@ -455,7 +478,11 @@ class _ResumeCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(LucideIcons.fileText, size: 20, color: AppColors.primary),
+              const Icon(
+                LucideIcons.fileText,
+                size: 20,
+                color: AppColors.primary,
+              ),
               const Gap(8),
               Text('Resume ที่ใช้สมัคร', style: textTheme.titleMedium),
             ],
@@ -465,7 +492,9 @@ class _ResumeCard extends StatelessWidget {
             resumeObjectKey != null
                 ? 'สำเนา Resume ในระบบ ณ วันที่ยื่นใบสมัคร'
                 : 'ยังไม่มี Resume ในใบสมัครนี้',
-            style: textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+            style: textTheme.bodySmall?.copyWith(
+              color: AppColors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -495,8 +524,8 @@ class _CompanyMark extends StatelessWidget {
           child: Text(
             letter,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onPrimary,
-                ),
+              color: Theme.of(context).colorScheme.onPrimary,
+            ),
           ),
         ),
       ),

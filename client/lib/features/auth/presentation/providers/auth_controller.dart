@@ -20,15 +20,11 @@ class AuthController extends AsyncNotifier<AuthSession?> {
     return ref.watch(authRepositoryProvider).restore();
   }
 
-  Future<String?> login({
-    required String email,
-    required String password,
-  }) {
+  Future<String?> login({required String email, required String password}) {
     return _openSession(
-      () => ref.read(authRepositoryProvider).login(
-        email: email,
-        password: password,
-      ),
+      () => ref
+          .read(authRepositoryProvider)
+          .login(email: email, password: password),
     );
   }
 
@@ -38,11 +34,9 @@ class AuthController extends AsyncNotifier<AuthSession?> {
     required UserRole role,
   }) {
     return _openSession(
-      () => ref.read(authRepositoryProvider).register(
-        email: email,
-        password: password,
-        role: role,
-      ),
+      () => ref
+          .read(authRepositoryProvider)
+          .register(email: email, password: password, role: role),
     );
   }
 

@@ -10,6 +10,7 @@ class JobModel {
     required this.category,
     required this.hasAllowance,
     required this.status,
+    this.skills = const [],
   });
 
   factory JobModel.fromJson(Map<String, dynamic> json) {
@@ -22,6 +23,11 @@ class JobModel {
       category: json['category'] as String,
       hasAllowance: json['hasAllowance'] as bool,
       status: JobStatus.values.byName(json['status'] as String),
+      skills:
+          (json['skills'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
     );
   }
 
@@ -33,6 +39,7 @@ class JobModel {
   final String category;
   final bool hasAllowance;
   final JobStatus status;
+  final List<String> skills;
 
   Job toEntity() {
     return Job(
@@ -44,6 +51,7 @@ class JobModel {
       category: category,
       hasAllowance: hasAllowance,
       status: status,
+      skills: skills,
     );
   }
 }
@@ -63,6 +71,7 @@ class JobDetailModel {
     required this.businessType,
     required this.companyDescription,
     required this.saved,
+    this.skills = const [],
   });
 
   factory JobDetailModel.fromJson(Map<String, dynamic> json) {
@@ -80,6 +89,11 @@ class JobDetailModel {
       businessType: json['businessType'] as String? ?? '',
       companyDescription: json['companyDescription'] as String? ?? '',
       saved: json['saved'] as bool? ?? false,
+      skills:
+          (json['skills'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
     );
   }
 
@@ -96,6 +110,7 @@ class JobDetailModel {
   final String businessType;
   final String companyDescription;
   final bool saved;
+  final List<String> skills;
 
   JobDetail toEntity() {
     return JobDetail(
@@ -112,6 +127,7 @@ class JobDetailModel {
       businessType: businessType,
       companyDescription: companyDescription,
       saved: saved,
+      skills: skills,
     );
   }
 }

@@ -10,21 +10,14 @@ void main() {
   Widget buildTestableWidget(Widget child) {
     return MaterialApp(
       theme: AppTheme.lightTheme,
-      home: Scaffold(
-        body: Center(child: child),
-      ),
+      home: Scaffold(body: Center(child: child)),
     );
   }
 
   group('Design System - AppButton', () {
     testWidgets('renders button text correctly', (tester) async {
       await tester.pumpWidget(
-        buildTestableWidget(
-          AppButton(
-            text: 'คลิกที่นี่',
-            onPressed: () {},
-          ),
-        ),
+        buildTestableWidget(AppButton(text: 'คลิกที่นี่', onPressed: () {})),
       );
 
       expect(find.text('คลิกที่นี่'), findsOneWidget);
@@ -34,10 +27,7 @@ void main() {
       var tapped = false;
       await tester.pumpWidget(
         buildTestableWidget(
-          AppButton(
-            text: 'กด',
-            onPressed: () => tapped = true,
-          ),
+          AppButton(text: 'กด', onPressed: () => tapped = true),
         ),
       );
 
@@ -45,32 +35,31 @@ void main() {
       expect(tapped, isTrue);
     });
 
-    testWidgets('shows loading spinner when isLoading is true and ignores tap', (tester) async {
-      var tapped = false;
-      await tester.pumpWidget(
-        buildTestableWidget(
-          AppButton(
-            text: 'กำลังโหลด',
-            isLoading: true,
-            onPressed: () => tapped = true,
+    testWidgets(
+      'shows loading spinner when isLoading is true and ignores tap',
+      (tester) async {
+        var tapped = false;
+        await tester.pumpWidget(
+          buildTestableWidget(
+            AppButton(
+              text: 'กำลังโหลด',
+              isLoading: true,
+              onPressed: () => tapped = true,
+            ),
           ),
-        ),
-      );
+        );
 
-      expect(find.byType(CircularProgressIndicator), findsOneWidget);
-      await tester.tap(find.byType(AppButton));
-      expect(tapped, isFalse);
-    });
+        expect(find.byType(CircularProgressIndicator), findsOneWidget);
+        await tester.tap(find.byType(AppButton));
+        expect(tapped, isFalse);
+      },
+    );
 
     testWidgets('renders all variants without throwing', (tester) async {
       for (final variant in AppButtonVariant.values) {
         await tester.pumpWidget(
           buildTestableWidget(
-            AppButton(
-              text: variant.name,
-              variant: variant,
-              onPressed: () {},
-            ),
+            AppButton(text: variant.name, variant: variant, onPressed: () {}),
           ),
         );
         expect(find.text(variant.name), findsOneWidget);
@@ -80,11 +69,7 @@ void main() {
     testWidgets('respects isFullWidth option', (tester) async {
       await tester.pumpWidget(
         buildTestableWidget(
-          AppButton(
-            text: 'Full Width',
-            isFullWidth: true,
-            onPressed: () {},
-          ),
+          AppButton(text: 'Full Width', isFullWidth: true, onPressed: () {}),
         ),
       );
 
@@ -100,10 +85,7 @@ void main() {
       var tapped = false;
       await tester.pumpWidget(
         buildTestableWidget(
-          AppCard(
-            onTap: () => tapped = true,
-            child: const Text('การ์ดข้อมูล'),
-          ),
+          AppCard(onTap: () => tapped = true, child: const Text('การ์ดข้อมูล')),
         ),
       );
 
@@ -124,10 +106,12 @@ void main() {
         ),
       );
 
-      final material = tester.widget<Material>(find.descendant(
-        of: find.byType(AppCard),
-        matching: find.byType(Material),
-      ));
+      final material = tester.widget<Material>(
+        find.descendant(
+          of: find.byType(AppCard),
+          matching: find.byType(Material),
+        ),
+      );
       expect(material.color, Colors.white);
       expect(material.shape, isA<RoundedRectangleBorder>());
       final shape = material.shape as RoundedRectangleBorder;
@@ -155,10 +139,7 @@ void main() {
       final controller = TextEditingController();
       await tester.pumpWidget(
         buildTestableWidget(
-          AppTextField(
-            controller: controller,
-            hintText: 'พิมพ์ที่นี่',
-          ),
+          AppTextField(controller: controller, hintText: 'พิมพ์ที่นี่'),
         ),
       );
 
@@ -174,7 +155,8 @@ void main() {
             key: formKey,
             child: AppTextField(
               label: 'อีเมล',
-              validator: (val) => (val == null || val.isEmpty) ? 'กรุณากรอกอีเมล' : null,
+              validator: (val) =>
+                  (val == null || val.isEmpty) ? 'กรุณากรอกอีเมล' : null,
             ),
           ),
         ),
@@ -188,7 +170,9 @@ void main() {
   });
 
   group('Design System - AppColorsExtension', () {
-    testWidgets('provides design tokens through context.colors', (tester) async {
+    testWidgets('provides design tokens through context.colors', (
+      tester,
+    ) async {
       late AppColorsExtension colors;
       await tester.pumpWidget(
         MaterialApp(

@@ -23,6 +23,9 @@ export class JobFeedItemDto {
   @ApiProperty()
   hasAllowance: boolean;
 
+  @ApiProperty({ type: [String], example: ['Flutter', 'Dart'] })
+  skills: string[];
+
   @ApiProperty({ enum: JobStatus, example: JobStatus.Open })
   status: JobStatus;
 }

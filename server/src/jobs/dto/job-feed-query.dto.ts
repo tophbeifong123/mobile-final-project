@@ -1,6 +1,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
+  IsArray,
   IsBoolean,
   IsEnum,
   IsOptional,
@@ -58,4 +59,30 @@ export class JobFeedQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsBoolean()
   hasAllowance?: boolean;
+
+  @ApiPropertyOptional({
+    example: 'Flutter,SQL',
+    description: 'กรองด้วยทักษะ (คั่นด้วยจุลภาค เช่น Flutter,SQL)',
+  })
+  @Transform(({ value }: { value: unknown }) => {
+    if (value == null) return undefined;
+    if (Array.isArray(value)) {
+      const arr = value
+        .map((s) => (typeof s === 'string' ? s.trim() : s))
+        .filter(Boolean);
+      return arr.length === 0 ? undefined : arr;
+    }
+    if (typeof value === 'string') {
+      const arr = value
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+      return arr.length === 0 ? undefined : arr;
+    }
+    return undefined;
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  skills?: string[];
 }

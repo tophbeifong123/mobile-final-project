@@ -23,6 +23,7 @@ class JobRemoteDataSource {
           if (filter.category != null && filter.category!.trim().isNotEmpty)
             'category': filter.category!.trim(),
           if (filter.hasAllowance != null) 'hasAllowance': filter.hasAllowance,
+          if (filter.skills.isNotEmpty) 'skills': filter.skills.join(','),
           'page': filter.page,
           'limit': filter.limit,
         },

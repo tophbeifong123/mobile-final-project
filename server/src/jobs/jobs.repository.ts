@@ -12,6 +12,7 @@ export interface OpenJobFilter {
   workMode?: WorkMode;
   category?: string;
   hasAllowance?: boolean;
+  skills?: string[];
   page?: number;
   limit?: number;
 }
@@ -24,6 +25,7 @@ export interface OpenJobRecord {
   workMode: WorkMode;
   category: string;
   hasAllowance: boolean;
+  skills: string[];
   status: JobStatus;
 }
 
@@ -50,6 +52,7 @@ export interface NewJob {
   category: string;
   hasAllowance: boolean;
   requirements: string;
+  skills?: string[];
 }
 
 export interface OwnedJobUpdate {
@@ -63,6 +66,7 @@ export interface OwnedJobUpdate {
   category: string;
   hasAllowance: boolean;
   requirements: string;
+  skills?: string[];
 }
 
 export class JobVersionConflictError extends Error {}
@@ -133,6 +137,7 @@ export class JobsRepository {
       .addSelect('job.workMode', 'workMode')
       .addSelect('job.category', 'category')
       .addSelect('job.hasAllowance', 'hasAllowance')
+      .addSelect('job.skills', 'skills')
       .addSelect('job.status', 'status')
       .orderBy('saved.createdAt', 'DESC')
       .offset(skip)
@@ -186,6 +191,7 @@ export class JobsRepository {
         category: input.category,
         hasAllowance: input.hasAllowance,
         requirements: input.requirements,
+        skills: input.skills ?? [],
         status: JobStatus.Open,
       }),
     );
@@ -210,6 +216,9 @@ export class JobsRepository {
     job.category = input.category;
     job.hasAllowance = input.hasAllowance;
     job.requirements = input.requirements;
+    if (input.skills !== undefined) {
+      job.skills = input.skills;
+    }
     job.version = input.version;
     try {
       return await jobs.save(job);
@@ -280,6 +289,11 @@ export class JobsRepository {
         hasAllowance: filter.hasAllowance,
       });
     }
+    if (filter.skills && filter.skills.length > 0) {
+      jobs.andWhere('job.skills && ARRAY[:...skills]', {
+        skills: filter.skills,
+      });
+    }
 
     const total = await jobs.getCount();
     const page = Math.max(1, filter.page ?? 1);
@@ -294,6 +308,7 @@ export class JobsRepository {
       .addSelect('job.workMode', 'workMode')
       .addSelect('job.category', 'category')
       .addSelect('job.hasAllowance', 'hasAllowance')
+      .addSelect('job.skills', 'skills')
       .addSelect('job.status', 'status')
       .orderBy('job.createdAt', 'DESC')
       .offset(skip)
@@ -321,6 +336,7 @@ export class JobsRepository {
       .addSelect('job.category', 'category')
       .addSelect('job.hasAllowance', 'hasAllowance')
       .addSelect('job.requirements', 'requirements')
+      .addSelect('job.skills', 'skills')
       .addSelect('job.status', 'status')
       .addSelect('company.name', 'companyName')
       .addSelect('company.businessType', 'businessType')
@@ -346,6 +362,24 @@ function readField(row: Record<string, unknown>, key: string): unknown {
   return row[key] ?? row[key.toLowerCase()];
 }
 
+function readArray(row: Record<string, unknown>, key: string): string[] {
+  const value = readField(row, key);
+  if (Array.isArray(value)) {
+    return value.map(String);
+  }
+  if (typeof value === 'string' && value.length > 0) {
+    if (value.startsWith('{') && value.endsWith('}')) {
+      return value
+        .slice(1, -1)
+        .split(',')
+        .map((s) => s.trim().replace(/^"|"$/g, ''))
+        .filter(Boolean);
+    }
+    return [value];
+  }
+  return [];
+}
+
 function toOpenJob(row: Record<string, unknown>): OpenJobRecord {
   return {
     id: String(readField(row, 'id')),
@@ -355,6 +389,7 @@ function toOpenJob(row: Record<string, unknown>): OpenJobRecord {
     workMode: readField(row, 'workMode') as WorkMode,
     category: String(readField(row, 'category') ?? ''),
     hasAllowance: readBoolean(row, 'hasAllowance'),
+    skills: readArray(row, 'skills'),
     status: readField(row, 'status') as JobStatus,
   };
 }

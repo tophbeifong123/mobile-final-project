@@ -108,16 +108,26 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final university = tester.widget<TextFormField>(
-      find.widgetWithText(TextFormField, 'มหาวิทยาลัย'),
+    final universityField = find.widgetWithText(TextFormField, 'มหาวิทยาลัย');
+    await tester.scrollUntilVisible(
+      universityField,
+      100,
+      scrollable: find.byType(Scrollable).first,
     );
+    final university = tester.widget<TextFormField>(universityField);
     expect(university.controller?.text, 'PSU');
 
     await tester.enterText(
       find.widgetWithText(TextFormField, 'มหาวิทยาลัย'),
       'KMUTT',
     );
-    await tester.tap(find.text('บันทึกโปรไฟล์'));
+    final saveButton = find.text('บันทึกโปรไฟล์');
+    await tester.scrollUntilVisible(
+      saveButton,
+      100,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(saveButton);
     await tester.pumpAndSettle();
 
     expect(repository.lastSaved?.university, 'KMUTT');
@@ -145,6 +155,33 @@ class _FakeStudentProfileRepository implements StudentProfileRepository {
   Future<StudentProfile> update(StudentProfile profile) async {
     lastSaved = profile;
     return profile;
+  }
+
+  @override
+  Future<StudentProfile> uploadAvatar({
+    required String filePath,
+    required String fileName,
+    List<int>? bytes,
+  }) async {
+    return const StudentProfile(
+      fullName: 'มีนา',
+      university: 'PSU',
+      major: 'IT',
+      skills: ['Flutter'],
+      portfolioUrl: null,
+      avatarObjectKey: 'avatars/avatar.png',
+    );
+  }
+
+  @override
+  Future<StudentProfile> deleteAvatar() async {
+    return const StudentProfile(
+      fullName: 'มีนา',
+      university: 'PSU',
+      major: 'IT',
+      skills: ['Flutter'],
+      portfolioUrl: null,
+    );
   }
 }
 

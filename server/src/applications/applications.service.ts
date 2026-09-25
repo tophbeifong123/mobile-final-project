@@ -18,7 +18,10 @@ import {
   RESUME_REQUIRED,
   STUDENT_ONLY,
 } from './applications.constants.js';
-import { ApplicationsRepository } from './applications.repository.js';
+import {
+  ApplicationsRepository,
+  type CompanyApplicantDetailRecord,
+} from './applications.repository.js';
 import { ApplicationStatus } from './application-status.js';
 import { ApplicantDetailDto } from './dto/applicant-detail.dto.js';
 import { ApplicationDetailDto } from './dto/application-detail.dto.js';
@@ -213,21 +216,31 @@ export class ApplicationsService {
       throw new NotFoundException(APPLICATION_NOT_FOUND);
     }
 
-    return {
-      applicationId: detail.applicationId,
-      jobId: detail.jobId,
-      fullName: detail.fullName,
-      university: detail.university,
-      major: detail.major,
-      skills: detail.skills,
-      portfolioUrl: detail.portfolioUrl,
-      resumeObjectKey: detail.resumeObjectKey,
-      resumeFileName: detail.resumeFileName,
-      status: detail.status,
-      coverLetter: detail.coverLetter,
-      createdAt: detail.createdAt.toISOString(),
-      updatedAt: detail.updatedAt.toISOString(),
-    };
+    return this.toApplicantDetailDto(detail);
+  }
+
+  async getApplicantAvatar(
+    user: AuthUser,
+    jobId: string,
+    applicationId: string,
+  ): Promise<{ buffer: Buffer; mimeType: string }> {
+    this.assertCompany(user);
+    const detail = await this.getApplicantDetail(user, jobId, applicationId);
+    if (!detail.avatarObjectKey) {
+      throw new NotFoundException('ไม่พบรูปโปรไฟล์ผู้สมัคร');
+    }
+    const buffer = await this.storageService.get(detail.avatarObjectKey);
+    if (!buffer) {
+      throw new NotFoundException('ไม่พบรูปโปรไฟล์ผู้สมัคร');
+    }
+    const ext = detail.avatarObjectKey.split('.').pop()?.toLowerCase();
+    let mimeType = 'image/png';
+    if (ext === 'jpg' || ext === 'jpeg') mimeType = 'image/jpeg';
+    else if (ext === 'webp') mimeType = 'image/webp';
+    else if (ext === 'svg') mimeType = 'image/svg+xml';
+    else if (ext === 'gif') mimeType = 'image/gif';
+
+    return { buffer, mimeType };
   }
 
   async updateApplicantStatus(
@@ -280,6 +293,12 @@ export class ApplicationsService {
       throw new NotFoundException(APPLICATION_NOT_FOUND);
     }
 
+    return this.toApplicantDetailDto(detail);
+  }
+
+  private toApplicantDetailDto(
+    detail: CompanyApplicantDetailRecord,
+  ): ApplicantDetailDto {
     return {
       applicationId: detail.applicationId,
       jobId: detail.jobId,
@@ -287,9 +306,23 @@ export class ApplicationsService {
       university: detail.university,
       major: detail.major,
       skills: detail.skills,
+      bio: detail.bio ?? '',
+      contactLinks: (detail.contactLinks ?? []).map((c) => ({
+        id: c.id,
+        platform: c.platform,
+        label: c.label,
+        value: c.value,
+      })),
+      portfolioLinks: (detail.portfolioLinks ?? []).map((p) => ({
+        id: p.id,
+        title: p.title,
+        url: p.url,
+        description: p.description,
+      })),
       portfolioUrl: detail.portfolioUrl,
       resumeObjectKey: detail.resumeObjectKey,
       resumeFileName: detail.resumeFileName,
+      avatarObjectKey: detail.avatarObjectKey,
       status: detail.status,
       coverLetter: detail.coverLetter,
       createdAt: detail.createdAt.toISOString(),

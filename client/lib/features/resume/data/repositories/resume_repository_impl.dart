@@ -20,4 +20,9 @@ class ResumeRepositoryImpl implements ResumeRepository {
     );
     return model.toEntity();
   }
+
+  @override
+  Future<List<int>> downloadResumePdf() {
+    return _remote.downloadResumePdf();
+  }
 }

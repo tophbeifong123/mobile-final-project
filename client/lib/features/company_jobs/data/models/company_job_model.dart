@@ -1,4 +1,5 @@
 import '../../domain/entities/company_job.dart';
+import 'package:client/features/student_profile/data/models/student_profile_model.dart';
 
 class CompanyJobModel {
   const CompanyJobModel({
@@ -62,6 +63,7 @@ class EditableJobModel {
     required this.requirements,
     required this.status,
     required this.version,
+    this.skills = const [],
   });
 
   factory EditableJobModel.fromJson(Map<String, dynamic> json) {
@@ -76,6 +78,11 @@ class EditableJobModel {
       requirements: json['requirements'] as String? ?? '',
       status: json['status'] as String? ?? 'open',
       version: json['version'] as int? ?? 1,
+      skills:
+          (json['skills'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
     );
   }
 
@@ -89,6 +96,7 @@ class EditableJobModel {
   final String requirements;
   final String status;
   final int version;
+  final List<String> skills;
 
   EditableJob toEntity() {
     return EditableJob(
@@ -102,6 +110,7 @@ class EditableJobModel {
       requirements: requirements,
       status: status,
       version: version,
+      skills: skills,
     );
   }
 }
@@ -115,9 +124,13 @@ class ApplicantModel {
     required this.status,
     required this.coverLetter,
     this.skills = const [],
+    this.bio = '',
+    this.contactLinks = const [],
+    this.portfolioLinks = const [],
     this.portfolioUrl,
     this.resumeObjectKey,
     this.resumeFileName,
+    this.avatarObjectKey,
     this.createdAt,
   });
 
@@ -134,9 +147,21 @@ class ApplicantModel {
               ?.map((e) => e.toString())
               .toList() ??
           const [],
+      bio: json['bio'] as String? ?? '',
+      contactLinks: (json['contactLinks'] as List<dynamic>? ?? const [])
+          .map(
+            (item) => ContactLinkModel.fromJson(item as Map<String, dynamic>),
+          )
+          .toList(),
+      portfolioLinks: (json['portfolioLinks'] as List<dynamic>? ?? const [])
+          .map(
+            (item) => PortfolioLinkModel.fromJson(item as Map<String, dynamic>),
+          )
+          .toList(),
       portfolioUrl: json['portfolioUrl'] as String?,
       resumeObjectKey: json['resumeObjectKey'] as String?,
       resumeFileName: json['resumeFileName'] as String?,
+      avatarObjectKey: json['avatarObjectKey'] as String?,
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'] as String)
           : null,
@@ -150,9 +175,13 @@ class ApplicantModel {
   final String status;
   final String coverLetter;
   final List<String> skills;
+  final String bio;
+  final List<ContactLinkModel> contactLinks;
+  final List<PortfolioLinkModel> portfolioLinks;
   final String? portfolioUrl;
   final String? resumeObjectKey;
   final String? resumeFileName;
+  final String? avatarObjectKey;
   final DateTime? createdAt;
 
   Applicant toEntity() {
@@ -164,9 +193,13 @@ class ApplicantModel {
       status: status,
       coverLetter: coverLetter,
       skills: skills,
+      bio: bio,
+      contactLinks: contactLinks.map((c) => c.toEntity()).toList(),
+      portfolioLinks: portfolioLinks.map((p) => p.toEntity()).toList(),
       portfolioUrl: portfolioUrl,
       resumeObjectKey: resumeObjectKey,
       resumeFileName: resumeFileName,
+      avatarObjectKey: avatarObjectKey,
       createdAt: createdAt,
     );
   }

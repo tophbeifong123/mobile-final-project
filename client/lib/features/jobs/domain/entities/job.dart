@@ -9,6 +9,7 @@ class JobFilter {
     this.workMode,
     this.category,
     this.hasAllowance,
+    this.skills = const [],
     this.page = 1,
     this.limit = 20,
   });
@@ -18,6 +19,7 @@ class JobFilter {
   final WorkMode? workMode;
   final String? category;
   final bool? hasAllowance;
+  final List<String> skills;
   final int page;
   final int limit;
 
@@ -26,13 +28,15 @@ class JobFilter {
       province != null ||
       workMode != null ||
       (category != null && category!.trim().isNotEmpty) ||
-      hasAllowance != null;
+      hasAllowance != null ||
+      skills.isNotEmpty;
 
   bool get hasFilters =>
       (province != null && province!.trim().isNotEmpty) ||
       workMode != null ||
       (category != null && category!.trim().isNotEmpty) ||
-      hasAllowance != null;
+      hasAllowance != null ||
+      skills.isNotEmpty;
 
   int get filterCount {
     var count = 0;
@@ -40,6 +44,7 @@ class JobFilter {
     if (workMode != null) count++;
     if (category != null && category!.trim().isNotEmpty) count++;
     if (hasAllowance != null) count++;
+    if (skills.isNotEmpty) count += skills.length;
     return count;
   }
 
@@ -53,6 +58,8 @@ class JobFilter {
     bool clearCategory = false,
     bool? hasAllowance,
     bool clearAllowance = false,
+    List<String>? skills,
+    bool clearSkills = false,
     int? page,
     int? limit,
   }) {
@@ -62,6 +69,7 @@ class JobFilter {
       workMode: clearWorkMode ? null : workMode ?? this.workMode,
       category: clearCategory ? null : category ?? this.category,
       hasAllowance: clearAllowance ? null : hasAllowance ?? this.hasAllowance,
+      skills: clearSkills ? const [] : skills ?? this.skills,
       page: page ?? this.page,
       limit: limit ?? this.limit,
     );
@@ -76,6 +84,7 @@ class JobFilter {
         other.workMode == workMode &&
         other.category == category &&
         other.hasAllowance == hasAllowance &&
+        _listEquals(other.skills, skills) &&
         other.page == page &&
         other.limit == limit;
   }
@@ -87,9 +96,18 @@ class JobFilter {
     workMode,
     category,
     hasAllowance,
+    Object.hashAll(skills),
     page,
     limit,
   );
+
+  static bool _listEquals(List<String> a, List<String> b) {
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
+  }
 }
 
 class Job {
@@ -102,6 +120,7 @@ class Job {
     required this.category,
     required this.hasAllowance,
     required this.status,
+    this.skills = const [],
   });
 
   final String id;
@@ -112,6 +131,7 @@ class Job {
   final String category;
   final bool hasAllowance;
   final JobStatus status;
+  final List<String> skills;
 }
 
 class JobDetail {
@@ -129,6 +149,7 @@ class JobDetail {
     required this.businessType,
     required this.companyDescription,
     required this.saved,
+    this.skills = const [],
   });
 
   final String id;
@@ -144,6 +165,7 @@ class JobDetail {
   final String businessType;
   final String companyDescription;
   final bool saved;
+  final List<String> skills;
 }
 
 String workModeToApi(WorkMode mode) {

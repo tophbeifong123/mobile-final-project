@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 
 import '../../../../core/constants/api_constants.dart';
@@ -34,9 +35,7 @@ class ResumeRemoteDataSource {
         );
       }
 
-      final formData = FormData.fromMap({
-        'file': file,
-      });
+      final formData = FormData.fromMap({'file': file});
 
       final response = await _dio.post<Map<String, dynamic>>(
         ApiConstants.studentResume,
@@ -53,12 +52,35 @@ class ResumeRemoteDataSource {
     }
   }
 
+  Future<List<int>> downloadResumePdf() async {
+    try {
+      final response = await _dio.get<List<int>>(
+        ApiConstants.studentResumeFile,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      final data = response.data;
+      if (data == null || data.isEmpty) {
+        throw const AppException('ไม่พบข้อมูลไฟล์ Resume');
+      }
+      return data;
+    } on DioException catch (e) {
+      throw _mapResumeError(e);
+    }
+  }
+
   AppException _mapResumeError(DioException error) {
-    final data = error.response?.data;
+    var data = error.response?.data;
+    if (data is List<int>) {
+      try {
+        data = jsonDecode(utf8.decode(data));
+      } catch (_) {}
+    }
+
     if (data is Map<String, dynamic> && data['message'] != null) {
       final msg = data['message'];
       if (msg is String) return AppException(msg);
-      if (msg is List && msg.isNotEmpty) return AppException(msg.first.toString());
+      if (msg is List && msg.isNotEmpty)
+        return AppException(msg.first.toString());
     }
 
     switch (error.response?.statusCode) {
@@ -69,9 +91,9 @@ class ResumeRemoteDataSource {
       case 403:
         return const AppException('เฉพาะนักศึกษาเท่านั้น');
       case 404:
-        return const AppException('ไม่พบโปรไฟล์');
+        return const AppException('ไม่พบไฟล์ Resume');
       default:
-        return const AppException('อัปโหลดไฟล์ไม่สำเร็จ');
+        return const AppException('ดาวน์โหลดหรือเปิดไฟล์ไม่สำเร็จ');
     }
   }
 }

@@ -1,5 +1,7 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/constants/api_constants.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../data/datasources/company_job_remote_data_source.dart';
 import '../../data/repositories/company_job_repository_impl.dart';
@@ -36,6 +38,24 @@ final companyApplicantDetailProvider =
       return ref
           .watch(companyJobRepositoryProvider)
           .fetchApplicant(jobId: arg.jobId, applicationId: arg.applicationId);
+    });
+
+final applicantAvatarBytesProvider =
+    FutureProvider.family<
+      List<int>?,
+      ({String jobId, String applicationId, String? avatarKey})
+    >((ref, arg) async {
+      if (arg.avatarKey == null || arg.avatarKey!.isEmpty) return null;
+      final dio = ref.watch(dioProvider);
+      try {
+        final response = await dio.get<List<int>>(
+          ApiConstants.applicantAvatar(arg.jobId, arg.applicationId),
+          options: Options(responseType: ResponseType.bytes),
+        );
+        return response.data;
+      } catch (_) {
+        return null;
+      }
     });
 
 class CompanyJobsController extends Notifier<void> {

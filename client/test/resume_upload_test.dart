@@ -48,78 +48,80 @@ void main() {
     expect(find.text('เปลี่ยน'), findsOneWidget);
   });
 
-  testWidgets('student profile screen shows empty resume prompt when none uploaded', (
-    tester,
-  ) async {
-    const profileWithoutResume = StudentProfile(
-      fullName: 'มีนา เพ็งชัย',
-      university: 'PSU',
-      major: 'IT',
-      skills: ['Flutter'],
-      portfolioUrl: null,
-      resumeFileName: null,
-      resumeObjectKey: null,
-    );
+  testWidgets(
+    'student profile screen shows empty resume prompt when none uploaded',
+    (tester) async {
+      const profileWithoutResume = StudentProfile(
+        fullName: 'มีนา เพ็งชัย',
+        university: 'PSU',
+        major: 'IT',
+        skills: ['Flutter'],
+        portfolioUrl: null,
+        resumeFileName: null,
+        resumeObjectKey: null,
+      );
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
-          studentProfileRepositoryProvider.overrideWithValue(
-            _FakeStudentProfileRepository(profileWithoutResume),
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+            studentProfileRepositoryProvider.overrideWithValue(
+              _FakeStudentProfileRepository(profileWithoutResume),
+            ),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: const StudentProfileScreen(),
           ),
-        ],
-        child: MaterialApp(
-          theme: AppTheme.lightTheme,
-          home: const StudentProfileScreen(),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('Resume'), findsOneWidget);
-    expect(find.text('ยังไม่มี Resume ในระบบ'), findsOneWidget);
-    expect(find.text('อัปโหลด'), findsOneWidget);
-  });
+      expect(find.text('Resume'), findsOneWidget);
+      expect(find.text('ยังไม่มี Resume ในระบบ'), findsOneWidget);
+      expect(find.text('อัปโหลด'), findsOneWidget);
+    },
+  );
 
-  testWidgets('resume upload screen renders current resume and upload controls', (
-    tester,
-  ) async {
-    const profile = StudentProfile(
-      fullName: 'มีนา เพ็งชัย',
-      university: 'PSU',
-      major: 'IT',
-      skills: ['Flutter'],
-      portfolioUrl: null,
-      resumeFileName: 'current_resume.pdf',
-      resumeObjectKey: 'resumes/current_resume.pdf',
-    );
+  testWidgets(
+    'resume upload screen renders current resume and upload controls',
+    (tester) async {
+      const profile = StudentProfile(
+        fullName: 'มีนา เพ็งชัย',
+        university: 'PSU',
+        major: 'IT',
+        skills: ['Flutter'],
+        portfolioUrl: null,
+        resumeFileName: 'current_resume.pdf',
+        resumeObjectKey: 'resumes/current_resume.pdf',
+      );
 
-    final fakeResumeRepo = _FakeResumeRepository();
+      final fakeResumeRepo = _FakeResumeRepository();
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
-          studentProfileRepositoryProvider.overrideWithValue(
-            _FakeStudentProfileRepository(profile),
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+            studentProfileRepositoryProvider.overrideWithValue(
+              _FakeStudentProfileRepository(profile),
+            ),
+            resumeRepositoryProvider.overrideWithValue(fakeResumeRepo),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: const ResumeUploadScreen(),
           ),
-          resumeRepositoryProvider.overrideWithValue(fakeResumeRepo),
-        ],
-        child: MaterialApp(
-          theme: AppTheme.lightTheme,
-          home: const ResumeUploadScreen(),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('อัปโหลด Resume'), findsWidgets);
-    expect(find.text('Resume ในระบบ'), findsOneWidget);
-    expect(find.text('current_resume.pdf'), findsOneWidget);
-    expect(find.text('เลือกไฟล์ PDF จากเครื่อง'), findsOneWidget);
-    expect(find.text('เลือกไฟล์'), findsOneWidget);
-  });
+      expect(find.text('อัปโหลด Resume'), findsWidgets);
+      expect(find.text('Resume ในระบบ'), findsOneWidget);
+      expect(find.text('current_resume.pdf'), findsOneWidget);
+      expect(find.text('เลือกไฟล์ PDF จากเครื่อง'), findsOneWidget);
+      expect(find.text('เลือกไฟล์'), findsOneWidget);
+    },
+  );
 }
 
 class _FakeStudentProfileRepository implements StudentProfileRepository {
@@ -135,6 +137,16 @@ class _FakeStudentProfileRepository implements StudentProfileRepository {
     profile = updated;
     return updated;
   }
+
+  @override
+  Future<StudentProfile> uploadAvatar({
+    required String filePath,
+    required String fileName,
+    List<int>? bytes,
+  }) async => profile;
+
+  @override
+  Future<StudentProfile> deleteAvatar() async => profile;
 }
 
 class _FakeResumeRepository implements ResumeRepository {
@@ -152,5 +164,10 @@ class _FakeResumeRepository implements ResumeRepository {
     );
     lastUploaded = result;
     return result;
+  }
+
+  @override
+  Future<List<int>> downloadResumePdf() async {
+    return [0x25, 0x50, 0x44, 0x46];
   }
 }

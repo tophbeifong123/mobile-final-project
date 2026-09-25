@@ -87,8 +87,22 @@ export interface CompanyApplicantDetailRecord {
   university: string;
   major: string;
   skills: string[];
+  bio: string;
+  contactLinks: Array<{
+    id?: string;
+    platform: string;
+    label?: string;
+    value: string;
+  }>;
+  portfolioLinks: Array<{
+    id?: string;
+    title: string;
+    url: string;
+    description?: string;
+  }>;
   portfolioUrl: string | null;
   resumeFileName: string | null;
+  avatarObjectKey: string | null;
   status: ApplicationStatus;
   coverLetter: string;
   resumeObjectKey: string;
@@ -345,8 +359,12 @@ export class ApplicationsRepository {
       university: student?.university ?? '',
       major: student?.major ?? '',
       skills: Array.isArray(student?.skills) ? student.skills : [],
+      bio: student?.bio ?? '',
+      contactLinks: Array.isArray(student?.contactLinks) ? student.contactLinks : [],
+      portfolioLinks: Array.isArray(student?.portfolioLinks) ? student.portfolioLinks : [],
       portfolioUrl: student?.portfolioUrl ?? null,
       resumeFileName: student?.resumeFileName ?? null,
+      avatarObjectKey: student?.avatarObjectKey ?? null,
       status: application.status,
       coverLetter: application.coverLetter,
       resumeObjectKey: application.resumeObjectKey,

@@ -1,3 +1,5 @@
+import 'package:client/features/student_profile/domain/entities/student_profile.dart';
+
 class CompanyJob {
   const CompanyJob({
     required this.id,
@@ -21,6 +23,7 @@ class JobPosting {
     required this.category,
     required this.hasAllowance,
     required this.requirements,
+    this.skills = const [],
   });
 
   final String title;
@@ -30,6 +33,7 @@ class JobPosting {
   final String category;
   final bool hasAllowance;
   final String requirements;
+  final List<String> skills;
 }
 
 class CreatedJob {
@@ -51,6 +55,7 @@ class EditableJob {
     required this.requirements,
     required this.status,
     required this.version,
+    this.skills = const [],
   });
 
   final String id;
@@ -63,6 +68,7 @@ class EditableJob {
   final String requirements;
   final String status;
   final int version;
+  final List<String> skills;
 }
 
 class Applicant {
@@ -74,9 +80,13 @@ class Applicant {
     required this.status,
     required this.coverLetter,
     this.skills = const [],
+    this.bio = '',
+    this.contactLinks = const [],
+    this.portfolioLinks = const [],
     this.portfolioUrl,
     this.resumeObjectKey,
     this.resumeFileName,
+    this.avatarObjectKey,
     this.createdAt,
   });
 
@@ -87,8 +97,12 @@ class Applicant {
   final String status;
   final String coverLetter;
   final List<String> skills;
+  final String bio;
+  final List<ContactLink> contactLinks;
+  final List<PortfolioLink> portfolioLinks;
   final String? portfolioUrl;
   final String? resumeObjectKey;
   final String? resumeFileName;
+  final String? avatarObjectKey;
   final DateTime? createdAt;
 }

@@ -29,6 +29,10 @@ class ApiConstants {
   static const String savedJobs = '/jobs/saved';
   static const String studentProfile = '/students/me';
   static const String studentResume = '/students/me/resume';
+  static const String studentResumeFile = '/students/me/resume/file';
+  static const String studentAvatar = '/students/me/avatar';
+  static String applicantAvatar(String jobId, String applicationId) =>
+      '/applications/company/jobs/$jobId/applications/$applicationId/avatar';
   static const String applications = '/applications';
   static const String notifications = '/notifications';
   static const String companyProfile = '/companies/me';

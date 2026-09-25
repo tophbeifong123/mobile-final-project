@@ -15,13 +15,27 @@ class StudentProfileRepositoryImpl implements StudentProfileRepository {
 
   @override
   Future<StudentProfile> update(StudentProfile profile) async {
-    final model = StudentProfileModel(
-      fullName: profile.fullName,
-      university: profile.university,
-      major: profile.major,
-      skills: profile.skills,
-      portfolioUrl: profile.portfolioUrl,
-    );
+    final model = StudentProfileModel.fromEntity(profile);
     return (await _remote.update(model)).toEntity();
+  }
+
+  @override
+  Future<StudentProfile> uploadAvatar({
+    required String filePath,
+    required String fileName,
+    List<int>? bytes,
+  }) async {
+    final model = await _remote.uploadAvatar(
+      filePath: filePath,
+      fileName: fileName,
+      bytes: bytes,
+    );
+    return model.toEntity();
+  }
+
+  @override
+  Future<StudentProfile> deleteAvatar() async {
+    final model = await _remote.deleteAvatar();
+    return model.toEntity();
   }
 }

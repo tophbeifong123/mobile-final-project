@@ -14,8 +14,8 @@ final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
 
 final notificationsProvider =
     AsyncNotifierProvider<NotificationsNotifier, List<AppNotification>>(
-  NotificationsNotifier.new,
-);
+      NotificationsNotifier.new,
+    );
 
 class NotificationsNotifier extends AsyncNotifier<List<AppNotification>> {
   @override

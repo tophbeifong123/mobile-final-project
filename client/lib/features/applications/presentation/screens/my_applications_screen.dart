@@ -101,8 +101,7 @@ class MyApplicationsScreen extends ConsumerWidget {
                     );
                   }
                   return RefreshIndicator(
-                    onRefresh: () =>
-                        ref.refresh(myApplicationsProvider.future),
+                    onRefresh: () => ref.refresh(myApplicationsProvider.future),
                     child: ListView.separated(
                       physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.fromLTRB(
@@ -112,8 +111,7 @@ class MyApplicationsScreen extends ConsumerWidget {
                         16,
                       ),
                       itemCount: items.length,
-                      separatorBuilder: (context, index) =>
-                          const Gap(12),
+                      separatorBuilder: (context, index) => const Gap(12),
                       itemBuilder: (context, index) {
                         final application = items[index];
                         return _ApplicationCard(
@@ -136,10 +134,7 @@ class MyApplicationsScreen extends ConsumerWidget {
 }
 
 class _ApplicationCard extends StatelessWidget {
-  const _ApplicationCard({
-    required this.application,
-    this.onTap,
-  });
+  const _ApplicationCard({required this.application, this.onTap});
 
   final JobApplication application;
   final VoidCallback? onTap;
@@ -163,15 +158,9 @@ class _ApplicationCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      application.jobTitle,
-                      style: textTheme.titleMedium,
-                    ),
+                    Text(application.jobTitle, style: textTheme.titleMedium),
                     const Gap(2),
-                    Text(
-                      application.companyName,
-                      style: textTheme.bodyMedium,
-                    ),
+                    Text(application.companyName, style: textTheme.bodyMedium),
                   ],
                 ),
               ),
@@ -240,8 +229,8 @@ class _CompanyMark extends StatelessWidget {
           child: Text(
             letter,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onPrimary,
-                ),
+              color: Theme.of(context).colorScheme.onPrimary,
+            ),
           ),
         ),
       ),

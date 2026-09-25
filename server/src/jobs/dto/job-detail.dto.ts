@@ -26,6 +26,9 @@ export class JobDetailDto {
   @ApiProperty()
   requirements: string;
 
+  @ApiProperty({ type: [String], example: ['Flutter', 'Dart'] })
+  skills: string[];
+
   @ApiProperty({ enum: JobStatus, example: JobStatus.Open })
   status: JobStatus;
 

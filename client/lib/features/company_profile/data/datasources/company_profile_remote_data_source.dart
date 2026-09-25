@@ -67,9 +67,7 @@ class CompanyProfileRemoteDataSource {
         );
       }
 
-      final formData = FormData.fromMap({
-        'file': file,
-      });
+      final formData = FormData.fromMap({'file': file});
 
       final response = await _dio.post<Map<String, dynamic>>(
         ApiConstants.companyLogo,
@@ -107,7 +105,8 @@ AppException mapCompanyProfileError(DioException error) {
   if (data is Map<String, dynamic> && data['message'] != null) {
     final msg = data['message'];
     if (msg is String) return AppException(msg);
-    if (msg is List && msg.isNotEmpty) return AppException(msg.first.toString());
+    if (msg is List && msg.isNotEmpty)
+      return AppException(msg.first.toString());
   }
 
   switch (error.response?.statusCode) {

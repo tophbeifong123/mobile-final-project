@@ -1,45 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+
+import '../widgets/neo_nav_bar.dart';
 
 class StudentShell extends StatelessWidget {
   const StudentShell({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
 
+  static const _items = [
+    NeoNavBarItem(icon: LucideIcons.house, label: 'หน้าแรก'),
+    NeoNavBarItem(icon: LucideIcons.bookmark, label: 'บันทึก'),
+    NeoNavBarItem(icon: LucideIcons.clipboardList, label: 'ใบสมัคร'),
+    NeoNavBarItem(icon: LucideIcons.userRound, label: 'โปรไฟล์'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: navigationShell,
-      bottomNavigationBar: NavigationBar(
+      bottomNavigationBar: NeoNavBar(
         selectedIndex: navigationShell.currentIndex,
-        onDestinationSelected: (index) {
-          navigationShell.goBranch(
-            index,
-            initialLocation: index == navigationShell.currentIndex,
-          );
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'หน้าแรก',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.bookmark_outline),
-            selectedIcon: Icon(Icons.bookmark),
-            label: 'บันทึก',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.assignment_outlined),
-            selectedIcon: Icon(Icons.assignment),
-            label: 'ใบสมัคร',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'โปรไฟล์',
-          ),
-        ],
+        onTap: (index) => navigationShell.goBranch(
+          index,
+          initialLocation: index == navigationShell.currentIndex,
+        ),
+        items: _items,
       ),
     );
   }

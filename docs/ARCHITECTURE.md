@@ -132,6 +132,7 @@ Access token อายุสั้น Refresh token หมุนทุกคร�
 |---|---|---|
 | GET, PATCH | /api/students/me | Student Profile |
 | POST | /api/students/me/resume | Resume Upload |
+| GET | /api/students/me/resume/file | Resume Preview / Download |
 | GET | /api/jobs | Home / Job Feed |
 | GET | /api/jobs/:id | Job Detail |
 | POST, DELETE | /api/jobs/:id/save | Save จาก Job Detail |
@@ -142,7 +143,7 @@ Access token อายุสั้น Refresh token หมุนทุกคร�
 | GET | /api/notifications | Notifications |
 | GET | /api/notifications/stream | ช่อง SSE ของแจ้งเตือน |
 
-`GET /api/jobs` รับ `search`, `province`, `workMode`, `category`, `hasAllowance` และคืนเฉพาะงานสถานะ `open`
+`GET /api/jobs` รับ `search`, `province`, `workMode`, `category`, `hasAllowance`, `skills` (กรองด้วย PostgreSQL array overlap operator) และคืนเฉพาะงานสถานะ `open`
 
 Route `GET /api/jobs/saved` ต้องประกาศก่อน `GET /api/jobs/:id` เพื่อไม่ให้คำว่า `saved` ถูกจับเป็น id
 

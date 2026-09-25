@@ -6,8 +6,10 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import { type Response } from 'express';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -153,6 +155,41 @@ export class ApplicationsController {
       jobId,
       applicationId,
     );
+  }
+
+  @Get('company/jobs/:id/applications/:applicationId/avatar')
+  @ApiOperation({ summary: 'ดาวน์โหลดหรือดูรูปโปรไฟล์ของผู้สมัคร' })
+  @ApiParam({ name: 'id', format: 'uuid', description: 'รหัสประกาศงาน' })
+  @ApiParam({
+    name: 'applicationId',
+    format: 'uuid',
+    description: 'รหัสใบสมัคร',
+  })
+  @ApiResponse({ status: 200, description: 'ไฟล์รูปภาพโปรไฟล์ผู้สมัคร' })
+  @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
+  @ApiResponse({
+    status: 403,
+    description: 'เฉพาะบริษัท หรือไม่ใช่ประกาศของบริษัทนี้',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'ไม่พบประกาศงาน ใบสมัคร หรือรูปโปรไฟล์',
+  })
+  async getApplicantAvatar(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ParseUUIDPipe()) jobId: string,
+    @Param('applicationId', new ParseUUIDPipe()) applicationId: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    const { buffer, mimeType } =
+      await this.applicationsService.getApplicantAvatar(
+        user,
+        jobId,
+        applicationId,
+      );
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Cache-Control', 'private, max-age=3600');
+    res.send(buffer);
   }
 
   @Patch('company/jobs/:id/applications/:applicationId/status')

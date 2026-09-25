@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   IsArray,
@@ -8,7 +8,10 @@ import {
   IsUrl,
   MaxLength,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
+import { ContactLinkDto } from './contact-link.dto.js';
+import { PortfolioLinkDto } from './portfolio-link.dto.js';
 
 function trimString({ value }: { value: unknown }): unknown {
   return typeof value === 'string' ? value.trim() : value;
@@ -50,6 +53,53 @@ export class UpdateStudentProfileDto {
   @IsString({ each: true })
   @MaxLength(100, { each: true })
   skills: string[];
+
+  @ApiProperty({
+    example: 'นักศึกษาชั้นปีที่ 4 มุ่งมั่นหาประสบการณ์ฝึกงานด้าน Flutter & Node.js',
+    maxLength: 1000,
+    required: false,
+  })
+  @IsOptional()
+  @Transform(trimString)
+  @IsString()
+  @MaxLength(1000)
+  bio?: string;
+
+  @ApiProperty({
+    type: () => [ContactLinkDto],
+    required: false,
+    example: [
+      {
+        platform: 'phone',
+        label: 'เบอร์โทร',
+        value: '0812345678',
+      },
+    ],
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @ValidateNested({ each: true })
+  @Type(() => ContactLinkDto)
+  contactLinks?: ContactLinkDto[];
+
+  @ApiProperty({
+    type: () => [PortfolioLinkDto],
+    required: false,
+    example: [
+      {
+        title: 'InternFinder App',
+        url: 'https://github.com/example/internfinder',
+        description: 'แอปพลิเคชันค้นหาที่ฝึกงาน',
+      },
+    ],
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(20)
+  @ValidateNested({ each: true })
+  @Type(() => PortfolioLinkDto)
+  portfolioLinks?: PortfolioLinkDto[];
 
   @ApiProperty({
     nullable: true,

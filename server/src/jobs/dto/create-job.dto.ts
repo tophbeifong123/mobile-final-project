@@ -1,8 +1,10 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
+  IsArray,
   IsBoolean,
   IsEnum,
+  IsOptional,
   IsString,
   MaxLength,
   MinLength,
@@ -54,4 +56,29 @@ export class CreateJobDto {
   @IsString()
   @MinLength(1)
   requirements: string;
+
+  @ApiPropertyOptional({
+    type: [String],
+    example: ['Flutter', 'Dart', 'Git'],
+    description: 'ทักษะที่เปิดรับสมัคร',
+  })
+  @Transform(({ value }: { value: unknown }) => {
+    if (!Array.isArray(value)) {
+      if (typeof value === 'string') {
+        return value
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
+      }
+      return [];
+    }
+    return value
+      .map((item) => (typeof item === 'string' ? item.trim() : item))
+      .filter((item) => item !== '');
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @MaxLength(100, { each: true })
+  skills?: string[];
 }

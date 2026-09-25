@@ -71,13 +71,13 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
       muted: Color.lerp(muted, other.muted, t) ?? muted,
       mutedForeground:
           Color.lerp(mutedForeground, other.mutedForeground, t) ??
-              mutedForeground,
+          mutedForeground,
       accent: Color.lerp(accent, other.accent, t) ?? accent,
       ring: Color.lerp(ring, other.ring, t) ?? ring,
       destructive: Color.lerp(destructive, other.destructive, t) ?? destructive,
       destructiveForeground:
           Color.lerp(destructiveForeground, other.destructiveForeground, t) ??
-              destructiveForeground,
+          destructiveForeground,
       card: Color.lerp(card, other.card, t) ?? card,
       cardForeground:
           Color.lerp(cardForeground, other.cardForeground, t) ?? cardForeground,
@@ -87,5 +87,6 @@ class AppColorsExtension extends ThemeExtension<AppColorsExtension> {
 
 extension ThemeContextX on BuildContext {
   AppColorsExtension get colors =>
-      Theme.of(this).extension<AppColorsExtension>() ?? AppColorsExtension.light;
+      Theme.of(this).extension<AppColorsExtension>() ??
+      AppColorsExtension.light;
 }

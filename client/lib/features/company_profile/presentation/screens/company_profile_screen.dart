@@ -156,10 +156,7 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'โลโก้บริษัท',
-                            style: textTheme.titleSmall,
-                          ),
+                          Text('โลโก้บริษัท', style: textTheme.titleSmall),
                           const Gap(4),
                           Text(
                             widget.profile.logoObjectKey != null &&
@@ -247,9 +244,7 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
             const Gap(12),
             Text(
               _error!,
-              style: textTheme.bodyMedium?.copyWith(
-                color: colors.destructive,
-              ),
+              style: textTheme.bodyMedium?.copyWith(color: colors.destructive),
             ),
           ],
           const Gap(20),
@@ -288,8 +283,10 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
       final allowed = ['png', 'jpg', 'jpeg', 'webp', 'svg'];
       if (!allowed.contains(ext) &&
           !allowed.any((e) => file.name.toLowerCase().endsWith('.$e'))) {
-        setState(() =>
-            _error = 'เลือกได้เฉพาะไฟล์รูปภาพเท่านั้น (PNG, JPG, WEBP, SVG)');
+        setState(
+          () =>
+              _error = 'เลือกได้เฉพาะไฟล์รูปภาพเท่านั้น (PNG, JPG, WEBP, SVG)',
+        );
         return;
       }
       setState(() => _pickedLogoFile = file);
@@ -322,16 +319,14 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
         return;
       }
 
-      await ref.read(companyProfileControllerProvider.notifier).uploadLogo(
-            filePath: path ?? '',
-            fileName: file.name,
-            bytes: bytes,
-          );
+      await ref
+          .read(companyProfileControllerProvider.notifier)
+          .uploadLogo(filePath: path ?? '', fileName: file.name, bytes: bytes);
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('อัปโหลดโลโก้แล้ว')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('อัปโหลดโลโก้แล้ว')));
       setState(() => _pickedLogoFile = null);
     } catch (error) {
       if (!mounted) return;
@@ -362,9 +357,9 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
     try {
       await ref.read(companyProfileControllerProvider.notifier).save(updated);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('บันทึกโปรไฟล์แล้ว')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('บันทึกโปรไฟล์แล้ว')));
     } catch (error) {
       if (!mounted) return;
       setState(() => _error = userVisibleError(error));
@@ -377,10 +372,7 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
 }
 
 class _CompanyLogoAvatar extends StatelessWidget {
-  const _CompanyLogoAvatar({
-    required this.name,
-    required this.logoKey,
-  });
+  const _CompanyLogoAvatar({required this.name, required this.logoKey});
 
   final String name;
   final String? logoKey;
@@ -389,8 +381,9 @@ class _CompanyLogoAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final trimmed = name.trim();
-    final letter =
-        trimmed.isEmpty ? 'C' : trimmed.characters.first.toUpperCase();
+    final letter = trimmed.isEmpty
+        ? 'C'
+        : trimmed.characters.first.toUpperCase();
 
     return Container(
       width: 52,
@@ -406,17 +399,13 @@ class _CompanyLogoAvatar extends StatelessWidget {
       ),
       child: Center(
         child: logoKey != null
-            ? const Icon(
-                Icons.business,
-                color: AppColors.primary,
-                size: 26,
-              )
+            ? const Icon(Icons.business, color: AppColors.primary, size: 26)
             : Text(
                 letter,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: colors.mutedForeground,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  color: colors.mutedForeground,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
       ),
     );

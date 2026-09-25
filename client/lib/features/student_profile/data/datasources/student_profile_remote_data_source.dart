@@ -24,6 +24,74 @@ class StudentProfileRemoteDataSource {
     });
   }
 
+  Future<StudentProfileModel> uploadAvatar({
+    required String filePath,
+    required String fileName,
+    List<int>? bytes,
+  }) async {
+    try {
+      final ext = fileName.split('.').last.toLowerCase();
+      final DioMediaType contentType;
+      switch (ext) {
+        case 'png':
+          contentType = DioMediaType('image', 'png');
+          break;
+        case 'jpg':
+        case 'jpeg':
+          contentType = DioMediaType('image', 'jpeg');
+          break;
+        case 'webp':
+          contentType = DioMediaType('image', 'webp');
+          break;
+        case 'svg':
+          contentType = DioMediaType('image', 'svg+xml');
+          break;
+        case 'gif':
+          contentType = DioMediaType('image', 'gif');
+          break;
+        default:
+          contentType = DioMediaType('image', 'png');
+          break;
+      }
+
+      final MultipartFile file;
+      if (bytes != null && bytes.isNotEmpty) {
+        file = MultipartFile.fromBytes(
+          bytes,
+          filename: fileName,
+          contentType: contentType,
+        );
+      } else {
+        file = await MultipartFile.fromFile(
+          filePath,
+          filename: fileName,
+          contentType: contentType,
+        );
+      }
+
+      final formData = FormData.fromMap({'file': file});
+
+      final response = await _dio.post<Map<String, dynamic>>(
+        ApiConstants.studentAvatar,
+        data: formData,
+      );
+
+      final data = response.data;
+      if (data == null) {
+        throw const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
+      }
+      return StudentProfileModel.fromJson(data);
+    } on DioException catch (error) {
+      throw mapStudentProfileError(error);
+    }
+  }
+
+  Future<StudentProfileModel> deleteAvatar() {
+    return _read(() {
+      return _dio.delete<Map<String, dynamic>>(ApiConstants.studentAvatar);
+    });
+  }
+
   Future<StudentProfileModel> _read(
     Future<Response<Map<String, dynamic>>> Function() request,
   ) async {
@@ -41,6 +109,13 @@ class StudentProfileRemoteDataSource {
 }
 
 AppException mapStudentProfileError(DioException error) {
+  final data = error.response?.data;
+  if (data is Map<String, dynamic> && data['message'] != null) {
+    final msg = data['message'];
+    if (msg is String) return AppException(msg);
+    if (msg is List && msg.isNotEmpty)
+      return AppException(msg.first.toString());
+  }
   switch (error.response?.statusCode) {
     case 400:
       return const AppException('ข้อมูลไม่ถูกต้อง');
