@@ -52,9 +52,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('ยังไม่มีใบสมัคร'), findsOneWidget);
-    expect(find.text('ค้นหางานเพื่อสมัคร'), findsOneWidget);
+    expect(find.text('ค้นหางานฝึกงาน'), findsOneWidget);
 
-    await tester.tap(find.text('ค้นหางานเพื่อสมัคร'));
+    await tester.tap(find.text('ค้นหางานฝึกงาน'));
     await tester.pumpAndSettle();
     expect(find.text('หน้าแรก'), findsOneWidget);
   });
@@ -126,12 +126,29 @@ void main() {
       expect(find.text('Flutter Developer Intern'), findsOneWidget);
       expect(find.text('TechCorp Co., Ltd.'), findsOneWidget);
       expect(find.text('ยื่นใบสมัครแล้ว'), findsOneWidget);
-      expect(find.text('สมัครเมื่อ 23/09/2026'), findsOneWidget);
+      expect(find.text('ยื่นเมื่อ 23 ก.ย. 2026'), findsOneWidget);
 
       expect(find.text('Backend Engineer Intern'), findsOneWidget);
       expect(find.text('DevHub Inc.'), findsOneWidget);
-      expect(find.text('กำลังพิจารณา'), findsOneWidget);
-      expect(find.text('สมัครเมื่อ 20/09/2026'), findsOneWidget);
+      expect(find.text('กำลังพิจารณา'), findsWidgets);
+      expect(find.text('ยื่นเมื่อ 20 ก.ย. 2026'), findsOneWidget);
+
+      final filters = find.byWidgetPredicate(
+        (widget) =>
+            widget is ListView && widget.scrollDirection == Axis.horizontal,
+      );
+      await tester.drag(filters, const Offset(-320, 0));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('กำลังพิจารณา (1)'));
+      await tester.pumpAndSettle();
+      expect(find.text('Backend Engineer Intern'), findsOneWidget);
+      expect(find.text('Flutter Developer Intern'), findsNothing);
+
+      await tester.drag(filters, const Offset(320, 0));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('ทั้งหมด (2)'));
+      await tester.pumpAndSettle();
+      expect(find.text('Flutter Developer Intern'), findsOneWidget);
 
       await tester.tap(find.text('Flutter Developer Intern'));
       await tester.pumpAndSettle();
@@ -176,7 +193,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('โหลดรายการใบสมัครไม่ได้'), findsOneWidget);
+    expect(find.text('โหลดใบสมัครไม่ได้'), findsOneWidget);
     expect(find.text('เครือข่ายขัดข้อง'), findsOneWidget);
     expect(find.text('ลองอีกครั้ง'), findsOneWidget);
 
