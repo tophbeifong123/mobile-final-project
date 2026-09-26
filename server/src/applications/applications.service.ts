@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { type AuthUser } from '../auth/auth-user.js';
 import { UserRole } from '../auth/user-role.js';
+import { StorageService } from '../storage/storage.service.js';
 import {
   APPLICATION_NOT_FOUND,
   COMPANY_ONLY,
@@ -36,6 +37,7 @@ import { Application } from './entities/application.entity.js';
 export class ApplicationsService {
   constructor(
     private readonly applicationsRepository: ApplicationsRepository,
+    private readonly storageService: StorageService,
   ) {}
 
   async getDetail(
