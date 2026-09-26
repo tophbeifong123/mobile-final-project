@@ -7,6 +7,7 @@ import {
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type AuthUser } from '../auth/auth-user.js';
 import { UserRole } from '../auth/user-role.js';
+import { StorageService } from '../storage/storage.service.js';
 import { ApplicationStatus } from './application-status.js';
 import {
   ALREADY_APPLIED,
@@ -63,7 +64,10 @@ describe('ApplicationsService', () => {
       applyJob: vi.fn(),
     } as unknown as ApplicationsRepository;
 
-    service = new ApplicationsService(repository);
+    service = new ApplicationsService(
+      repository,
+      { get: vi.fn() } as unknown as StorageService,
+    );
   });
 
   it('rejects if user role is not student', async () => {
