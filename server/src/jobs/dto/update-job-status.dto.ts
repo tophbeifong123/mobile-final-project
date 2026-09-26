@@ -6,7 +6,7 @@ export class UpdateJobStatusDto {
   @ApiProperty({
     enum: JobStatus,
     example: JobStatus.Closed,
-    description: 'สถานะประกาศใหม่ (open หรือ closed)',
+    description: 'สถานะประกาศใหม่ (draft, open หรือ closed)',
   })
   @IsEnum(JobStatus)
   status: JobStatus;

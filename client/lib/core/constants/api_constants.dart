@@ -37,6 +37,7 @@ class ApiConstants {
   static const String notifications = '/notifications';
   static const String companyProfile = '/companies/me';
   static const String companyLogo = '/companies/me/logo';
+  static const String companyCover = '/companies/me/cover';
   static const String companyDashboard = '/companies/me/dashboard';
   static const String companyJobs = '/company/jobs';
 }

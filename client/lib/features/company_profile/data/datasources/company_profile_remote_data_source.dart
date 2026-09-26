@@ -28,6 +28,45 @@ class CompanyProfileRemoteDataSource {
     required String filePath,
     required String fileName,
     List<int>? bytes,
+  }) {
+    return _uploadImage(
+      endpoint: ApiConstants.companyLogo,
+      filePath: filePath,
+      fileName: fileName,
+      bytes: bytes,
+    );
+  }
+
+  Future<CompanyProfileModel> deleteLogo() {
+    return _read(() {
+      return _dio.delete<Map<String, dynamic>>(ApiConstants.companyLogo);
+    });
+  }
+
+  Future<CompanyProfileModel> uploadCover({
+    required String filePath,
+    required String fileName,
+    List<int>? bytes,
+  }) {
+    return _uploadImage(
+      endpoint: ApiConstants.companyCover,
+      filePath: filePath,
+      fileName: fileName,
+      bytes: bytes,
+    );
+  }
+
+  Future<CompanyProfileModel> deleteCover() {
+    return _read(() {
+      return _dio.delete<Map<String, dynamic>>(ApiConstants.companyCover);
+    });
+  }
+
+  Future<CompanyProfileModel> _uploadImage({
+    required String endpoint,
+    required String filePath,
+    required String fileName,
+    List<int>? bytes,
   }) async {
     try {
       final ext = fileName.split('.').last.toLowerCase();
@@ -70,7 +109,7 @@ class CompanyProfileRemoteDataSource {
       final formData = FormData.fromMap({'file': file});
 
       final response = await _dio.post<Map<String, dynamic>>(
-        ApiConstants.companyLogo,
+        endpoint,
         data: formData,
       );
 
@@ -105,8 +144,9 @@ AppException mapCompanyProfileError(DioException error) {
   if (data is Map<String, dynamic> && data['message'] != null) {
     final msg = data['message'];
     if (msg is String) return AppException(msg);
-    if (msg is List && msg.isNotEmpty)
+    if (msg is List && msg.isNotEmpty) {
       return AppException(msg.first.toString());
+    }
   }
 
   switch (error.response?.statusCode) {

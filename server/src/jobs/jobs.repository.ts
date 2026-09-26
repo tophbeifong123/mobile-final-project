@@ -40,7 +40,10 @@ export interface CompanyJobRecord {
   id: string;
   title: string;
   status: JobStatus;
+  workMode: WorkMode;
   applicantCount: number;
+  pendingApplicantCount: number;
+  deadline: Date | null;
 }
 
 export interface NewJob {
@@ -158,24 +161,32 @@ export class JobsRepository {
     const limit = Math.min(100, Math.max(1, pagination?.limit ?? 20));
     const skip = (page - 1) * limit;
 
-    const [jobs, total] = await this.dataSource
-      .getRepository(Job)
-      .findAndCount({
-        where: { companyId },
-        select: { id: true, title: true, status: true },
-        order: { createdAt: 'DESC' },
-        skip,
-        take: limit,
-      });
+    const [rows, countRows] = await Promise.all([
+      this.dataSource.query<Record<string, unknown>[]>(
+        `SELECT j.id,
+                j.title,
+                j.status,
+                j.work_mode      AS "workMode",
+                j.deadline,
+                COUNT(a.id)::int AS "applicantCount",
+                COUNT(a.id) FILTER (WHERE a.status = 'submitted')::int AS "pendingApplicantCount"
+         FROM jobs j
+         LEFT JOIN applications a ON a.job_id = j.id
+         WHERE j.company_id = $1
+         GROUP BY j.id
+         ORDER BY j.created_at DESC
+         LIMIT $2 OFFSET $3`,
+        [companyId, limit, skip],
+      ),
+      this.dataSource.query<Array<{ count: string }>>(
+        `SELECT COUNT(*)::text AS count FROM jobs WHERE company_id = $1`,
+        [companyId],
+      ),
+    ]);
 
     return {
-      items: jobs.map((job) => ({
-        id: job.id,
-        title: job.title,
-        status: job.status,
-        applicantCount: 0,
-      })),
-      total,
+      items: rows.map(toCompanyJobRecord),
+      total: Number(countRows[0]?.count ?? 0),
     };
   }
 
@@ -401,6 +412,19 @@ function toOpenJobDetail(row: Record<string, unknown>): OpenJobDetail {
     requirements: String(readField(row, 'requirements') ?? ''),
     businessType: String(readField(row, 'businessType') ?? ''),
     companyDescription: String(readField(row, 'companyDescription') ?? ''),
+  };
+}
+
+function toCompanyJobRecord(row: Record<string, unknown>): CompanyJobRecord {
+  const deadline = readField(row, 'deadline');
+  return {
+    id: String(readField(row, 'id')),
+    title: String(readField(row, 'title') ?? ''),
+    status: readField(row, 'status') as JobStatus,
+    workMode: readField(row, 'workMode') as WorkMode,
+    applicantCount: Number(readField(row, 'applicantCount') ?? 0),
+    pendingApplicantCount: Number(readField(row, 'pendingApplicantCount') ?? 0),
+    deadline: deadline instanceof Date ? deadline : deadline ? new Date(String(deadline)) : null,
   };
 }
 

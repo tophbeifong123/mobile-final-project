@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { JobStatus } from '../job-enums.js';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { JobStatus, WorkMode } from '../job-enums.js';
 
 export class CompanyJobItemDto {
   @ApiProperty()
@@ -11,6 +11,15 @@ export class CompanyJobItemDto {
   @ApiProperty({ enum: JobStatus, example: JobStatus.Open })
   status: JobStatus;
 
+  @ApiProperty({ enum: WorkMode, example: WorkMode.Hybrid })
+  workMode: WorkMode;
+
   @ApiProperty({ example: 0 })
   applicantCount: number;
+
+  @ApiProperty({ example: 0 })
+  pendingApplicantCount: number;
+
+  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
+  deadline: Date | null;
 }
