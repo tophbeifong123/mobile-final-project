@@ -1,2 +1,4 @@
-﻿[allowlist]
-paths = ['''server/README\.md''']
+[allowlist]
+paths = [
+    '''server/README\.md''',
+]
