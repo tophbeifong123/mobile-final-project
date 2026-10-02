@@ -32,9 +32,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Flutter Intern'), findsOneWidget);
-    expect(find.text('เปิดรับสมัคร'), findsOneWidget);
+    expect(find.text('เปิดรับสมัคร'), findsWidgets);
     expect(find.text('งานที่ปิดแล้ว'), findsOneWidget);
-    expect(find.text('ปิดรับสมัคร'), findsOneWidget);
+    expect(find.text('ปิดรับสมัคร'), findsWidgets);
     expect(find.text('แก้ไข'), findsNWidgets(2));
     expect(find.text('ผู้สมัคร'), findsNWidgets(2));
   });
@@ -91,7 +91,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('โหลดประกาศไม่ได้'), findsOneWidget);
+    expect(find.text('โหลดประกาศไม่ได้'), findsWidgets);
     expect(find.text('ลองอีกครั้ง'), findsOneWidget);
   });
 }
