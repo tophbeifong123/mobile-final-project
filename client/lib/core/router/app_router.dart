@@ -8,7 +8,9 @@ import '../../features/applications/presentation/screens/my_applications_screen.
 import '../../features/auth/domain/entities/auth_session.dart';
 import '../../features/auth/presentation/providers/auth_controller.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/auth/presentation/screens/forgot_password_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
+import '../../features/auth/presentation/screens/reset_password_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/company_dashboard/presentation/screens/company_dashboard_screen.dart';
 import '../../features/company_jobs/presentation/screens/applicant_detail_screen.dart';
@@ -47,6 +49,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
 });
 
 String? _redirect(AsyncValue<AuthSession?> auth, String location) {
+  // An email recovery link must survive startup and existing login sessions.
+  // Keep its query token on the recovery route while session storage restores.
+  if (location == '/forgot-password' || location == '/reset-password') {
+    return null;
+  }
   final onSplash = location == '/splash';
   final onAuthPage = location == '/login' || location == '/register';
 
@@ -78,6 +85,17 @@ List<RouteBase> _routes(GlobalKey<NavigatorState> rootNavigatorKey) {
   return [
     GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
     GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+    GoRoute(
+      path: '/forgot-password',
+      builder: (context, state) => ForgotPasswordScreen(
+        initialEmail: state.uri.queryParameters['email'] ?? '',
+      ),
+    ),
+    GoRoute(
+      path: '/reset-password',
+      builder: (context, state) =>
+          ResetPasswordScreen(token: state.uri.queryParameters['token']),
+    ),
     GoRoute(
       path: '/register',
       builder: (context, state) => const RegisterScreen(),

@@ -4,6 +4,7 @@ import { ApplicationStatusEvent } from '../applications/entities/application-sta
 import { Application } from '../applications/entities/application.entity.js';
 import { CompanyProfile } from '../auth/entities/company-profile.entity.js';
 import { RefreshToken } from '../auth/entities/refresh-token.entity.js';
+import { PasswordResetToken } from '../auth/entities/password-reset-token.entity.js';
 import { StudentProfile } from '../auth/entities/student-profile.entity.js';
 import { User } from '../auth/entities/user.entity.js';
 import { Job } from '../jobs/entities/job.entity.js';
@@ -17,6 +18,7 @@ import { CreateAuthTables1758556800000 } from './migrations/1758556800000-create
 import { CreateJobsTable1758600000000 } from './migrations/1758600000000-create-jobs-table.js';
 import { CreateNotificationsTable1758900000000 } from './migrations/1758900000000-create-notifications-table.js';
 import { CreateSavedJobsTable1758700000000 } from './migrations/1758700000000-create-saved-jobs.js';
+import { AddPasswordRecovery1791072000000 } from './migrations/1791072000000-add-password-recovery.js';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -29,6 +31,7 @@ export const AppDataSource = new DataSource({
   entities: [
     User,
     RefreshToken,
+    PasswordResetToken,
     StudentProfile,
     CompanyProfile,
     Job,
@@ -46,5 +49,6 @@ export const AppDataSource = new DataSource({
     AddSkillsToJobs1759000000000,
     AddBioContactsPortfoliosToStudentProfiles1759100000000,
     AddAvatarToStudentProfiles1759200000000,
+    AddPasswordRecovery1791072000000,
   ],
 });

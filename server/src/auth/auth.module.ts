@@ -8,16 +8,21 @@ import { AuthRepository } from './auth.repository.js';
 import { AuthService } from './auth.service.js';
 import { CompanyProfile } from './entities/company-profile.entity.js';
 import { RefreshToken } from './entities/refresh-token.entity.js';
+import { PasswordResetToken } from './entities/password-reset-token.entity.js';
 import { StudentProfile } from './entities/student-profile.entity.js';
 import { User } from './entities/user.entity.js';
 import { JwtStrategy } from './jwt.strategy.js';
 import { BcryptPasswordHasher, PASSWORD_HASHER } from './password-hasher.js';
+import { PasswordResetMailer } from './password-reset-mailer.js';
+import { PasswordRecoveryService } from './password-recovery.service.js';
+import { PasswordRecoveryRateLimitGuard } from './password-recovery-rate-limit.guard.js';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       User,
       RefreshToken,
+      PasswordResetToken,
       StudentProfile,
       CompanyProfile,
     ]),
@@ -47,6 +52,9 @@ import { BcryptPasswordHasher, PASSWORD_HASHER } from './password-hasher.js';
     AuthService,
     AuthRepository,
     JwtStrategy,
+    PasswordResetMailer,
+    PasswordRecoveryService,
+    PasswordRecoveryRateLimitGuard,
     { provide: PASSWORD_HASHER, useClass: BcryptPasswordHasher },
   ],
 })
