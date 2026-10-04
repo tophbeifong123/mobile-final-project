@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/app_toast.dart';
+import '../../domain/entities/auth_session.dart';
 import '../providers/auth_controller.dart';
 import '../widgets/widgets.dart';
 
@@ -59,6 +60,70 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   void _showNotice(String message) {
     AppToast.info(context, message);
+  }
+
+  Future<UserRole?> _chooseGoogleRole() {
+    return showDialog<UserRole>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => AlertDialog(
+        title: const Text('เลือกประเภทบัญชี'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'เลือกบทบาทสำหรับบัญชีใหม่ บทบาทนี้เปลี่ยนภายหลังไม่ได้',
+            ),
+            const Gap(20),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () =>
+                        Navigator.pop(context, UserRole.student),
+                    child: const Text('นักศึกษา'),
+                  ),
+                ),
+                const Gap(12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () =>
+                        Navigator.pop(context, UserRole.company),
+                    child: const Text('บริษัท'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _onGoogleIdToken(String idToken) async {
+    if (_submitting) return;
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
+    var result = await ref
+        .read(authControllerProvider.notifier)
+        .authenticateWithGoogle(idToken: idToken);
+    if (mounted && result.roleRequired) {
+      setState(() => _submitting = false);
+      final role = await _chooseGoogleRole();
+      if (role == null || !mounted) return;
+      setState(() => _submitting = true);
+      result = await ref
+          .read(authControllerProvider.notifier)
+          .authenticateWithGoogle(idToken: idToken, role: role);
+    }
+    if (!mounted) return;
+    setState(() {
+      _submitting = false;
+      _error = result.error;
+    });
   }
 
   @override
@@ -306,12 +371,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                         Row(
                                           children: [
                                             Expanded(
-                                              child: AuthSocialButton(
-                                                label: 'Google',
-                                                icon: const GoogleGIcon(),
-                                                onTap: () => _showNotice(
-                                                  'ระบบเข้าสู่ระบบด้วย Google จะเปิดให้บริการในเร็วๆ นี้',
-                                                ),
+                                              child: GoogleSignInButton(
+                                                onIdToken: _onGoogleIdToken,
+                                                onError: (message) {
+                                                  if (mounted) {
+                                                    setState(
+                                                      () => _error = message,
+                                                    );
+                                                  }
+                                                },
                                               ),
                                             ),
                                             const Gap(12),

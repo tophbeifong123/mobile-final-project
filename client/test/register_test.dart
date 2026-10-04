@@ -280,5 +280,13 @@ class _FakeAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<bool> authenticateWithGoogle({
+    required String idToken,
+    UserRole? role,
+  }) async {
+    throw const AppException('Not implemented in fake');
+  }
+
+  @override
   Future<void> logout() async {}
 }

@@ -9,11 +9,16 @@ import {
 import {
   ApiBearerAuth,
   ApiBody,
+  ApiExtraModels,
   ApiOperation,
   ApiResponse,
   ApiTags,
+  getSchemaPath,
 } from '@nestjs/swagger';
+import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service.js';
+import { GoogleAuthDto } from './dto/google-auth.dto.js';
+import { GoogleRoleRequiredDto } from './dto/google-role-required.dto.js';
 import { type AuthUser } from './auth-user.js';
 import { CurrentUser } from './current-user.decorator.js';
 import { AuthSessionDto } from './dto/auth-session.dto.js';
@@ -23,6 +28,7 @@ import { RegisterDto } from './dto/register.dto.js';
 import { JwtAuthGuard } from './jwt-auth.guard.js';
 
 @ApiTags('Auth')
+@ApiExtraModels(AuthSessionDto, GoogleRoleRequiredDto)
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -32,7 +38,10 @@ export class AuthController {
   @ApiOperation({ summary: 'สมัครบัญชีและเลือก role' })
   @ApiBody({ type: RegisterDto })
   @ApiResponse({ status: 201, type: AuthSessionDto })
-  @ApiResponse({ status: 400, description: 'ข้อมูลไม่ถูกต้องหรือ role ไม่ถูกต้อง' })
+  @ApiResponse({
+    status: 400,
+    description: 'ข้อมูลไม่ถูกต้องหรือ role ไม่ถูกต้อง',
+  })
   @ApiResponse({ status: 409, description: 'อีเมลซ้ำ' })
   register(@Body() dto: RegisterDto): Promise<AuthSessionDto> {
     return this.authService.register(dto);
@@ -46,6 +55,37 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'อีเมลหรือรหัสผ่านไม่ถูกต้อง' })
   login(@Body() dto: LoginDto): Promise<AuthSessionDto> {
     return this.authService.login(dto);
+  }
+
+  @Post('google')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @ApiOperation({ summary: 'สมัครหรือเข้าสู่ระบบด้วย Google ID token' })
+  @ApiBody({ type: GoogleAuthDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Auth session, or { code: role_required } for a new account',
+    schema: {
+      oneOf: [
+        { $ref: getSchemaPath(AuthSessionDto) },
+        { $ref: getSchemaPath(GoogleRoleRequiredDto) },
+      ],
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Google ID token invalid or not verified',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Email belongs to an existing password account',
+  })
+  @ApiResponse({ status: 429, description: 'Too many Google login attempts' })
+  google(
+    @Body() dto: GoogleAuthDto,
+  ): Promise<AuthSessionDto | GoogleRoleRequiredDto> {
+    return this.authService.googleAuth(dto);
   }
 
   @Post('refresh')

@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { DataSource } from 'typeorm';
 import { ApplicationStatusEvent } from '../applications/entities/application-status-event.entity.js';
 import { Application } from '../applications/entities/application.entity.js';
+import { AuthIdentity } from '../auth/entities/auth-identity.entity.js';
 import { CompanyProfile } from '../auth/entities/company-profile.entity.js';
 import { RefreshToken } from '../auth/entities/refresh-token.entity.js';
 import { StudentProfile } from '../auth/entities/student-profile.entity.js';
@@ -10,6 +11,7 @@ import { Job } from '../jobs/entities/job.entity.js';
 import { SavedJob } from '../jobs/entities/saved-job.entity.js';
 import { Notification } from '../notifications/entities/notification.entity.js';
 import { AddAvatarToStudentProfiles1759200000000 } from './migrations/1759200000000-add-avatar-to-student-profiles.js';
+import { AddGoogleAuthIdentities1759300000000 } from './migrations/1759300000000-add-google-auth-identities.js';
 import { AddBioContactsPortfoliosToStudentProfiles1759100000000 } from './migrations/1759100000000-add-bio-contacts-portfolios-to-student-profiles.js';
 import { AddSkillsToJobs1759000000000 } from './migrations/1759000000000-add-skills-to-jobs.js';
 import { CreateApplicationsTables1758800000000 } from './migrations/1758800000000-create-applications-tables.js';
@@ -28,6 +30,7 @@ export const AppDataSource = new DataSource({
   synchronize: false,
   entities: [
     User,
+    AuthIdentity,
     RefreshToken,
     StudentProfile,
     CompanyProfile,
@@ -46,5 +49,6 @@ export const AppDataSource = new DataSource({
     AddSkillsToJobs1759000000000,
     AddBioContactsPortfoliosToStudentProfiles1759100000000,
     AddAvatarToStudentProfiles1759200000000,
+    AddGoogleAuthIdentities1759300000000,
   ],
 });

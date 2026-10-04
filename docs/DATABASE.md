@@ -12,6 +12,7 @@
 users ||--o| student_profiles : "role = student"
 users ||--o| company_profiles : "role = company"
 users ||--o{ refresh_tokens : has
+users ||--o{ auth_identities : Google provider identity
 
 company_profiles ||--o{ jobs : posts
 student_profiles ||--o{ saved_jobs : saves
@@ -52,6 +53,20 @@ applications ||--o{ outbox_messages : "enqueue on status change"
 | role | user_role | ตั้งตอนสมัคร แก้ไม่ได้ |
 | created_at | timestamptz | |
 | updated_at | timestamptz | |
+
+บัญชี Google-only มี password_hash เป็น null และ password login ต้องปฏิเสธอย่างปลอดภัยเมื่อ hash เป็น null. ตาราง auth_identities เก็บ provider (google), provider_subject (Google sub), user_id และเวลาสร้าง; unique (provider, provider_subject) และ FK ไป users. Email ยังคง unique ใน users; ห้ามผูกบัญชีเดิมอัตโนมัติจาก email.
+
+### auth_identities
+
+| คอลัมน์ | ชนิด | หมายเหตุ |
+|---|---|---|
+| id | uuid | PK |
+| user_id | uuid | FK → users.id |
+| provider | varchar | เช่น google |
+| provider_subject | varchar | ค่า sub จาก ID token ที่ verify แล้ว |
+| created_at | timestamptz | |
+
+Unique ที่ (provider, provider_subject) ใช้ระบุตัวผู้ให้บริการ ไม่ใช้ email เป็น identity.
 
 ### refresh_tokens
 
@@ -212,6 +227,8 @@ Worker ที่สำเร็จแล้วตั้ง `sent` เกิน�
 ### สมัครบัญชี
 
 `DataSource.transaction()` สร้าง `users` พร้อม `student_profiles` หรือ `company_profiles` ที่ว่างตาม role ถ้าสร้างโปรไฟล์ไม่สำเร็จ ทั้งคู่ถูกยกเลิก
+
+Google signup ทำใน transaction เดียวกัน: สร้าง user โดยไม่มี password hash, auth identity จาก token ที่ตรวจแล้ว และ role-specific profile. บัญชี Google ใหม่ต้องมี role ก่อนเริ่ม transaction; ถ้า email ชนบัญชีเดิมให้ยกเลิกโดยไม่เชื่อม identity. Unique identity/email constraints เป็นตัวตัดสินสุดท้ายเมื่อ request ชนกัน.
 
 ### สมัครงาน และเปิดหรือปิดรับสมัคร
 

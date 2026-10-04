@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, type EntityManager, IsNull } from 'typeorm';
 import { CompanyProfile } from './entities/company-profile.entity.js';
+import { AuthIdentity } from './entities/auth-identity.entity.js';
 import { RefreshToken } from './entities/refresh-token.entity.js';
 import { StudentProfile } from './entities/student-profile.entity.js';
 import { User } from './entities/user.entity.js';
@@ -8,7 +9,13 @@ import { UserRole } from './user-role.js';
 
 export interface NewUser {
   email: string;
-  passwordHash: string;
+  passwordHash: string | null;
+  role: UserRole;
+}
+
+export interface NewGoogleUser {
+  email: string;
+  providerSubject: string;
   role: UserRole;
 }
 
@@ -35,6 +42,40 @@ export class AuthRepository {
 
   findByEmail(email: string): Promise<User | null> {
     return this.dataSource.getRepository(User).findOne({ where: { email } });
+  }
+
+  findByGoogleSubject(providerSubject: string): Promise<User | null> {
+    return this.dataSource
+      .getRepository(User)
+      .createQueryBuilder('user')
+      .innerJoin(
+        AuthIdentity,
+        'identity',
+        'identity.user_id = user.id AND identity.provider = :provider AND identity.provider_subject = :providerSubject',
+        { provider: 'google', providerSubject },
+      )
+      .getOne();
+  }
+
+  async createGoogleUserWithProfile(input: NewGoogleUser): Promise<User> {
+    return this.dataSource.transaction(async (manager) => {
+      const user = await manager.save(
+        manager.create(User, {
+          email: input.email,
+          passwordHash: null,
+          role: input.role,
+        }),
+      );
+      await manager.save(
+        manager.create(AuthIdentity, {
+          userId: user.id,
+          provider: 'google',
+          providerSubject: input.providerSubject,
+        }),
+      );
+      await this.saveEmptyProfile(manager, user.id, input.role);
+      return user;
+    });
   }
 
   async createUserWithProfile(input: NewUser): Promise<User> {
@@ -68,7 +109,9 @@ export class AuthRepository {
         return null;
       }
 
-      const user = await manager.findOne(User, { where: { id: current.userId } });
+      const user = await manager.findOne(User, {
+        where: { id: current.userId },
+      });
       if (!user) {
         return null;
       }
@@ -123,9 +166,8 @@ export class AuthRepository {
   }
 
   async revokeAllForUser(userId: string): Promise<void> {
-    await this.dataSource.getRepository(RefreshToken).update(
-      { userId, revokedAt: IsNull() },
-      { revokedAt: new Date() },
-    );
+    await this.dataSource
+      .getRepository(RefreshToken)
+      .update({ userId, revokedAt: IsNull() }, { revokedAt: new Date() });
   }
 }
