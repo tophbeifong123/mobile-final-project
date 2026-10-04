@@ -471,7 +471,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                           onIdToken: _onGoogleIdToken,
                                           onError: (message) {
                                             if (mounted) {
-                                              setState(() => _error = message);
+                                              setState(() {
+                                                _submitting = false;
+                                                _error = message;
+                                              });
                                             }
                                           },
                                         ),

@@ -435,7 +435,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                                 onError: (message) {
                                                   if (mounted) {
                                                     setState(
-                                                      () => _error = message,
+                                                      () {
+                                                        _submitting = false;
+                                                        _error = message;
+                                                      },
                                                     );
                                                   }
                                                 },
