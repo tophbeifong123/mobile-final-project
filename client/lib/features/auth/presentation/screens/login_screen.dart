@@ -66,36 +66,64 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return showDialog<UserRole>(
       context: context,
       barrierDismissible: true,
-      builder: (context) => AlertDialog(
-        title: const Text('เลือกประเภทบัญชี'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'เลือกบทบาทสำหรับบัญชีใหม่ บทบาทนี้เปลี่ยนภายหลังไม่ได้',
-            ),
-            const Gap(20),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () =>
-                        Navigator.pop(context, UserRole.student),
-                    child: const Text('นักศึกษา'),
-                  ),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 22),
+          decoration: BoxDecoration(
+            color: NeoColors.pureWhite,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: NeoColors.inkSolid, width: 2.5),
+            boxShadow: NeoShadows.elevation3,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'เลือกประเภทบัญชี',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: NeoColors.inkSolid,
                 ),
-                const Gap(12),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: () =>
-                        Navigator.pop(context, UserRole.company),
-                    child: const Text('บริษัท'),
-                  ),
+              ),
+              const Gap(8),
+              const Text(
+                'เลือกบทบาทสำหรับบัญชีใหม่ บทบาทนี้เปลี่ยนภายหลังไม่ได้',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: NeoColors.subtleInk,
                 ),
-              ],
-            ),
-          ],
+              ),
+              const Gap(20),
+              Row(
+                children: [
+                  Expanded(
+                    child: NeoSubmitButton(
+                      text: 'นักศึกษา',
+                      height: 46,
+                      backgroundColor: NeoColors.butterYellow,
+                      onTap: () =>
+                          Navigator.pop(context, UserRole.student),
+                    ),
+                  ),
+                  const Gap(12),
+                  Expanded(
+                    child: NeoSubmitButton(
+                      text: 'บริษัท',
+                      height: 46,
+                      backgroundColor: NeoColors.butterYellow,
+                      onTap: () =>
+                          Navigator.pop(context, UserRole.company),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
