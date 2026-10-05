@@ -38,6 +38,10 @@ export class JobsController {
   @Get()
   @ApiOperation({ summary: 'รายการงานที่เปิดรับ' })
   @ApiResponse({ status: 200, type: PaginatedJobsDto })
+  @ApiResponse({
+    status: 400,
+    description: 'จังหวัดที่กรองไม่อยู่ในรายการจังหวัดไทย',
+  })
   @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
   @ApiResponse({ status: 403, description: 'เฉพาะนักศึกษา' })
   list(

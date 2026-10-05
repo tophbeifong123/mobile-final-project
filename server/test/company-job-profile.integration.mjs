@@ -18,6 +18,8 @@ import { JobsRepository } from '../dist/jobs/jobs.repository.js';
 import { JobsService } from '../dist/jobs/jobs.service.js';
 import { JwtAuthGuard } from '../dist/auth/jwt-auth.guard.js';
 import { StorageService } from '../dist/storage/storage.service.js';
+import { ProvincesService } from '../dist/provinces/provinces.service.js';
+import { ProvincesRepository } from '../dist/provinces/provinces.repository.js';
 
 test('persisted company profile reaches job detail, logo and Swagger', async () => {
   const port = Number(process.env.COMPANY_PROFILE_INTEGRATION_PORT);
@@ -58,6 +60,7 @@ test('persisted company profile reaches job detail, logo and Swagger', async () 
       controllers: [CompaniesController, JobsController],
       providers: [
         CompaniesService, JobsService,
+        { provide: ProvincesService, useValue: new ProvincesService(new ProvincesRepository(dataSource)) },
         { provide: CompaniesRepository, useValue: new CompaniesRepository(dataSource) },
         { provide: JobsRepository, useValue: new JobsRepository(dataSource) },
         { provide: StorageService, useValue: { get: async key => key === 'company-logos/fixture/logo.svg' ? logo : null } },

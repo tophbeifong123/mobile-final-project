@@ -4,8 +4,12 @@ class CompanyProfile {
     required this.businessType,
     required this.description,
     this.logoObjectKey,
-    this.websiteUrl = '',
+    this.provinceId,
+    this.provinceName,
     this.location = '',
+    this.latitude,
+    this.longitude,
+    this.websiteUrl = '',
     this.companySize = '',
     this.perks = const [],
     this.coverObjectKey,
@@ -15,8 +19,12 @@ class CompanyProfile {
   final String businessType;
   final String description;
   final String? logoObjectKey;
-  final String websiteUrl;
+  final int? provinceId;
+  final String? provinceName;
   final String location;
+  final double? latitude;
+  final double? longitude;
+  final String websiteUrl;
   final String companySize;
   final List<String> perks;
   final String? coverObjectKey;
@@ -28,6 +36,10 @@ class CompanyProfile {
     String? Function()? logoObjectKey,
     String? websiteUrl,
     String? location,
+    int? Function()? provinceId,
+    String? Function()? provinceName,
+    double? Function()? latitude,
+    double? Function()? longitude,
     String? companySize,
     List<String>? perks,
     String? Function()? coverObjectKey,
@@ -41,6 +53,10 @@ class CompanyProfile {
           : this.logoObjectKey,
       websiteUrl: websiteUrl ?? this.websiteUrl,
       location: location ?? this.location,
+      provinceId: provinceId != null ? provinceId() : this.provinceId,
+      provinceName: provinceName != null ? provinceName() : this.provinceName,
+      latitude: latitude != null ? latitude() : this.latitude,
+      longitude: longitude != null ? longitude() : this.longitude,
       companySize: companySize ?? this.companySize,
       perks: perks ?? this.perks,
       coverObjectKey: coverObjectKey != null

@@ -1,4 +1,6 @@
 import 'package:client/core/network/dio_client.dart';
+import 'package:client/core/provinces/thai_province.dart';
+import 'package:client/core/provinces/thai_provinces_provider.dart';
 import 'package:client/core/storage/token_storage.dart';
 import 'package:client/core/theme/app_theme.dart';
 import 'package:client/features/company_jobs/domain/entities/company_job.dart';
@@ -11,6 +13,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
 void main() {
+  const provinces = [
+    ThaiProvince(
+      id: 90,
+      nameTh: 'สงขลา',
+      centerLatitude: 7.19,
+      centerLongitude: 100.59,
+    ),
+    ThaiProvince(
+      id: 10,
+      nameTh: 'กรุงเทพมหานคร',
+      centerLatitude: 13.75,
+      centerLongitude: 100.50,
+      aliases: ['กรุงเทพฯ', 'กทม.'],
+    ),
+  ];
+
   testWidgets('company creates an open job posting', (tester) async {
     final repository = _FakeCompanyJobRepository();
     final router = GoRouter(
@@ -34,6 +52,7 @@ void main() {
         overrides: [
           tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
           companyJobRepositoryProvider.overrideWithValue(repository),
+          thaiProvincesProvider.overrideWith((ref) async => provinces),
         ],
         child: MaterialApp.router(
           theme: AppTheme.lightTheme,
@@ -51,10 +70,10 @@ void main() {
       find.widgetWithText(TextFormField, 'รายละเอียด'),
       'ช่วยพัฒนาแอป',
     );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'จังหวัด'),
-      'สงขลา',
-    );
+    await tester.tap(find.byKey(const Key('job-province-picker')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('province-90')));
+    await tester.pumpAndSettle();
     await tester.enterText(find.widgetWithText(TextFormField, 'หมวดงาน'), 'IT');
     await tester.enterText(
       find.widgetWithText(TextFormField, 'คุณสมบัติ'),
@@ -65,6 +84,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(repository.lastPosting?.title, 'Flutter Intern');
+    expect(repository.lastPosting?.province, 'สงขลา');
     expect(repository.lastPosting?.workMode, 'hybrid');
     expect(repository.lastPosting?.hasAllowance, isFalse);
     expect(find.text('รายการประกาศ'), findsOneWidget);
@@ -94,6 +114,7 @@ void main() {
         overrides: [
           tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
           companyJobRepositoryProvider.overrideWithValue(repository),
+          thaiProvincesProvider.overrideWith((ref) async => provinces),
         ],
         child: MaterialApp.router(
           theme: AppTheme.lightTheme,

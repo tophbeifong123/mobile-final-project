@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { type AuthUser } from '../auth/auth-user.js';
 import { UserRole } from '../auth/user-role.js';
+import { ProvincesService } from '../provinces/provinces.service.js';
 import { StorageService } from '../storage/storage.service.js';
 import { CompanyJobItemDto } from './dto/company-job-item.dto.js';
 import { CreateJobDto } from './dto/create-job.dto.js';
@@ -34,6 +35,7 @@ const STALE_JOB = 'ประกาศถูกแก้ไปแล้ว โห
 export class JobsService {
   constructor(
     private readonly jobsRepository: JobsRepository,
+    private readonly provincesService: ProvincesService,
     private readonly storageService: StorageService,
   ) {}
 
@@ -47,11 +49,12 @@ export class JobsService {
       throw new NotFoundException(COMPANY_NOT_FOUND);
     }
 
+    const province = await this.provincesService.resolveName(dto.province);
     const job = await this.jobsRepository.create({
       companyId,
       title: dto.title.trim(),
       description: dto.description.trim(),
-      province: dto.province.trim(),
+      province,
       workMode: dto.workMode,
       category: dto.category.trim(),
       hasAllowance: dto.hasAllowance,
@@ -70,9 +73,12 @@ export class JobsService {
     }
     const page = Math.max(1, query.page ?? 1);
     const limit = Math.min(100, Math.max(1, query.limit ?? 20));
+    const province = query.province
+      ? await this.provincesService.resolveName(query.province)
+      : undefined;
     const result = await this.jobsRepository.findOpen({
       search: query.search,
-      province: query.province,
+      province,
       workMode: query.workMode,
       category: query.category,
       hasAllowance: query.hasAllowance,
@@ -201,6 +207,7 @@ export class JobsService {
   ): Promise<JobDto> {
     const companyId = await this.requireCompanyId(user);
     await this.requireOwnedJob(companyId, jobId);
+    const province = await this.provincesService.resolveName(dto.province);
     try {
       const updated = await this.jobsRepository.updateOwned({
         id: jobId,
@@ -208,7 +215,7 @@ export class JobsService {
         version: dto.version,
         title: dto.title.trim(),
         description: dto.description.trim(),
-        province: dto.province.trim(),
+        province,
         workMode: dto.workMode,
         category: dto.category.trim(),
         hasAllowance: dto.hasAllowance,

@@ -29,7 +29,12 @@ export class CreateJobDto {
   @MinLength(1)
   description: string;
 
-  @ApiProperty({ example: 'สงขลา', maxLength: 255 })
+  @ApiProperty({
+    example: 'สงขลา',
+    maxLength: 255,
+    description:
+      'ชื่อจังหวัดมาตรฐานหรือชื่อเรียกจาก GET /api/provinces; ระบบบันทึกชื่อมาตรฐาน',
+  })
   @Transform(trimString)
   @IsString()
   @MinLength(1)
