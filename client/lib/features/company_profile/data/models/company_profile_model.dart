@@ -6,8 +6,12 @@ class CompanyProfileModel {
     required this.businessType,
     required this.description,
     this.logoObjectKey,
-    this.websiteUrl = '',
+    this.provinceId,
+    this.provinceName,
     this.location = '',
+    this.latitude,
+    this.longitude,
+    this.websiteUrl = '',
     this.companySize = '',
     this.perks = const [],
     this.coverObjectKey,
@@ -19,8 +23,12 @@ class CompanyProfileModel {
       businessType: json['businessType'] as String? ?? '',
       description: json['description'] as String? ?? '',
       logoObjectKey: json['logoObjectKey'] as String?,
-      websiteUrl: json['websiteUrl'] as String? ?? '',
+      provinceId: (json['provinceId'] as num?)?.toInt(),
+      provinceName: json['provinceName'] as String?,
       location: json['location'] as String? ?? '',
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
+      websiteUrl: json['websiteUrl'] as String? ?? '',
       companySize: json['companySize'] as String? ?? '',
       perks:
           (json['perks'] as List<dynamic>?)
@@ -42,6 +50,10 @@ class CompanyProfileModel {
       companySize: entity.companySize,
       perks: entity.perks,
       coverObjectKey: entity.coverObjectKey,
+      provinceId: entity.provinceId,
+      provinceName: entity.provinceName,
+      latitude: entity.latitude,
+      longitude: entity.longitude,
     );
   }
 
@@ -49,8 +61,12 @@ class CompanyProfileModel {
   final String businessType;
   final String description;
   final String? logoObjectKey;
-  final String websiteUrl;
+  final int? provinceId;
+  final String? provinceName;
   final String location;
+  final double? latitude;
+  final double? longitude;
+  final String websiteUrl;
   final String companySize;
   final List<String> perks;
   final String? coverObjectKey;
@@ -61,8 +77,12 @@ class CompanyProfileModel {
       businessType: businessType,
       description: description,
       logoObjectKey: logoObjectKey,
-      websiteUrl: websiteUrl,
+      provinceId: provinceId,
+      provinceName: provinceName,
       location: location,
+      latitude: latitude,
+      longitude: longitude,
+      websiteUrl: websiteUrl,
       companySize: companySize,
       perks: perks,
       coverObjectKey: coverObjectKey,
@@ -74,8 +94,11 @@ class CompanyProfileModel {
       'name': name,
       'businessType': businessType,
       'description': description,
-      'websiteUrl': websiteUrl,
+      'provinceId': provinceId,
       'location': location,
+      'latitude': latitude,
+      'longitude': longitude,
+      'websiteUrl': websiteUrl,
       'companySize': companySize,
       'perks': perks,
     };

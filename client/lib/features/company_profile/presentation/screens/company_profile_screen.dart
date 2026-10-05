@@ -4,6 +4,12 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
+import 'package:latlong2/latlong.dart';
+
+import '../../../../core/provinces/thai_province.dart';
+import '../../../../core/provinces/thai_province_picker.dart';
+import '../../../../core/provinces/thai_provinces_provider.dart';
+import '../widgets/office_map_picker.dart';
 
 import '../../../../core/error/app_exception.dart';
 import '../../../../core/theme/app_tokens.dart';
@@ -99,6 +105,10 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
 
   late String _selectedCompanySize;
   late List<String> _perks;
+  int? _provinceId;
+  String? _provinceName;
+  double? _latitude;
+  double? _longitude;
 
   bool _saving = false;
   bool _uploadingLogo = false;
@@ -145,31 +155,10 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
 
     _selectedCompanySize = p.companySize;
     _perks = List<String>.from(p.perks);
-  }
-
-  @override
-  void didUpdateWidget(covariant _CompanyProfileForm oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.profile != widget.profile) {
-      final p = widget.profile;
-      if (_nameController.text != p.name) _nameController.text = p.name;
-      if (_businessTypeController.text != p.businessType) {
-        _businessTypeController.text = p.businessType;
-      }
-      if (_descriptionController.text != p.description) {
-        _descriptionController.text = p.description;
-      }
-      if (_websiteUrlController.text != p.websiteUrl) {
-        _websiteUrlController.text = p.websiteUrl;
-      }
-      if (_locationController.text != p.location) {
-        _locationController.text = p.location;
-      }
-      if (_selectedCompanySize != p.companySize) {
-        _selectedCompanySize = p.companySize;
-      }
-      _perks = List<String>.from(p.perks);
-    }
+    _provinceId = p.provinceId;
+    _provinceName = p.provinceName;
+    _latitude = p.latitude;
+    _longitude = p.longitude;
   }
 
   @override
@@ -724,6 +713,24 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
   }
 
   Widget _buildLocationCard() {
+    final textTheme = Theme.of(context).textTheme;
+    final provinceAsync = _provinceId == null
+        ? null
+        : ref.watch(thaiProvincesProvider);
+    final provinceList = provinceAsync?.asData?.value;
+    ThaiProvince? province;
+    if (provinceList != null && _provinceId != null) {
+      for (final item in provinceList) {
+        if (item.id == _provinceId) {
+          province = item;
+          break;
+        }
+      }
+    }
+    final pin = _latitude != null && _longitude != null
+        ? LatLng(_latitude!, _longitude!)
+        : null;
+
     return _buildCardShell(
       iconBg: NeoColors.skyBlue,
       icon: Icons.location_on_rounded,
@@ -731,45 +738,77 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildFieldLabel(label: 'ที่ตั้งสำนักงาน (Office Address)'),
+          Text('ที่ตั้งสำนักงาน', style: textTheme.titleMedium),
           const Gap(4),
-          _buildTextInput(
-            controller: _locationController,
-            hint: 'FYI Center อาคาร 2 ชั้น 11 ถนนรัชดาภิเษก คลองเตย กรุงเทพฯ',
-            maxLines: 3,
+          Text(
+            'เลือกจังหวัดและใส่ที่อยู่แยกกัน แล้วปักหมุดจุดสำนักงาน',
+            style: textTheme.bodySmall,
           ),
-          const Gap(12),
-          // Transit preview pill
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: NeoColors.surfaceCream,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: NeoColors.inkSolid, width: 1.5),
-              boxShadow: NeoShadows.elevation1,
-            ),
-            child: Row(
-              children: const [
-                Icon(
-                  Icons.train_rounded,
-                  size: 18,
-                  color: NeoColors.electricIndigo,
-                ),
-                Gap(8),
-                Expanded(
-                  child: Text(
-                    'ใกล้สถานีรถไฟฟ้า MRT / BTS จุดเชื่อมต่อการเดินทางสะดวก',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: NeoColors.inkSolid,
+          const Gap(14),
+          Text('จังหวัด', style: textTheme.titleSmall),
+          const Gap(6),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  key: const Key('company-province-picker'),
+                  onPressed: _pickProvince,
+                  icon: const Icon(Icons.location_on_outlined),
+                  label: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      province?.nameTh ?? _provinceName ?? 'เลือกจังหวัด',
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+              if (_provinceId != null)
+                IconButton(
+                  key: const Key('company-clear-province'),
+                  tooltip: 'ล้างจังหวัดและหมุด',
+                  onPressed: () => setState(() {
+                    _provinceId = null;
+                    _provinceName = null;
+                    _latitude = null;
+                    _longitude = null;
+                  }),
+                  icon: const Icon(Icons.close),
+                ),
+            ],
           ),
+          const Gap(12),
+          _buildFieldLabel(label: 'ที่อยู่สำนักงาน (แบบสั้น)'),
+          const Gap(4),
+          _buildTextInput(
+            controller: _locationController,
+            hint: 'เช่น อาคาร A ถนนพระราม 1',
+            keyboardType: TextInputType.streetAddress,
+            maxLines: 2,
+            validator: _validateLocation,
+          ),
+          if (_provinceId != null) ...[
+            const Gap(14),
+            if (province != null)
+              OfficeMapPicker(
+                key: ValueKey('office-picker-${province.id}'),
+                province: province,
+                pin: pin,
+                onPinChanged: (position) => setState(() {
+                  _latitude = position?.latitude;
+                  _longitude = position?.longitude;
+                }),
+              )
+            else if (provinceAsync?.hasError ?? false)
+              TextButton(
+                onPressed: () => ref.invalidate(thaiProvincesProvider),
+                child: const Text('โหลดจังหวัดไม่สำเร็จ ลองใหม่'),
+              )
+            else
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Text('กำลังโหลดแผนที่จังหวัด...'),
+              ),
+          ],
         ],
       ),
     );
@@ -1117,6 +1156,47 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
     );
   }
 
+  String? _validateLocation(String? value) {
+    if ((value?.trim().length ?? 0) > 255) {
+      return 'ที่อยู่ต้องไม่เกิน 255 ตัวอักษร';
+    }
+    return null;
+  }
+
+  void _applySavedProfile(CompanyProfile profile) {
+    // Only a successful profile save replaces the draft. A logo upload also
+    // updates the provider, but must leave in-progress form edits untouched.
+    _nameController.text = profile.name;
+    _businessTypeController.text = profile.businessType;
+    _descriptionController.text = profile.description;
+    _websiteUrlController.text = profile.websiteUrl;
+    _selectedCompanySize = profile.companySize;
+    _perks = List<String>.from(profile.perks);
+    _locationController.text = profile.location;
+    _provinceId = profile.provinceId;
+    _provinceName = profile.provinceName;
+    _latitude = profile.latitude;
+    _longitude = profile.longitude;
+  }
+
+  Future<void> _pickProvince() async {
+    final selected = await showThaiProvincePicker(
+      context,
+      selectedProvinceId: _provinceId,
+    );
+    if (!mounted || selected == null) return;
+    setState(() {
+      if (_provinceId != selected.id) {
+        // The previous office pin cannot silently move into another province.
+        _latitude = null;
+        _longitude = null;
+      }
+      _provinceId = selected.id;
+      _provinceName = selected.nameTh;
+      _error = null;
+    });
+  }
+
   Future<void> _pickAndUploadLogo() async {
     setState(() => _error = null);
     try {
@@ -1232,6 +1312,10 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
       name: _nameController.text.trim(),
       businessType: _businessTypeController.text.trim(),
       description: _descriptionController.text.trim(),
+      provinceId: () => _provinceId,
+      provinceName: () => _provinceName,
+      latitude: () => _latitude,
+      longitude: () => _longitude,
       websiteUrl: _websiteUrlController.text.trim(),
       location: _locationController.text.trim(),
       companySize: _selectedCompanySize,
@@ -1239,9 +1323,14 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
     );
 
     try {
-      await ref.read(companyProfileControllerProvider.notifier).save(updated);
+      final saved = await ref
+          .read(companyProfileControllerProvider.notifier)
+          .save(updated);
       if (!mounted) return;
-      setState(() => _showSavedToast = true);
+      setState(() {
+        _applySavedProfile(saved);
+        _showSavedToast = true;
+      });
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('บันทึกโปรไฟล์แล้ว')));

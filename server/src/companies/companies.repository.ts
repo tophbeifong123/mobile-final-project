@@ -20,7 +20,7 @@ export class CompaniesRepository {
   findCompanyProfileByUserId(userId: string): Promise<CompanyProfile | null> {
     return this.dataSource
       .getRepository(CompanyProfile)
-      .findOne({ where: { userId } });
+      .findOne({ where: { userId }, relations: { province: true } });
   }
 
   async getDashboardSummary(
@@ -56,29 +56,25 @@ export class CompaniesRepository {
 
   async updateProfile(
     id: string,
-    data: {
-      name: string;
-      businessType: string;
-      description: string;
-      websiteUrl?: string;
-      location?: string;
-      companySize?: string;
-      perks?: string[];
-    },
+    data: Partial<
+      Pick<
+        CompanyProfile,
+        | 'name'
+        | 'businessType'
+        | 'description'
+        | 'websiteUrl'
+        | 'companySize'
+        | 'perks'
+        | 'provinceId'
+        | 'location'
+        | 'latitude'
+        | 'longitude'
+      >
+    >,
   ): Promise<CompanyProfile | null> {
     const repo = this.dataSource.getRepository(CompanyProfile);
-    const updateData: Partial<CompanyProfile> = {
-      name: data.name,
-      businessType: data.businessType,
-      description: data.description,
-    };
-    if (data.websiteUrl !== undefined) updateData.websiteUrl = data.websiteUrl;
-    if (data.location !== undefined) updateData.location = data.location;
-    if (data.companySize !== undefined) updateData.companySize = data.companySize;
-    if (data.perks !== undefined) updateData.perks = data.perks;
-
-    await repo.update(id, updateData);
-    return repo.findOne({ where: { id } });
+    await repo.update(id, data);
+    return repo.findOne({ where: { id }, relations: { province: true } });
   }
 
   async updateLogoObjectKey(
@@ -87,7 +83,7 @@ export class CompaniesRepository {
   ): Promise<CompanyProfile | null> {
     const repo = this.dataSource.getRepository(CompanyProfile);
     await repo.update(id, { logoObjectKey });
-    return repo.findOne({ where: { id } });
+    return repo.findOne({ where: { id }, relations: { province: true } });
   }
 
   async updateCoverObjectKey(
@@ -96,6 +92,6 @@ export class CompaniesRepository {
   ): Promise<CompanyProfile | null> {
     const repo = this.dataSource.getRepository(CompanyProfile);
     await repo.update(id, { coverObjectKey });
-    return repo.findOne({ where: { id } });
+    return repo.findOne({ where: { id }, relations: { province: true } });
   }
 }

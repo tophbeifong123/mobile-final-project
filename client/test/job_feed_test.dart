@@ -1,4 +1,6 @@
 import 'package:client/core/network/dio_client.dart';
+import 'package:client/core/provinces/thai_province.dart';
+import 'package:client/core/provinces/thai_provinces_provider.dart';
 import 'package:client/core/storage/token_storage.dart';
 import 'package:client/core/theme/app_theme.dart';
 import 'package:client/features/jobs/domain/entities/job.dart';
@@ -11,6 +13,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  const provinces = [
+    ThaiProvince(
+      id: 90,
+      nameTh: 'สงขลา',
+      centerLatitude: 7.19,
+      centerLongitude: 100.59,
+    ),
+    ThaiProvince(
+      id: 10,
+      nameTh: 'กรุงเทพมหานคร',
+      centerLatitude: 13.75,
+      centerLongitude: 100.50,
+      aliases: ['กรุงเทพฯ', 'กทม.'],
+    ),
+  ];
+
   const sampleJobs = [
     Job(
       id: 'job-1',
@@ -26,7 +44,7 @@ void main() {
       id: 'job-2',
       title: 'UI/UX Designer Intern',
       companyName: 'Design Studio',
-      province: 'กรุงเทพฯ',
+      province: 'กรุงเทพมหานคร',
       workMode: WorkMode.hybrid,
       category: 'Design & UX/UI',
       hasAllowance: false,
@@ -49,6 +67,7 @@ void main() {
       overrides: [
         tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
         jobRepositoryProvider.overrideWithValue(repo),
+        thaiProvincesProvider.overrideWith((ref) async => provinces),
       ],
       child: MaterialApp(
         theme: AppTheme.lightTheme,
@@ -141,9 +160,12 @@ void main() {
         findsOneWidget,
       );
 
-      // Enter province
+      // Pick province from the same canonical list as the company profile.
       final provinceField = find.widgetWithText(TextField, 'จังหวัด');
-      await tester.enterText(provinceField, 'สงขลา');
+      await tester.tap(provinceField);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('province-90')));
+      await tester.pumpAndSettle();
 
       // Tap "มีเบี้ยเลี้ยง"
       final allowanceChip = find.widgetWithText(FilterChip, 'มีเบี้ยเลี้ยง');
@@ -179,6 +201,34 @@ void main() {
       expect(find.text('Marketing Trainee'), findsOneWidget);
     },
   );
+
+  testWidgets('province alias search applies the canonical name', (
+    tester,
+  ) async {
+    await tester.pumpWidget(buildScreen(_FilteringJobRepository(sampleJobs)));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('ตัวกรอง'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextField, 'จังหวัด'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextField, 'ค้นหาจังหวัด'),
+      'กทม',
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('province-10')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('province-10')));
+    await tester.pumpAndSettle();
+    final applyButton = find.widgetWithText(FilledButton, 'ใช้ตัวกรอง');
+    await tester.ensureVisible(applyButton);
+    await tester.tap(applyButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('UI/UX Designer Intern'), findsOneWidget);
+    expect(find.text('Flutter Intern'), findsNothing);
+    expect(find.text('Marketing Trainee'), findsNothing);
+  });
 }
 
 class _FilteringJobRepository implements JobRepository {

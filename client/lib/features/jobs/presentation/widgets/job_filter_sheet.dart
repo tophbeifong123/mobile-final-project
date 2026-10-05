@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_tokens.dart';
+import '../../../../core/provinces/thai_province_picker.dart';
 import '../../../../core/widgets/app_primary_button.dart';
 import '../../../../core/widgets/skill_picker_sheet.dart';
 import '../../domain/entities/job.dart';
@@ -30,6 +31,7 @@ class _JobFilterSheetState extends State<JobFilterSheet> {
   WorkMode? _workMode;
   bool? _hasAllowance;
   late List<String> _skills;
+  int? _selectedProvinceId;
 
   @override
   void initState() {
@@ -67,10 +69,22 @@ class _JobFilterSheetState extends State<JobFilterSheet> {
               const SizedBox(height: 16),
               TextField(
                 controller: _province,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(
+                readOnly: true,
+                onTap: _openProvincePicker,
+                decoration: InputDecoration(
                   labelText: 'จังหวัด',
-                  prefixIcon: Icon(Icons.place_outlined),
+                  hintText: 'เลือกจากรายชื่อจังหวัด',
+                  prefixIcon: const Icon(Icons.place_outlined),
+                  suffixIcon: _province.text.isEmpty
+                      ? const Icon(Icons.keyboard_arrow_down)
+                      : IconButton(
+                          tooltip: 'ล้างจังหวัด',
+                          onPressed: () => setState(() {
+                            _province.clear();
+                            _selectedProvinceId = null;
+                          }),
+                          icon: const Icon(Icons.close),
+                        ),
                 ),
               ),
               const SizedBox(height: 12),
@@ -266,6 +280,18 @@ class _JobFilterSheetState extends State<JobFilterSheet> {
       hasAllowance: _hasAllowance,
       skills: _skills,
     );
+  }
+
+  Future<void> _openProvincePicker() async {
+    final selected = await showThaiProvincePicker(
+      context,
+      selectedProvinceId: _selectedProvinceId,
+    );
+    if (!mounted || selected == null) return;
+    setState(() {
+      _selectedProvinceId = selected.id;
+      _province.text = selected.nameTh;
+    });
   }
 
   String? _emptyToNull(String value) {

@@ -14,6 +14,8 @@ import { CompaniesRepository } from '../dist/companies/companies.repository.js';
 import { CompaniesService } from '../dist/companies/companies.service.js';
 import { JwtAuthGuard } from '../dist/auth/jwt-auth.guard.js';
 import { StorageService } from '../dist/storage/storage.service.js';
+import { ProvincesService } from '../dist/provinces/provinces.service.js';
+import { ProvincesRepository } from '../dist/provinces/provinces.repository.js';
 
 // Dedicated test cluster only; never migrate an existing application database.
 test('dashboard counts live company data, pending states and Swagger', async () => {
@@ -57,6 +59,7 @@ test('dashboard counts live company data, pending states and Swagger', async () 
     }
     const module = await Test.createTestingModule({
       controllers: [CompaniesController], providers: [CompaniesService,
+        { provide: ProvincesService, useValue: new ProvincesService(new ProvincesRepository(source)) },
         { provide: CompaniesRepository, useValue: new CompaniesRepository(source) },
         { provide: StorageService, useValue: {} },
       ],
