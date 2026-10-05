@@ -2,8 +2,12 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../../../core/error/app_exception.dart';
+import '../../../../core/provinces/thai_province.dart';
+import '../../../../core/provinces/thai_province_picker.dart';
+import '../../../../core/provinces/thai_provinces_provider.dart';
 import '../../../../core/theme/app_colors_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -17,6 +21,7 @@ import '../../../../core/widgets/status_chip.dart';
 import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../domain/entities/company_profile.dart';
 import '../providers/company_profile_controller.dart';
+import '../widgets/office_map_picker.dart';
 
 class CompanyProfileScreen extends ConsumerWidget {
   const CompanyProfileScreen({super.key});
@@ -87,6 +92,12 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
   late final TextEditingController _nameController;
   late final TextEditingController _businessTypeController;
   late final TextEditingController _descriptionController;
+  late final TextEditingController _locationController;
+
+  int? _provinceId;
+  String? _provinceName;
+  double? _latitude;
+  double? _longitude;
 
   PlatformFile? _pickedLogoFile;
   bool _saving = false;
@@ -100,22 +111,11 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
     _nameController = TextEditingController(text: profile.name);
     _businessTypeController = TextEditingController(text: profile.businessType);
     _descriptionController = TextEditingController(text: profile.description);
-  }
-
-  @override
-  void didUpdateWidget(covariant _CompanyProfileForm oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.profile != widget.profile) {
-      if (_nameController.text != widget.profile.name) {
-        _nameController.text = widget.profile.name;
-      }
-      if (_businessTypeController.text != widget.profile.businessType) {
-        _businessTypeController.text = widget.profile.businessType;
-      }
-      if (_descriptionController.text != widget.profile.description) {
-        _descriptionController.text = widget.profile.description;
-      }
-    }
+    _locationController = TextEditingController(text: profile.location);
+    _provinceId = profile.provinceId;
+    _provinceName = profile.provinceName;
+    _latitude = profile.latitude;
+    _longitude = profile.longitude;
   }
 
   @override
@@ -123,6 +123,7 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
     _nameController.dispose();
     _businessTypeController.dispose();
     _descriptionController.dispose();
+    _locationController.dispose();
     super.dispose();
   }
 
@@ -130,6 +131,22 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
   Widget build(BuildContext context) {
     final colors = context.colors;
     final textTheme = Theme.of(context).textTheme;
+    final provinceAsync = _provinceId == null
+        ? null
+        : ref.watch(thaiProvincesProvider);
+    final provinceList = provinceAsync?.asData?.value;
+    ThaiProvince? province;
+    if (provinceList != null && _provinceId != null) {
+      for (final item in provinceList) {
+        if (item.id == _provinceId) {
+          province = item;
+          break;
+        }
+      }
+    }
+    final pin = _latitude != null && _longitude != null
+        ? LatLng(_latitude!, _longitude!)
+        : null;
 
     return Form(
       key: _formKey,
@@ -138,7 +155,7 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
         children: [
           const PageHeading(
             title: 'โปรไฟล์บริษัท',
-            subtitle: 'ชื่อ โลโก้ ประเภทกิจการ และคำอธิบาย',
+            subtitle: 'ข้อมูลบริษัทและที่ตั้งสำนักงาน',
           ),
           const Gap(16),
           AppCard(
@@ -240,6 +257,84 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
             maxLines: 4,
             prefixIcon: const Icon(Icons.description_outlined, size: 20),
           ),
+          const Gap(20),
+          AppCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('ที่ตั้งสำนักงาน', style: textTheme.titleMedium),
+                const Gap(4),
+                Text(
+                  'เลือกจังหวัดและใส่ที่อยู่แยกกัน แล้วปักหมุดจุดสำนักงาน',
+                  style: textTheme.bodySmall,
+                ),
+                const Gap(14),
+                Text('จังหวัด', style: textTheme.titleSmall),
+                const Gap(6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        key: const Key('company-province-picker'),
+                        onPressed: _pickProvince,
+                        icon: const Icon(Icons.location_on_outlined),
+                        label: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            province?.nameTh ?? _provinceName ?? 'เลือกจังหวัด',
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (_provinceId != null)
+                      IconButton(
+                        key: const Key('company-clear-province'),
+                        tooltip: 'ล้างจังหวัดและหมุด',
+                        onPressed: () => setState(() {
+                          _provinceId = null;
+                          _provinceName = null;
+                          _latitude = null;
+                          _longitude = null;
+                        }),
+                        icon: const Icon(Icons.close),
+                      ),
+                  ],
+                ),
+                const Gap(12),
+                AppTextField(
+                  controller: _locationController,
+                  label: 'ที่อยู่สำนักงาน (แบบสั้น)',
+                  hintText: 'เช่น อาคาร A ถนนพระราม 1',
+                  keyboardType: TextInputType.streetAddress,
+                  maxLines: 2,
+                  validator: _validateLocation,
+                ),
+                if (_provinceId != null) ...[
+                  const Gap(14),
+                  if (province != null)
+                    OfficeMapPicker(
+                      key: ValueKey('office-picker-${province.id}'),
+                      province: province,
+                      pin: pin,
+                      onPinChanged: (position) => setState(() {
+                        _latitude = position?.latitude;
+                        _longitude = position?.longitude;
+                      }),
+                    )
+                  else if (provinceAsync?.hasError ?? false)
+                    TextButton(
+                      onPressed: () => ref.invalidate(thaiProvincesProvider),
+                      child: const Text('โหลดจังหวัดไม่สำเร็จ ลองใหม่'),
+                    )
+                  else
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Text('กำลังโหลดแผนที่จังหวัด...'),
+                    ),
+                ],
+              ],
+            ),
+          ),
           if (_error != null) ...[
             const Gap(12),
             Text(
@@ -267,6 +362,44 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
       return 'กรอกข้อมูลนี้';
     }
     return null;
+  }
+
+  String? _validateLocation(String? value) {
+    if ((value?.trim().length ?? 0) > 255) {
+      return 'ที่อยู่ต้องไม่เกิน 255 ตัวอักษร';
+    }
+    return null;
+  }
+
+  void _applySavedProfile(CompanyProfile profile) {
+    // Only a successful profile save replaces the draft. A logo upload also
+    // updates the provider, but must leave in-progress form edits untouched.
+    _nameController.text = profile.name;
+    _businessTypeController.text = profile.businessType;
+    _descriptionController.text = profile.description;
+    _locationController.text = profile.location;
+    _provinceId = profile.provinceId;
+    _provinceName = profile.provinceName;
+    _latitude = profile.latitude;
+    _longitude = profile.longitude;
+  }
+
+  Future<void> _pickProvince() async {
+    final selected = await showThaiProvincePicker(
+      context,
+      selectedProvinceId: _provinceId,
+    );
+    if (!mounted || selected == null) return;
+    setState(() {
+      if (_provinceId != selected.id) {
+        // The previous office pin cannot silently move into another province.
+        _latitude = null;
+        _longitude = null;
+      }
+      _provinceId = selected.id;
+      _provinceName = selected.nameTh;
+      _error = null;
+    });
   }
 
   Future<void> _pickLogo() async {
@@ -342,6 +475,14 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
+    if ((_latitude != null || _longitude != null) && _provinceId == null) {
+      setState(() => _error = 'เลือกจังหวัดก่อนบันทึกหมุดสำนักงาน');
+      return;
+    }
+    if ((_latitude == null) != (_longitude == null)) {
+      setState(() => _error = 'พิกัดสำนักงานไม่ครบ กรุณาปักหมุดใหม่');
+      return;
+    }
     setState(() {
       _saving = true;
       _error = null;
@@ -352,11 +493,19 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
       businessType: _businessTypeController.text.trim(),
       description: _descriptionController.text.trim(),
       logoObjectKey: widget.profile.logoObjectKey,
+      provinceId: _provinceId,
+      provinceName: _provinceName,
+      location: _locationController.text.trim(),
+      latitude: _latitude,
+      longitude: _longitude,
     );
 
     try {
-      await ref.read(companyProfileControllerProvider.notifier).save(updated);
+      final saved = await ref
+          .read(companyProfileControllerProvider.notifier)
+          .save(updated);
       if (!mounted) return;
+      setState(() => _applySavedProfile(saved));
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('บันทึกโปรไฟล์แล้ว')));

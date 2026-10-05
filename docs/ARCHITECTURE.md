@@ -47,7 +47,7 @@ Read ของ job feed ชี้ replica Write ทุกชนิดชี้ p
 
 คง OpenAPI ที่ `GET /api/docs` เอกสารต้องตรงกับ route จริง ชื่อเอกสารคือ InternFinder API และมี Bearer auth
 
-- แยก tag ตามโมดูล: Auth, Students, Companies, Jobs, Applications, Notifications, Health
+- แยก tag ตามโมดูล: Auth, Students, Companies, Provinces, Jobs, Applications, Notifications, Health
 - DTO ทุกตัวมี `@ApiProperty` รวม enum และฟิลด์ที่ required
 - endpoint ทุกตัวมี `@ApiOperation` และ `@ApiResponse` ของสถานะที่ใช้จริง เช่น 200, 201, 400, 401, 403, 409
 - endpoint ที่ต้อง login มี `@ApiBearerAuth`
@@ -64,7 +64,8 @@ Prefix ของ API คือ `/api` ตาม `app.setGlobalPrefix('api')` ใ
 |---|---|
 | AuthModule | สมัคร, login, refresh, logout |
 | StudentsModule | โปรไฟล์นักศึกษาและ Resume |
-| CompaniesModule | โปรไฟล์บริษัท, logo, ตัวเลขแดชบอร์ด |
+| CompaniesModule | โปรไฟล์บริษัท, logo, จังหวัดและหมุดสำนักงาน, ตัวเลขแดชบอร์ด |
+| ProvincesModule | มาสเตอร์จังหวัด 77 จังหวัด ชื่อเรียก และจุดกึ่งกลางสำหรับเปิดแผนที่ |
 | JobsModule | ประกาศ, feed, บันทึกงาน, เปิดหรือปิดรับสมัคร |
 | ApplicationsModule | สมัครงาน, timeline, เปลี่ยนสถานะ |
 | NotificationsModule | แจ้งเตือนในแอปและ BullMQ worker |
@@ -100,6 +101,7 @@ server/src/
 ├── auth/
 ├── students/
 ├── companies/
+├── provinces/
 ├── jobs/
 ├── applications/
 ├── notifications/
@@ -112,6 +114,16 @@ server/src/
 ## 5. เส้นทาง API
 
 Filter ของหน้า Home เป็น query ของ `GET /jobs` ไม่มี resource แยก
+
+จังหวัดที่ใช้ในโปรไฟล์บริษัท ฟอร์มประกาศ และตัวกรองงานอ้างอิงมาสเตอร์ 77 จังหวัดเดียวกัน ชื่อจังหวัดในประกาศยังเป็นอิสระจากโปรไฟล์บริษัท
+
+### จังหวัด
+
+| Method | Path | ใช้กับหน้า |
+|---|---|---|
+| GET | /api/provinces | Company Profile, Create / Edit Job, Filter |
+
+ผลลัพธ์มีรหัสจังหวัด ชื่อมาตรฐาน ชื่อเรียกที่ค้นหาได้ และจุดกึ่งกลางสำหรับเปิดแผนที่ ไม่เรียกบริการค้นหาที่อยู่ภายนอก
 
 ### Auth
 
@@ -145,6 +157,8 @@ Access token อายุสั้น Refresh token หมุนทุกคร�
 
 `GET /api/jobs` รับ `search`, `province`, `workMode`, `category`, `hasAllowance`, `skills` (กรองด้วย PostgreSQL array overlap operator) และคืนเฉพาะงานสถานะ `open`
 
+ค่า `province` และชื่อจังหวัดที่บันทึกในประกาศถูกแปลงเป็นชื่อมาตรฐานเดียวกันก่อนกรอง เพื่อรองรับชื่อเรียกอย่าง `กทม.` และข้อมูลเก่าอย่าง `กรุงเทพฯ`
+
 Route `GET /api/jobs/saved` ต้องประกาศก่อน `GET /api/jobs/:id` เพื่อไม่ให้คำว่า `saved` ถูกจับเป็น id
 
 ### บริษัท
@@ -162,6 +176,8 @@ Route `GET /api/jobs/saved` ต้องประกาศก่อน `GET /api
 | PATCH | /api/company/jobs/:id/applications/:applicationId/status | เปลี่ยนสถานะผู้สมัคร |
 
 บริษัทเรียกได้เฉพาะประกาศและผู้สมัครของบริษัทตัวเอง ไม่เช่นนั้นตอบ 403
+
+`PATCH /api/companies/me` รับ `provinceId`, `location` (ที่อยู่สั้น), และ `latitude`/`longitude` เป็นคู่ พิกัดต้องมีจังหวัดก่อน และการเปลี่ยนจังหวัดโดยไม่ส่งพิกัดใหม่จะล้างหมุดเก่า แผนที่บนแอปใช้แผนที่เปิด ไม่ใช้ Google Maps key
 
 ### Health
 
@@ -231,6 +247,7 @@ submitted → reviewing → accepted
 - `dio` เรียก API
 - `flutter_secure_storage` เก็บ access token และ refresh token
 - `file_picker` เลือก Resume PDF และ logo
+- `flutter_map` และปลั๊กอินหมุดลากได้แสดงที่ตั้งสำนักงานบนแผนที่เปิด พร้อมเครดิต OpenStreetMap
 
 ไม่ใช้ GetX, Bloc หรือ `build_runner` กติกาธุรกิจอยู่ที่ API แอปไม่มีคลาส use case แยก
 
@@ -249,6 +266,7 @@ client/lib/
 │   ├── router/company_shell.dart
 │   ├── storage/token_storage.dart
 │   ├── error/app_exception.dart
+│   ├── provinces/                # มาสเตอร์จังหวัดและ Bottom Sheet ที่ใช้ร่วมกัน
 │   └── widgets/
 │       ├── job_card.dart
 │       ├── status_chip.dart

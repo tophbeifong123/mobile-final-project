@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/error/app_exception.dart';
+import '../../../../core/provinces/thai_province_picker.dart';
 import '../../../../core/theme/app_colors_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/app_primary_button.dart';
@@ -70,6 +71,7 @@ class _JobFormState extends ConsumerState<_JobForm> {
   late bool _hasAllowance;
   late int _version;
   late List<String> _skills;
+  int? _selectedProvinceId;
   String? _error;
   bool _submitting = false;
   bool _deleting = false;
@@ -132,12 +134,20 @@ class _JobFormState extends ConsumerState<_JobForm> {
               validator: _required,
             ),
             const Gap(12),
-            AppTextField(
-              controller: _provinceController,
-              textInputAction: TextInputAction.next,
-              label: 'จังหวัด',
-              prefixIcon: const Icon(LucideIcons.mapPin, size: 18),
-              validator: _required,
+            InkWell(
+              key: const Key('job-province-picker'),
+              onTap: _busy ? null : _openProvincePicker,
+              child: IgnorePointer(
+                child: AppTextField(
+                  controller: _provinceController,
+                  label: 'จังหวัด',
+                  hintText: 'เลือกจากรายชื่อจังหวัด',
+                  readOnly: true,
+                  prefixIcon: const Icon(LucideIcons.mapPin, size: 18),
+                  suffixIcon: const Icon(Icons.keyboard_arrow_down),
+                  validator: _required,
+                ),
+              ),
             ),
             const Gap(12),
             DropdownButtonFormField<WorkMode>(
@@ -359,6 +369,18 @@ class _JobFormState extends ConsumerState<_JobForm> {
     if (selected != null && mounted) {
       setState(() => _skills = selected);
     }
+  }
+
+  Future<void> _openProvincePicker() async {
+    final selected = await showThaiProvincePicker(
+      context,
+      selectedProvinceId: _selectedProvinceId,
+    );
+    if (!mounted || selected == null) return;
+    setState(() {
+      _selectedProvinceId = selected.id;
+      _provinceController.text = selected.nameTh;
+    });
   }
 
   String get _submitLabel {

@@ -9,6 +9,8 @@ import { User } from '../auth/entities/user.entity.js';
 import { Job } from '../jobs/entities/job.entity.js';
 import { SavedJob } from '../jobs/entities/saved-job.entity.js';
 import { Notification } from '../notifications/entities/notification.entity.js';
+import { Province } from '../provinces/province.entity.js';
+import { AddCompanyOfficeLocation1791158400000 } from './migrations/1791158400000-add-company-office-location.js';
 import { AddAvatarToStudentProfiles1759200000000 } from './migrations/1759200000000-add-avatar-to-student-profiles.js';
 import { AddBioContactsPortfoliosToStudentProfiles1759100000000 } from './migrations/1759100000000-add-bio-contacts-portfolios-to-student-profiles.js';
 import { AddSkillsToJobs1759000000000 } from './migrations/1759000000000-add-skills-to-jobs.js';
@@ -36,6 +38,7 @@ export const AppDataSource = new DataSource({
     Application,
     ApplicationStatusEvent,
     Notification,
+    Province,
   ],
   migrations: [
     CreateAuthTables1758556800000,
@@ -46,5 +49,6 @@ export const AppDataSource = new DataSource({
     AddSkillsToJobs1759000000000,
     AddBioContactsPortfoliosToStudentProfiles1759100000000,
     AddAvatarToStudentProfiles1759200000000,
+    AddCompanyOfficeLocation1791158400000,
   ],
 });

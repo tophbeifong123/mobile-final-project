@@ -27,7 +27,10 @@ export class JobFeedQueryDto extends PaginationQueryDto {
   @MaxLength(255)
   search?: string;
 
-  @ApiPropertyOptional({ example: 'สงขลา' })
+  @ApiPropertyOptional({
+    example: 'สงขลา',
+    description: 'ชื่อจังหวัดมาตรฐานหรือชื่อเรียกจาก GET /api/provinces',
+  })
   @Transform(emptyToUndefined)
   @IsOptional()
   @IsString()

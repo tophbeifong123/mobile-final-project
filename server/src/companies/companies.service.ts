@@ -9,6 +9,7 @@ import { type AuthUser } from '../auth/auth-user.js';
 import { UserRole } from '../auth/user-role.js';
 import { StorageService } from '../storage/storage.service.js';
 import { type UploadedFilePayload } from '../storage/uploaded-file.interface.js';
+import { ProvincesService } from '../provinces/provinces.service.js';
 import { CompaniesRepository } from './companies.repository.js';
 import { CompanyDashboardSummaryDto } from './dto/company-dashboard-summary.dto.js';
 import { CompanyProfileDto } from './dto/company-profile.dto.js';
@@ -24,6 +25,7 @@ export class CompaniesService {
   constructor(
     private readonly companiesRepository: CompaniesRepository,
     private readonly storageService: StorageService,
+    private readonly provincesService: ProvincesService,
   ) {}
 
   async getDashboard(user: AuthUser): Promise<CompanyDashboardSummaryDto> {
@@ -73,11 +75,80 @@ export class CompaniesService {
       throw new NotFoundException(COMPANY_NOT_FOUND);
     }
 
-    const saved = await this.companiesRepository.updateProfile(profile.id, {
-      name: dto.name.trim(),
-      businessType: dto.businessType.trim(),
-      description: dto.description.trim(),
-    });
+    const data: {
+      name?: string;
+      businessType?: string;
+      description?: string;
+      provinceId?: number | null;
+      location?: string;
+      latitude?: number | null;
+      longitude?: number | null;
+    } = {};
+    if (typeof dto.name === 'string') data.name = dto.name.trim();
+    if (typeof dto.businessType === 'string')
+      data.businessType = dto.businessType.trim();
+    if (typeof dto.description === 'string')
+      data.description = dto.description.trim();
+    if (typeof dto.location === 'string') {
+      const location = dto.location.trim();
+      if (location.length > 255) {
+        throw new BadRequestException('ที่อยู่ต้องไม่เกิน 255 ตัวอักษร');
+      }
+      data.location = location;
+    }
+
+    const currentProvinceId = profile.provinceId ?? null;
+    const provinceId =
+      dto.provinceId !== undefined ? dto.provinceId : currentProvinceId;
+    if (dto.provinceId !== undefined) {
+      if (dto.provinceId !== null) {
+        await this.provincesService.requireById(dto.provinceId);
+      }
+      data.provinceId = dto.provinceId;
+    }
+
+    const hasLatitude = dto.latitude !== undefined;
+    const hasLongitude = dto.longitude !== undefined;
+    if (hasLatitude !== hasLongitude) {
+      throw new BadRequestException('ต้องส่ง latitude และ longitude พร้อมกัน');
+    }
+    if (hasLatitude && hasLongitude) {
+      const bothNull = dto.latitude === null && dto.longitude === null;
+      const validPair =
+        typeof dto.latitude === 'number' &&
+        typeof dto.longitude === 'number' &&
+        Number.isFinite(dto.latitude) &&
+        Number.isFinite(dto.longitude) &&
+        dto.latitude >= -90 &&
+        dto.latitude <= 90 &&
+        dto.longitude >= -180 &&
+        dto.longitude <= 180;
+      if (!bothNull && !validPair) {
+        throw new BadRequestException('พิกัดไม่ถูกต้อง');
+      }
+      if (validPair && provinceId === null) {
+        throw new BadRequestException('ต้องเลือกจังหวัดก่อนบันทึกหมุดสำนักงาน');
+      }
+      data.latitude = dto.latitude;
+      data.longitude = dto.longitude;
+    } else if (
+      dto.provinceId !== undefined &&
+      dto.provinceId !== currentProvinceId
+    ) {
+      // A pin from the previously selected province must not silently survive
+      // a province change. The caller can send a fresh coordinate pair instead.
+      data.latitude = null;
+      data.longitude = null;
+    }
+
+    if (Object.keys(data).length === 0) {
+      throw new BadRequestException('ไม่มีข้อมูลสำหรับแก้ไข');
+    }
+
+    const saved = await this.companiesRepository.updateProfile(
+      profile.id,
+      data,
+    );
 
     if (!saved) {
       throw new NotFoundException(COMPANY_NOT_FOUND);
@@ -132,7 +203,8 @@ export class CompaniesService {
       file.originalname?.toLowerCase().match(/\.(png|jpe?g|webp|svg|gif)$/),
     );
 
-    const isImage = isPng || isJpeg || isWebp || isGif || isSvg || isImageMime || hasImageExt;
+    const isImage =
+      isPng || isJpeg || isWebp || isGif || isSvg || isImageMime || hasImageExt;
 
     if (!isImage) {
       throw new BadRequestException(ONLY_IMAGE_ALLOWED);
@@ -200,11 +272,21 @@ function toProfileDto(profile: {
   businessType: string;
   description: string;
   logoObjectKey: string | null;
+  provinceId?: number | null;
+  province?: { nameTh: string } | null;
+  location?: string;
+  latitude?: number | null;
+  longitude?: number | null;
 }): CompanyProfileDto {
   const dto = new CompanyProfileDto();
   dto.name = profile.name;
   dto.businessType = profile.businessType;
   dto.description = profile.description;
   dto.logoObjectKey = profile.logoObjectKey ?? null;
+  dto.provinceId = profile.provinceId ?? null;
+  dto.provinceName = profile.province?.nameTh ?? null;
+  dto.location = profile.location ?? '';
+  dto.latitude = profile.latitude ?? null;
+  dto.longitude = profile.longitude ?? null;
   return dto;
 }

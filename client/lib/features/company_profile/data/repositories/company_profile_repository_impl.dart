@@ -20,6 +20,11 @@ class CompanyProfileRepositoryImpl implements CompanyProfileRepository {
       businessType: profile.businessType,
       description: profile.description,
       logoObjectKey: profile.logoObjectKey,
+      provinceId: profile.provinceId,
+      provinceName: profile.provinceName,
+      location: profile.location,
+      latitude: profile.latitude,
+      longitude: profile.longitude,
     );
     return (await _remote.update(model)).toEntity();
   }

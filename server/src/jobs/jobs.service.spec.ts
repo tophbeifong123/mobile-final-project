@@ -1,6 +1,12 @@
-import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { UserRole } from '../auth/user-role.js';
+import { ProvincesService } from '../provinces/provinces.service.js';
 import { CreateJobDto } from './dto/create-job.dto.js';
 import { JobFeedQueryDto } from './dto/job-feed-query.dto.js';
 import { UpdateJobDto } from './dto/update-job.dto.js';
@@ -26,6 +32,7 @@ describe('JobsService', () => {
     deleteOwned: vi.fn(),
     listByCompany: vi.fn(),
   };
+  const provincesService = { resolveName: vi.fn() };
 
   let service: JobsService;
 
@@ -34,10 +41,14 @@ describe('JobsService', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    provincesService.resolveName.mockImplementation(async (name: string) =>
+      name.trim(),
+    );
     const module = await Test.createTestingModule({
       providers: [
         JobsService,
         { provide: JobsRepository, useValue: repository },
+        { provide: ProvincesService, useValue: provincesService },
       ],
     }).compile();
     service = module.get(JobsService);
@@ -97,6 +108,46 @@ describe('JobsService', () => {
       ForbiddenException,
     );
     expect(repository.findCompanyId).not.toHaveBeenCalled();
+  });
+
+  it('stores a canonical province for a colloquial job province', async () => {
+    repository.findCompanyId.mockResolvedValue('company-1');
+    provincesService.resolveName.mockResolvedValue('กรุงเทพมหานคร');
+    repository.create.mockResolvedValue({
+      id: 'job-1',
+      title: 'งาน',
+      province: 'กรุงเทพมหานคร',
+      status: JobStatus.Open,
+    });
+    const dto = new CreateJobDto();
+    dto.title = 'งาน';
+    dto.description = 'รายละเอียด';
+    dto.province = 'กทม.';
+    dto.workMode = WorkMode.OnSite;
+    dto.category = 'IT';
+    dto.hasAllowance = false;
+    dto.requirements = 'คุณสมบัติ';
+
+    await service.create(company, dto);
+
+    expect(provincesService.resolveName).toHaveBeenCalledWith('กทม.');
+    expect(repository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ province: 'กรุงเทพมหานคร' }),
+    );
+  });
+
+  it('rejects a job province absent from the master', async () => {
+    repository.findCompanyId.mockResolvedValue('company-1');
+    provincesService.resolveName.mockRejectedValue(
+      new BadRequestException('ไม่พบจังหวัดที่เลือก'),
+    );
+    const dto = new CreateJobDto();
+    dto.province = 'ไม่มีจังหวัดนี้';
+
+    await expect(service.create(company, dto)).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+    expect(repository.create).not.toHaveBeenCalled();
   });
 
   it('returns not found when the company profile row is missing', async () => {
@@ -193,6 +244,19 @@ describe('JobsService', () => {
     });
     expect(result.items).toHaveLength(1);
     expect(result.items[0]?.skills).toEqual(['Flutter', 'Dart']);
+  });
+
+  it('uses the canonical province name to filter the student feed', async () => {
+    provincesService.resolveName.mockResolvedValue('กรุงเทพมหานคร');
+    repository.findOpen.mockResolvedValue({ items: [], total: 0 });
+    const query = new JobFeedQueryDto();
+    query.province = 'กรุงเทพฯ';
+
+    await service.listOpen(student, query);
+
+    expect(repository.findOpen).toHaveBeenCalledWith(
+      expect.objectContaining({ province: 'กรุงเทพมหานคร' }),
+    );
   });
 
   it('rejects a company reading the student feed', async () => {

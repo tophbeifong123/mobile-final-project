@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { UserRole } from '../auth/user-role.js';
+import { ProvincesService } from '../provinces/provinces.service.js';
 import { StorageService } from '../storage/storage.service.js';
 import { CompaniesRepository } from './companies.repository.js';
 import { CompaniesService } from './companies.service.js';
@@ -22,6 +23,7 @@ describe('CompaniesService', () => {
   const storageService = {
     put: vi.fn(),
   };
+  const provincesService = { requireById: vi.fn() };
 
   const companyUser = { userId: 'company-user-1', role: UserRole.Company };
   const studentUser = { userId: 'student-user-1', role: UserRole.Student };
@@ -33,6 +35,7 @@ describe('CompaniesService', () => {
         CompaniesService,
         { provide: CompaniesRepository, useValue: repository },
         { provide: StorageService, useValue: storageService },
+        { provide: ProvincesService, useValue: provincesService },
       ],
     }).compile();
 
@@ -119,6 +122,11 @@ describe('CompaniesService', () => {
         businessType: 'Software',
         description: 'Tech Company',
         logoObjectKey: 'company-logos/user-1/logo.png',
+        provinceId: null,
+        provinceName: null,
+        location: '',
+        latitude: null,
+        longitude: null,
       });
     });
 
@@ -171,7 +179,145 @@ describe('CompaniesService', () => {
         businessType: 'Consulting',
         description: 'Updated Description',
         logoObjectKey: null,
+        provinceId: null,
+        provinceName: null,
+        location: '',
+        latitude: null,
+        longitude: null,
       });
+    });
+
+    it('saves a selected province, short address and office pin', async () => {
+      repository.findCompanyProfileByUserId.mockResolvedValue({
+        id: 'company-profile-1',
+        provinceId: null,
+      });
+      provincesService.requireById.mockResolvedValue({
+        id: 90,
+        nameTh: 'สงขลา',
+      });
+      repository.updateProfile.mockResolvedValue({
+        name: 'Tech Corp',
+        businessType: 'IT',
+        description: '',
+        logoObjectKey: null,
+        provinceId: 90,
+        province: { nameTh: 'สงขลา' },
+        location: 'ถนนกาญจนวนิช',
+        latitude: 7.0064,
+        longitude: 100.5008,
+      });
+
+      const result = await service.updateProfile(companyUser, {
+        provinceId: 90,
+        location: ' ถนนกาญจนวนิช ',
+        latitude: 7.0064,
+        longitude: 100.5008,
+      });
+
+      expect(provincesService.requireById).toHaveBeenCalledWith(90);
+      expect(repository.updateProfile).toHaveBeenCalledWith(
+        'company-profile-1',
+        {
+          provinceId: 90,
+          location: 'ถนนกาญจนวนิช',
+          latitude: 7.0064,
+          longitude: 100.5008,
+        },
+      );
+      expect(result).toMatchObject({
+        provinceName: 'สงขลา',
+        location: 'ถนนกาญจนวนิช',
+      });
+    });
+
+    it('rejects saving an office pin before a province is selected', async () => {
+      repository.findCompanyProfileByUserId.mockResolvedValue({
+        id: 'company-profile-1',
+        provinceId: null,
+      });
+
+      await expect(
+        service.updateProfile(companyUser, { latitude: 7, longitude: 100 }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(repository.updateProfile).not.toHaveBeenCalled();
+    });
+
+    it('rejects a partial or out-of-range coordinate pair', async () => {
+      repository.findCompanyProfileByUserId.mockResolvedValue({
+        id: 'company-profile-1',
+        provinceId: 90,
+      });
+
+      await expect(
+        service.updateProfile(companyUser, { latitude: 7 }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      await expect(
+        service.updateProfile(companyUser, { latitude: 91, longitude: 100 }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(repository.updateProfile).not.toHaveBeenCalled();
+    });
+
+    it('rejects an address longer than the short-address column', async () => {
+      repository.findCompanyProfileByUserId.mockResolvedValue({
+        id: 'company-profile-1',
+        provinceId: null,
+      });
+
+      await expect(
+        service.updateProfile(companyUser, { location: 'ก'.repeat(256) }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(repository.updateProfile).not.toHaveBeenCalled();
+    });
+
+    it('clears the old pin when province changes without a new pin', async () => {
+      repository.findCompanyProfileByUserId.mockResolvedValue({
+        id: 'company-profile-1',
+        provinceId: 10,
+        latitude: 13.75,
+        longitude: 100.5,
+      });
+      provincesService.requireById.mockResolvedValue({
+        id: 90,
+        nameTh: 'สงขลา',
+      });
+      repository.updateProfile.mockResolvedValue({
+        name: 'Tech Corp',
+        businessType: 'IT',
+        description: '',
+        logoObjectKey: null,
+        provinceId: 90,
+        province: { nameTh: 'สงขลา' },
+        location: '',
+        latitude: null,
+        longitude: null,
+      });
+
+      await service.updateProfile(companyUser, { provinceId: 90 });
+
+      expect(repository.updateProfile).toHaveBeenCalledWith(
+        'company-profile-1',
+        {
+          provinceId: 90,
+          latitude: null,
+          longitude: null,
+        },
+      );
+    });
+
+    it('rejects a province ID not in the 77-province master', async () => {
+      repository.findCompanyProfileByUserId.mockResolvedValue({
+        id: 'company-profile-1',
+        provinceId: null,
+      });
+      provincesService.requireById.mockRejectedValue(
+        new BadRequestException('ไม่พบจังหวัดที่เลือก'),
+      );
+
+      await expect(
+        service.updateProfile(companyUser, { provinceId: 999 }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(repository.updateProfile).not.toHaveBeenCalled();
     });
 
     it('rejects student updating company profile', async () => {
@@ -213,7 +359,9 @@ describe('CompaniesService', () => {
         logoObjectKey: 'company-logos/company-user-1/mock.png',
       });
 
-      const pngHeader = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+      const pngHeader = Buffer.from([
+        0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+      ]);
       const file = {
         fieldname: 'file',
         originalname: 'logo.png',
@@ -236,13 +384,18 @@ describe('CompaniesService', () => {
         businessType: 'IT',
         description: 'Desc',
         logoObjectKey: 'company-logos/company-user-1/mock.png',
+        provinceId: null,
+        provinceName: null,
+        location: '',
+        latitude: null,
+        longitude: null,
       });
     });
 
     it('throws BadRequestException when file is missing', async () => {
-      await expect(service.uploadLogo(companyUser, undefined)).rejects.toBeInstanceOf(
-        BadRequestException,
-      );
+      await expect(
+        service.uploadLogo(companyUser, undefined),
+      ).rejects.toBeInstanceOf(BadRequestException);
     });
 
     it('throws BadRequestException when file is not an image', async () => {
@@ -256,9 +409,9 @@ describe('CompaniesService', () => {
         buffer: pdfHeader,
       };
 
-      await expect(service.uploadLogo(companyUser, file)).rejects.toBeInstanceOf(
-        BadRequestException,
-      );
+      await expect(
+        service.uploadLogo(companyUser, file),
+      ).rejects.toBeInstanceOf(BadRequestException);
     });
 
     it('rejects student uploading company logo', async () => {
@@ -271,9 +424,9 @@ describe('CompaniesService', () => {
         buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
       };
 
-      await expect(service.uploadLogo(studentUser, file)).rejects.toBeInstanceOf(
-        ForbiddenException,
-      );
+      await expect(
+        service.uploadLogo(studentUser, file),
+      ).rejects.toBeInstanceOf(ForbiddenException);
     });
   });
 });
