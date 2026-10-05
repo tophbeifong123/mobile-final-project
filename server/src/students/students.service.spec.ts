@@ -15,9 +15,7 @@ describe('StudentsService', () => {
   const repository = {
     findByUserId: vi.fn(),
     updateByUserId: vi.fn(),
-    updateResume: vi.fn(),
     updateAvatar: vi.fn(),
-    findCvOrType: vi.fn(),
     findCv: vi.fn(),
     saveDocument: vi.fn(),
     isObjectReferencedByApplication: vi.fn(),
@@ -140,13 +138,10 @@ describe('StudentsService', () => {
     it('uploads a valid PDF resume to the student documents store', async () => {
       repository.findByUserId.mockResolvedValue({ ...stored, id: 'student-profile-1' });
       storage.put.mockResolvedValue('resumes/user-1/generated-key.pdf');
-      repository.findCvOrType.mockResolvedValue(null);
-      repository.saveDocument.mockImplementation(async (input) => ({ id: 'doc-1', ...input }));
-      repository.updateResume.mockResolvedValue({
-        ...stored,
-        resumeFileName: 'my-resume.pdf',
-        resumeObjectKey: 'resumes/user-1/generated-key.pdf',
-      });
+      repository.saveDocument.mockImplementation(async (input) => ({
+        document: { id: 'doc-1', ...input },
+        replacedDocument: null,
+      }));
 
       const result = await service.uploadResume(student, validPdfFile);
 
@@ -257,7 +252,6 @@ describe('StudentsService', () => {
 
     it('rejects a fourth other document and cleans up its uploaded object', async () => {
       repository.findByUserId.mockResolvedValue(stored);
-      repository.findCvOrType.mockResolvedValue(null);
       repository.saveDocument.mockRejectedValue(new TooManyOtherDocumentsError());
       storage.delete.mockResolvedValue(undefined);
       const pdf: UploadedFilePayload = { fieldname: 'file', originalname: 'file.pdf', encoding: '7bit', mimetype: 'application/pdf', size: 15, buffer: Buffer.from('%PDF-1.4 valid') };
@@ -266,7 +260,7 @@ describe('StudentsService', () => {
       expect(storage.delete).toHaveBeenCalledOnce();
     });
 
-    it('deletes a CV, clears the active resume, and keeps an application snapshot', async () => {
+    it('deletes a CV and keeps an application snapshot', async () => {
       repository.findByUserId.mockResolvedValue({ ...stored, id: 'student-profile-1' });
       repository.deleteDocument.mockResolvedValue({
         id: 'cv-1',
@@ -277,7 +271,6 @@ describe('StudentsService', () => {
 
       await service.deleteDocument(student, 'cv-1');
 
-      expect(repository.updateResume).toHaveBeenCalledWith('user-1', null, null);
       expect(storage.delete).not.toHaveBeenCalled();
     });
 
@@ -292,7 +285,6 @@ describe('StudentsService', () => {
 
       await service.deleteDocument(student, 'transcript-1');
 
-      expect(repository.updateResume).not.toHaveBeenCalled();
       expect(storage.delete).toHaveBeenCalledWith(
         'student-documents/user-1/transcript/current.pdf',
       );

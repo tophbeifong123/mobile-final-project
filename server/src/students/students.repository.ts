@@ -66,7 +66,7 @@ export class StudentsRepository {
     type: StudentDocumentType;
     objectKey: string;
     fileName: string;
-  }): Promise<StudentDocument> {
+  }): Promise<{ document: StudentDocument; replacedDocument: StudentDocument | null }> {
     return this.dataSource.transaction(async (manager) => {
       await this.lockStudent(manager, input.studentId);
       const documents = manager.getRepository(StudentDocument);
@@ -76,13 +76,22 @@ export class StudentsRepository {
         });
         if (count >= 3) throw new TooManyOtherDocumentsError();
       }
+      let replacedDocument: StudentDocument | null = null;
       if (input.type !== StudentDocumentType.Other) {
-        const current = await documents.findOne({
+        replacedDocument = await documents.findOne({
           where: { studentId: input.studentId, type: input.type },
         });
-        if (current) await documents.remove(current);
+        if (replacedDocument) await documents.remove(replacedDocument);
       }
-      return documents.save(documents.create(input));
+      const document = await documents.save(documents.create(input));
+      if (input.type === StudentDocumentType.Cv) {
+        await manager.update(
+          StudentProfile,
+          { id: input.studentId },
+          { resumeObjectKey: input.objectKey, resumeFileName: input.fileName },
+        );
+      }
+      return { document, replacedDocument };
     });
   }
 
@@ -93,7 +102,16 @@ export class StudentsRepository {
       const document = await documents.findOne({
         where: { id, studentId },
       });
-      if (document) await documents.remove(document);
+      if (document) {
+        await documents.remove(document);
+        if (document.type === StudentDocumentType.Cv) {
+          await manager.update(
+            StudentProfile,
+            { id: studentId },
+            { resumeObjectKey: null, resumeFileName: null },
+          );
+        }
+      }
       return document;
     });
   }

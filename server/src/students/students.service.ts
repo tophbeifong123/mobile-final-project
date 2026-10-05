@@ -144,13 +144,12 @@ export class StudentsService {
     const profile = await this.studentsRepository.findByUserId(user.userId);
     if (!profile) throw new NotFoundException(PROFILE_NOT_FOUND);
     const fileName = sanitizePdfName(file.originalname);
-    const old = type === StudentDocumentType.Other ? null : await this.studentsRepository.findCvOrType(profile.id, type);
     const objectKey = 'student-documents/' + user.userId + '/' + type + '/' + randomUUID() + '.pdf';
     await this.storageService.put(objectKey, file.buffer, 'application/pdf');
     try {
-      const document = await this.studentsRepository.saveDocument({ studentId: profile.id, type, objectKey, fileName });
-      if (old && !(await this.studentsRepository.isObjectReferencedByApplication(old.objectKey))) {
-        await this.storageService.delete(old.objectKey).catch(() => undefined);
+      const { document, replacedDocument } = await this.studentsRepository.saveDocument({ studentId: profile.id, type, objectKey, fileName });
+      if (replacedDocument && !(await this.studentsRepository.isObjectReferencedByApplication(replacedDocument.objectKey))) {
+        await this.storageService.delete(replacedDocument.objectKey).catch(() => undefined);
       }
       return document;
     } catch (error) {
@@ -166,9 +165,6 @@ export class StudentsService {
     if (!profile) throw new NotFoundException(PROFILE_NOT_FOUND);
     const document = await this.studentsRepository.deleteDocument(profile.id, id);
     if (!document) throw new NotFoundException('ไม่พบเอกสาร');
-    if (document.type === StudentDocumentType.Cv) {
-      await this.studentsRepository.updateResume(user.userId, null, null);
-    }
     if (!(await this.studentsRepository.isObjectReferencedByApplication(document.objectKey))) {
       await this.storageService.delete(document.objectKey).catch(() => undefined);
     }
