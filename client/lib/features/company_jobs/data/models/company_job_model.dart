@@ -6,7 +6,10 @@ class CompanyJobModel {
     required this.id,
     required this.title,
     required this.status,
+    required this.workMode,
     required this.applicantCount,
+    required this.pendingApplicantCount,
+    this.deadline,
   });
 
   factory CompanyJobModel.fromJson(Map<String, dynamic> json) {
@@ -14,21 +17,32 @@ class CompanyJobModel {
       id: json['id'] as String,
       title: json['title'] as String? ?? '',
       status: json['status'] as String? ?? 'open',
+      workMode: json['workMode'] as String? ?? 'hybrid',
       applicantCount: json['applicantCount'] as int? ?? 0,
+      pendingApplicantCount: json['pendingApplicantCount'] as int? ?? 0,
+      deadline: json['deadline'] != null
+          ? DateTime.tryParse(json['deadline'] as String)
+          : null,
     );
   }
 
   final String id;
   final String title;
   final String status;
+  final String workMode;
   final int applicantCount;
+  final int pendingApplicantCount;
+  final DateTime? deadline;
 
   CompanyJob toEntity() {
     return CompanyJob(
       id: id,
       title: title,
       status: status,
+      workMode: workMode,
       applicantCount: applicantCount,
+      pendingApplicantCount: pendingApplicantCount,
+      deadline: deadline,
     );
   }
 }

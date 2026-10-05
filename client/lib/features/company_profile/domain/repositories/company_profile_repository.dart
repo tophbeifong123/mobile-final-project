@@ -10,4 +10,14 @@ abstract class CompanyProfileRepository {
     required String fileName,
     List<int>? bytes,
   });
+
+  Future<CompanyProfile> deleteLogo();
+
+  Future<CompanyProfile> uploadCover({
+    required String filePath,
+    required String fileName,
+    List<int>? bytes,
+  });
+
+  Future<CompanyProfile> deleteCover();
 }

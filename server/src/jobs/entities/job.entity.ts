@@ -53,6 +53,9 @@ export class Job {
   })
   status: JobStatus;
 
+  @Column({ type: 'timestamptz', nullable: true, default: null })
+  deadline: Date | null;
+
   @VersionColumn()
   version: number;
 
