@@ -14,11 +14,10 @@ final companyDashboardRepositoryProvider = Provider<CompanyDashboardRepository>(
   },
 );
 
-final companyDashboardSummaryProvider = FutureProvider<CompanyDashboardSummary>(
-  (ref) {
-    return ref.watch(companyDashboardRepositoryProvider).fetchSummary();
-  },
-);
+final companyDashboardSummaryProvider =
+    FutureProvider.autoDispose<CompanyDashboardSummary>((ref) {
+      return ref.watch(companyDashboardRepositoryProvider).fetchSummary();
+    });
 
 class CompanyDashboardController extends Notifier<void> {
   @override

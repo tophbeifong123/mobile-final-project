@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { UserRole } from '../auth/user-role.js';
+import { ApplicationStatus } from '../applications/application-status.js';
 import { StorageService } from '../storage/storage.service.js';
 import { CompaniesRepository } from './companies.repository.js';
 import { CompaniesService } from './companies.service.js';
@@ -53,6 +54,7 @@ describe('CompaniesService', () => {
         totalJobs: 5,
         openJobs: 3,
         totalApplicants: 12,
+        pendingApplicants: 7,
       });
 
       const result = await service.getDashboard(companyUser);
@@ -62,11 +64,13 @@ describe('CompaniesService', () => {
       );
       expect(repository.getDashboardSummary).toHaveBeenCalledWith(
         'company-profile-1',
+        [ApplicationStatus.Submitted, ApplicationStatus.Reviewing],
       );
       expect(result).toEqual({
         totalJobs: 5,
         openJobs: 3,
         totalApplicants: 12,
+        pendingApplicants: 7,
       });
     });
 
@@ -80,11 +84,26 @@ describe('CompaniesService', () => {
         totalJobs: 1,
         openJobs: 1,
         totalApplicants: 0,
+        pendingApplicants: 0,
       });
 
       const result = await service.getDashboard(companyUser);
 
       expect(result.totalApplicants).toBe(0);
+      expect(result.pendingApplicants).toBe(0);
+    });
+
+    it('returns all zero counts for a company without jobs', async () => {
+      repository.findCompanyProfileByUserId.mockResolvedValue({ id: 'empty-company' });
+      const empty = { totalJobs: 0, openJobs: 0, totalApplicants: 0, pendingApplicants: 0 };
+      repository.getDashboardSummary.mockResolvedValue(empty);
+      expect(await service.getDashboard(companyUser)).toEqual(empty);
+    });
+
+    it('propagates a count failure instead of presenting false zero counts', async () => {
+      repository.findCompanyProfileByUserId.mockResolvedValue({ id: 'company-profile-1' });
+      repository.getDashboardSummary.mockRejectedValueOnce(new Error('Database unavailable'));
+      await expect(service.getDashboard(companyUser)).rejects.toThrow('Database unavailable');
     });
 
     it('rejects student accessing company dashboard', async () => {

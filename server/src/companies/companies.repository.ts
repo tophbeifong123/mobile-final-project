@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { Application } from '../applications/entities/application.entity.js';
+import { type ApplicationStatus } from '../applications/application-status.js';
 import { CompanyProfile } from '../auth/entities/company-profile.entity.js';
 import { Job } from '../jobs/entities/job.entity.js';
 import { JobStatus } from '../jobs/job-enums.js';
@@ -9,6 +10,7 @@ export interface DashboardSummaryData {
   totalJobs: number;
   openJobs: number;
   totalApplicants: number;
+  pendingApplicants: number;
 }
 
 @Injectable()
@@ -21,11 +23,14 @@ export class CompaniesRepository {
       .findOne({ where: { userId } });
   }
 
-  async getDashboardSummary(companyId: string): Promise<DashboardSummaryData> {
+  async getDashboardSummary(
+    companyId: string,
+    pendingStatuses: readonly ApplicationStatus[],
+  ): Promise<DashboardSummaryData> {
     const jobRepo = this.dataSource.getRepository(Job);
     const appRepo = this.dataSource.getRepository(Application);
 
-    const [totalJobs, openJobs, totalApplicants] = await Promise.all([
+    const [totalJobs, openJobs, totalApplicants, pendingApplicants] = await Promise.all([
       jobRepo.count({ where: { companyId } }),
       jobRepo.count({ where: { companyId, status: JobStatus.Open } }),
       appRepo
@@ -33,12 +38,19 @@ export class CompaniesRepository {
         .innerJoin(Job, 'job', 'job.id = app.jobId')
         .where('job.companyId = :companyId', { companyId })
         .getCount(),
+      appRepo
+        .createQueryBuilder('app')
+        .innerJoin(Job, 'job', 'job.id = app.jobId')
+        .where('job.companyId = :companyId', { companyId })
+        .andWhere('app.status IN (:...pendingStatuses)', { pendingStatuses })
+        .getCount(),
     ]);
 
     return {
       totalJobs,
       openJobs,
       totalApplicants,
+      pendingApplicants,
     };
   }
 

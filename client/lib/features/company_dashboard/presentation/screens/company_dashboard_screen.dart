@@ -17,13 +17,20 @@ class CompanyDashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final summaryAsync = ref.watch(companyDashboardSummaryProvider);
 
+    Future<void> openPage(String path) async {
+      await context.push<void>(path);
+      if (context.mounted) ref.invalidate(companyDashboardSummaryProvider);
+    }
+
     return Scaffold(
+      backgroundColor: NeoColors.paperCanvas,
       appBar: const CompanyTopBar(title: 'แดชบอร์ดบริษัท'),
       body: SafeArea(
         top: false,
         child: RefreshIndicator(
           onRefresh: () => ref.refresh(companyDashboardSummaryProvider.future),
           child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(
               kPagePadding,
               16,
@@ -49,6 +56,8 @@ class CompanyDashboardScreen extends ConsumerWidget {
                       _StatCardPlaceholder(),
                       Gap(12),
                       _StatCardPlaceholder(),
+                      Gap(12),
+                      _StatCardPlaceholder(),
                     ],
                   ),
                 ),
@@ -65,9 +74,9 @@ class CompanyDashboardScreen extends ConsumerWidget {
                       value: summary.totalJobs.toString(),
                       subtitle: 'ตำแหน่งงานที่คุณสร้างไว้',
                       icon: Icons.work_outline,
-                      iconColor: AppColors.primary,
-                      iconBgColor: const Color(0x1A4F46E5),
-                      onTap: () => context.push('/company/jobs'),
+                      iconColor: NeoColors.inkSolid,
+                      iconBgColor: NeoColors.skyBlue,
+                      onTap: () => openPage('/company/jobs'),
                     ),
                     const Gap(12),
                     _StatCard(
@@ -75,9 +84,9 @@ class CompanyDashboardScreen extends ConsumerWidget {
                       value: summary.openJobs.toString(),
                       subtitle: 'กำลังแสดงในฟีดของนักศึกษา',
                       icon: Icons.check_circle_outline,
-                      iconColor: const Color(0xFF16A34A),
-                      iconBgColor: const Color(0x1A16A34A),
-                      onTap: () => context.push('/company/jobs'),
+                      iconColor: NeoColors.inkSolid,
+                      iconBgColor: NeoColors.freshMint,
+                      onTap: () => openPage('/company/jobs'),
                     ),
                     const Gap(12),
                     _StatCard(
@@ -85,9 +94,19 @@ class CompanyDashboardScreen extends ConsumerWidget {
                       value: summary.totalApplicants.toString(),
                       subtitle: 'จากทุกตำแหน่งงานของบริษัท',
                       icon: Icons.people_outline,
-                      iconColor: const Color(0xFFD97706),
-                      iconBgColor: const Color(0x1AD97706),
-                      onTap: () => context.push('/company/jobs'),
+                      iconColor: NeoColors.inkSolid,
+                      iconBgColor: NeoColors.softLilac,
+                      onTap: () => openPage('/company/jobs'),
+                    ),
+                    const Gap(12),
+                    _StatCard(
+                      title: 'ใบสมัครที่รอตรวจ',
+                      value: summary.pendingApplicants.toString(),
+                      subtitle: 'ส่งใบสมัครแล้ว หรือกำลังตรวจสอบ',
+                      icon: Icons.pending_actions_outlined,
+                      iconColor: NeoColors.inkSolid,
+                      iconBgColor: NeoColors.butterYellow,
+                      onTap: () => openPage('/company/jobs'),
                     ),
                   ],
                 ),
@@ -100,18 +119,18 @@ class CompanyDashboardScreen extends ConsumerWidget {
                 ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
               ),
               const Gap(12),
-              AppButton(
-                variant: AppButtonVariant.default_,
+              NeoButton(
+                variant: NeoButtonVariant.secondary,
                 isFullWidth: true,
-                onPressed: () => context.push('/company/jobs/new'),
+                onPressed: () => openPage('/company/jobs/new'),
                 icon: const Icon(Icons.add, size: 18),
                 text: 'สร้างประกาศ',
               ),
               const Gap(10),
-              AppButton(
-                variant: AppButtonVariant.outline,
+              NeoButton(
+                variant: NeoButtonVariant.outline,
                 isFullWidth: true,
-                onPressed: () => context.push('/company/jobs'),
+                onPressed: () => openPage('/company/jobs'),
                 icon: const Icon(Icons.format_list_bulleted, size: 18),
                 text: 'จัดการประกาศ',
               ),
@@ -149,6 +168,10 @@ class _StatCard extends StatelessWidget {
 
     return AppCard(
       onTap: onTap,
+      borderColor: NeoColors.inkSolid,
+      borderWidth: 2.5,
+      backgroundColor: NeoColors.pureWhite,
+      shadows: NeoShadows.elevation2,
       child: Row(
         children: [
           Container(
@@ -157,6 +180,7 @@ class _StatCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: iconBgColor,
               borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: NeoColors.inkSolid, width: 2),
             ),
             child: Icon(icon, color: iconColor, size: 24),
           ),
@@ -175,7 +199,7 @@ class _StatCard extends StatelessWidget {
                 Text(
                   value,
                   style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
                 const Gap(2),
@@ -201,6 +225,9 @@ class _StatCardPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const AppCard(
+      borderColor: NeoColors.inkSolid,
+      borderWidth: 2.5,
+      backgroundColor: NeoColors.pureWhite,
       child: Row(
         children: [
           SizedBox(width: 48, height: 48),

@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { isURL } from 'class-validator';
+import { ApplicationStatus } from '../applications/application-status.js';
 import {
   BadRequestException,
   ForbiddenException,
@@ -40,12 +41,14 @@ export class CompaniesService {
 
     const summary = await this.companiesRepository.getDashboardSummary(
       profile.id,
+      [ApplicationStatus.Submitted, ApplicationStatus.Reviewing],
     );
 
     const dto = new CompanyDashboardSummaryDto();
     dto.totalJobs = summary.totalJobs;
     dto.openJobs = summary.openJobs;
     dto.totalApplicants = summary.totalApplicants;
+    dto.pendingApplicants = summary.pendingApplicants;
     return dto;
   }
 
