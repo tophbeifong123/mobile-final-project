@@ -109,3 +109,7 @@ mongo_data/
 
 *.tsbuildinfo
 
+
+# Local Security Tools
+tools/
+

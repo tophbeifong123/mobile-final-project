@@ -5,13 +5,19 @@ class CompanyJob {
     required this.id,
     required this.title,
     required this.status,
+    required this.workMode,
     required this.applicantCount,
+    required this.pendingApplicantCount,
+    this.deadline,
   });
 
   final String id;
   final String title;
   final String status;
+  final String workMode;
   final int applicantCount;
+  final int pendingApplicantCount;
+  final DateTime? deadline;
 }
 
 class JobPosting {

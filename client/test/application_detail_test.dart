@@ -90,16 +90,21 @@ void main() {
       ); // StatusChip + Timeline step
       expect(find.text('กำลังพิจารณา'), findsOneWidget);
       expect(find.text('ผลการคัดเลือก'), findsOneWidget);
-      expect(find.text('ฉันตั้งใจจะฝึกงานตำแหน่งนี้มากๆ ครับ'), findsOneWidget);
       await tester.scrollUntilVisible(find.text('Resume ที่ใช้สมัคร'), 200);
       expect(find.text('Resume ที่ใช้สมัคร'), findsOneWidget);
       expect(
         find.text('สำเนา Resume ในระบบ ณ วันที่ยื่นใบสมัคร'),
         findsOneWidget,
       );
+      await tester.scrollUntilVisible(
+        find.text('ฉันตั้งใจจะฝึกงานตำแหน่งนี้มากๆ ครับ'),
+        200,
+      );
+      expect(find.text('ฉันตั้งใจจะฝึกงานตำแหน่งนี้มากๆ ครับ'), findsOneWidget);
 
       // Scroll back up to tap 'ดูประกาศงาน'
-      await tester.scrollUntilVisible(find.text('ดูประกาศงาน'), -200);
+      await tester.drag(find.byType(ListView), const Offset(0, 600));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('ดูประกาศงาน'));
       await tester.pumpAndSettle();
       expect(find.text('หน้ารายละเอียดงาน'), findsOneWidget);
