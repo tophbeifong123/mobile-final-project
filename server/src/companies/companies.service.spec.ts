@@ -151,6 +151,68 @@ describe('CompaniesService', () => {
   });
 
   describe('updateProfile', () => {
+    it.each([
+      'example.com',
+      'ftp://example.com',
+      'javascript:alert(1)',
+      'https://',
+      'https://invalid_domain.com',
+      'https://example .com',
+      'https://user:password@example.com',
+    ])(
+      'rejects invalid website %s without persisting any changes',
+      async (websiteUrl) => {
+        repository.findCompanyProfileByUserId.mockResolvedValue({
+          id: 'company-profile-1',
+        });
+        await expect(
+          service.updateProfile(companyUser, {
+            name: 'Company',
+            businessType: 'IT',
+            description: 'Description',
+            websiteUrl,
+          }),
+        ).rejects.toThrow('เว็บไซต์ต้องเป็น URL');
+        expect(repository.updateProfile).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each(['', 'https://example.com/careers?lang=th', 'http://example.com'])(
+      'persists all profile fields and reads them back after reopening: %s',
+      async (websiteUrl) => {
+        const profile = {
+          id: 'company-profile-1',
+          name: 'Company',
+          businessType: 'IT',
+          description: 'Description',
+          logoObjectKey: null,
+          coverObjectKey: null,
+          websiteUrl,
+          companySize: '201-500',
+          perks: ['MacBook'],
+          location: 'อาคาร A',
+        };
+        repository.findCompanyProfileByUserId.mockResolvedValue(profile);
+        repository.updateProfile.mockResolvedValue(profile);
+        const saved = await service.updateProfile(companyUser, profile);
+        const reopened = await service.getProfile(companyUser);
+        expect(reopened).toEqual(saved);
+        expect(reopened).toMatchObject({
+          name: 'Company',
+          businessType: 'IT',
+          description: 'Description',
+          websiteUrl,
+          companySize: '201-500',
+          perks: ['MacBook'],
+          location: 'อาคาร A',
+        });
+        expect(repository.updateProfile).toHaveBeenCalledWith(
+          'company-profile-1',
+          expect.objectContaining({ websiteUrl }),
+        );
+      },
+    );
+
     it('updates company profile fields and returns updated DTO', async () => {
       repository.findCompanyProfileByUserId.mockResolvedValue({
         id: 'company-profile-1',
@@ -250,7 +312,9 @@ describe('CompaniesService', () => {
         coverObjectKey: null,
       });
 
-      const pngHeader = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+      const pngHeader = Buffer.from([
+        0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+      ]);
       const file = {
         fieldname: 'file',
         originalname: 'logo.png',
@@ -271,13 +335,15 @@ describe('CompaniesService', () => {
         'image/png',
       );
       expect(repository.updateLogoObjectKey).toHaveBeenCalled();
-      expect(result.logoObjectKey).toBe('company-logos/company-user-1/mock.png');
+      expect(result.logoObjectKey).toBe(
+        'company-logos/company-user-1/mock.png',
+      );
     });
 
     it('throws BadRequestException when file is missing', async () => {
-      await expect(service.uploadLogo(companyUser, undefined)).rejects.toBeInstanceOf(
-        BadRequestException,
-      );
+      await expect(
+        service.uploadLogo(companyUser, undefined),
+      ).rejects.toBeInstanceOf(BadRequestException);
     });
 
     it('throws BadRequestException when file is not an image', async () => {
@@ -291,9 +357,9 @@ describe('CompaniesService', () => {
         buffer: pdfHeader,
       };
 
-      await expect(service.uploadLogo(companyUser, file)).rejects.toBeInstanceOf(
-        BadRequestException,
-      );
+      await expect(
+        service.uploadLogo(companyUser, file),
+      ).rejects.toBeInstanceOf(BadRequestException);
     });
 
     it('rejects student uploading company logo', async () => {
@@ -306,9 +372,9 @@ describe('CompaniesService', () => {
         buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
       };
 
-      await expect(service.uploadLogo(studentUser, file)).rejects.toBeInstanceOf(
-        ForbiddenException,
-      );
+      await expect(
+        service.uploadLogo(studentUser, file),
+      ).rejects.toBeInstanceOf(ForbiddenException);
     });
   });
 
@@ -359,8 +425,13 @@ describe('CompaniesService', () => {
       });
 
       const result = await service.deleteLogo(companyUser);
-      expect(storageService.delete).toHaveBeenCalledWith('company-logos/user/test.png');
-      expect(repository.updateLogoObjectKey).toHaveBeenCalledWith('company-profile-1', null);
+      expect(storageService.delete).toHaveBeenCalledWith(
+        'company-logos/user/test.png',
+      );
+      expect(repository.updateLogoObjectKey).toHaveBeenCalledWith(
+        'company-profile-1',
+        null,
+      );
       expect(result.logoObjectKey).toBeNull();
     });
   });
@@ -398,7 +469,9 @@ describe('CompaniesService', () => {
       const result = await service.uploadCover(companyUser, file);
       expect(storageService.put).toHaveBeenCalled();
       expect(repository.updateCoverObjectKey).toHaveBeenCalled();
-      expect(result.coverObjectKey).toBe('company-covers/company-user-1/mock.jpg');
+      expect(result.coverObjectKey).toBe(
+        'company-covers/company-user-1/mock.jpg',
+      );
     });
 
     it('gets cover file and returns buffer and mimeType', async () => {
@@ -433,8 +506,13 @@ describe('CompaniesService', () => {
       });
 
       const result = await service.deleteCover(companyUser);
-      expect(storageService.delete).toHaveBeenCalledWith('company-covers/user/test.jpg');
-      expect(repository.updateCoverObjectKey).toHaveBeenCalledWith('company-profile-1', null);
+      expect(storageService.delete).toHaveBeenCalledWith(
+        'company-covers/user/test.jpg',
+      );
+      expect(repository.updateCoverObjectKey).toHaveBeenCalledWith(
+        'company-profile-1',
+        null,
+      );
       expect(result.coverObjectKey).toBeNull();
     });
   });

@@ -12,6 +12,7 @@ import '../../../../core/widgets/loading_view.dart';
 import '../../../../core/widgets/neo_button.dart';
 import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../domain/entities/company_profile.dart';
+import '../../domain/entities/company_website_policy.dart';
 import '../providers/company_profile_controller.dart';
 
 class CompanyProfileScreen extends ConsumerWidget {
@@ -139,7 +140,7 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
     _locationController = TextEditingController(text: p.location);
     _newPerkController = TextEditingController();
 
-    _selectedCompanySize = p.companySize.isNotEmpty ? p.companySize : '51-200';
+    _selectedCompanySize = p.companySize;
     _perks = List<String>.from(p.perks);
   }
 
@@ -161,7 +162,7 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
       if (_locationController.text != p.location) {
         _locationController.text = p.location;
       }
-      if (p.companySize.isNotEmpty && _selectedCompanySize != p.companySize) {
+      if (_selectedCompanySize != p.companySize) {
         _selectedCompanySize = p.companySize;
       }
       _perks = List<String>.from(p.perks);
@@ -672,6 +673,7 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
             hint: 'https://www.bitkub.com',
             prefixIcon: Icons.language,
             keyboardType: TextInputType.url,
+            validator: validateCompanyWebsite,
           ),
         ],
       ),
@@ -873,74 +875,6 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
             hint:
                 'บริษัทผู้นำด้านเทคโนโลยี เรามุ่งมั่นพัฒนาคนรุ่นใหม่ สนับสนุนให้นักศึกษาได้ลงมือทำจริง...',
             maxLines: 4,
-          ),
-          const Gap(14),
-          _buildFieldLabel(label: 'บรรยากาศการทำงานจริง (Life at Office)'),
-          const Gap(6),
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: NeoColors.freshMint.withValues(alpha: 0.4),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: NeoColors.inkSolid, width: 2),
-                    boxShadow: NeoShadows.elevation1,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(
-                        Icons.groups_rounded,
-                        size: 26,
-                        color: NeoColors.inkSolid,
-                      ),
-                      Gap(4),
-                      Text(
-                        'Team & Collab',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: NeoColors.inkSolid,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const Gap(10),
-              Expanded(
-                child: Container(
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: NeoColors.butterYellow.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: NeoColors.inkSolid, width: 2),
-                    boxShadow: NeoShadows.elevation1,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(
-                        Icons.coffee_rounded,
-                        size: 26,
-                        color: NeoColors.inkSolid,
-                      ),
-                      Gap(4),
-                      Text(
-                        'Pantry & Snacks',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: NeoColors.inkSolid,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
           ),
         ],
       ),

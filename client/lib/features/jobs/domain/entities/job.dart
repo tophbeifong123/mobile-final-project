@@ -149,6 +149,11 @@ class JobDetail {
     required this.businessType,
     required this.companyDescription,
     required this.saved,
+    this.companyWebsiteUrl = '',
+    this.companySize = '',
+    this.companyLocation = '',
+    this.companyPerks = const [],
+    this.companyLogoAvailable = false,
     this.skills = const [],
   });
 
@@ -164,6 +169,11 @@ class JobDetail {
   final String companyName;
   final String businessType;
   final String companyDescription;
+  final String companyWebsiteUrl;
+  final String companySize;
+  final String companyLocation;
+  final List<String> companyPerks;
+  final bool companyLogoAvailable;
   final bool saved;
   final List<String> skills;
 }

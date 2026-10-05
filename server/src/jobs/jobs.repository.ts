@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource, OptimisticLockVersionMismatchError, QueryFailedError } from 'typeorm';
+import {
+  DataSource,
+  OptimisticLockVersionMismatchError,
+  QueryFailedError,
+} from 'typeorm';
 import { CompanyProfile } from '../auth/entities/company-profile.entity.js';
 import { StudentProfile } from '../auth/entities/student-profile.entity.js';
 import { Job } from './entities/job.entity.js';
@@ -34,6 +38,11 @@ export interface OpenJobDetail extends OpenJobRecord {
   requirements: string;
   businessType: string;
   companyDescription: string;
+  companyWebsiteUrl: string;
+  companySize: string;
+  companyPerks: string[];
+  companyLocation: string;
+  companyLogoObjectKey: string | null;
 }
 
 export interface CompanyJobRecord {
@@ -100,7 +109,9 @@ export class JobsRepository {
 
   async save(studentId: string, jobId: string): Promise<void> {
     try {
-      await this.dataSource.getRepository(SavedJob).insert({ studentId, jobId });
+      await this.dataSource
+        .getRepository(SavedJob)
+        .insert({ studentId, jobId });
     } catch (error) {
       if (!isUniqueViolation(error)) {
         throw error;
@@ -352,6 +363,11 @@ export class JobsRepository {
       .addSelect('company.name', 'companyName')
       .addSelect('company.businessType', 'businessType')
       .addSelect('company.description', 'companyDescription')
+      .addSelect('company.websiteUrl', 'companyWebsiteUrl')
+      .addSelect('company.companySize', 'companySize')
+      .addSelect('company.perks', 'companyPerks')
+      .addSelect('company.location', 'companyLocation')
+      .addSelect('company.logoObjectKey', 'companyLogoObjectKey')
       .getRawOne<Record<string, unknown>>()
       .then((row) => (row ? toOpenJobDetail(row) : null));
   }
@@ -412,6 +428,14 @@ function toOpenJobDetail(row: Record<string, unknown>): OpenJobDetail {
     requirements: String(readField(row, 'requirements') ?? ''),
     businessType: String(readField(row, 'businessType') ?? ''),
     companyDescription: String(readField(row, 'companyDescription') ?? ''),
+    companyWebsiteUrl: String(readField(row, 'companyWebsiteUrl') ?? ''),
+    companySize: String(readField(row, 'companySize') ?? ''),
+    companyPerks: readArray(row, 'companyPerks'),
+    companyLocation: String(readField(row, 'companyLocation') ?? ''),
+    companyLogoObjectKey:
+      readField(row, 'companyLogoObjectKey') == null
+        ? null
+        : String(readField(row, 'companyLogoObjectKey')),
   };
 }
 
@@ -424,7 +448,12 @@ function toCompanyJobRecord(row: Record<string, unknown>): CompanyJobRecord {
     workMode: readField(row, 'workMode') as WorkMode,
     applicantCount: Number(readField(row, 'applicantCount') ?? 0),
     pendingApplicantCount: Number(readField(row, 'pendingApplicantCount') ?? 0),
-    deadline: deadline instanceof Date ? deadline : deadline ? new Date(String(deadline)) : null,
+    deadline:
+      deadline instanceof Date
+        ? deadline
+        : deadline
+          ? new Date(String(deadline))
+          : null,
   };
 }
 

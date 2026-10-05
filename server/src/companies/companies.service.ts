@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { isURL } from 'class-validator';
 import {
   BadRequestException,
   ForbiddenException,
@@ -17,7 +18,8 @@ import { UpdateCompanyProfileDto } from './dto/update-company-profile.dto.js';
 const COMPANY_ONLY = 'เฉพาะบริษัทเท่านั้น';
 const COMPANY_NOT_FOUND = 'ไม่พบโปรไฟล์บริษัท';
 const FILE_REQUIRED = 'กรุณาเลือกไฟล์รูปภาพ';
-const ONLY_IMAGE_ALLOWED = 'เลือกได้เฉพาะไฟล์รูปภาพเท่านั้น (PNG, JPG, WEBP, SVG)';
+const ONLY_IMAGE_ALLOWED =
+  'เลือกได้เฉพาะไฟล์รูปภาพเท่านั้น (PNG, JPG, WEBP, SVG)';
 
 @Injectable()
 export class CompaniesService {
@@ -73,13 +75,28 @@ export class CompaniesService {
       throw new NotFoundException(COMPANY_NOT_FOUND);
     }
 
+    const websiteUrl = dto.websiteUrl?.trim();
+    if (
+      websiteUrl &&
+      !isURL(websiteUrl, {
+        protocols: ['http', 'https'],
+        require_protocol: true,
+        require_valid_protocol: true,
+        disallow_auth: true,
+      })
+    ) {
+      throw new BadRequestException(
+        'เว็บไซต์ต้องเป็น URL ที่ถูกต้องและขึ้นต้นด้วย http:// หรือ https:// โดยไม่มีชื่อผู้ใช้หรือรหัสผ่าน',
+      );
+    }
     const saved = await this.companiesRepository.updateProfile(profile.id, {
       name: dto.name.trim(),
       businessType: dto.businessType.trim(),
       description: dto.description.trim(),
-      websiteUrl: dto.websiteUrl !== undefined ? dto.websiteUrl.trim() : undefined,
+      websiteUrl,
       location: dto.location !== undefined ? dto.location.trim() : undefined,
-      companySize: dto.companySize !== undefined ? dto.companySize.trim() : undefined,
+      companySize:
+        dto.companySize !== undefined ? dto.companySize.trim() : undefined,
       perks: dto.perks !== undefined ? dto.perks : undefined,
     });
 
@@ -295,7 +312,11 @@ export class CompaniesService {
       file.originalname?.toLowerCase().endsWith('.svg') ||
       file.mimetype === 'image/svg+xml' ||
       (file.buffer &&
-        file.buffer.subarray(0, 100).toString('utf8').toLowerCase().includes('<svg'));
+        file.buffer
+          .subarray(0, 100)
+          .toString('utf8')
+          .toLowerCase()
+          .includes('<svg'));
 
     const isImageMime = Boolean(file.mimetype?.startsWith('image/'));
     const hasImageExt = Boolean(
