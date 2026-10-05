@@ -41,4 +41,22 @@ export class CompanyProfileDto {
 
   @ApiProperty({ type: Number, nullable: true, example: 100.5008 })
   longitude: number | null;
+  @ApiProperty({ example: 'https://www.bitkub.com', default: '' })
+  websiteUrl: string;
+
+  @ApiProperty({ example: '201-500 คน', default: '' })
+  companySize: string;
+
+  @ApiProperty({
+    example: ['💻 MacBook Pro ประจำตำแหน่ง', '🍱 ขนมและเครื่องดื่มฟรีไม่อั้น'],
+    type: [String],
+    default: [],
+  })
+  perks: string[];
+
+  @ApiProperty({
+    nullable: true,
+    example: 'company-covers/company-id/1758556800000-uuid.png',
+  })
+  coverObjectKey: string | null;
 }

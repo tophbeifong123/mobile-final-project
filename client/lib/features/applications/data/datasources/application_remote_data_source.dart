@@ -65,7 +65,9 @@ class ApplicationRemoteDataSource {
     final data = error.response?.data;
     if (data is Map<String, dynamic> && data['message'] != null) {
       final msg = data['message'];
-      if (msg is String) return AppException(msg);
+      if (msg is String) {
+        return AppException(msg);
+      }
       if (msg is List && msg.isNotEmpty) {
         return AppException(msg.first.toString());
       }

@@ -7,6 +7,7 @@ import {
 import { type AuthUser } from '../auth/auth-user.js';
 import { UserRole } from '../auth/user-role.js';
 import { ProvincesService } from '../provinces/provinces.service.js';
+import { StorageService } from '../storage/storage.service.js';
 import { CompanyJobItemDto } from './dto/company-job-item.dto.js';
 import { CreateJobDto } from './dto/create-job.dto.js';
 import { JobDetailDto } from './dto/job-detail.dto.js';
@@ -19,7 +20,7 @@ import { PaginationQueryDto } from '../common/dto/pagination-query.dto.js';
 import { toPaginatedResult } from '../common/dto/paginated-result.js';
 import { UpdateJobDto } from './dto/update-job.dto.js';
 import { UpdateJobStatusDto } from './dto/update-job-status.dto.js';
-import { JobStatus } from './job-enums.js';
+import { JobStatus, WorkMode } from './job-enums.js';
 import { JobsRepository, JobVersionConflictError } from './jobs.repository.js';
 
 const COMPANY_ONLY = 'เฉพาะบริษัทเท่านั้น';
@@ -35,6 +36,7 @@ export class JobsService {
   constructor(
     private readonly jobsRepository: JobsRepository,
     private readonly provincesService: ProvincesService,
+    private readonly storageService: StorageService,
   ) {}
 
   async create(user: AuthUser, dto: CreateJobDto): Promise<JobDto> {
@@ -105,6 +107,33 @@ export class JobsService {
       ? await this.jobsRepository.isSaved(studentId, jobId)
       : false;
     return toDetail(job, saved);
+  }
+
+  async getCompanyLogo(
+    user: AuthUser,
+    jobId: string,
+  ): Promise<{ buffer: Buffer; mimeType: string }> {
+    if (user.role !== UserRole.Student) {
+      throw new ForbiddenException(STUDENT_ONLY);
+    }
+    const job = await this.jobsRepository.findOpenById(jobId);
+    if (!job) throw new NotFoundException(JOB_NOT_FOUND);
+    const key = job.companyLogoObjectKey;
+    if (!key) throw new NotFoundException('ไม่พบโลโก้บริษัท');
+    const buffer = await this.storageService.get(key);
+    if (!buffer) throw new NotFoundException('ไม่พบโลโก้บริษัท');
+    const extension = key.split('.').pop()?.toLowerCase();
+    const mimeType =
+      extension === 'svg'
+        ? 'image/svg+xml'
+        : extension === 'jpg' || extension === 'jpeg'
+          ? 'image/jpeg'
+          : extension === 'webp'
+            ? 'image/webp'
+            : extension === 'gif'
+              ? 'image/gif'
+              : 'image/png';
+    return { buffer, mimeType };
   }
 
   async save(user: AuthUser, jobId: string): Promise<void> {
@@ -309,6 +338,11 @@ function toDetail(
     companyName: string;
     businessType: string;
     companyDescription: string;
+    companyWebsiteUrl?: string;
+    companySize?: string;
+    companyPerks?: string[];
+    companyLocation?: string;
+    companyLogoObjectKey?: string | null;
   },
   saved: boolean,
 ): JobDetailDto {
@@ -326,6 +360,11 @@ function toDetail(
   dto.companyName = job.companyName;
   dto.businessType = job.businessType;
   dto.companyDescription = job.companyDescription;
+  dto.companyWebsiteUrl = job.companyWebsiteUrl ?? '';
+  dto.companySize = job.companySize ?? '';
+  dto.companyPerks = job.companyPerks ?? [];
+  dto.companyLocation = job.companyLocation ?? '';
+  dto.companyLogoAvailable = Boolean(job.companyLogoObjectKey);
   dto.saved = saved;
   return dto;
 }
@@ -334,13 +373,19 @@ function toCompanyItem(job: {
   id: string;
   title: string;
   status: JobStatus;
+  workMode: WorkMode;
   applicantCount: number;
+  pendingApplicantCount: number;
+  deadline: Date | null;
 }): CompanyJobItemDto {
   const dto = new CompanyJobItemDto();
   dto.id = job.id;
   dto.title = job.title;
   dto.status = job.status;
+  dto.workMode = job.workMode;
   dto.applicantCount = job.applicantCount;
+  dto.pendingApplicantCount = job.pendingApplicantCount;
+  dto.deadline = job.deadline;
   return dto;
 }
 

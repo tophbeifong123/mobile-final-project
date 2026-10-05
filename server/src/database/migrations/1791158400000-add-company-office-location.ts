@@ -31,9 +31,8 @@ export class AddCompanyOfficeLocation1791158400000 implements MigrationInterface
     await queryRunner.query(
       `ALTER TABLE "company_profiles" ADD "province_id" smallint`,
     );
-    await queryRunner.query(
-      `ALTER TABLE "company_profiles" ADD "location" varchar(255) NOT NULL DEFAULT ''`,
-    );
+    // location already belongs to the earlier company-details migration.
+    // Keep existing text (including legacy long addresses) on both up and down.
     await queryRunner.query(
       `ALTER TABLE "company_profiles" ADD "latitude" double precision`,
     );
@@ -96,9 +95,6 @@ export class AddCompanyOfficeLocation1791158400000 implements MigrationInterface
     );
     await queryRunner.query(
       `ALTER TABLE "company_profiles" DROP COLUMN "latitude"`,
-    );
-    await queryRunner.query(
-      `ALTER TABLE "company_profiles" DROP COLUMN "location"`,
     );
     await queryRunner.query(
       `ALTER TABLE "company_profiles" DROP COLUMN "province_id"`,

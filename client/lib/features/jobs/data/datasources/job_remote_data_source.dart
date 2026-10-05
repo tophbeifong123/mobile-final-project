@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/error/app_exception.dart';
 import '../../domain/entities/job.dart';
+import '../../domain/entities/company_logo.dart';
 import '../models/job_model.dart';
 
 class JobRemoteDataSource {
@@ -59,6 +60,24 @@ class JobRemoteDataSource {
       }
       return JobDetailModel.fromJson(data);
     } on DioException catch (error) {
+      throw mapJobError(error);
+    }
+  }
+
+  Future<CompanyLogo?> fetchCompanyLogo(String jobId) async {
+    try {
+      final response = await _dio.get<List<int>>(
+        '${ApiConstants.jobs}/$jobId/company-logo',
+        options: Options(responseType: ResponseType.bytes),
+      );
+      final bytes = response.data;
+      if (bytes == null || bytes.isEmpty) return null;
+      return CompanyLogo(
+        bytes: bytes,
+        mimeType: response.headers.value('content-type') ?? 'image/png',
+      );
+    } on DioException catch (error) {
+      if (error.response?.statusCode == 404) return null;
       throw mapJobError(error);
     }
   }

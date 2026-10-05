@@ -13,6 +13,7 @@ users ||--o| student_profiles : "role = student"
 users ||--o| company_profiles : "role = company"
 provinces ||--o{ company_profiles : "selected office province"
 users ||--o{ refresh_tokens : has
+users ||--o| password_reset_tokens : recovery
 
 company_profiles ||--o{ jobs : posts
 student_profiles ||--o{ saved_jobs : saves
@@ -50,6 +51,7 @@ applications ||--o{ outbox_messages : "enqueue on status change"
 | id | uuid | PK |
 | email | varchar | unique, ไม่ซ้ำทั้งระบบ |
 | password_hash | varchar | เก็บค่า hash ไม่เก็บรหัสตรง |
+| token_version | integer | ค่าเริ่มต้น 0 เพิ่มหลังรีเซ็ตรหัสผ่านเพื่อยกเลิก access token เดิม |
 | role | user_role | ตั้งตอนสมัคร แก้ไม่ได้ |
 | created_at | timestamptz | |
 | updated_at | timestamptz | |
@@ -66,6 +68,18 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | expires_at | timestamptz | |
 | revoked_at | timestamptz | null แปลว่ายังใช้ได้ |
 | created_at | timestamptz | |
+
+### password_reset_tokens
+
+| คอลัมน์ | ชนิด | หมายเหตุ |
+|---|---|---|
+| id | uuid | PK |
+| user_id | uuid | unique, FK → users.id ON DELETE CASCADE |
+| token_hash | varchar(64) | unique, SHA-256 ของ token; ไม่เก็บ token ดิบ |
+| expires_at | timestamptz | หมดอายุใน 15 นาที |
+| created_at | timestamptz | ใช้จำกัดอีเมลใหม่ไม่เกินหนึ่งครั้งต่อนาที |
+
+ตอนออกลิงก์และรีเซ็ตให้ล็อก user ก่อน token เสมอ ตอนรีเซ็ตให้เทียบรหัสใหม่กับ hash ปัจจุบันขณะถือ lock หากซ้ำให้ปฏิเสธโดยยังคงลิงก์ไว้ รีเซ็ตที่สำเร็จเปลี่ยน password_hash, เพิ่ม token_version, เพิกถอน refresh token และลบ reset token ใน transaction เดียว เพื่อกันใช้ลิงก์ซ้ำและ session ที่สร้างพร้อมกับการรีเซ็ต
 
 ### student_profiles
 
@@ -97,13 +111,19 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | business_type | varchar | ประเภทกิจการ |
 | description | text | |
 | province_id | smallint | null ได้, FK → provinces.id; รหัสจังหวัดตามกรมการปกครอง |
-| location | varchar(255) | ที่อยู่สั้นแยกจากจังหวัด, ค่าเริ่มต้น `''` |
+| location | text | คอลัมน์เดิม; ที่อยู่สั้นแยกจากจังหวัด จำกัดข้อมูลใหม่ 255 ตัวอักษรใน service ไม่ตัดข้อมูลเก่า |
 | latitude | double precision | null ได้; พิกัดหมุดสำนักงาน WGS84 |
 | longitude | double precision | null ได้; ต้องมีหรือไม่มีพร้อม latitude |
+| website_url | varchar(1024) | เว็บไซต์ HTTP/HTTPS หรือค่าว่าง |
+| company_size | varchar(100) | ขนาดองค์กร หรือค่าว่าง |
+| perks | text[] | สวัสดิการที่บริษัทระบุ |
+| cover_object_key | varchar(1024) | คีย์รูปหน้าปกบริษัท, null ได้ |
 | created_at | timestamptz | |
 | updated_at | timestamptz | |
 
 ตัวเลขแดชบอร์ดไม่เก็บเป็นคอลัมน์ นับจาก `jobs` กับ `applications` แล้วเขียนทับค่าใน Redis ถ้า Redis หายให้นับจากตารางนี้ใหม่
+
+เว็บไซต์ ขนาดองค์กร สวัสดิการ ที่อยู่ และรูปหน้าปกมาจาก migration `1759300000000-add-details-and-cover-to-company-profiles` ที่มี up/down; IFND-141 อ่านข้อมูลล่าสุดผ่าน join ไม่เก็บสำเนาใน jobs. Migration IFND-138 เพิ่มเฉพาะมาสเตอร์จังหวัดและ `province_id`/`latitude`/`longitude` ไม่เพิ่มหรือลบคอลัมน์ `location` เดิมใน up/down.
 
 `latitude` และ `longitude` ต้องเป็นคู่ อยู่ในช่วงพิกัดที่ถูกต้อง และมี `province_id` ก่อนเสมอ เมื่อเปลี่ยนจังหวัดโดยไม่ส่งพิกัดใหม่ service ล้างหมุดเดิม ไม่เอาหมุดจากจังหวัดก่อนหน้ามาใช้ต่อ
 
@@ -120,6 +140,7 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | center_longitude | double precision | WGS84, ใช้คู่กับ center_latitude |
 
 ข้อมูลรหัสและชื่ออิง [มาตรฐานจังหวัดกระทรวงพาณิชย์](https://std.moc.go.th/std/group/28) ส่วนจุดเปิดแผนที่เป็นพิกัดประมาณดัดแปลงจาก [Open Admin Data (CC BY 4.0)](https://github.com/open-admin-data/thailand-administrative-divisions) แอปใช้ข้อมูลนี้ในเครื่องหลังเรียก API ไม่เรียก geocoding ภายนอก
+
 
 ### jobs
 

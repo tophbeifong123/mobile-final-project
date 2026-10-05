@@ -62,7 +62,7 @@ Prefix ของ API คือ `/api` ตาม `app.setGlobalPrefix('api')` ใ
 
 | โมดูล | หน้าที่ |
 |---|---|
-| AuthModule | สมัคร, login, refresh, logout |
+| AuthModule | สมัคร, login, refresh, logout, forgot/reset password |
 | StudentsModule | โปรไฟล์นักศึกษาและ Resume |
 | CompaniesModule | โปรไฟล์บริษัท, logo, จังหวัดและหมุดสำนักงาน, ตัวเลขแดชบอร์ด |
 | ProvincesModule | มาสเตอร์จังหวัด 77 จังหวัด ชื่อเรียก และจุดกึ่งกลางสำหรับเปิดแผนที่ |
@@ -133,10 +133,14 @@ Filter ของหน้า Home เป็น query ของ `GET /jobs` ไ�
 | POST | /api/auth/login | ยังไม่ login |
 | POST | /api/auth/refresh | มี refresh token |
 | POST | /api/auth/logout | login แล้ว |
+| POST | /api/auth/forgot-password | ยังไม่ login, ส่ง email เพื่อขอลิงก์ |
+| POST | /api/auth/reset-password | มีลิงก์ token ที่ยังไม่หมดอายุ |
 
 Register รับ email, password และ role `student` หรือ `company` role เปลี่ยนทีหลังไม่ได้
 
 Access token อายุสั้น Refresh token หมุนทุกครั้งที่ใช้ และเก็บเป็นค่า hash Logout คือเพิกถอน refresh token
+
+Password recovery รองรับเฉพาะบัญชี `@email.psu.ac.th` และ `@psu.ac.th` ตรวจทั้งตอนขอลิงก์และตอนใช้ token รวมถึงตรวจซ้ำใต้ user lock เพื่อกันลิงก์เก่าของโดเมนอื่น ระบบส่งลิงก์ด้วย SMTP เก็บเฉพาะ SHA-256 ของ token ใน PostgreSQL ใช้ได้ครั้งเดียวภายใน 15 นาที รีเซ็ตรหัสผ่านและเพิกถอน refresh token ใน transaction เดียว พร้อมเพิ่ม `users.token_version` เพื่อยกเลิก access token เดิมทันที ไม่ขึ้นกับ Google Login รายละเอียด SMTP อยู่ใน [PASSWORD_RECOVERY.md](PASSWORD_RECOVERY.md)
 
 ### นักศึกษา
 
@@ -147,6 +151,7 @@ Access token อายุสั้น Refresh token หมุนทุกคร�
 | GET | /api/students/me/resume/file | Resume Preview / Download |
 | GET | /api/jobs | Home / Job Feed |
 | GET | /api/jobs/:id | Job Detail |
+| GET | /api/jobs/:id/company-logo | โลโก้บริษัทบน Job Detail เฉพาะประกาศที่เปิดรับและนักศึกษาที่ login แล้ว |
 | POST, DELETE | /api/jobs/:id/save | Save จาก Job Detail |
 | GET | /api/jobs/saved | Saved Jobs |
 | POST | /api/jobs/:id/applications | Apply Job |
@@ -160,6 +165,10 @@ Access token อายุสั้น Refresh token หมุนทุกคร�
 ค่า `province` และชื่อจังหวัดที่บันทึกในประกาศถูกแปลงเป็นชื่อมาตรฐานเดียวกันก่อนกรอง เพื่อรองรับชื่อเรียกอย่าง `กทม.` และข้อมูลเก่าอย่าง `กรุงเทพฯ`
 
 Route `GET /api/jobs/saved` ต้องประกาศก่อน `GET /api/jobs/:id` เพื่อไม่ให้คำว่า `saved` ถูกจับเป็น id
+
+`GET /api/jobs/:id` join โปรไฟล์บริษัทล่าสุดและคืน `companyWebsiteUrl`, `companySize`, `companyPerks`, `companyLocation`, `companyLogoAvailable` ร่วมกับชื่อ ประเภทกิจการ และคำอธิบาย ไม่เปิดเผย object key ของโลโก้ให้นักศึกษา โหลดโลโก้ผ่านเส้นทางประกาศที่ตรวจ role และสถานะงานก่อนอ่าน storage รองรับ PNG/JPEG/WEBP/GIF/SVG และคืน 404 เมื่อไม่มีไฟล์ งานปิดแล้วไม่สามารถใช้เส้นทางนี้ได้
+
+Flutter โหลดรายละเอียดใหม่เมื่อกลับมาเปิดหน้าและโหลดโลโก้ด้วย Dio ที่มี token ไม่ใช้ URL รูปแบบสาธารณะหรือเพิ่มหน้าโปรไฟล์บริษัท แสดงตัวอักษรชื่อบริษัทแทนเมื่อไม่มีโลโก้หรือโหลดล้มเหลว; SVG แสดงด้วย `flutter_svg`
 
 ### บริษัท
 
@@ -178,6 +187,8 @@ Route `GET /api/jobs/saved` ต้องประกาศก่อน `GET /api
 บริษัทเรียกได้เฉพาะประกาศและผู้สมัครของบริษัทตัวเอง ไม่เช่นนั้นตอบ 403
 
 `PATCH /api/companies/me` รับ `provinceId`, `location` (ที่อยู่สั้น), และ `latitude`/`longitude` เป็นคู่ พิกัดต้องมีจังหวัดก่อน และการเปลี่ยนจังหวัดโดยไม่ส่งพิกัดใหม่จะล้างหมุดเก่า แผนที่บนแอปใช้แผนที่เปิด ไม่ใช้ Google Maps key
+
+`PATCH /api/companies/me` บันทึกเว็บไซต์ ขนาดองค์กร สวัสดิการ และที่อยู่ด้วยคอลัมน์เดิม เว็บไซต์ตรวจใน CompaniesService: ว่างได้ หรือ URL HTTP/HTTPS แบบเต็มที่ไม่มี credentials ค่าไม่ถูกต้องคืน 400 พร้อมเหตุผลโดยไม่บันทึกข้อมูลส่วนอื่น Swagger ระบุฟิลด์และกติกานี้ที่ `/api/docs`
 
 ### Health
 
@@ -268,6 +279,7 @@ client/lib/
 │   ├── error/app_exception.dart
 │   ├── provinces/                # มาสเตอร์จังหวัดและ Bottom Sheet ที่ใช้ร่วมกัน
 │   └── widgets/
+│       ├── company_top_bar.dart   # แถบบนร่วมของหน้าบริษัททั้ง 6 หน้า
 │       ├── job_card.dart
 │       ├── status_chip.dart
 │       ├── empty_state.dart
@@ -297,6 +309,8 @@ Route ที่ถูก push ทับเชลล์: Job Detail, Apply Job, R
 
 Route ที่ถูก push: Create / Edit Job, Applicants List, Applicant Detail
 
+ทุกหน้าของบริษัทใช้ `CompanyTopBar` เป็น `Scaffold.appBar` รวมถึงสถานะ loading/error เพื่อให้แถบบนอยู่คงที่ แสดงชื่อหน้าและป้ายบริษัท ไม่มี action แจ้งเตือน และไม่มี route `/company/notifications` หน้ารองเปิดปุ่มกลับซึ่ง pop เมื่อมีประวัติ หรือกลับไปหน้ารายการที่เกี่ยวข้องเมื่อเปิดจากลิงก์ตรง แถบบนของนักศึกษายังใช้ route `/student/notifications` ตามเดิม
+
 Dio ใน `auth_interceptor.dart` ใส่ access token และเมื่อได้ 401 จะเรียก refresh หนึ่งครั้งก่อนล้าง session รอบโครงไฟล์นี้หน้าจอยังไม่ยิง API จริง data source โยน `AppException` จนกว่าจะต่อ endpoint
 
 ก่อนอัปโหลด แอปต้องตรวจว่าเป็น PDF และไม่เกินขนาดที่ API กำหนด จุดเลือกไฟล์ใช้ `file_picker`
@@ -311,4 +325,4 @@ CORS เปิดให้แอปมือถือเรียกได้ต
 
 ## 10. นอกแบบนี้
 
-ไม่ทำแชท, นัดสัมภาษณ์, ลืมรหัสผ่าน, ยืนยัน email, login ด้วยโซเชียล, ถอนใบสมัคร, หน้าโปรไฟล์บริษัทแยก, Admin, push notification นอกแอป หรือการเปลี่ยน role หลังสมัคร
+ไม่ทำแชท, นัดสัมภาษณ์, ยืนยัน email, login ด้วยโซเชียล, ถอนใบสมัคร, หน้าโปรไฟล์บริษัทแยก, Admin, push notification นอกแอป หรือการเปลี่ยน role หลังสมัคร

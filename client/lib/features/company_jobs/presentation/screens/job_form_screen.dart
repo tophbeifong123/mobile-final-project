@@ -10,6 +10,7 @@ import '../../../../core/theme/app_colors_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/app_primary_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/company_top_bar.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/loading_view.dart';
 import '../../../../core/widgets/neo_button.dart';
@@ -33,11 +34,19 @@ class JobFormScreen extends ConsumerWidget {
     final detail = ref.watch(companyJobDetailProvider(jobId));
     return detail.when(
       loading: () => Scaffold(
-        appBar: AppBar(title: const Text('แก้ประกาศ')),
+        appBar: const CompanyTopBar(
+          title: 'แก้ประกาศ',
+          showBack: true,
+          backLocation: '/company/jobs',
+        ),
         body: const LoadingView(label: 'กำลังโหลดประกาศ'),
       ),
       error: (error, _) => Scaffold(
-        appBar: AppBar(title: const Text('แก้ประกาศ')),
+        appBar: const CompanyTopBar(
+          title: 'แก้ประกาศ',
+          showBack: true,
+          backLocation: '/company/jobs',
+        ),
         body: Center(
           child: AppErrorView(
             message: userVisibleError(error),
@@ -113,7 +122,11 @@ class _JobFormState extends ConsumerState<_JobForm> {
     final editing = widget.job != null;
 
     return Scaffold(
-      appBar: AppBar(title: Text(editing ? 'แก้ประกาศ' : 'สร้างประกาศ')),
+      appBar: CompanyTopBar(
+        title: editing ? 'แก้ประกาศ' : 'สร้างประกาศ',
+        showBack: true,
+        backLocation: '/company/jobs',
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -224,10 +237,13 @@ class _JobFormState extends ConsumerState<_JobForm> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 10,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       const Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
                             LucideIcons.sparkles,
@@ -235,12 +251,14 @@ class _JobFormState extends ConsumerState<_JobForm> {
                             color: NeoColors.inkSolid,
                           ),
                           Gap(6),
-                          Text(
-                            'ทักษะที่ต้องการ (Skills)',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              color: NeoColors.inkSolid,
+                          Flexible(
+                            child: Text(
+                              'ทักษะที่ต้องการ (Skills)',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: NeoColors.inkSolid,
+                              ),
                             ),
                           ),
                         ],

@@ -41,7 +41,7 @@ export class CompanyProfile {
   @JoinColumn({ name: 'province_id' })
   province: Province | null;
 
-  @Column({ type: 'varchar', length: 255, default: '' })
+  @Column({ type: 'text', default: '' })
   location: string;
 
   @Column({ type: 'double precision', nullable: true })
@@ -49,6 +49,22 @@ export class CompanyProfile {
 
   @Column({ type: 'double precision', nullable: true })
   longitude: number | null;
+  @Column({ name: 'website_url', type: 'varchar', length: 1024, default: '' })
+  websiteUrl: string;
+
+  @Column({ name: 'company_size', type: 'varchar', length: 100, default: '' })
+  companySize: string;
+
+  @Column({ type: 'text', array: true, default: '{}' })
+  perks: string[];
+
+  @Column({
+    name: 'cover_object_key',
+    type: 'varchar',
+    length: 1024,
+    nullable: true,
+  })
+  coverObjectKey: string | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;

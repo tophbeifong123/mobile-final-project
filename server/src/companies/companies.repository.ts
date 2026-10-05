@@ -50,6 +50,9 @@ export class CompaniesRepository {
         | 'name'
         | 'businessType'
         | 'description'
+        | 'websiteUrl'
+        | 'companySize'
+        | 'perks'
         | 'provinceId'
         | 'location'
         | 'latitude'
@@ -64,10 +67,19 @@ export class CompaniesRepository {
 
   async updateLogoObjectKey(
     id: string,
-    logoObjectKey: string,
+    logoObjectKey: string | null,
   ): Promise<CompanyProfile | null> {
     const repo = this.dataSource.getRepository(CompanyProfile);
     await repo.update(id, { logoObjectKey });
+    return repo.findOne({ where: { id }, relations: { province: true } });
+  }
+
+  async updateCoverObjectKey(
+    id: string,
+    coverObjectKey: string | null,
+  ): Promise<CompanyProfile | null> {
+    const repo = this.dataSource.getRepository(CompanyProfile);
+    await repo.update(id, { coverObjectKey });
     return repo.findOne({ where: { id }, relations: { province: true } });
   }
 }

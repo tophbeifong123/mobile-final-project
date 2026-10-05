@@ -1,27 +1,34 @@
 import 'package:client/core/error/app_exception.dart';
 import 'package:client/core/network/dio_client.dart';
-import 'package:client/core/provinces/thai_province.dart';
-import 'package:client/core/provinces/thai_provinces_provider.dart';
 import 'package:client/core/storage/token_storage.dart';
 import 'package:client/core/theme/app_theme.dart';
 import 'package:client/features/company_profile/domain/entities/company_profile.dart';
+import 'package:client/features/company_profile/domain/entities/company_website_policy.dart';
 import 'package:client/features/company_profile/domain/repositories/company_profile_repository.dart';
-import 'package:client/features/company_profile/data/models/company_profile_model.dart';
 import 'package:client/features/company_profile/presentation/providers/company_profile_controller.dart';
 import 'package:client/features/company_profile/presentation/screens/company_profile_screen.dart';
-import 'package:client/features/company_profile/presentation/widgets/office_map_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'package:client/core/provinces/thai_province.dart';
+import 'package:client/core/provinces/thai_provinces_provider.dart';
+import 'package:client/features/company_profile/data/models/company_profile_model.dart';
+import 'package:client/features/company_profile/presentation/widgets/office_map_picker.dart';
+import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 void main() {
   const mockProfile = CompanyProfile(
     name: 'Tech Solutions Co.',
-    businessType: 'ซอฟต์แวร์',
+    businessType: 'ซอฟต์แวร์ & ไอที (Software & IT Solutions)',
     description: 'พัฒนาแอปพลิเคชันมือถือและเว็บ',
     logoObjectKey: null,
+    websiteUrl: 'https://techsolutions.co',
+    location: 'FYI Center, Bangkok',
+    companySize: '51-200',
+    perks: ['💻 MacBook Pro', '🍱 Free Lunch'],
+    coverObjectKey: null,
   );
 
   test('company profile JSON keeps office fields separate', () {
@@ -37,6 +44,10 @@ void main() {
       'longitude': 100.4747,
     });
 
+    expect(
+      CompanyProfileModel.fromEntity(model.toEntity()).toJson(),
+      model.toJson(),
+    );
     expect(model.toEntity().provinceId, 90);
     expect(model.toEntity().provinceName, 'สงขลา');
     expect(model.toEntity().location, 'อาคาร A ถนนนิพัทธ์อุทิศ');
@@ -44,6 +55,9 @@ void main() {
       'name': 'Tech Solutions Co.',
       'businessType': 'ซอฟต์แวร์',
       'description': '',
+      'websiteUrl': '',
+      'companySize': '',
+      'perks': <String>[],
       'provinceId': 90,
       'location': 'อาคาร A ถนนนิพัทธ์อุทิศ',
       'latitude': 7.0084,
@@ -87,16 +101,86 @@ void main() {
     expect(selected, isNot(const LatLng(13.7563, 100.5018)));
   });
 
-  testWidgets('renders company profile form with existing fields and logout', (
+  testWidgets(
+    'renders redesigned company profile with neo-brutalist cards and fields',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final repo = _FakeCompanyProfileRepository(profile: mockProfile);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+            companyProfileRepositoryProvider.overrideWithValue(repo),
+          ],
+          child: MaterialApp(
+            theme: AppTheme.lightTheme,
+            home: const CompanyProfileScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Top Bar & Branding
+      expect(find.text('InternMatch'), findsOneWidget);
+      expect(find.text('บริษัท'), findsOneWidget);
+      expect(find.text('บรรยากาศการทำงานจริง (Life at Office)'), findsNothing);
+      expect(find.text('Team & Collab'), findsNothing);
+      expect(find.text('Pantry & Snacks'), findsNothing);
+
+      // Cover & Avatar section
+      expect(find.text('เปลี่ยนรูปหน้าปก'), findsOneWidget);
+      expect(find.text('VERIFIED PARTNER'), findsOneWidget);
+
+      // Section Cards
+      expect(find.text('ข้อมูลทั่วไปของบริษัท'), findsOneWidget);
+      expect(
+        find.text('Tech Solutions Co.'),
+        findsNWidgets(2),
+      ); // Title & Form Input
+      expect(
+        find.text('ซอฟต์แวร์ & ไอที (Software & IT Solutions)'),
+        findsOneWidget,
+      );
+
+      // Scroll down to check further sections
+      final locationCard = find.text('สถานที่ฝึกงาน & การเดินทาง');
+      await tester.ensureVisible(locationCard);
+      expect(locationCard, findsOneWidget);
+      expect(find.text('FYI Center, Bangkok'), findsOneWidget);
+
+      final cultureCard = find.text('เกี่ยวกับและวัฒนธรรมองค์กร');
+      await tester.ensureVisible(cultureCard);
+      expect(cultureCard, findsOneWidget);
+      expect(find.text('พัฒนาแอปพลิเคชันมือถือและเว็บ'), findsOneWidget);
+
+      final perksCard = find.text('สวัสดิการเด็กฝึกงาน');
+      await tester.ensureVisible(perksCard);
+      expect(perksCard, findsOneWidget);
+      expect(find.text('💻 MacBook Pro'), findsOneWidget);
+      expect(find.text('🍱 Free Lunch'), findsOneWidget);
+      expect(find.text('2 แท็ก'), findsOneWidget);
+
+      // Primary CTA and Logout
+      final saveButton = find.text('บันทึกโปรไฟล์');
+      await tester.ensureVisible(saveButton);
+      expect(saveButton, findsOneWidget);
+      expect(find.text('ออกจากระบบ'), findsOneWidget);
+    },
+  );
+
+  testWidgets('invalid website cannot save and displays a reason', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(390, 900);
+    tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-
     final repo = _FakeCompanyProfileRepository(profile: mockProfile);
-
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -110,59 +194,66 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-
-    expect(find.text('โปรไฟล์บริษัท'), findsOneWidget);
-    expect(find.text('ข้อมูลบริษัทและที่ตั้งสำนักงาน'), findsOneWidget);
-    expect(find.text('โลโก้บริษัท'), findsOneWidget);
-    expect(find.text('ยังไม่มีโลโก้บริษัท'), findsOneWidget);
-    expect(find.text('เลือกรูป'), findsOneWidget);
-
-    expect(find.text('Tech Solutions Co.'), findsOneWidget);
-    expect(find.text('ซอฟต์แวร์'), findsOneWidget);
-    expect(find.text('พัฒนาแอปพลิเคชันมือถือและเว็บ'), findsOneWidget);
-
-    expect(find.text('บันทึกโปรไฟล์'), findsOneWidget);
-    expect(find.text('เลือกจังหวัด'), findsOneWidget);
-    expect(find.text('ที่อยู่สำนักงาน (แบบสั้น)'), findsOneWidget);
-    expect(find.text('ออกจากระบบ'), findsOneWidget);
+    final field = find.widgetWithText(
+      TextFormField,
+      'https://techsolutions.co',
+    );
+    await tester.ensureVisible(field);
+    await tester.enterText(field, 'javascript:alert(1)');
+    await tester.ensureVisible(find.text('บันทึกโปรไฟล์'));
+    await tester.tap(find.text('บันทึกโปรไฟล์'));
+    await tester.pumpAndSettle();
+    expect(repo.updateCalls, 0);
+    expect(find.text(companyWebsiteError), findsOneWidget);
   });
 
-  testWidgets('renders logo status when company already has logo uploaded', (
+  testWidgets('saved profile fields survive opening a new page', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(390, 900);
+    tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-
-    final profileWithLogo = const CompanyProfile(
-      name: 'Tech Corp',
-      businessType: 'IT',
-      description: 'Consulting',
-      logoObjectKey: 'company-logos/company-1/logo.png',
-    );
-    final repo = _FakeCompanyProfileRepository(profile: profileWithLogo);
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
-          companyProfileRepositoryProvider.overrideWithValue(repo),
-        ],
-        child: MaterialApp(
-          theme: AppTheme.lightTheme,
-          home: const CompanyProfileScreen(),
-        ),
+    final repo = _FakeCompanyProfileRepository(profile: mockProfile);
+    Widget page() => ProviderScope(
+      overrides: [
+        tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+        companyProfileRepositoryProvider.overrideWithValue(repo),
+      ],
+      child: MaterialApp(
+        theme: AppTheme.lightTheme,
+        home: const CompanyProfileScreen(),
       ),
     );
+    await tester.pumpWidget(page());
     await tester.pumpAndSettle();
-
-    expect(find.text('มีโลโก้บริษัทแล้ว'), findsOneWidget);
-    expect(find.text('เปลี่ยน'), findsOneWidget);
+    final name = find.widgetWithText(TextFormField, 'Tech Solutions Co.').first;
+    await tester.enterText(name, 'Saved Company');
+    final website = find.widgetWithText(
+      TextFormField,
+      'https://techsolutions.co',
+    );
+    await tester.ensureVisible(website);
+    await tester.enterText(website, 'https://saved.example.com');
+    await tester.ensureVisible(find.text('บันทึกโปรไฟล์'));
+    await tester.tap(find.text('บันทึกโปรไฟล์'));
+    await tester.pumpAndSettle();
+    expect(repo.updateCalls, 1);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    await tester.pumpWidget(page());
+    await tester.pumpAndSettle();
+    expect(find.text('Saved Company'), findsWidgets);
+    expect(find.text('https://saved.example.com'), findsOneWidget);
+    expect(repo.profile.businessType, mockProfile.businessType);
+    expect(repo.profile.description, mockProfile.description);
+    expect(repo.profile.companySize, mockProfile.companySize);
+    expect(repo.profile.perks, mockProfile.perks);
+    expect(repo.profile.location, mockProfile.location);
   });
 
   testWidgets('validates required fields before submitting', (tester) async {
-    tester.view.physicalSize = const Size(390, 900);
+    tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -184,19 +275,22 @@ void main() {
     await tester.pumpAndSettle();
 
     // Clear name field
-    final nameField = find.widgetWithText(TextFormField, 'Tech Solutions Co.');
+    final nameField = find
+        .widgetWithText(TextFormField, 'Tech Solutions Co.')
+        .first;
     await tester.enterText(nameField, '');
-    await _tapSave(tester);
+
+    final saveButton = find.text('บันทึกโปรไฟล์');
+    await tester.ensureVisible(saveButton);
+    await tester.tap(saveButton);
     await tester.pumpAndSettle();
 
     expect(find.text('กรอกข้อมูลนี้'), findsOneWidget);
     expect(repo.updateCalls, 0);
   });
 
-  testWidgets('saves updated company profile fields successfully', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(390, 900);
+  testWidgets('adds and removes perk tags dynamically', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -217,33 +311,87 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Update fields
-    final nameField = find.widgetWithText(TextFormField, 'Tech Solutions Co.');
-    await tester.enterText(nameField, 'New Company Name');
+    // Scroll to perks
+    final perksCard = find.text('สวัสดิการเด็กฝึกงาน');
+    await tester.ensureVisible(perksCard);
+    expect(find.text('2 แท็ก'), findsOneWidget);
 
-    final businessTypeField = find.widgetWithText(TextFormField, 'ซอฟต์แวร์');
-    await tester.enterText(businessTypeField, 'เทคโนโลยี AI');
-
-    final descriptionField = find.widgetWithText(
+    // Add new perk
+    final newPerkField = find.widgetWithText(
       TextFormField,
-      'พัฒนาแอปพลิเคชันมือถือและเว็บ',
+      'เช่น วันหยุดพิเศษ, คลาสเรียนฟรี...',
     );
-    await tester.enterText(descriptionField, 'เชี่ยวชาญด้าน LLM และ Agent');
+    await tester.ensureVisible(newPerkField);
+    await tester.enterText(newPerkField, '🎓 Mentor 1:1');
+    await tester.tap(find.text('เพิ่ม'));
+    await tester.pumpAndSettle();
 
-    await _tapSave(tester);
+    expect(find.text('🎓 Mentor 1:1'), findsOneWidget);
+    expect(find.text('3 แท็ก'), findsOneWidget);
+
+    // Remove first perk
+    final closeIcons = find.byIcon(Icons.close_rounded);
+    await tester.tap(closeIcons.first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('💻 MacBook Pro'), findsNothing);
+    expect(find.text('2 แท็ก'), findsOneWidget);
+  });
+
+  testWidgets('selects company size and saves profile successfully', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repo = _FakeCompanyProfileRepository(profile: mockProfile);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+          companyProfileRepositoryProvider.overrideWithValue(repo),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: const CompanyProfileScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Select 201-500 size
+    final sizeButton = find.text('201-500 คน');
+    await tester.ensureVisible(sizeButton);
+    await tester.tap(sizeButton);
+    await tester.pumpAndSettle();
+
+    // Update website
+    final webField = find.widgetWithText(
+      TextFormField,
+      'https://techsolutions.co',
+    );
+    await tester.ensureVisible(webField);
+    await tester.enterText(webField, 'https://new-tech.com');
+
+    // Tap Save
+    final saveButton = find.text('บันทึกโปรไฟล์');
+    await tester.ensureVisible(saveButton);
+    await tester.tap(saveButton);
     await tester.pumpAndSettle();
 
     expect(repo.updateCalls, 1);
-    expect(repo.profile.name, 'New Company Name');
-    expect(repo.profile.businessType, 'เทคโนโลยี AI');
-    expect(repo.profile.description, 'เชี่ยวชาญด้าน LLM และ Agent');
-    expect(find.text('บันทึกโปรไฟล์แล้ว'), findsOneWidget);
+    expect(repo.profile.companySize, '201-500');
+    expect(repo.profile.websiteUrl, 'https://new-tech.com');
+    expect(find.text('บันทึกข้อมูลเรียบร้อยแล้ว! 🎉'), findsOneWidget);
   });
 
   testWidgets(
     'shows error state when fetching company profile fails and retry works',
     (tester) async {
-      tester.view.physicalSize = const Size(390, 900);
+      tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
@@ -273,11 +421,10 @@ void main() {
       await tester.tap(find.text('ลองอีกครั้ง'));
       await tester.pumpAndSettle();
 
-      expect(find.text('โปรไฟล์บริษัท'), findsOneWidget);
-      expect(find.text('Tech Solutions Co.'), findsOneWidget);
+      expect(find.text('InternMatch'), findsOneWidget);
+      expect(find.text('Tech Solutions Co.'), findsWidgets);
     },
   );
-
   testWidgets('province alias selects canonical province and map opens there', (
     tester,
   ) async {
@@ -345,6 +492,9 @@ void main() {
         provinceId: 90,
         provinceName: 'สงขลา',
         location: 'อาคาร A ถนนนิพัทธ์อุทิศ',
+        websiteUrl: 'https://example.com',
+        companySize: '201-500',
+        perks: ['Mentor'],
         latitude: 7.0084,
         longitude: 100.4747,
       ),
@@ -375,6 +525,9 @@ void main() {
     expect(repo.profile.location, 'อาคาร A ถนนนิพัทธ์อุทิศ');
     expect(repo.profile.latitude, 7.0084);
     expect(repo.profile.longitude, 100.4747);
+    expect(repo.profile.websiteUrl, 'https://example.com');
+    expect(repo.profile.companySize, '201-500');
+    expect(repo.profile.perks, ['Mentor']);
   });
 
   testWidgets('clearing province also clears the office pin', (tester) async {
@@ -528,10 +681,7 @@ void main() {
       find.widgetWithText(TextFormField, 'ชื่อเดิม'),
       'ชื่อที่ยังไม่บันทึก',
     );
-    await tester.enterText(
-      find.widgetWithText(TextFormField, 'ประเภทเดิม'),
-      'ประเภทใหม่',
-    );
+
     await tester.enterText(
       find.widgetWithText(TextFormField, 'คำอธิบายเดิม'),
       'คำอธิบายใหม่',
@@ -576,17 +726,12 @@ void main() {
     expect(repo.uploadLogoCalls, 1);
     expect(repo.profile.provinceId, 90);
     expect(repo.profile.location, 'ที่อยู่เดิม');
-    await tester.scrollUntilVisible(
-      find.text('มีโลโก้บริษัทแล้ว'),
-      -250,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.text('มีโลโก้บริษัทแล้ว'), findsOneWidget);
+    expect(repo.profile.logoObjectKey, isNotNull);
     expect(
       find.widgetWithText(TextFormField, 'ชื่อที่ยังไม่บันทึก'),
       findsOneWidget,
     );
-    expect(find.widgetWithText(TextFormField, 'ประเภทใหม่'), findsOneWidget);
+
     expect(find.widgetWithText(TextFormField, 'คำอธิบายใหม่'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.widgetWithText(TextFormField, 'อาคารใหม่ ถนนสีลม'),
@@ -611,7 +756,7 @@ void main() {
     await _tapSave(tester);
     await tester.pumpAndSettle();
     expect(repo.lastUpdateRequest?.name, 'ชื่อที่ยังไม่บันทึก');
-    expect(repo.lastUpdateRequest?.businessType, 'ประเภทใหม่');
+    expect(repo.lastUpdateRequest?.businessType, 'ประเภทเดิม');
     expect(repo.lastUpdateRequest?.description, 'คำอธิบายใหม่');
     expect(repo.lastUpdateRequest?.location, 'อาคารใหม่ ถนนสีลม');
     expect(repo.lastUpdateRequest?.provinceId, 10);
@@ -668,10 +813,7 @@ void main() {
       find.widgetWithText(TextFormField, 'ชื่อจากเซิร์ฟเวอร์'),
       findsOneWidget,
     );
-    expect(
-      find.widgetWithText(TextFormField, 'ประเภทจากเซิร์ฟเวอร์'),
-      findsOneWidget,
-    );
+    expect(repo.profile.businessType, 'ประเภทจากเซิร์ฟเวอร์');
     expect(
       find.widgetWithText(TextFormField, 'คำอธิบายจากเซิร์ฟเวอร์'),
       findsOneWidget,
@@ -721,6 +863,9 @@ class _FakeCompanyProfileRepository implements CompanyProfileRepository {
   CompanyProfile? lastUpdateRequest;
   int updateCalls = 0;
   int uploadLogoCalls = 0;
+  int uploadCoverCalls = 0;
+  int deleteLogoCalls = 0;
+  int deleteCoverCalls = 0;
 
   @override
   Future<CompanyProfile> fetchMe() async => profile;
@@ -740,17 +885,36 @@ class _FakeCompanyProfileRepository implements CompanyProfileRepository {
     List<int>? bytes,
   }) async {
     uploadLogoCalls++;
-    profile = CompanyProfile(
-      name: profile.name,
-      businessType: profile.businessType,
-      description: profile.description,
-      logoObjectKey: 'company-logos/user-1/$fileName',
-      provinceId: profile.provinceId,
-      provinceName: profile.provinceName,
-      location: profile.location,
-      latitude: profile.latitude,
-      longitude: profile.longitude,
+    profile = profile.copyWith(
+      logoObjectKey: () => 'company-logos/user-1/$fileName',
     );
+    return profile;
+  }
+
+  @override
+  Future<CompanyProfile> deleteLogo() async {
+    deleteLogoCalls++;
+    profile = profile.copyWith(logoObjectKey: () => null);
+    return profile;
+  }
+
+  @override
+  Future<CompanyProfile> uploadCover({
+    required String filePath,
+    required String fileName,
+    List<int>? bytes,
+  }) async {
+    uploadCoverCalls++;
+    profile = profile.copyWith(
+      coverObjectKey: () => 'company-covers/user-1/$fileName',
+    );
+    return profile;
+  }
+
+  @override
+  Future<CompanyProfile> deleteCover() async {
+    deleteCoverCalls++;
+    profile = profile.copyWith(coverObjectKey: () => null);
     return profile;
   }
 }
@@ -778,4 +942,17 @@ class _FailingCompanyProfileRepository implements CompanyProfileRepository {
     required String fileName,
     List<int>? bytes,
   }) async => profile;
+
+  @override
+  Future<CompanyProfile> deleteLogo() async => profile;
+
+  @override
+  Future<CompanyProfile> uploadCover({
+    required String filePath,
+    required String fileName,
+    List<int>? bytes,
+  }) async => profile;
+
+  @override
+  Future<CompanyProfile> deleteCover() async => profile;
 }

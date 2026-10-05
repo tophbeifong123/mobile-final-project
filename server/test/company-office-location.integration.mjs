@@ -55,7 +55,8 @@ test('company office migration, API and canonical province filtering', async () 
     const columns = await source.query(
       "SELECT column_name FROM information_schema.columns WHERE table_name = 'company_profiles'",
     );
-    for (const column of ['province_id', 'location', 'latitude', 'longitude']) {
+    assert.ok(columns.some((item) => item.column_name === 'location'));
+    for (const column of ['province_id', 'latitude', 'longitude']) {
       assert.ok(!columns.some((item) => item.column_name === column));
     }
 
@@ -68,8 +69,8 @@ test('company office migration, API and canonical province filtering', async () 
       [legacyUserId, 'legacy@example.test', 'unused-test-hash', 'company'],
     );
     await source.query(
-      'INSERT INTO company_profiles (id,user_id,name) VALUES ($1,$2,$3)',
-      [legacyCompanyId, legacyUserId, 'Legacy company'],
+      'INSERT INTO company_profiles (id,user_id,name,location) VALUES ($1,$2,$3,$4)',
+      [legacyCompanyId, legacyUserId, 'Legacy company', 'legacy address '.repeat(30)],
     );
     await source.query(
       `INSERT INTO jobs
@@ -83,6 +84,16 @@ test('company office migration, API and canonical province filtering', async () 
       VALUES ($1,$2,'Prefixed legacy internship','Test','จังหวัด กทม.','on_site','IT',false,'Test')`,
       [prefixedLegacyJobId, legacyCompanyId],
     );
+    await source.runMigrations();
+    const [legacyProfile] = await source.query(
+      'SELECT location FROM company_profiles WHERE id=$1', [legacyCompanyId],
+    );
+    assert.equal(legacyProfile.location, 'legacy address '.repeat(30));
+    await source.undoLastMigration();
+    const [afterRollback] = await source.query(
+      'SELECT location FROM company_profiles WHERE id=$1', [legacyCompanyId],
+    );
+    assert.equal(afterRollback.location, legacyProfile.location);
     await source.runMigrations();
     const [legacyJob] = await source.query(
       'SELECT province FROM jobs WHERE id=$1',

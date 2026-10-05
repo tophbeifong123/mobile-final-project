@@ -18,10 +18,13 @@ describe('CompaniesService', () => {
     getDashboardSummary: vi.fn(),
     updateProfile: vi.fn(),
     updateLogoObjectKey: vi.fn(),
+    updateCoverObjectKey: vi.fn(),
   };
 
   const storageService = {
     put: vi.fn(),
+    get: vi.fn(),
+    delete: vi.fn(),
   };
   const provincesService = { requireById: vi.fn() };
 
@@ -113,6 +116,11 @@ describe('CompaniesService', () => {
         businessType: 'Software',
         description: 'Tech Company',
         logoObjectKey: 'company-logos/user-1/logo.png',
+        websiteUrl: 'https://example.com',
+        location: 'Bangkok',
+        companySize: '51-200 คน',
+        perks: ['Free Lunch'],
+        coverObjectKey: 'company-covers/user-1/cover.jpg',
       });
 
       const result = await service.getProfile(companyUser);
@@ -124,9 +132,13 @@ describe('CompaniesService', () => {
         logoObjectKey: 'company-logos/user-1/logo.png',
         provinceId: null,
         provinceName: null,
-        location: '',
         latitude: null,
         longitude: null,
+        websiteUrl: 'https://example.com',
+        location: 'Bangkok',
+        companySize: '51-200 คน',
+        perks: ['Free Lunch'],
+        coverObjectKey: 'company-covers/user-1/cover.jpg',
       });
     });
 
@@ -146,6 +158,68 @@ describe('CompaniesService', () => {
   });
 
   describe('updateProfile', () => {
+    it.each([
+      'example.com',
+      'ftp://example.com',
+      'javascript:alert(1)',
+      'https://',
+      'https://invalid_domain.com',
+      'https://example .com',
+      'https://user:password@example.com',
+    ])(
+      'rejects invalid website %s without persisting any changes',
+      async (websiteUrl) => {
+        repository.findCompanyProfileByUserId.mockResolvedValue({
+          id: 'company-profile-1',
+        });
+        await expect(
+          service.updateProfile(companyUser, {
+            name: 'Company',
+            businessType: 'IT',
+            description: 'Description',
+            websiteUrl,
+          }),
+        ).rejects.toThrow('เว็บไซต์ต้องเป็น URL');
+        expect(repository.updateProfile).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each(['', 'https://example.com/careers?lang=th', 'http://example.com'])(
+      'persists all profile fields and reads them back after reopening: %s',
+      async (websiteUrl) => {
+        const profile = {
+          id: 'company-profile-1',
+          name: 'Company',
+          businessType: 'IT',
+          description: 'Description',
+          logoObjectKey: null,
+          coverObjectKey: null,
+          websiteUrl,
+          companySize: '201-500',
+          perks: ['MacBook'],
+          location: 'อาคาร A',
+        };
+        repository.findCompanyProfileByUserId.mockResolvedValue(profile);
+        repository.updateProfile.mockResolvedValue(profile);
+        const saved = await service.updateProfile(companyUser, profile);
+        const reopened = await service.getProfile(companyUser);
+        expect(reopened).toEqual(saved);
+        expect(reopened).toMatchObject({
+          name: 'Company',
+          businessType: 'IT',
+          description: 'Description',
+          websiteUrl,
+          companySize: '201-500',
+          perks: ['MacBook'],
+          location: 'อาคาร A',
+        });
+        expect(repository.updateProfile).toHaveBeenCalledWith(
+          'company-profile-1',
+          expect.objectContaining({ websiteUrl }),
+        );
+      },
+    );
+
     it('updates company profile fields and returns updated DTO', async () => {
       repository.findCompanyProfileByUserId.mockResolvedValue({
         id: 'company-profile-1',
@@ -158,12 +232,21 @@ describe('CompaniesService', () => {
         businessType: 'Consulting',
         description: 'Updated Description',
         logoObjectKey: null,
+        websiteUrl: 'https://updated.com',
+        location: 'FYI Center',
+        companySize: '201-500 คน',
+        perks: ['MacBook'],
+        coverObjectKey: null,
       });
 
       const result = await service.updateProfile(companyUser, {
         name: ' Updated Tech Corp ',
         businessType: ' Consulting ',
         description: ' Updated Description ',
+        websiteUrl: ' https://updated.com ',
+        location: ' FYI Center ',
+        companySize: ' 201-500 คน ',
+        perks: ['MacBook'],
       });
 
       expect(repository.updateProfile).toHaveBeenCalledWith(
@@ -172,6 +255,10 @@ describe('CompaniesService', () => {
           name: 'Updated Tech Corp',
           businessType: 'Consulting',
           description: 'Updated Description',
+          websiteUrl: 'https://updated.com',
+          location: 'FYI Center',
+          companySize: '201-500 คน',
+          perks: ['MacBook'],
         },
       );
       expect(result).toEqual({
@@ -181,9 +268,13 @@ describe('CompaniesService', () => {
         logoObjectKey: null,
         provinceId: null,
         provinceName: null,
-        location: '',
         latitude: null,
         longitude: null,
+        websiteUrl: 'https://updated.com',
+        location: 'FYI Center',
+        companySize: '201-500 คน',
+        perks: ['MacBook'],
+        coverObjectKey: null,
       });
     });
 
@@ -348,6 +439,7 @@ describe('CompaniesService', () => {
       repository.findCompanyProfileByUserId.mockResolvedValue({
         id: 'company-profile-1',
         userId: 'company-user-1',
+        logoObjectKey: 'company-logos/company-user-1/old.png',
       });
       storageService.put.mockResolvedValue('uploaded-key');
       repository.updateLogoObjectKey.mockResolvedValue({
@@ -357,6 +449,11 @@ describe('CompaniesService', () => {
         businessType: 'IT',
         description: 'Desc',
         logoObjectKey: 'company-logos/company-user-1/mock.png',
+        websiteUrl: '',
+        location: '',
+        companySize: '',
+        perks: [],
+        coverObjectKey: null,
       });
 
       const pngHeader = Buffer.from([
@@ -373,23 +470,18 @@ describe('CompaniesService', () => {
 
       const result = await service.uploadLogo(companyUser, file);
 
+      expect(storageService.delete).toHaveBeenCalledWith(
+        'company-logos/company-user-1/old.png',
+      );
       expect(storageService.put).toHaveBeenCalledWith(
         expect.stringMatching(/^company-logos\/company-user-1\/.+\.png$/),
         pngHeader,
         'image/png',
       );
       expect(repository.updateLogoObjectKey).toHaveBeenCalled();
-      expect(result).toEqual({
-        name: 'Tech Corp',
-        businessType: 'IT',
-        description: 'Desc',
-        logoObjectKey: 'company-logos/company-user-1/mock.png',
-        provinceId: null,
-        provinceName: null,
-        location: '',
-        latitude: null,
-        longitude: null,
-      });
+      expect(result.logoObjectKey).toBe(
+        'company-logos/company-user-1/mock.png',
+      );
     });
 
     it('throws BadRequestException when file is missing', async () => {
@@ -427,6 +519,145 @@ describe('CompaniesService', () => {
       await expect(
         service.uploadLogo(studentUser, file),
       ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+  });
+
+  describe('getLogoFile', () => {
+    it('returns buffer and mimeType', async () => {
+      repository.findCompanyProfileByUserId.mockResolvedValue({
+        id: 'company-profile-1',
+        userId: 'company-user-1',
+        logoObjectKey: 'company-logos/user/test.png',
+      });
+      const dummyBuffer = Buffer.from('logo-bytes');
+      storageService.get.mockResolvedValue(dummyBuffer);
+
+      const result = await service.getLogoFile(companyUser);
+      expect(result).toEqual({ buffer: dummyBuffer, mimeType: 'image/png' });
+    });
+
+    it('throws NotFoundException if no logo exists', async () => {
+      repository.findCompanyProfileByUserId.mockResolvedValue({
+        id: 'company-profile-1',
+        userId: 'company-user-1',
+        logoObjectKey: null,
+      });
+
+      await expect(service.getLogoFile(companyUser)).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('deleteLogo', () => {
+    it('deletes logo and updates profile', async () => {
+      repository.findCompanyProfileByUserId.mockResolvedValue({
+        id: 'company-profile-1',
+        userId: 'company-user-1',
+        logoObjectKey: 'company-logos/user/test.png',
+      });
+      repository.updateLogoObjectKey.mockResolvedValue({
+        name: 'Tech Corp',
+        businessType: 'Software',
+        description: 'Desc',
+        logoObjectKey: null,
+        websiteUrl: '',
+        location: '',
+        companySize: '',
+        perks: [],
+        coverObjectKey: null,
+      });
+
+      const result = await service.deleteLogo(companyUser);
+      expect(storageService.delete).toHaveBeenCalledWith(
+        'company-logos/user/test.png',
+      );
+      expect(repository.updateLogoObjectKey).toHaveBeenCalledWith(
+        'company-profile-1',
+        null,
+      );
+      expect(result.logoObjectKey).toBeNull();
+    });
+  });
+
+  describe('uploadCover & deleteCover', () => {
+    it('uploads valid cover image', async () => {
+      repository.findCompanyProfileByUserId.mockResolvedValue({
+        id: 'company-profile-1',
+        userId: 'company-user-1',
+        coverObjectKey: null,
+      });
+      storageService.put.mockResolvedValue('uploaded-key');
+      repository.updateCoverObjectKey.mockResolvedValue({
+        name: 'Tech Corp',
+        businessType: 'IT',
+        description: 'Desc',
+        logoObjectKey: null,
+        websiteUrl: '',
+        location: '',
+        companySize: '',
+        perks: [],
+        coverObjectKey: 'company-covers/company-user-1/mock.jpg',
+      });
+
+      const jpegHeader = Buffer.from([0xff, 0xd8, 0xff, 0xe0]);
+      const file = {
+        fieldname: 'file',
+        originalname: 'cover.jpg',
+        encoding: '7bit',
+        mimetype: 'image/jpeg',
+        size: 4,
+        buffer: jpegHeader,
+      };
+
+      const result = await service.uploadCover(companyUser, file);
+      expect(storageService.put).toHaveBeenCalled();
+      expect(repository.updateCoverObjectKey).toHaveBeenCalled();
+      expect(result.coverObjectKey).toBe(
+        'company-covers/company-user-1/mock.jpg',
+      );
+    });
+
+    it('gets cover file and returns buffer and mimeType', async () => {
+      repository.findCompanyProfileByUserId.mockResolvedValue({
+        id: 'company-profile-1',
+        userId: 'company-user-1',
+        coverObjectKey: 'company-covers/user/test.webp',
+      });
+      const dummyBuffer = Buffer.from('cover-bytes');
+      storageService.get.mockResolvedValue(dummyBuffer);
+
+      const result = await service.getCoverFile(companyUser);
+      expect(result).toEqual({ buffer: dummyBuffer, mimeType: 'image/webp' });
+    });
+
+    it('deletes cover file', async () => {
+      repository.findCompanyProfileByUserId.mockResolvedValue({
+        id: 'company-profile-1',
+        userId: 'company-user-1',
+        coverObjectKey: 'company-covers/user/test.jpg',
+      });
+      repository.updateCoverObjectKey.mockResolvedValue({
+        name: 'Tech Corp',
+        businessType: 'Software',
+        description: 'Desc',
+        logoObjectKey: null,
+        websiteUrl: '',
+        location: '',
+        companySize: '',
+        perks: [],
+        coverObjectKey: null,
+      });
+
+      const result = await service.deleteCover(companyUser);
+      expect(storageService.delete).toHaveBeenCalledWith(
+        'company-covers/user/test.jpg',
+      );
+      expect(repository.updateCoverObjectKey).toHaveBeenCalledWith(
+        'company-profile-1',
+        null,
+      );
+      expect(result.coverObjectKey).toBeNull();
     });
   });
 });

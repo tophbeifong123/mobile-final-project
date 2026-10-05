@@ -5,12 +5,16 @@ class CompanyProfileModel {
     required this.name,
     required this.businessType,
     required this.description,
-    required this.logoObjectKey,
+    this.logoObjectKey,
     this.provinceId,
     this.provinceName,
     this.location = '',
     this.latitude,
     this.longitude,
+    this.websiteUrl = '',
+    this.companySize = '',
+    this.perks = const [],
+    this.coverObjectKey,
   });
 
   factory CompanyProfileModel.fromJson(Map<String, dynamic> json) {
@@ -24,6 +28,32 @@ class CompanyProfileModel {
       location: json['location'] as String? ?? '',
       latitude: (json['latitude'] as num?)?.toDouble(),
       longitude: (json['longitude'] as num?)?.toDouble(),
+      websiteUrl: json['websiteUrl'] as String? ?? '',
+      companySize: json['companySize'] as String? ?? '',
+      perks:
+          (json['perks'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
+      coverObjectKey: json['coverObjectKey'] as String?,
+    );
+  }
+
+  factory CompanyProfileModel.fromEntity(CompanyProfile entity) {
+    return CompanyProfileModel(
+      name: entity.name,
+      businessType: entity.businessType,
+      description: entity.description,
+      logoObjectKey: entity.logoObjectKey,
+      websiteUrl: entity.websiteUrl,
+      location: entity.location,
+      companySize: entity.companySize,
+      perks: entity.perks,
+      coverObjectKey: entity.coverObjectKey,
+      provinceId: entity.provinceId,
+      provinceName: entity.provinceName,
+      latitude: entity.latitude,
+      longitude: entity.longitude,
     );
   }
 
@@ -36,6 +66,10 @@ class CompanyProfileModel {
   final String location;
   final double? latitude;
   final double? longitude;
+  final String websiteUrl;
+  final String companySize;
+  final List<String> perks;
+  final String? coverObjectKey;
 
   CompanyProfile toEntity() {
     return CompanyProfile(
@@ -48,6 +82,10 @@ class CompanyProfileModel {
       location: location,
       latitude: latitude,
       longitude: longitude,
+      websiteUrl: websiteUrl,
+      companySize: companySize,
+      perks: perks,
+      coverObjectKey: coverObjectKey,
     );
   }
 
@@ -60,6 +98,9 @@ class CompanyProfileModel {
       'location': location,
       'latitude': latitude,
       'longitude': longitude,
+      'websiteUrl': websiteUrl,
+      'companySize': companySize,
+      'perks': perks,
     };
   }
 }

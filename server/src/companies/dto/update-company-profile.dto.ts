@@ -8,6 +8,7 @@ import {
   Max,
   MaxLength,
   Min,
+  IsArray,
   MinLength,
 } from 'class-validator';
 
@@ -84,4 +85,33 @@ export class UpdateCompanyProfileDto {
   @Min(-180)
   @Max(180)
   longitude?: number | null;
+  @ApiPropertyOptional({
+    example: 'https://www.bitkub.com',
+    required: false,
+    maxLength: 1024,
+    description:
+      'เว็บไซต์ HTTP/HTTPS แบบเต็ม ไม่มี username/password; ส่งค่าว่างเพื่อล้างเว็บไซต์',
+  })
+  @IsOptional()
+  @Transform(trimString)
+  @IsString()
+  @MaxLength(1024)
+  websiteUrl?: string;
+
+  @ApiPropertyOptional({ example: '201-500 คน' })
+  @IsOptional()
+  @Transform(trimString)
+  @IsString()
+  @MaxLength(100)
+  companySize?: string;
+
+  @ApiPropertyOptional({
+    example: ['💻 MacBook Pro ประจำตำแหน่ง', '🍱 ขนมและเครื่องดื่มฟรีไม่อั้น'],
+    type: [String],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  perks?: string[];
 }
