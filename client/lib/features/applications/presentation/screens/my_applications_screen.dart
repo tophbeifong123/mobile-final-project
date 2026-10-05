@@ -211,11 +211,7 @@ class _TopBarAction extends StatelessWidget {
             border: Border.all(color: NeoColors.inkSolid, width: 1.5),
             boxShadow: NeoShadows.elevation1,
           ),
-          child: Icon(
-            icon,
-            size: 22,
-            color: NeoColors.inkSolid,
-          ),
+          child: Icon(icon, size: 22, color: NeoColors.inkSolid),
         ),
       ),
     );
