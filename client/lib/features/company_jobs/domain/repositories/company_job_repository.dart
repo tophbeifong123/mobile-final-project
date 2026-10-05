@@ -24,6 +24,12 @@ abstract class CompanyJobRepository {
     required String applicationId,
   });
 
+  Future<List<int>> downloadApplicantDocument({
+    required String jobId,
+    required String applicationId,
+    required String documentId,
+  });
+
   Future<void> updateApplicantStatus({
     required String jobId,
     required String applicationId,

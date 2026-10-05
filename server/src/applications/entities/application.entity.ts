@@ -25,6 +25,9 @@ export class Application {
   @Column({ name: 'resume_object_key', type: 'varchar', length: 1024 })
   resumeObjectKey: string;
 
+  @Column({ name: 'resume_file_name', type: 'varchar', length: 255, nullable: true })
+  resumeFileName: string | null;
+
   @Column({
     type: 'enum',
     enum: ApplicationStatus,

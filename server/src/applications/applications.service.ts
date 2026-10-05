@@ -133,7 +133,10 @@ export class ApplicationsService {
       throw new NotFoundException(PROFILE_NOT_FOUND);
     }
 
-    if (!profile.resumeObjectKey) {
+    const currentCv = await this.applicationsRepository.findStudentCv(profile.id);
+    const cvObjectKey = currentCv?.objectKey ?? profile.resumeObjectKey;
+    const cvFileName = currentCv?.fileName ?? profile.resumeFileName;
+    if (!cvObjectKey) {
       throw new BadRequestException(RESUME_REQUIRED);
     }
 
@@ -141,7 +144,8 @@ export class ApplicationsService {
       studentId: profile.id,
       jobId,
       coverLetter,
-      resumeObjectKey: profile.resumeObjectKey,
+      resumeObjectKey: cvObjectKey,
+      resumeFileName: cvFileName,
       actorUserId: user.userId,
     });
 
@@ -245,6 +249,18 @@ export class ApplicationsService {
     return { buffer, mimeType };
   }
 
+  async getApplicantDocument(user: AuthUser, jobId: string, applicationId: string, documentId: string) {
+    this.assertCompany(user);
+    const detail = await this.getApplicantDetail(user, jobId, applicationId);
+    const doc = detail.documents.find((item) => item.id === documentId);
+    if (!doc) throw new NotFoundException('ไม่พบเอกสารผู้สมัคร');
+    const stored = await this.applicationsRepository.findApplicantDocument(jobId, applicationId, documentId);
+    if (!stored) throw new NotFoundException('ไม่พบไฟล์เอกสารผู้สมัคร');
+    const buffer = await this.storageService.get(stored.objectKey);
+    if (!buffer) throw new NotFoundException('ไม่พบไฟล์เอกสารผู้สมัคร');
+    return { buffer, fileName: stored.fileName };
+  }
+
   async updateApplicantStatus(
     user: AuthUser,
     jobId: string,
@@ -329,6 +345,7 @@ export class ApplicationsService {
       coverLetter: detail.coverLetter,
       createdAt: detail.createdAt.toISOString(),
       updatedAt: detail.updatedAt.toISOString(),
+      documents: detail.documents,
     };
   }
 

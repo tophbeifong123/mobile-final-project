@@ -114,4 +114,23 @@ class _FakeResumeRepository implements ResumeRepository {
   Future<List<int>> downloadResumePdf() async {
     return [0x25, 0x50, 0x44, 0x46]; // %PDF
   }
+
+  @override
+  Future<List<int>> downloadDocumentPdf(String id) async {
+    return [0x25, 0x50, 0x44, 0x46]; // %PDF
+  }
+
+  @override
+  Future<List<StudentDocument>> listDocuments() async => const [];
+
+  @override
+  Future<StudentDocument> uploadDocument({
+    required String kind,
+    required String filePath,
+    required String fileName,
+    List<int>? bytes,
+  }) async => StudentDocument(id: 'doc', type: kind, fileName: fileName);
+
+  @override
+  Future<void> deleteDocument(String id) async {}
 }

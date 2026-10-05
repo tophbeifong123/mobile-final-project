@@ -132,6 +132,7 @@ class ApplicantModel {
     this.resumeFileName,
     this.avatarObjectKey,
     this.createdAt,
+    this.documents = const [],
   });
 
   factory ApplicantModel.fromJson(Map<String, dynamic> json) {
@@ -165,6 +166,14 @@ class ApplicantModel {
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'] as String)
           : null,
+      documents: (json['documents'] as List<dynamic>? ?? const []).map((item) {
+        final document = item as Map<String, dynamic>;
+        return ApplicantDocumentModel(
+          id: document['id'] as String,
+          type: document['type'] as String,
+          fileName: document['fileName'] as String,
+        );
+      }).toList(),
     );
   }
 
@@ -183,6 +192,7 @@ class ApplicantModel {
   final String? resumeFileName;
   final String? avatarObjectKey;
   final DateTime? createdAt;
+  final List<ApplicantDocumentModel> documents;
 
   Applicant toEntity() {
     return Applicant(
@@ -201,6 +211,23 @@ class ApplicantModel {
       resumeFileName: resumeFileName,
       avatarObjectKey: avatarObjectKey,
       createdAt: createdAt,
+      documents: documents
+          .map(
+            (d) =>
+                ApplicantDocument(id: d.id, type: d.type, fileName: d.fileName),
+          )
+          .toList(),
     );
   }
+}
+
+class ApplicantDocumentModel {
+  const ApplicantDocumentModel({
+    required this.id,
+    required this.type,
+    required this.fileName,
+  });
+  final String id;
+  final String type;
+  final String fileName;
 }

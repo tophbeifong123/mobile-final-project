@@ -13,12 +13,21 @@ import { ResumeResponseDto } from './dto/resume-response.dto.js';
 import { StudentProfileDto } from './dto/student-profile.dto.js';
 import { UpdateStudentProfileDto } from './dto/update-student-profile.dto.js';
 import { StudentsRepository } from './students.repository.js';
+import { TooManyOtherDocumentsError } from './students.repository.js';
+import { StudentDocumentType } from './student-document.entity.js';
 
 const STUDENT_ONLY = 'เฉพาะนักศึกษาเท่านั้น';
 const PROFILE_NOT_FOUND = 'ไม่พบโปรไฟล์';
 const ONLY_PDF_ALLOWED = 'เลือกได้เฉพาะไฟล์ PDF เท่านั้น';
 const FILE_REQUIRED = 'กรุณาเลือกไฟล์ PDF';
 const RESUME_NOT_FOUND = 'ไม่พบไฟล์ Resume';
+const MAX_DOCUMENT_BYTES = 10 * 1024 * 1024;
+
+function sanitizePdfName(name?: string): string {
+  const cleaned = (name ?? 'document.pdf').replace(/[\\/\r\n"]/g, '_').trim();
+  const bounded = cleaned.slice(0, 250) || 'document';
+  return bounded.toLowerCase().endsWith('.pdf') ? bounded : bounded + '.pdf';
+}
 
 @Injectable()
 export class StudentsService {
@@ -33,7 +42,7 @@ export class StudentsService {
     if (!profile) {
       throw new NotFoundException(PROFILE_NOT_FOUND);
     }
-    return toDto(profile);
+    return this.toProfileDto(profile);
   }
 
   async updateMine(
@@ -80,70 +89,16 @@ export class StudentsService {
     if (!saved) {
       throw new NotFoundException(PROFILE_NOT_FOUND);
     }
-    return toDto(saved);
+    return this.toProfileDto(saved);
   }
 
   async uploadResume(
     user: AuthUser,
     file: UploadedFilePayload | undefined,
   ): Promise<ResumeResponseDto> {
-    this.assertStudent(user);
-    if (!file) {
-      throw new BadRequestException(FILE_REQUIRED);
-    }
+    const document = await this.uploadDocument(user, StudentDocumentType.Cv, file);
+    return { fileName: document.fileName, objectKey: document.objectKey };
 
-    const isPdfMagic =
-      file.buffer &&
-      file.buffer.length >= 4 &&
-      file.buffer.subarray(0, 4).toString() === '%PDF';
-
-    const hasPdfExt = file.originalname?.toLowerCase().endsWith('.pdf');
-    const isPdfMime =
-      file.mimetype === 'application/pdf' ||
-      file.mimetype === 'application/x-pdf' ||
-      file.mimetype === 'application/acrobat' ||
-      file.mimetype === 'applications/vnd.pdf' ||
-      file.mimetype === 'text/pdf';
-
-    const isGenericMime =
-      !file.mimetype ||
-      file.mimetype === 'application/octet-stream' ||
-      file.mimetype === 'binary/octet-stream';
-
-    // Must either match PDF magic bytes (%PDF) or have PDF extension/mime
-    const isPdf = isPdfMagic || (hasPdfExt && isGenericMime) || isPdfMime;
-
-    // If buffer exists and has at least 4 bytes, verify it does not have invalid header
-    if (!isPdf || (file.buffer && file.buffer.length >= 4 && !isPdfMagic && !hasPdfExt)) {
-      throw new BadRequestException(ONLY_PDF_ALLOWED);
-    }
-
-    let fileName = file.originalname?.trim() || 'resume.pdf';
-    if (!fileName.toLowerCase().endsWith('.pdf')) {
-      fileName += '.pdf';
-    }
-
-    const profile = await this.studentsRepository.findByUserId(user.userId);
-    if (!profile) {
-      throw new NotFoundException(PROFILE_NOT_FOUND);
-    }
-
-    const objectKey = `resumes/${user.userId}/${Date.now()}-${randomUUID()}.pdf`;
-    await this.storageService.put(objectKey, file.buffer, 'application/pdf');
-
-    const updated = await this.studentsRepository.updateResume(
-      user.userId,
-      objectKey,
-      fileName,
-    );
-    if (!updated) {
-      throw new NotFoundException(PROFILE_NOT_FOUND);
-    }
-
-    return {
-      fileName: updated.resumeFileName ?? fileName,
-      objectKey: updated.resumeObjectKey ?? objectKey,
-    };
   }
 
   async getResumeFile(
@@ -153,6 +108,12 @@ export class StudentsService {
     const profile = await this.studentsRepository.findByUserId(user.userId);
     if (!profile) {
       throw new NotFoundException(PROFILE_NOT_FOUND);
+    }
+    const cv = await this.studentsRepository.findCv(profile.id);
+    if (cv) {
+      const currentBuffer = await this.storageService.get(cv.objectKey);
+      if (!currentBuffer) throw new NotFoundException(RESUME_NOT_FOUND);
+      return { buffer: currentBuffer, fileName: cv.fileName };
     }
     if (!profile.resumeObjectKey) {
       throw new NotFoundException(RESUME_NOT_FOUND);
@@ -165,6 +126,63 @@ export class StudentsService {
       buffer,
       fileName: profile.resumeFileName || 'resume.pdf',
     };
+  }
+
+  async listDocuments(user: AuthUser) {
+    this.assertStudent(user);
+    const profile = await this.studentsRepository.findByUserId(user.userId);
+    if (!profile) throw new NotFoundException(PROFILE_NOT_FOUND);
+    return this.studentsRepository.listDocuments(profile.id);
+  }
+
+  async uploadDocument(user: AuthUser, type: StudentDocumentType, file?: UploadedFilePayload) {
+    this.assertStudent(user);
+    if (!file) throw new BadRequestException(FILE_REQUIRED);
+    if (!file.buffer?.length || file.buffer.length > MAX_DOCUMENT_BYTES || file.buffer.subarray(0, 5).toString() !== '%PDF-') {
+      throw new BadRequestException(ONLY_PDF_ALLOWED);
+    }
+    const profile = await this.studentsRepository.findByUserId(user.userId);
+    if (!profile) throw new NotFoundException(PROFILE_NOT_FOUND);
+    const fileName = sanitizePdfName(file.originalname);
+    const old = type === StudentDocumentType.Other ? null : await this.studentsRepository.findCvOrType(profile.id, type);
+    const objectKey = 'student-documents/' + user.userId + '/' + type + '/' + randomUUID() + '.pdf';
+    await this.storageService.put(objectKey, file.buffer, 'application/pdf');
+    try {
+      const document = await this.studentsRepository.saveDocument({ studentId: profile.id, type, objectKey, fileName });
+      if (old && !(await this.studentsRepository.isObjectReferencedByApplication(old.objectKey))) {
+        await this.storageService.delete(old.objectKey).catch(() => undefined);
+      }
+      return document;
+    } catch (error) {
+      await this.storageService.delete(objectKey).catch(() => undefined);
+      if (error instanceof TooManyOtherDocumentsError) throw new BadRequestException('เพิ่มเอกสารอื่นได้ไม่เกิน 3 ไฟล์');
+      throw error;
+    }
+  }
+
+  async deleteDocument(user: AuthUser, id: string): Promise<void> {
+    this.assertStudent(user);
+    const profile = await this.studentsRepository.findByUserId(user.userId);
+    if (!profile) throw new NotFoundException(PROFILE_NOT_FOUND);
+    const document = await this.studentsRepository.deleteDocument(profile.id, id);
+    if (!document) throw new NotFoundException('ไม่พบเอกสาร');
+    if (document.type === StudentDocumentType.Cv) {
+      await this.studentsRepository.updateResume(user.userId, null, null);
+    }
+    if (!(await this.studentsRepository.isObjectReferencedByApplication(document.objectKey))) {
+      await this.storageService.delete(document.objectKey).catch(() => undefined);
+    }
+  }
+
+  async getStudentDocument(user: AuthUser, id: string): Promise<{ buffer: Buffer; fileName: string }> {
+    this.assertStudent(user);
+    const profile = await this.studentsRepository.findByUserId(user.userId);
+    if (!profile) throw new NotFoundException(PROFILE_NOT_FOUND);
+    const document = await this.studentsRepository.findDocument(profile.id, id);
+    if (!document) throw new NotFoundException('ไม่พบเอกสาร');
+    const buffer = await this.storageService.get(document.objectKey);
+    if (!buffer) throw new NotFoundException('ไม่พบไฟล์เอกสาร');
+    return { buffer, fileName: document.fileName };
   }
 
   async uploadAvatar(
@@ -330,9 +348,18 @@ export class StudentsService {
       throw new ForbiddenException(STUDENT_ONLY);
     }
   }
+
+  private async toProfileDto(profile: Parameters<typeof toDto>[0]): Promise<StudentProfileDto> {
+    const dto = toDto(profile);
+    const cv = profile.id ? await this.studentsRepository.findCv(profile.id) : null;
+    dto.resumeFileName = cv?.fileName ?? profile.resumeFileName ?? null;
+    dto.resumeObjectKey = cv?.objectKey ?? profile.resumeObjectKey ?? null;
+    return dto;
+  }
 }
 
 function toDto(profile: {
+  id?: string;
   fullName: string;
   university: string;
   major: string;

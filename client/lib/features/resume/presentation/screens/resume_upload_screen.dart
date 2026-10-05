@@ -5,11 +5,9 @@ import 'package:gap/gap.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/error/app_exception.dart';
-import '../../../../core/theme/app_colors_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
-import '../../../../core/widgets/app_card.dart';
-import '../../../../core/widgets/app_primary_button.dart';
-import '../../../../core/widgets/status_chip.dart';
+import '../../../../core/widgets/neo_button.dart';
+import '../../domain/entities/resume_file.dart';
 import '../../../student_profile/presentation/providers/student_profile_controller.dart';
 import '../providers/resume_controller.dart';
 
@@ -21,135 +19,188 @@ class ResumeUploadScreen extends ConsumerStatefulWidget {
 }
 
 class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
-  PlatformFile? _file;
+  PlatformFile? _pendingCv;
+  PlatformFile? _pendingTranscript;
+  PlatformFile? _pendingOther;
   String? _error;
   bool _uploading = false;
 
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final colors = context.colors;
-    final file = _file;
     final profileAsync = ref.watch(studentProfileControllerProvider);
     final currentResumeName = profileAsync.asData?.value.resumeFileName;
+    final documentsAsync = ref.watch(studentDocumentsProvider);
+    final documents = documentsAsync.asData?.value ?? const [];
+    final cv = documents.where((d) => d.type == 'cv').firstOrNull;
+    final currentCvName = cv?.fileName ?? currentResumeName;
+    final transcript = documents
+        .where((d) => d.type == 'transcript')
+        .firstOrNull;
+    final otherDocuments = documents.where((d) => d.type == 'other').toList();
+    final pendingCv = _pendingCv;
+    final pendingTranscript = _pendingTranscript;
+    final pendingOther = _pendingOther;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('อัปโหลด Resume')),
+      backgroundColor: NeoColors.paperCanvas,
+      appBar: AppBar(
+        title: const Text('เอกสารของฉัน'),
+        backgroundColor: NeoColors.paperCanvas,
+        foregroundColor: NeoColors.inkSolid,
+        surfaceTintColor: Colors.transparent,
+      ),
       body: ListView(
         padding: const EdgeInsets.all(kPagePadding),
         children: [
-          Text('ไฟล์ PDF', style: textTheme.titleLarge),
+          Text('CV', style: textTheme.titleLarge),
           const Gap(4),
           Text(
-            'ต้องมี Resume เป็น PDF ก่อนสมัครงาน',
-            style: textTheme.bodyMedium?.copyWith(
-              color: colors.mutedForeground,
-            ),
+            'ใช้สมัครงาน และแทนที่ไฟล์เดิมได้',
+            style: textTheme.bodyMedium?.copyWith(color: NeoColors.subtleInk),
           ),
           const Gap(16),
-          if (currentResumeName != null && currentResumeName.isNotEmpty) ...[
-            AppCard(
-              child: Row(
-                children: [
-                  const Icon(
-                    LucideIcons.checkCircle2,
-                    color: AppColors.primary,
-                    size: 20,
-                  ),
-                  const Gap(12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Resume ในระบบ', style: textTheme.labelMedium),
-                        const Gap(2),
-                        Text(currentResumeName, style: textTheme.titleMedium),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const Gap(16),
-          ],
-          AppCard(
+          _DocumentCard(
             padding: const EdgeInsets.all(24),
             child: Column(
               children: [
-                const Icon(
-                  LucideIcons.uploadCloud,
-                  size: 40,
-                  color: AppColors.primary,
-                ),
-                const Gap(8),
-                Text(
-                  'เลือกไฟล์ PDF จากเครื่อง',
-                  textAlign: TextAlign.center,
-                  style: textTheme.titleMedium,
-                ),
-                const Gap(12),
-                OutlinedButton(
-                  onPressed: _uploading ? null : _pickPdf,
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(kMinTouchTarget),
-                    foregroundColor: AppColors.primary,
-                    side: const BorderSide(color: AppColors.primary),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
+                if (currentCvName?.isNotEmpty == true) ...[
+                  _StoredDocumentRow(
+                    label: 'Resume ในระบบ',
+                    fileName: currentCvName!,
+                    onRemove: cv == null ? null : () => _deleteDocument(cv),
                   ),
-                  child: const Text('เลือกไฟล์'),
-                ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Divider(color: NeoColors.inkSolid, thickness: 1.5),
+                  ),
+                ],
+                if (pendingCv != null)
+                  _PendingUploadArea(
+                    fileName: pendingCv.name,
+                    uploadLabel: 'อัปโหลด CV',
+                    isLoading: _uploading,
+                    onRemove: () => _clearPendingFile('cv'),
+                    onUpload: () => _upload('cv'),
+                  )
+                else
+                  _DocumentUploadZone(
+                    label: currentCvName == null
+                        ? 'เลือก CV (PDF)'
+                        : 'แก้ไข CV',
+                    showPickerHint: currentCvName == null,
+                    onPick: _uploading ? null : () => _pickPdf('cv'),
+                  ),
               ],
             ),
           ),
-          if (file != null) ...[
-            const Gap(16),
-            AppCard(
-              child: Row(
-                children: [
-                  const Icon(
-                    LucideIcons.fileText,
-                    color: AppColors.primary,
-                    size: 22,
+          const Gap(24),
+          Text('Transcript', style: textTheme.titleLarge),
+          const Gap(8),
+          _DocumentCard(
+            child: Column(
+              children: [
+                if (transcript != null) ...[
+                  _StoredDocumentRow(
+                    label: 'Transcript ในระบบ',
+                    fileName: transcript.fileName,
+                    onRemove: () => _deleteDocument(transcript),
                   ),
-                  const Gap(12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(file.name, style: textTheme.titleMedium),
-                        const Gap(8),
-                        const StatusChip(label: 'พร้อมอัปโหลด'),
-                      ],
-                    ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 14),
+                    child: Divider(color: NeoColors.inkSolid, thickness: 1.5),
                   ),
                 ],
-              ),
+                if (pendingTranscript != null)
+                  _PendingUploadArea(
+                    fileName: pendingTranscript.name,
+                    uploadLabel: 'อัปโหลด Transcript',
+                    isLoading: _uploading,
+                    onRemove: () => _clearPendingFile('transcript'),
+                    onUpload: () => _upload('transcript'),
+                  )
+                else
+                  _DocumentUploadZone(
+                    label: transcript == null
+                        ? 'เพิ่ม Transcript (PDF)'
+                        : 'แก้ไข Transcript',
+                    showPickerHint: transcript == null,
+                    onPick: _uploading ? null : () => _pickPdf('transcript'),
+                  ),
+              ],
             ),
-          ],
+          ),
+          const Gap(24),
+          Text(
+            'เอกสารอื่น (${otherDocuments.length}/3)',
+            style: textTheme.titleLarge,
+          ),
+          const Gap(8),
+          _DocumentCard(
+            child: Column(
+              children: [
+                for (final document in otherDocuments) ...[
+                  _StoredDocumentRow(
+                    label: 'เอกสารอื่นในระบบ',
+                    fileName: document.fileName,
+                    onRemove: () => _deleteDocument(document),
+                  ),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 14),
+                    child: Divider(color: NeoColors.inkSolid, thickness: 1.5),
+                  ),
+                ],
+                if (pendingOther != null)
+                  _PendingUploadArea(
+                    fileName: pendingOther.name,
+                    uploadLabel: 'อัปโหลดเอกสารอื่น',
+                    isLoading: _uploading,
+                    onRemove: () => _clearPendingFile('other'),
+                    onUpload: () => _upload('other'),
+                  )
+                else
+                  _DocumentUploadZone(
+                    label: otherDocuments.isEmpty
+                        ? 'เพิ่มเอกสารอื่น (PDF)'
+                        : 'แก้ไขเอกสารอื่น',
+                    showPickerHint: otherDocuments.isEmpty,
+                    onPick: _uploading || otherDocuments.length >= 3
+                        ? null
+                        : () => _pickPdf('other'),
+                  ),
+              ],
+            ),
+          ),
+          if (otherDocuments.length >= 3)
+            Text(
+              'ลบไฟล์หนึ่งรายการก่อนเพิ่มเอกสารใหม่',
+              style: textTheme.bodySmall?.copyWith(color: NeoColors.subtleInk),
+            ),
           if (_error != null) ...[
             const Gap(12),
-            Text(
-              _error!,
-              style: textTheme.bodyMedium?.copyWith(color: colors.destructive),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: NeoColors.errorBg,
+                border: Border.all(color: NeoColors.errorBorder, width: 2),
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: NeoShadows.elevation1,
+              ),
+              child: Text(
+                _error!,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: NeoColors.errorText,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
           ],
         ],
       ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(kPagePadding, 8, kPagePadding, 16),
-          child: AppPrimaryButton(
-            onPressed: file == null || _uploading ? null : _upload,
-            child: Text(_uploading ? 'กำลังอัปโหลด' : 'อัปโหลด'),
-          ),
-        ),
-      ),
     );
   }
 
-  Future<void> _pickPdf() async {
+  Future<void> _pickPdf(String kind) async {
     setState(() => _error = null);
     try {
       final file = await FilePicker.pickFile(
@@ -165,14 +216,60 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
         setState(() => _error = 'เลือกได้เฉพาะไฟล์ PDF เท่านั้น');
         return;
       }
-      setState(() => _file = file);
+      setState(() {
+        switch (kind) {
+          case 'cv':
+            _pendingCv = file;
+          case 'transcript':
+            _pendingTranscript = file;
+          case 'other':
+            _pendingOther = file;
+        }
+      });
     } catch (error) {
       setState(() => _error = userVisibleError(error));
     }
   }
 
-  Future<void> _upload() async {
-    final file = _file;
+  void _clearPendingFile(String kind) {
+    setState(() {
+      switch (kind) {
+        case 'cv':
+          _pendingCv = null;
+        case 'transcript':
+          _pendingTranscript = null;
+        case 'other':
+          _pendingOther = null;
+      }
+    });
+  }
+
+  Future<void> _deleteDocument(StudentDocument document) async {
+    setState(() {
+      _uploading = true;
+      _error = null;
+    });
+    try {
+      await ref.read(resumeRepositoryProvider).deleteDocument(document.id);
+      ref.invalidate(studentDocumentsProvider);
+      ref.invalidate(studentProfileControllerProvider);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('นำ ${document.fileName} ออกแล้ว')),
+      );
+    } catch (error) {
+      if (mounted) setState(() => _error = userVisibleError(error));
+    } finally {
+      if (mounted) setState(() => _uploading = false);
+    }
+  }
+
+  Future<void> _upload(String kind) async {
+    final file = switch (kind) {
+      'cv' => _pendingCv,
+      'transcript' => _pendingTranscript,
+      _ => _pendingOther,
+    };
     if (file == null) {
       return;
     }
@@ -194,15 +291,26 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
       }
       await ref
           .read(resumeRepositoryProvider)
-          .uploadPdf(filePath: path ?? '', fileName: file.name, bytes: bytes);
+          .uploadDocument(
+            kind: kind,
+            filePath: path ?? '',
+            fileName: file.name,
+            bytes: bytes,
+          );
+      ref.invalidate(studentDocumentsProvider);
       ref.invalidate(studentProfileControllerProvider);
       if (!mounted) {
         return;
       }
+      final uploadedLabel = switch (kind) {
+        'cv' => 'CV',
+        'transcript' => 'Transcript',
+        _ => 'เอกสารอื่น',
+      };
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('อัปโหลด Resume แล้ว')));
-      setState(() => _file = null);
+      ).showSnackBar(SnackBar(content: Text('อัปโหลด$uploadedLabelแล้ว')));
+      _clearPendingFile(kind);
     } catch (error) {
       if (!mounted) {
         return;
@@ -213,5 +321,178 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
         setState(() => _uploading = false);
       }
     }
+  }
+}
+
+class _DocumentCard extends StatelessWidget {
+  const _DocumentCard({
+    required this.child,
+    this.padding = const EdgeInsets.all(16),
+  });
+
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        color: NeoColors.pureWhite,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: NeoColors.inkSolid, width: 2.5),
+        boxShadow: NeoShadows.elevation3,
+      ),
+      child: child,
+    );
+  }
+}
+
+class _StoredDocumentRow extends StatelessWidget {
+  const _StoredDocumentRow({
+    required this.label,
+    required this.fileName,
+    this.onRemove,
+  });
+
+  final String label;
+  final String fileName;
+  final VoidCallback? onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const Icon(
+          LucideIcons.checkCircle2,
+          color: NeoColors.electricIndigo,
+          size: 20,
+        ),
+        const Gap(12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: Theme.of(context).textTheme.labelMedium),
+              const Gap(2),
+              Text(fileName, style: Theme.of(context).textTheme.titleMedium),
+            ],
+          ),
+        ),
+        if (onRemove != null)
+          IconButton(
+            tooltip: 'นำเอกสารออก',
+            onPressed: onRemove,
+            icon: const Icon(Icons.close_rounded, color: NeoColors.errorText),
+          ),
+      ],
+    );
+  }
+}
+
+class _DocumentUploadZone extends StatelessWidget {
+  const _DocumentUploadZone({
+    required this.label,
+    required this.showPickerHint,
+    required this.onPick,
+  });
+
+  final String label;
+  final bool showPickerHint;
+  final VoidCallback? onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        if (showPickerHint) ...[
+          const Icon(
+            LucideIcons.uploadCloud,
+            size: 40,
+            color: NeoColors.electricIndigo,
+          ),
+          const Gap(8),
+          Text(
+            'เลือกไฟล์ PDF จากเครื่อง',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const Gap(12),
+        ],
+        NeoButton(
+          onPressed: onPick,
+          text: label,
+          icon: const Icon(Icons.upload_file, size: 19),
+          variant: NeoButtonVariant.secondary,
+          isFullWidth: true,
+        ),
+      ],
+    );
+  }
+}
+
+class _PendingUploadArea extends StatelessWidget {
+  const _PendingUploadArea({
+    required this.fileName,
+    required this.uploadLabel,
+    required this.isLoading,
+    required this.onRemove,
+    required this.onUpload,
+  });
+
+  final String fileName;
+  final String uploadLabel;
+  final bool isLoading;
+  final VoidCallback onRemove;
+  final VoidCallback? onUpload;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            const Icon(
+              LucideIcons.fileText,
+              color: NeoColors.electricIndigo,
+              size: 22,
+            ),
+            const Gap(12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    fileName,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const Gap(2),
+                  Text(
+                    'พร้อมอัปโหลด',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: NeoColors.subtleInk,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              tooltip: 'เอาไฟล์ออก',
+              onPressed: onRemove,
+              icon: const Icon(Icons.close_rounded, color: NeoColors.errorText),
+            ),
+          ],
+        ),
+        const Gap(12),
+        NeoButton(
+          onPressed: onUpload,
+          text: uploadLabel,
+          icon: const Icon(Icons.upload_file, size: 19),
+          variant: NeoButtonVariant.secondary,
+          isLoading: isLoading,
+          isFullWidth: true,
+        ),
+      ],
+    );
   }
 }

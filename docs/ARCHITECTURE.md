@@ -133,6 +133,12 @@ Access token อายุสั้น Refresh token หมุนทุกคร�
 | GET, PATCH | /api/students/me | Student Profile |
 | POST | /api/students/me/resume | Resume Upload |
 | GET | /api/students/me/resume/file | Resume Preview / Download |
+| GET | /api/students/me/documents | รายการเอกสาร |
+| POST | /api/students/me/documents/cv | อัปโหลด/แทนที่ CV (multipart/form-data, PDF, 10 MiB max) |
+| POST | /api/students/me/documents/transcript | อัปโหลด/แทนที่ transcript (multipart/form-data, PDF, 10 MiB max) |
+| POST | /api/students/me/documents/other | เพิ่มเอกสารอื่น (multipart/form-data, PDF, สูงสุด 3, 10 MiB max) |
+| DELETE | /api/students/me/documents/:id | ลบ CV, transcript หรือเอกสารอื่น; CV ที่ถูกใช้สมัครงานแล้วจะคงไฟล์ snapshot ของใบสมัครไว้ |
+| GET | /api/students/me/documents/:id/file | เปิดเอกสารของตัวเอง |
 | GET | /api/jobs | Home / Job Feed |
 | GET | /api/jobs/:id | Job Detail |
 | POST, DELETE | /api/jobs/:id/save | Save จาก Job Detail |
@@ -159,6 +165,7 @@ Route `GET /api/jobs/saved` ต้องประกาศก่อน `GET /api
 | PATCH | /api/company/jobs/:id/status | เปิดหรือปิดรับสมัคร |
 | GET | /api/company/jobs/:id/applications | Applicants List |
 | GET | /api/company/jobs/:id/applications/:applicationId | Applicant Detail |
+| GET | /api/company/jobs/:id/applications/:applicationId/documents/:documentId/file | เปิด CV snapshot หรือเอกสารปัจจุบัน |
 | PATCH | /api/company/jobs/:id/applications/:applicationId/status | เปลี่ยนสถานะผู้สมัคร |
 
 บริษัทเรียกได้เฉพาะประกาศและผู้สมัครของบริษัทตัวเอง ไม่เช่นนั้นตอบ 403

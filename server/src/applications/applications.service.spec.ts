@@ -61,6 +61,7 @@ describe('ApplicationsService', () => {
     repository = {
       findStudentProfileByUserId: vi.fn(),
       findApplication: vi.fn(),
+      findStudentCv: vi.fn().mockResolvedValue(null),
       applyJob: vi.fn(),
     } as unknown as ApplicationsRepository;
 
@@ -128,6 +129,7 @@ describe('ApplicationsService', () => {
       jobId: 'job-1',
       coverLetter: 'I am passionate about this internship',
       resumeObjectKey: studentProfile.resumeObjectKey,
+      resumeFileName: studentProfile.resumeFileName,
       actorUserId: studentUser.userId,
     });
 
@@ -135,6 +137,37 @@ describe('ApplicationsService', () => {
     expect(result.status).toBe(ApplicationStatus.Submitted);
     expect(result.coverLetter).toBe('I am passionate about this internship');
     expect(result.resumeObjectKey).toBe(studentProfile.resumeObjectKey);
+  });
+
+  it('passes the current CV filename to the application snapshot', async () => {
+    vi.mocked(repository.findStudentProfileByUserId).mockResolvedValue(
+      studentProfile as any,
+    );
+    vi.mocked(repository.findStudentCv).mockResolvedValue({
+      objectKey: 'student-documents/student-123/cv/current.pdf',
+      fileName: 'current-cv.pdf',
+    } as any);
+    vi.mocked(repository.applyJob).mockResolvedValue({
+      id: 'app-123',
+      studentId: studentProfile.id,
+      jobId: 'job-1',
+      coverLetter: 'Hello',
+      resumeObjectKey: 'student-documents/student-123/cv/current.pdf',
+      resumeFileName: 'current-cv.pdf',
+      status: ApplicationStatus.Submitted,
+      version: 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as Application);
+
+    await service.apply(studentUser, 'job-1', { coverLetter: 'Hello' });
+
+    expect(repository.applyJob).toHaveBeenCalledWith(
+      expect.objectContaining({
+        resumeObjectKey: 'student-documents/student-123/cv/current.pdf',
+        resumeFileName: 'current-cv.pdf',
+      }),
+    );
   });
 
   it('propagates NotFoundException when job is not found', async () => {

@@ -88,6 +88,7 @@ class Applicant {
     this.resumeFileName,
     this.avatarObjectKey,
     this.createdAt,
+    this.documents = const [],
   });
 
   final String applicationId;
@@ -105,4 +106,16 @@ class Applicant {
   final String? resumeFileName;
   final String? avatarObjectKey;
   final DateTime? createdAt;
+  final List<ApplicantDocument> documents;
+}
+
+class ApplicantDocument {
+  const ApplicantDocument({
+    required this.id,
+    required this.type,
+    required this.fileName,
+  });
+  final String id;
+  final String type;
+  final String fileName;
 }

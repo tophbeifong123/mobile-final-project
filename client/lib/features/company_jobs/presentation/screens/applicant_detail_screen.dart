@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:pdfx/pdfx.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,6 +35,39 @@ class ApplicantDetailScreen extends ConsumerStatefulWidget {
 
 class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
   bool _isUpdating = false;
+
+  Future<void> _openApplicantDocument(ApplicantDocument document) async {
+    try {
+      final bytes = await ref
+          .read(companyJobsControllerProvider.notifier)
+          .downloadApplicantDocument(
+            jobId: widget.jobId,
+            applicationId: widget.applicationId,
+            documentId: document.id,
+          );
+      if (bytes == null || bytes.isEmpty || !mounted) return;
+      final controller = PdfControllerPinch(
+        document: PdfDocument.openData(Uint8List.fromList(bytes)),
+      );
+      await showDialog<void>(
+        context: context,
+        builder: (context) => Dialog(
+          child: SizedBox(
+            width: MediaQuery.sizeOf(context).width * .92,
+            height: MediaQuery.sizeOf(context).height * .84,
+            child: PdfViewPinch(controller: controller),
+          ),
+        ),
+      );
+      controller.dispose();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(userVisibleError(error))));
+      }
+    }
+  }
 
   Future<void> _updateStatusToReviewing(Applicant applicant) async {
     setState(() => _isUpdating = true);
@@ -204,7 +238,44 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
                 _ResumeCard(
                   resumeFileName: applicant.resumeFileName,
                   resumeObjectKey: applicant.resumeObjectKey,
+                  onOpen:
+                      applicant.documents.any((d) => d.id == 'application-cv')
+                      ? () => _openApplicantDocument(
+                          applicant.documents.firstWhere(
+                            (d) => d.id == 'application-cv',
+                          ),
+                        )
+                      : null,
                 ),
+                for (final document in applicant.documents.where(
+                  (d) => d.id != 'application-cv',
+                ))
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: AppCard(
+                      child: ListTile(
+                        leading: const Icon(
+                          Icons.picture_as_pdf_outlined,
+                          color: AppColors.primary,
+                        ),
+                        title: Text(
+                          document.type == 'transcript'
+                              ? 'Transcript'
+                              : 'เอกสารอื่น',
+                        ),
+                        subtitle: Text(
+                          document.fileName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        trailing: IconButton(
+                          tooltip: 'เปิดไฟล์ PDF',
+                          onPressed: () => _openApplicantDocument(document),
+                          icon: const Icon(Icons.open_in_new),
+                        ),
+                      ),
+                    ),
+                  ),
                 const SizedBox(height: 16),
                 _CoverLetterCard(coverLetter: applicant.coverLetter),
               ],
@@ -849,10 +920,11 @@ class _PortfolioCard extends StatelessWidget {
 }
 
 class _ResumeCard extends StatelessWidget {
-  const _ResumeCard({this.resumeFileName, this.resumeObjectKey});
+  const _ResumeCard({this.resumeFileName, this.resumeObjectKey, this.onOpen});
 
   final String? resumeFileName;
   final String? resumeObjectKey;
+  final VoidCallback? onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -912,6 +984,11 @@ class _ResumeCard extends StatelessWidget {
                       ),
                     ],
                   ),
+                ),
+                IconButton(
+                  tooltip: 'เปิด CV PDF',
+                  onPressed: onOpen,
+                  icon: const Icon(Icons.open_in_new),
                 ),
               ],
             ),

@@ -1,19 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_tokens.dart';
+import '../../../resume/domain/entities/resume_file.dart';
+import '../../../resume/presentation/providers/resume_controller.dart';
 import 'resume_preview_modal.dart';
 
 /// Active Resume Card for Student Profile Screen matching Neo-Brutalist design
-class StudentProfileResumeCard extends StatelessWidget {
+class StudentProfileResumeCard extends ConsumerWidget {
   const StudentProfileResumeCard({super.key, required this.resumeFileName});
 
   final String? resumeFileName;
 
   @override
-  Widget build(BuildContext context) {
-    final hasResume = resumeFileName != null && resumeFileName!.isNotEmpty;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final documents =
+        ref.watch(studentDocumentsProvider).asData?.value ??
+        const <StudentDocument>[];
+    final cv = documents.where((document) => document.type == 'cv').firstOrNull;
+    final transcript = documents
+        .where((document) => document.type == 'transcript')
+        .firstOrNull;
+    final others = documents.where((document) => document.type == 'other');
+    final activeResumeName = cv?.fileName ?? resumeFileName;
+    final hasResume = activeResumeName != null && activeResumeName.isNotEmpty;
 
     return Container(
       decoration: BoxDecoration(
@@ -93,7 +105,7 @@ class StudentProfileResumeCard extends StatelessWidget {
           ),
           const Gap(12),
 
-          // Inner File Box
+          // One shared document frame: CV, transcript, and other documents.
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -111,177 +123,141 @@ class StudentProfileResumeCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: hasResume
-                            ? NeoColors.softRose
-                            : NeoColors.surfaceCream,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: NeoColors.inkSolid,
-                          width: 1.5,
-                        ),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: NeoColors.inkSolid,
-                            offset: Offset(1.5, 1.5),
-                            blurRadius: 0,
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        hasResume
-                            ? Icons.picture_as_pdf_rounded
-                            : Icons.upload_file_rounded,
-                        size: 22,
-                        color: NeoColors.inkSolid,
-                      ),
-                    ),
-                    const Gap(12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Resume',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: NeoColors.subtleInk,
-                            ),
-                          ),
-                          const Gap(2),
-                          Text(
-                            hasResume
-                                ? resumeFileName!
-                                : 'ยังไม่มี Resume ในระบบ',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              color: hasResume
-                                  ? NeoColors.inkSolid
-                                  : NeoColors.subtleInk,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                _ProfileDocumentLine(
+                  label: 'Resume',
+                  fileName: activeResumeName ?? 'ยังไม่มี Resume ในระบบ',
+                  prominent: true,
+                  onTap: hasResume
+                      ? () => ResumePreviewModal.show(
+                          context,
+                          fileName: activeResumeName!,
+                          documentId: cv?.id,
+                        )
+                      : null,
                 ),
-                const Gap(12),
-
-                // Action Buttons
-                Row(
-                  children: [
-                    if (hasResume) ...[
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () {
-                            ResumePreviewModal.show(
-                              context,
-                              fileName: resumeFileName!,
-                              onReplace: () => context.push('/student/resume'),
-                            );
-                          },
-                          style: OutlinedButton.styleFrom(
-                            backgroundColor: NeoColors.pureWhite,
-                            foregroundColor: NeoColors.inkSolid,
-                            side: const BorderSide(
-                              color: NeoColors.inkSolid,
-                              width: 1.5,
-                            ),
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 10,
-                            ),
-                            visualDensity: VisualDensity.compact,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.visibility_rounded, size: 15),
-                              Gap(4),
-                              Flexible(
-                                child: Text(
-                                  'ดูตัวอย่าง',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const Gap(8),
-                    ],
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () => context.push('/student/resume'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: NeoColors.butterYellow,
-                          foregroundColor: NeoColors.inkSolid,
-                          elevation: 0,
-                          side: const BorderSide(
-                            color: NeoColors.inkSolid,
-                            width: 1.5,
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 10,
-                          ),
-                          visualDensity: VisualDensity.compact,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              hasResume
-                                  ? Icons.sync_rounded
-                                  : Icons.upload_file_rounded,
-                              size: 15,
-                            ),
-                            const Gap(4),
-                            Flexible(
-                              child: Text(
-                                hasResume ? 'เปลี่ยน' : 'อัปโหลด',
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                if (transcript != null || others.isNotEmpty) ...[
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: Divider(color: NeoColors.inkSolid, height: 1),
+                  ),
+                  const Text(
+                    'เอกสารที่อัปโหลดแล้ว',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: NeoColors.subtleInk,
+                    ),
+                  ),
+                  if (transcript != null) ...[
+                    const Gap(8),
+                    _ProfileDocumentLine(
+                      label: 'Transcript',
+                      fileName: transcript.fileName,
+                      onTap: () => ResumePreviewModal.show(
+                        context,
+                        fileName: transcript.fileName,
+                        documentId: transcript.id,
                       ),
                     ),
                   ],
+                  for (final document in others) ...[
+                    const Gap(8),
+                    _ProfileDocumentLine(
+                      label: 'เอกสารอื่น',
+                      fileName: document.fileName,
+                      onTap: () => ResumePreviewModal.show(
+                        context,
+                        fileName: document.fileName,
+                        documentId: document.id,
+                      ),
+                    ),
+                  ],
+                ],
+                const Gap(14),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => context.push('/student/resume'),
+                    icon: const Icon(Icons.edit_rounded, size: 17),
+                    label: const Text('แก้ไข'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: NeoColors.butterYellow,
+                      foregroundColor: NeoColors.inkSolid,
+                      elevation: 0,
+                      side: const BorderSide(
+                        color: NeoColors.inkSolid,
+                        width: 1.5,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ProfileDocumentLine extends StatelessWidget {
+  const _ProfileDocumentLine({
+    required this.label,
+    required this.fileName,
+    this.prominent = false,
+    this.onTap,
+  });
+
+  final String label;
+  final String fileName;
+  final bool prominent;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(
+          Icons.picture_as_pdf_rounded,
+          size: prominent ? 22 : 18,
+          color: onTap == null ? NeoColors.subtleInk : NeoColors.electricIndigo,
+        ),
+        const Gap(8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: NeoColors.subtleInk,
+                ),
+              ),
+              InkWell(
+                onTap: onTap,
+                child: Text(
+                  fileName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: prominent ? 14 : 13,
+                    fontWeight: FontWeight.w800,
+                    color: onTap == null
+                        ? NeoColors.subtleInk
+                        : NeoColors.electricIndigo,
+                    decoration: onTap == null ? null : TextDecoration.underline,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

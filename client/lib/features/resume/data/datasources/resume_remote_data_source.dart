@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/error/app_exception.dart';
 import '../models/resume_file_model.dart';
+import '../../domain/entities/resume_file.dart';
 
 class ResumeRemoteDataSource {
   ResumeRemoteDataSource(this._dio);
@@ -68,6 +69,85 @@ class ResumeRemoteDataSource {
     }
   }
 
+  Future<List<int>> downloadDocumentPdf(String id) async {
+    try {
+      final response = await _dio.get<List<int>>(
+        ApiConstants.studentDocumentFile(id),
+        options: Options(responseType: ResponseType.bytes),
+      );
+      final data = response.data;
+      if (data == null || data.isEmpty) {
+        throw const AppException('ไม่พบข้อมูลไฟล์เอกสาร');
+      }
+      return data;
+    } on DioException catch (error) {
+      throw _mapResumeError(error);
+    }
+  }
+
+  Future<List<StudentDocument>> listDocuments() async {
+    try {
+      final response = await _dio.get<List<dynamic>>(
+        ApiConstants.studentDocuments,
+      );
+      return (response.data ?? const []).map((item) {
+        final json = item as Map<String, dynamic>;
+        return StudentDocument(
+          id: json['id'] as String,
+          type: json['type'] as String,
+          fileName: json['fileName'] as String,
+        );
+      }).toList();
+    } on DioException catch (error) {
+      throw _mapResumeError(error);
+    }
+  }
+
+  Future<StudentDocument> uploadDocument({
+    required String kind,
+    required String filePath,
+    required String fileName,
+    List<int>? bytes,
+  }) async {
+    try {
+      final safeName = fileName.toLowerCase().endsWith('.pdf')
+          ? fileName
+          : '$fileName.pdf';
+      final multipart = bytes != null && bytes.isNotEmpty
+          ? MultipartFile.fromBytes(
+              bytes,
+              filename: safeName,
+              contentType: DioMediaType('application', 'pdf'),
+            )
+          : await MultipartFile.fromFile(
+              filePath,
+              filename: safeName,
+              contentType: DioMediaType('application', 'pdf'),
+            );
+      final response = await _dio.post<Map<String, dynamic>>(
+        ApiConstants.studentDocumentUpload(kind),
+        data: FormData.fromMap({'file': multipart}),
+      );
+      final json = response.data;
+      if (json == null) throw const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
+      return StudentDocument(
+        id: json['id'] as String,
+        type: json['type'] as String,
+        fileName: json['fileName'] as String,
+      );
+    } on DioException catch (error) {
+      throw _mapResumeError(error);
+    }
+  }
+
+  Future<void> deleteDocument(String id) async {
+    try {
+      await _dio.delete<void>(ApiConstants.studentDocumentDelete(id));
+    } on DioException catch (error) {
+      throw _mapResumeError(error);
+    }
+  }
+
   AppException _mapResumeError(DioException error) {
     var data = error.response?.data;
     if (data is List<int>) {
@@ -79,8 +159,9 @@ class ResumeRemoteDataSource {
     if (data is Map<String, dynamic> && data['message'] != null) {
       final msg = data['message'];
       if (msg is String) return AppException(msg);
-      if (msg is List && msg.isNotEmpty)
+      if (msg is List && msg.isNotEmpty) {
         return AppException(msg.first.toString());
+      }
     }
 
     switch (error.response?.statusCode) {
