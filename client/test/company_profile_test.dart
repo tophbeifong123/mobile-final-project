@@ -48,8 +48,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Top Bar & Branding
-      expect(find.text('InternFinder'), findsOneWidget);
-      expect(find.text('FOR BUSINESS'), findsOneWidget);
+      expect(find.text('InternMatch'), findsOneWidget);
+      expect(find.text('บริษัท'), findsOneWidget);
 
       // Cover & Avatar section
       expect(find.text('เปลี่ยนรูปหน้าปก'), findsOneWidget);
@@ -261,7 +261,7 @@ void main() {
       await tester.tap(find.text('ลองอีกครั้ง'));
       await tester.pumpAndSettle();
 
-      expect(find.text('InternFinder'), findsOneWidget);
+      expect(find.text('InternMatch'), findsOneWidget);
       expect(find.text('Tech Solutions Co.'), findsWidgets);
     },
   );

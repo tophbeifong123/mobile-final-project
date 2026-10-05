@@ -18,7 +18,9 @@ class CompanyDashboardScreen extends ConsumerWidget {
     final summaryAsync = ref.watch(companyDashboardSummaryProvider);
 
     return Scaffold(
+      appBar: const CompanyTopBar(title: 'แดชบอร์ดบริษัท'),
       body: SafeArea(
+        top: false,
         child: RefreshIndicator(
           onRefresh: () => ref.refresh(companyDashboardSummaryProvider.future),
           child: ListView(
@@ -29,9 +31,11 @@ class CompanyDashboardScreen extends ConsumerWidget {
               24,
             ),
             children: [
-              const PageHeading(
-                title: 'แดชบอร์ดบริษัท',
-                subtitle: 'ภาพรวมประกาศรับสมัครและผู้สมัครทั้งหมด',
+              Text(
+                'ภาพรวมประกาศรับสมัครและผู้สมัครทั้งหมด',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: context.colors.mutedForeground,
+                ),
               ),
               const Gap(20),
               summaryAsync.when(
