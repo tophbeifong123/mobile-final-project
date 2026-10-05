@@ -62,7 +62,7 @@ Prefix ของ API คือ `/api` ตาม `app.setGlobalPrefix('api')` ใ
 
 | โมดูล | หน้าที่ |
 |---|---|
-| AuthModule | สมัคร, login, refresh, logout |
+| AuthModule | สมัคร, login, refresh, logout, forgot/reset password |
 | StudentsModule | โปรไฟล์นักศึกษาและ Resume |
 | CompaniesModule | โปรไฟล์บริษัท, logo, ตัวเลขแดชบอร์ด |
 | JobsModule | ประกาศ, feed, บันทึกงาน, เปิดหรือปิดรับสมัคร |
@@ -121,10 +121,14 @@ Filter ของหน้า Home เป็น query ของ `GET /jobs` ไ�
 | POST | /api/auth/login | ยังไม่ login |
 | POST | /api/auth/refresh | มี refresh token |
 | POST | /api/auth/logout | login แล้ว |
+| POST | /api/auth/forgot-password | ยังไม่ login, ส่ง email เพื่อขอลิงก์ |
+| POST | /api/auth/reset-password | มีลิงก์ token ที่ยังไม่หมดอายุ |
 
 Register รับ email, password และ role `student` หรือ `company` role เปลี่ยนทีหลังไม่ได้
 
 Access token อายุสั้น Refresh token หมุนทุกครั้งที่ใช้ และเก็บเป็นค่า hash Logout คือเพิกถอน refresh token
+
+Password recovery รองรับเฉพาะบัญชี `@email.psu.ac.th` และ `@psu.ac.th` ตรวจทั้งตอนขอลิงก์และตอนใช้ token รวมถึงตรวจซ้ำใต้ user lock เพื่อกันลิงก์เก่าของโดเมนอื่น ระบบส่งลิงก์ด้วย SMTP เก็บเฉพาะ SHA-256 ของ token ใน PostgreSQL ใช้ได้ครั้งเดียวภายใน 15 นาที รีเซ็ตรหัสผ่านและเพิกถอน refresh token ใน transaction เดียว พร้อมเพิ่ม `users.token_version` เพื่อยกเลิก access token เดิมทันที ไม่ขึ้นกับ Google Login รายละเอียด SMTP อยู่ใน [PASSWORD_RECOVERY.md](PASSWORD_RECOVERY.md)
 
 ### นักศึกษา
 
@@ -293,4 +297,4 @@ CORS เปิดให้แอปมือถือเรียกได้ต
 
 ## 10. นอกแบบนี้
 
-ไม่ทำแชท, นัดสัมภาษณ์, ลืมรหัสผ่าน, ยืนยัน email, login ด้วยโซเชียล, ถอนใบสมัคร, หน้าโปรไฟล์บริษัทแยก, Admin, push notification นอกแอป หรือการเปลี่ยน role หลังสมัคร
+ไม่ทำแชท, นัดสัมภาษณ์, ยืนยัน email, login ด้วยโซเชียล, ถอนใบสมัคร, หน้าโปรไฟล์บริษัทแยก, Admin, push notification นอกแอป หรือการเปลี่ยน role หลังสมัคร

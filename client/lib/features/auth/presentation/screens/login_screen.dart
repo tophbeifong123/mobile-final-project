@@ -61,6 +61,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     AppToast.info(context, message);
   }
 
+  void _openPasswordRecovery() {
+    if (_submitting) return;
+    context.go(
+      Uri(
+        path: '/forgot-password',
+        queryParameters: _emailController.text.trim().isEmpty
+            ? null
+            : {'email': _emailController.text.trim()},
+      ).toString(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -135,9 +147,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                           controller: _passwordController,
                                           label: 'รหัสผ่าน',
                                           helperText: 'ลืมรหัส PIN?',
-                                          onHelperTap: () => _showNotice(
-                                            'ระบบรีเซ็ต PIN กำลังอยู่ระหว่างการพัฒนา',
-                                          ),
+                                          onHelperTap: _openPasswordRecovery,
                                           hintText: '••••••••••••',
                                           badgeColor: NeoColors.skyBlue,
                                           badgeIcon: Icons.lock_outline_rounded,
@@ -235,9 +245,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                               ),
                                             ),
                                             GestureDetector(
-                                              onTap: () => _showNotice(
-                                                'ระบบรีเซ็ตรหัสผ่านยังไม่เปิดให้บริการ',
-                                              ),
+                                              onTap: _openPasswordRecovery,
                                               child: const Text(
                                                 'ลืมรหัสผ่าน?',
                                                 style: TextStyle(

@@ -45,6 +45,20 @@ class AuthController extends AsyncNotifier<AuthSession?> {
     state = const AsyncData(null);
   }
 
+  /// Password recovery revokes server sessions. Finish any pending restore
+  /// before clearing local state so it cannot restore the old session later.
+  Future<void> clearLocalSession() async {
+    if (state.isLoading) {
+      try {
+        await future;
+      } catch (_) {
+        // A failed restore also needs to become a signed-out session.
+      }
+    }
+    await ref.read(tokenStorageProvider).clear();
+    state = const AsyncData(null);
+  }
+
   Future<String?> _openSession(Future<AuthSession> Function() request) async {
     try {
       final session = await request();

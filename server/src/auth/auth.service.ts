@@ -78,6 +78,7 @@ export class AuthService {
     const accessToken = await this.jwtService.signAsync({
       sub: rotated.userId,
       role: rotated.role,
+      tokenVersion: rotated.tokenVersion,
     });
     return {
       accessToken,
@@ -94,13 +95,18 @@ export class AuthService {
     const accessToken = await this.jwtService.signAsync({
       sub: user.id,
       role: user.role,
+      tokenVersion: user.tokenVersion ?? 0,
     });
     const refreshToken = randomBytes(32).toString('base64url');
-    await this.authRepository.saveRefreshToken({
+    const saved = await this.authRepository.saveRefreshToken({
       userId: user.id,
       tokenHash: hashRefreshToken(refreshToken),
       expiresAt: this.refreshExpiry(),
+      tokenVersion: user.tokenVersion ?? 0,
     });
+    if (!saved) {
+      throw new UnauthorizedException(INVALID_CREDENTIALS);
+    }
     return {
       accessToken,
       refreshToken,

@@ -103,7 +103,11 @@ void main() {
       expect(find.text('ฉันตั้งใจจะฝึกงานตำแหน่งนี้มากๆ ครับ'), findsOneWidget);
 
       // Scroll back up to tap 'ดูประกาศงาน'
-      await tester.drag(find.byType(ListView), const Offset(0, 600));
+      await tester.scrollUntilVisible(find.text('ดูประกาศงาน'), -200);
+      await Scrollable.ensureVisible(
+        tester.element(find.text('ดูประกาศงาน')),
+        alignment: 0.3,
+      );
       await tester.pumpAndSettle();
       await tester.tap(find.text('ดูประกาศงาน'));
       await tester.pumpAndSettle();

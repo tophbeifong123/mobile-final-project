@@ -9,6 +9,7 @@ import 'package:client/features/auth/presentation/screens/login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 
 void main() {
   testWidgets(
@@ -185,10 +186,21 @@ void main() {
     expect(find.byIcon(Icons.visibility_off_outlined), findsOneWidget);
   });
 
-  testWidgets(
-    'shows top toast notice when tapping forgot PIN or unreleased features',
-    (tester) async {
+  for (final link in ['ลืมรหัส PIN?', 'ลืมรหัสผ่าน?']) {
+    testWidgets('$link opens recovery with the entered email', (tester) async {
       final fakeAuthRepo = _FakeAuthRepository();
+      final router = GoRouter(
+        initialLocation: '/login',
+        routes: [
+          GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
+          GoRoute(
+            path: '/forgot-password',
+            builder: (_, state) =>
+                Scaffold(body: Text(state.uri.queryParameters['email'] ?? '')),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
 
       await tester.pumpWidget(
         ProviderScope(
@@ -196,32 +208,27 @@ void main() {
             tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
             authRepositoryProvider.overrideWithValue(fakeAuthRepo),
           ],
-          child: MaterialApp(
+          child: MaterialApp.router(
             theme: AppTheme.lightTheme,
-            home: const LoginScreen(),
+            routerConfig: router,
           ),
         ),
       );
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('ลืมรหัส PIN?'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 300));
-
-      expect(
-        find.text('ระบบรีเซ็ต PIN กำลังอยู่ระหว่างการพัฒนา'),
-        findsOneWidget,
+      await tester.enterText(
+        find.byType(TextFormField).first,
+        'student+intern@university.ac.th',
       );
-
-      // Dismiss toast
-      await tester.pump(const Duration(milliseconds: 2800));
-      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.text(link));
+      await tester.pumpAndSettle();
       expect(
-        find.text('ระบบรีเซ็ต PIN กำลังอยู่ระหว่างการพัฒนา'),
-        findsNothing,
+        router.routeInformationProvider.value.uri.path,
+        '/forgot-password',
       );
-    },
-  );
+      expect(find.text('student+intern@university.ac.th'), findsOneWidget);
+    });
+  }
 }
 
 class _FakeAuthRepository implements AuthRepository {

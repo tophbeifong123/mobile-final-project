@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, type EntityManager, IsNull } from 'typeorm';
 import { CompanyProfile } from './entities/company-profile.entity.js';
+import { PasswordResetToken } from './entities/password-reset-token.entity.js';
 import { RefreshToken } from './entities/refresh-token.entity.js';
 import { StudentProfile } from './entities/student-profile.entity.js';
 import { User } from './entities/user.entity.js';
 import { UserRole } from './user-role.js';
+import { isPasswordRecoveryEmailAllowed } from './password-recovery-email.js';
 
 export interface NewUser {
   email: string;
@@ -16,6 +18,7 @@ export interface StoredRefreshToken {
   userId: string;
   tokenHash: string;
   expiresAt: Date;
+  tokenVersion: number;
 }
 
 export interface RefreshRotation {
@@ -27,7 +30,13 @@ export interface RefreshRotation {
 export interface ActiveSessionUser {
   userId: string;
   role: UserRole;
+  tokenVersion: number;
 }
+
+export type PasswordResetConsumption =
+  | { status: 'consumed'; email: string }
+  | { status: 'reused' }
+  | null;
 
 @Injectable()
 export class AuthRepository {
@@ -35,6 +44,10 @@ export class AuthRepository {
 
   findByEmail(email: string): Promise<User | null> {
     return this.dataSource.getRepository(User).findOne({ where: { email } });
+  }
+
+  findById(id: string): Promise<User | null> {
+    return this.dataSource.getRepository(User).findOne({ where: { id } });
   }
 
   async createUserWithProfile(input: NewUser): Promise<User> {
@@ -51,25 +64,47 @@ export class AuthRepository {
     });
   }
 
-  async saveRefreshToken(input: StoredRefreshToken): Promise<void> {
-    const tokens = this.dataSource.getRepository(RefreshToken);
-    await tokens.save(tokens.create(input));
+  async saveRefreshToken(input: StoredRefreshToken): Promise<boolean> {
+    return this.dataSource.transaction(async (manager) => {
+      const user = await manager.findOne(User, {
+        where: { id: input.userId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!user || user.tokenVersion !== input.tokenVersion) {
+        return false;
+      }
+      await manager.save(manager.create(RefreshToken, {
+        userId: input.userId,
+        tokenHash: input.tokenHash,
+        expiresAt: input.expiresAt,
+      }));
+      return true;
+    });
   }
 
   async rotateRefreshToken(
     input: RefreshRotation,
   ): Promise<ActiveSessionUser | null> {
     return this.dataSource.transaction(async (manager) => {
+      const candidate = await manager.findOne(RefreshToken, {
+        where: { tokenHash: input.currentHash },
+      });
+      if (!candidate) {
+        return null;
+      }
+      // Always lock the user first, also used by recovery/session creation.
+      const user = await manager.findOne(User, {
+        where: { id: candidate.userId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!user) {
+        return null;
+      }
       const current = await manager.findOne(RefreshToken, {
         where: { tokenHash: input.currentHash, revokedAt: IsNull() },
         lock: { mode: 'pessimistic_write' },
       });
       if (!current || current.expiresAt.getTime() <= Date.now()) {
-        return null;
-      }
-
-      const user = await manager.findOne(User, { where: { id: current.userId } });
-      if (!user) {
         return null;
       }
 
@@ -85,7 +120,76 @@ export class AuthRepository {
           expiresAt: input.expiresAt,
         }),
       );
-      return { userId: user.id, role: user.role };
+      return { userId: user.id, role: user.role, tokenVersion: user.tokenVersion };
+    });
+  }
+
+  async replacePasswordResetToken(input: Omit<StoredRefreshToken, 'tokenVersion'>): Promise<boolean> {
+    return this.dataSource.transaction(async (manager) => {
+      const user = await manager.findOne(User, {
+        where: { id: input.userId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!user || !isPasswordRecoveryEmailAllowed(user.email)) {
+        return false;
+      }
+      const previous = await manager.findOne(PasswordResetToken, {
+        where: { userId: input.userId },
+      });
+      if (previous && previous.createdAt.getTime() > Date.now() - 60_000) {
+        return false;
+      }
+      await manager.delete(PasswordResetToken, { userId: input.userId });
+      await manager.save(manager.create(PasswordResetToken, input));
+      return true;
+    });
+  }
+
+  findPasswordResetToken(tokenHash: string): Promise<PasswordResetToken | null> {
+    return this.dataSource.getRepository(PasswordResetToken).findOne({ where: { tokenHash } });
+  }
+
+  async deletePasswordResetToken(tokenHash: string): Promise<void> {
+    await this.dataSource.getRepository(PasswordResetToken).delete({ tokenHash });
+  }
+
+  async consumePasswordResetToken(
+    tokenHash: string,
+    passwordHash: string,
+    isReusedPassword: (currentHash: string) => Promise<boolean>,
+  ): Promise<PasswordResetConsumption> {
+    return this.dataSource.transaction(async (manager) => {
+      const candidate = await manager.findOne(PasswordResetToken, { where: { tokenHash } });
+      if (!candidate) {
+        return null;
+      }
+      const user = await manager.findOne(User, {
+        where: { id: candidate.userId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      // Recheck under the user lock so an old link cannot bypass the current policy.
+      if (!user || !isPasswordRecoveryEmailAllowed(user.email)) {
+        return null;
+      }
+      const token = await manager.findOne(PasswordResetToken, {
+        where: { tokenHash },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!token || token.expiresAt.getTime() <= Date.now()) {
+        return null;
+      }
+      // Compare against the current hash while the user is locked. A rejected
+      // password leaves both the one-use token and existing sessions intact.
+      if (await isReusedPassword(user.passwordHash)) {
+        return { status: 'reused' };
+      }
+      await manager.update(User, { id: user.id }, {
+        passwordHash,
+        tokenVersion: () => '"token_version" + 1',
+      });
+      await manager.update(RefreshToken, { userId: user.id, revokedAt: IsNull() }, { revokedAt: new Date() });
+      await manager.delete(PasswordResetToken, { userId: user.id });
+      return { status: 'consumed', email: user.email };
     });
   }
 
