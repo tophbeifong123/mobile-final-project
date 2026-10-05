@@ -8,6 +8,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import '../../../../core/error/app_exception.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/app_toast.dart';
+import '../../../../core/widgets/company_top_bar.dart';
 import '../../../../core/widgets/neo_button.dart';
 import '../../domain/entities/company_job.dart';
 import '../providers/company_jobs_controller.dart';
@@ -42,11 +43,13 @@ class _ManageJobsScreenState extends ConsumerState<ManageJobsScreen> {
     final jobsAsync = ref.watch(companyJobListProvider);
     return Scaffold(
       backgroundColor: NeoColors.paperCanvas,
+      appBar: const CompanyTopBar(title: 'ประกาศของบริษัท'),
       body: SafeArea(
+        top: false,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _Header(jobsAsync: jobsAsync),
+            _JobSummary(jobsAsync: jobsAsync),
             _FilterTabBar(
               selected: _selectedTab,
               onSelect: (tab) => setState(() => _selectedTab = tab),
@@ -64,111 +67,22 @@ class _ManageJobsScreenState extends ConsumerState<ManageJobsScreen> {
 
 // ── Header ────────────────────────────────────────────────────────────────────
 
-class _Header extends StatelessWidget {
-  const _Header({required this.jobsAsync});
+class _JobSummary extends StatelessWidget {
+  const _JobSummary({required this.jobsAsync});
   final AsyncValue<List<CompanyJob>> jobsAsync;
 
   @override
   Widget build(BuildContext context) {
     final count = jobsAsync.asData?.value.length ?? 0;
-    return Container(
-      color: NeoColors.paperCanvas,
+    return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-            decoration: BoxDecoration(
-              color: NeoColors.electricIndigo,
-              border: Border.all(color: NeoColors.inkSolid, width: 1.5),
-              borderRadius: BorderRadius.circular(4),
-              boxShadow: const [
-                BoxShadow(color: NeoColors.inkSolid, offset: Offset(1.5, 1.5)),
-              ],
-            ),
-            child: const Text(
-              'RECRUITER HUB',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.4,
-              ),
-            ),
-          ),
-          const Gap(8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              const Expanded(
-                child: Text(
-                  'จัดการตำแหน่งงาน',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    color: NeoColors.inkSolid,
-                    height: 1.1,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-              ),
-              const Gap(8),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: NeoColors.electricIndigo,
-                  border: Border.all(color: NeoColors.inkSolid, width: 1.5),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: NeoColors.inkSolid,
-                      offset: Offset(1.5, 1.5),
-                    ),
-                  ],
-                ),
-                child: Text(
-                  '$count',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ),
-              const Gap(8),
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: NeoColors.softLilac,
-                  border: Border.all(color: NeoColors.inkSolid, width: 1.8),
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: const [
-                    BoxShadow(color: NeoColors.inkSolid, offset: Offset(2, 2)),
-                  ],
-                ),
-                child: const Icon(
-                  LucideIcons.award,
-                  size: 20,
-                  color: NeoColors.inkSolid,
-                ),
-              ),
-            ],
-          ),
-          const Gap(4),
-          const Text(
-            'สร้าง แก้ไข และจัดการประกาศงานทั้งหมดของบริษัทคุณ',
-            style: TextStyle(
-              fontSize: 13,
-              color: NeoColors.subtleInk,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
+      child: Text(
+        'ประกาศทั้งหมด $count ตำแหน่ง — สร้าง แก้ไข และจัดการประกาศงานของบริษัทคุณ',
+        style: const TextStyle(
+          fontSize: 13,
+          color: NeoColors.subtleInk,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }

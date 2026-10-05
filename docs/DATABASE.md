@@ -12,6 +12,7 @@
 users ||--o| student_profiles : "role = student"
 users ||--o| company_profiles : "role = company"
 users ||--o{ refresh_tokens : has
+users ||--o| password_reset_tokens : recovery
 
 company_profiles ||--o{ jobs : posts
 student_profiles ||--o{ saved_jobs : saves
@@ -49,6 +50,7 @@ applications ||--o{ outbox_messages : "enqueue on status change"
 | id | uuid | PK |
 | email | varchar | unique, ไม่ซ้ำทั้งระบบ |
 | password_hash | varchar | เก็บค่า hash ไม่เก็บรหัสตรง |
+| token_version | integer | ค่าเริ่มต้น 0 เพิ่มหลังรีเซ็ตรหัสผ่านเพื่อยกเลิก access token เดิม |
 | role | user_role | ตั้งตอนสมัคร แก้ไม่ได้ |
 | created_at | timestamptz | |
 | updated_at | timestamptz | |
@@ -65,6 +67,18 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | expires_at | timestamptz | |
 | revoked_at | timestamptz | null แปลว่ายังใช้ได้ |
 | created_at | timestamptz | |
+
+### password_reset_tokens
+
+| คอลัมน์ | ชนิด | หมายเหตุ |
+|---|---|---|
+| id | uuid | PK |
+| user_id | uuid | unique, FK → users.id ON DELETE CASCADE |
+| token_hash | varchar(64) | unique, SHA-256 ของ token; ไม่เก็บ token ดิบ |
+| expires_at | timestamptz | หมดอายุใน 15 นาที |
+| created_at | timestamptz | ใช้จำกัดอีเมลใหม่ไม่เกินหนึ่งครั้งต่อนาที |
+
+ตอนออกลิงก์และรีเซ็ตให้ล็อก user ก่อน token เสมอ ตอนรีเซ็ตให้เทียบรหัสใหม่กับ hash ปัจจุบันขณะถือ lock หากซ้ำให้ปฏิเสธโดยยังคงลิงก์ไว้ รีเซ็ตที่สำเร็จเปลี่ยน password_hash, เพิ่ม token_version, เพิกถอน refresh token และลบ reset token ใน transaction เดียว เพื่อกันใช้ลิงก์ซ้ำและ session ที่สร้างพร้อมกับการรีเซ็ต
 
 ### student_profiles
 

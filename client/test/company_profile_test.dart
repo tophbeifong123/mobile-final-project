@@ -49,8 +49,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Top Bar & Branding
-      expect(find.text('InternFinder'), findsOneWidget);
-      expect(find.text('FOR BUSINESS'), findsOneWidget);
+      expect(find.text('InternMatch'), findsOneWidget);
+      expect(find.text('บริษัท'), findsOneWidget);
       expect(find.text('บรรยากาศการทำงานจริง (Life at Office)'), findsNothing);
       expect(find.text('Team & Collab'), findsNothing);
       expect(find.text('Pantry & Snacks'), findsNothing);
@@ -344,7 +344,7 @@ void main() {
       await tester.tap(find.text('ลองอีกครั้ง'));
       await tester.pumpAndSettle();
 
-      expect(find.text('InternFinder'), findsOneWidget);
+      expect(find.text('InternMatch'), findsOneWidget);
       expect(find.text('Tech Solutions Co.'), findsWidgets);
     },
   );

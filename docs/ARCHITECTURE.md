@@ -62,7 +62,7 @@ Prefix ของ API คือ `/api` ตาม `app.setGlobalPrefix('api')` ใ
 
 | โมดูล | หน้าที่ |
 |---|---|
-| AuthModule | สมัคร, login, refresh, logout |
+| AuthModule | สมัคร, login, refresh, logout, forgot/reset password |
 | StudentsModule | โปรไฟล์นักศึกษาและ Resume |
 | CompaniesModule | โปรไฟล์บริษัท, logo, ตัวเลขแดชบอร์ด |
 | JobsModule | ประกาศ, feed, บันทึกงาน, เปิดหรือปิดรับสมัคร |
@@ -121,10 +121,14 @@ Filter ของหน้า Home เป็น query ของ `GET /jobs` ไ�
 | POST | /api/auth/login | ยังไม่ login |
 | POST | /api/auth/refresh | มี refresh token |
 | POST | /api/auth/logout | login แล้ว |
+| POST | /api/auth/forgot-password | ยังไม่ login, ส่ง email เพื่อขอลิงก์ |
+| POST | /api/auth/reset-password | มีลิงก์ token ที่ยังไม่หมดอายุ |
 
 Register รับ email, password และ role `student` หรือ `company` role เปลี่ยนทีหลังไม่ได้
 
 Access token อายุสั้น Refresh token หมุนทุกครั้งที่ใช้ และเก็บเป็นค่า hash Logout คือเพิกถอน refresh token
+
+Password recovery รองรับเฉพาะบัญชี `@email.psu.ac.th` และ `@psu.ac.th` ตรวจทั้งตอนขอลิงก์และตอนใช้ token รวมถึงตรวจซ้ำใต้ user lock เพื่อกันลิงก์เก่าของโดเมนอื่น ระบบส่งลิงก์ด้วย SMTP เก็บเฉพาะ SHA-256 ของ token ใน PostgreSQL ใช้ได้ครั้งเดียวภายใน 15 นาที รีเซ็ตรหัสผ่านและเพิกถอน refresh token ใน transaction เดียว พร้อมเพิ่ม `users.token_version` เพื่อยกเลิก access token เดิมทันที ไม่ขึ้นกับ Google Login รายละเอียด SMTP อยู่ใน [PASSWORD_RECOVERY.md](PASSWORD_RECOVERY.md)
 
 ### นักศึกษา
 
@@ -257,6 +261,7 @@ client/lib/
 │   ├── storage/token_storage.dart
 │   ├── error/app_exception.dart
 │   └── widgets/
+│       ├── company_top_bar.dart   # แถบบนร่วมของหน้าบริษัททั้ง 6 หน้า
 │       ├── job_card.dart
 │       ├── status_chip.dart
 │       ├── empty_state.dart
@@ -286,6 +291,8 @@ Route ที่ถูก push ทับเชลล์: Job Detail, Apply Job, R
 
 Route ที่ถูก push: Create / Edit Job, Applicants List, Applicant Detail
 
+ทุกหน้าของบริษัทใช้ `CompanyTopBar` เป็น `Scaffold.appBar` รวมถึงสถานะ loading/error เพื่อให้แถบบนอยู่คงที่ แสดงชื่อหน้าและป้ายบริษัท ไม่มี action แจ้งเตือน และไม่มี route `/company/notifications` หน้ารองเปิดปุ่มกลับซึ่ง pop เมื่อมีประวัติ หรือกลับไปหน้ารายการที่เกี่ยวข้องเมื่อเปิดจากลิงก์ตรง แถบบนของนักศึกษายังใช้ route `/student/notifications` ตามเดิม
+
 Dio ใน `auth_interceptor.dart` ใส่ access token และเมื่อได้ 401 จะเรียก refresh หนึ่งครั้งก่อนล้าง session รอบโครงไฟล์นี้หน้าจอยังไม่ยิง API จริง data source โยน `AppException` จนกว่าจะต่อ endpoint
 
 ก่อนอัปโหลด แอปต้องตรวจว่าเป็น PDF และไม่เกินขนาดที่ API กำหนด จุดเลือกไฟล์ใช้ `file_picker`
@@ -300,4 +307,4 @@ CORS เปิดให้แอปมือถือเรียกได้ต
 
 ## 10. นอกแบบนี้
 
-ไม่ทำแชท, นัดสัมภาษณ์, ลืมรหัสผ่าน, ยืนยัน email, login ด้วยโซเชียล, ถอนใบสมัคร, หน้าโปรไฟล์บริษัทแยก, Admin, push notification นอกแอป หรือการเปลี่ยน role หลังสมัคร
+ไม่ทำแชท, นัดสัมภาษณ์, ยืนยัน email, login ด้วยโซเชียล, ถอนใบสมัคร, หน้าโปรไฟล์บริษัทแยก, Admin, push notification นอกแอป หรือการเปลี่ยน role หลังสมัคร

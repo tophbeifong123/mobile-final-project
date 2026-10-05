@@ -11,10 +11,19 @@ class AuthInterceptor extends QueuedInterceptor {
   final TokenStorage tokenStorage;
   final Dio refreshDio;
 
+  bool _isPublicAuthRequest(String path) => const {
+    ApiConstants.login,
+    ApiConstants.register,
+    ApiConstants.forgotPassword,
+    ApiConstants.resetPassword,
+  }.contains(path);
+
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
     final token = tokenStorage.accessToken;
-    if (token != null && token.isNotEmpty) {
+    if (!_isPublicAuthRequest(options.path) &&
+        token != null &&
+        token.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $token';
     }
     handler.next(options);
@@ -31,7 +40,9 @@ class AuthInterceptor extends QueuedInterceptor {
   ) async {
     final statusCode = err.response?.statusCode;
     final alreadyRetried = err.requestOptions.extra['retried'] == true;
-    if (statusCode != 401 || alreadyRetried) {
+    if (statusCode != 401 ||
+        alreadyRetried ||
+        _isPublicAuthRequest(err.requestOptions.path)) {
       handler.next(err);
       return;
     }

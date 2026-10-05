@@ -10,6 +10,7 @@ import '../../../../core/theme/app_colors_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
+import '../../../../core/widgets/company_top_bar.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/status_chip.dart';
 import '../../domain/entities/company_job.dart';
@@ -25,7 +26,11 @@ class ApplicantsScreen extends ConsumerWidget {
     final applicantsAsync = ref.watch(companyJobApplicantsProvider(jobId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('รายชื่อผู้สมัคร')),
+      appBar: const CompanyTopBar(
+        title: 'รายชื่อผู้สมัคร',
+        showBack: true,
+        backLocation: '/company/jobs',
+      ),
       body: applicantsAsync.when(
         skipLoadingOnReload: true,
         loading: () => Skeletonizer(
