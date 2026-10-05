@@ -7,6 +7,7 @@ import 'package:gap/gap.dart';
 
 import '../../../../core/error/app_exception.dart';
 import '../../../../core/theme/app_tokens.dart';
+import '../../../../core/widgets/company_top_bar.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/loading_view.dart';
 import '../../../../core/widgets/neo_button.dart';
@@ -23,7 +24,9 @@ class CompanyProfileScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: NeoColors.paperCanvas,
+      appBar: const CompanyTopBar(title: 'โปรไฟล์บริษัท'),
       body: SafeArea(
+        top: false,
         child: profileAsync.when(
           loading: () => const LoadingView(label: 'กำลังโหลดโปรไฟล์บริษัท'),
           error: (error, _) => _ProfileError(
@@ -190,8 +193,6 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildTopBar(),
-                const Gap(14),
                 _buildCoverAndAvatarSection(),
                 const Gap(16),
                 _buildHeaderTitleSection(),
@@ -214,92 +215,6 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
             Positioned(top: 16, left: 20, right: 20, child: _buildSavedToast()),
         ],
       ),
-    );
-  }
-
-  Widget _buildTopBar() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: NeoColors.butterYellow,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: NeoColors.inkSolid, width: 2.5),
-                boxShadow: NeoShadows.elevation1,
-              ),
-              child: const Icon(
-                Icons.corporate_fare,
-                size: 22,
-                color: NeoColors.inkSolid,
-              ),
-            ),
-            const Gap(10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: const [
-                Text(
-                  'InternFinder',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: NeoColors.inkSolid,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                Text(
-                  'FOR BUSINESS',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    color: NeoColors.electricIndigo,
-                    letterSpacing: 0.6,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-        Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            color: NeoColors.surfaceCream,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: NeoColors.inkSolid, width: 2.5),
-            boxShadow: NeoShadows.elevation1,
-          ),
-          child: Stack(
-            children: [
-              const Center(
-                child: Icon(
-                  Icons.notifications_outlined,
-                  size: 22,
-                  color: NeoColors.inkSolid,
-                ),
-              ),
-              Positioned(
-                top: 6,
-                right: 6,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: NeoColors.electricIndigo,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: NeoColors.inkSolid, width: 1),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 

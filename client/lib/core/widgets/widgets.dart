@@ -4,6 +4,7 @@ export 'app_hero_card.dart';
 export 'app_logo.dart';
 export 'app_primary_button.dart';
 export 'app_text_field.dart';
+export 'company_top_bar.dart';
 export 'empty_state.dart';
 export 'info_chip.dart';
 export 'job_card.dart';
