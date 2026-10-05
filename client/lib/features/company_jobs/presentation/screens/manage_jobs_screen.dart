@@ -10,8 +10,8 @@ import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_primary_button.dart';
+import '../../../../core/widgets/company_top_bar.dart';
 import '../../../../core/widgets/empty_state.dart';
-import '../../../../core/widgets/page_heading.dart';
 import '../../../../core/widgets/status_chip.dart';
 import '../../domain/entities/company_job.dart';
 import '../providers/company_jobs_controller.dart';
@@ -23,16 +23,15 @@ class ManageJobsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final jobs = ref.watch(companyJobListProvider);
     return Scaffold(
+      appBar: const CompanyTopBar(title: 'ประกาศของบริษัท'),
       body: SafeArea(
+        top: false,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Padding(
               padding: EdgeInsets.fromLTRB(kPagePadding, 16, kPagePadding, 0),
-              child: PageHeading(
-                title: 'ประกาศของบริษัท',
-                subtitle: 'สร้างประกาศใหม่ได้จากปุ่มด้านล่าง',
-              ),
+              child: Text('สร้างประกาศใหม่ได้จากปุ่มด้านล่าง'),
             ),
             Expanded(
               child: jobs.when(

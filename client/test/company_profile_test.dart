@@ -124,6 +124,11 @@ void main() {
     expect(find.text('บันทึกโปรไฟล์'), findsOneWidget);
     expect(find.text('เลือกจังหวัด'), findsOneWidget);
     expect(find.text('ที่อยู่สำนักงาน (แบบสั้น)'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('ออกจากระบบ'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('ออกจากระบบ'), findsOneWidget);
   });
 
@@ -557,6 +562,7 @@ void main() {
       scrollable: find.byType(Scrollable).first,
     );
     await tester.ensureVisible(find.byType(OfficeMapPicker));
+    await tester.pumpAndSettle();
     await tester.drag(
       find.byKey(const Key('office-marker')),
       const Offset(60, 30),
@@ -576,11 +582,12 @@ void main() {
     expect(repo.uploadLogoCalls, 1);
     expect(repo.profile.provinceId, 90);
     expect(repo.profile.location, 'ที่อยู่เดิม');
-    await tester.scrollUntilVisible(
-      find.text('มีโลโก้บริษัทแล้ว'),
-      -250,
-      scrollable: find.byType(Scrollable).first,
-    );
+    // Return to the form top without dragging the interactive office map.
+    tester
+        .state<ScrollableState>(find.byType(Scrollable).first)
+        .position
+        .jumpTo(0);
+    await tester.pumpAndSettle();
     expect(find.text('มีโลโก้บริษัทแล้ว'), findsOneWidget);
     expect(
       find.widgetWithText(TextFormField, 'ชื่อที่ยังไม่บันทึก'),
@@ -710,6 +717,7 @@ Future<void> _tapSave(WidgetTester tester) async {
     250,
     scrollable: find.byType(Scrollable).first,
   );
+  await tester.pumpAndSettle();
   await tester.tap(find.text('บันทึกโปรไฟล์'));
 }
 

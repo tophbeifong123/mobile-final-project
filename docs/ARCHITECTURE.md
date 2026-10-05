@@ -268,6 +268,7 @@ client/lib/
 │   ├── error/app_exception.dart
 │   ├── provinces/                # มาสเตอร์จังหวัดและ Bottom Sheet ที่ใช้ร่วมกัน
 │   └── widgets/
+│       ├── company_top_bar.dart   # แถบบนร่วมของหน้าบริษัททั้ง 6 หน้า
 │       ├── job_card.dart
 │       ├── status_chip.dart
 │       ├── empty_state.dart
@@ -296,6 +297,8 @@ Route ที่ถูก push ทับเชลล์: Job Detail, Apply Job, R
 เชลล์บริษัทใน `company_shell.dart` มีแท็บ Dashboard, Jobs, Profile
 
 Route ที่ถูก push: Create / Edit Job, Applicants List, Applicant Detail
+
+ทุกหน้าของบริษัทใช้ `CompanyTopBar` เป็น `Scaffold.appBar` รวมถึงสถานะ loading/error เพื่อให้แถบบนอยู่คงที่ แสดงชื่อหน้าและป้ายบริษัท ไม่มี action แจ้งเตือน และไม่มี route `/company/notifications` หน้ารองเปิดปุ่มกลับซึ่ง pop เมื่อมีประวัติ หรือกลับไปหน้ารายการที่เกี่ยวข้องเมื่อเปิดจากลิงก์ตรง แถบบนของนักศึกษายังใช้ route `/student/notifications` ตามเดิม
 
 Dio ใน `auth_interceptor.dart` ใส่ access token และเมื่อได้ 401 จะเรียก refresh หนึ่งครั้งก่อนล้าง session รอบโครงไฟล์นี้หน้าจอยังไม่ยิง API จริง data source โยน `AppException` จนกว่าจะต่อ endpoint
 

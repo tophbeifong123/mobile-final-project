@@ -14,9 +14,9 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_primary_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/company_top_bar.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/loading_view.dart';
-import '../../../../core/widgets/page_heading.dart';
 import '../../../../core/widgets/status_chip.dart';
 import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../domain/entities/company_profile.dart';
@@ -31,7 +31,9 @@ class CompanyProfileScreen extends ConsumerWidget {
     final profileAsync = ref.watch(companyProfileControllerProvider);
 
     return Scaffold(
+      appBar: const CompanyTopBar(title: 'โปรไฟล์บริษัท'),
       body: SafeArea(
+        top: false,
         child: profileAsync.when(
           loading: () => const LoadingView(label: 'กำลังโหลดโปรไฟล์บริษัท'),
           error: (error, _) => _ProfileError(
@@ -153,9 +155,11 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
       child: ListView(
         padding: const EdgeInsets.all(kPagePadding),
         children: [
-          const PageHeading(
-            title: 'โปรไฟล์บริษัท',
-            subtitle: 'ข้อมูลบริษัทและที่ตั้งสำนักงาน',
+          Text(
+            'ข้อมูลบริษัทและที่ตั้งสำนักงาน',
+            style: textTheme.bodyMedium?.copyWith(
+              color: colors.mutedForeground,
+            ),
           ),
           const Gap(16),
           AppCard(
