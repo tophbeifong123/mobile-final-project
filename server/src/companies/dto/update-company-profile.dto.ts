@@ -1,6 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsArray, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import {
+  IsArray,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
 function trimString({ value }: { value: unknown }): unknown {
   return typeof value === 'string' ? value.trim() : value;
@@ -26,7 +32,13 @@ export class UpdateCompanyProfileDto {
   @IsString()
   description: string;
 
-  @ApiProperty({ example: 'https://www.bitkub.com', required: false })
+  @ApiProperty({
+    example: 'https://www.bitkub.com',
+    required: false,
+    maxLength: 1024,
+    description:
+      'เว็บไซต์ HTTP/HTTPS แบบเต็ม ไม่มี username/password; ส่งค่าว่างเพื่อล้างเว็บไซต์',
+  })
   @IsOptional()
   @Transform(trimString)
   @IsString()

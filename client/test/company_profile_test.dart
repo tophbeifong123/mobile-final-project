@@ -3,6 +3,7 @@ import 'package:client/core/network/dio_client.dart';
 import 'package:client/core/storage/token_storage.dart';
 import 'package:client/core/theme/app_theme.dart';
 import 'package:client/features/company_profile/domain/entities/company_profile.dart';
+import 'package:client/features/company_profile/domain/entities/company_website_policy.dart';
 import 'package:client/features/company_profile/domain/repositories/company_profile_repository.dart';
 import 'package:client/features/company_profile/presentation/providers/company_profile_controller.dart';
 import 'package:client/features/company_profile/presentation/screens/company_profile_screen.dart';
@@ -50,6 +51,9 @@ void main() {
       // Top Bar & Branding
       expect(find.text('InternMatch'), findsOneWidget);
       expect(find.text('บริษัท'), findsOneWidget);
+      expect(find.text('บรรยากาศการทำงานจริง (Life at Office)'), findsNothing);
+      expect(find.text('Team & Collab'), findsNothing);
+      expect(find.text('Pantry & Snacks'), findsNothing);
 
       // Cover & Avatar section
       expect(find.text('เปลี่ยนรูปหน้าปก'), findsOneWidget);
@@ -91,6 +95,85 @@ void main() {
       expect(find.text('ออกจากระบบ'), findsOneWidget);
     },
   );
+
+  testWidgets('invalid website cannot save and displays a reason', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final repo = _FakeCompanyProfileRepository(profile: mockProfile);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+          companyProfileRepositoryProvider.overrideWithValue(repo),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: const CompanyProfileScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final field = find.widgetWithText(
+      TextFormField,
+      'https://techsolutions.co',
+    );
+    await tester.ensureVisible(field);
+    await tester.enterText(field, 'javascript:alert(1)');
+    await tester.ensureVisible(find.text('บันทึกโปรไฟล์'));
+    await tester.tap(find.text('บันทึกโปรไฟล์'));
+    await tester.pumpAndSettle();
+    expect(repo.updateCalls, 0);
+    expect(find.text(companyWebsiteError), findsOneWidget);
+  });
+
+  testWidgets('saved profile fields survive opening a new page', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final repo = _FakeCompanyProfileRepository(profile: mockProfile);
+    Widget page() => ProviderScope(
+      overrides: [
+        tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+        companyProfileRepositoryProvider.overrideWithValue(repo),
+      ],
+      child: MaterialApp(
+        theme: AppTheme.lightTheme,
+        home: const CompanyProfileScreen(),
+      ),
+    );
+    await tester.pumpWidget(page());
+    await tester.pumpAndSettle();
+    final name = find.widgetWithText(TextFormField, 'Tech Solutions Co.').first;
+    await tester.enterText(name, 'Saved Company');
+    final website = find.widgetWithText(
+      TextFormField,
+      'https://techsolutions.co',
+    );
+    await tester.ensureVisible(website);
+    await tester.enterText(website, 'https://saved.example.com');
+    await tester.ensureVisible(find.text('บันทึกโปรไฟล์'));
+    await tester.tap(find.text('บันทึกโปรไฟล์'));
+    await tester.pumpAndSettle();
+    expect(repo.updateCalls, 1);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    await tester.pumpWidget(page());
+    await tester.pumpAndSettle();
+    expect(find.text('Saved Company'), findsWidgets);
+    expect(find.text('https://saved.example.com'), findsOneWidget);
+    expect(repo.profile.businessType, mockProfile.businessType);
+    expect(repo.profile.description, mockProfile.description);
+    expect(repo.profile.companySize, mockProfile.companySize);
+    expect(repo.profile.perks, mockProfile.perks);
+    expect(repo.profile.location, mockProfile.location);
+  });
 
   testWidgets('validates required fields before submitting', (tester) async {
     tester.view.physicalSize = const Size(390, 844);

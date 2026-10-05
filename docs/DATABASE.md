@@ -109,10 +109,17 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | logo_object_key | varchar | คีย์ไฟล์ใน MinIO, null ได้ |
 | business_type | varchar | ประเภทกิจการ |
 | description | text | |
+| website_url | varchar(1024) | เว็บไซต์ HTTP/HTTPS หรือค่าว่าง |
+| location | text | ที่อยู่สำนักงาน ไม่ใช่จังหวัดประกาศ; IFND-138 ใช้คอลัมน์เดิม |
+| company_size | varchar(100) | ขนาดองค์กร หรือค่าว่าง |
+| perks | text[] | สวัสดิการที่บริษัทระบุ |
+| cover_object_key | varchar(1024) | คีย์รูปหน้าปกบริษัท, null ได้ |
 | created_at | timestamptz | |
 | updated_at | timestamptz | |
 
 ตัวเลขแดชบอร์ดไม่เก็บเป็นคอลัมน์ นับจาก `jobs` กับ `applications` แล้วเขียนทับค่าใน Redis ถ้า Redis หายให้นับจากตารางนี้ใหม่
+
+ฟิลด์ข้างต้นมาจาก migration `1759300000000-add-details-and-cover-to-company-profiles` ที่มีทั้ง up/down; IFND-141 ไม่เพิ่มคอลัมน์ใหม่ รายละเอียดงานอ่านโปรไฟล์ผ่าน join ไม่เก็บสำเนาเว็บไซต์ ขนาดองค์กร สวัสดิการ หรือที่อยู่ไว้ใน jobs
 
 ### jobs
 

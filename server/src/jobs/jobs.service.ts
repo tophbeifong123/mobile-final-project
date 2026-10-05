@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { type AuthUser } from '../auth/auth-user.js';
 import { UserRole } from '../auth/user-role.js';
+import { StorageService } from '../storage/storage.service.js';
 import { CompanyJobItemDto } from './dto/company-job-item.dto.js';
 import { CreateJobDto } from './dto/create-job.dto.js';
 import { JobDetailDto } from './dto/job-detail.dto.js';
@@ -31,7 +32,10 @@ const STALE_JOB = 'ประกาศถูกแก้ไปแล้ว โห
 
 @Injectable()
 export class JobsService {
-  constructor(private readonly jobsRepository: JobsRepository) {}
+  constructor(
+    private readonly jobsRepository: JobsRepository,
+    private readonly storageService: StorageService,
+  ) {}
 
   async create(user: AuthUser, dto: CreateJobDto): Promise<JobDto> {
     if (user.role !== UserRole.Company) {
@@ -99,6 +103,33 @@ export class JobsService {
     return toDetail(job, saved);
   }
 
+  async getCompanyLogo(
+    user: AuthUser,
+    jobId: string,
+  ): Promise<{ buffer: Buffer; mimeType: string }> {
+    if (user.role !== UserRole.Student) {
+      throw new ForbiddenException(STUDENT_ONLY);
+    }
+    const job = await this.jobsRepository.findOpenById(jobId);
+    if (!job) throw new NotFoundException(JOB_NOT_FOUND);
+    const key = job.companyLogoObjectKey;
+    if (!key) throw new NotFoundException('ไม่พบโลโก้บริษัท');
+    const buffer = await this.storageService.get(key);
+    if (!buffer) throw new NotFoundException('ไม่พบโลโก้บริษัท');
+    const extension = key.split('.').pop()?.toLowerCase();
+    const mimeType =
+      extension === 'svg'
+        ? 'image/svg+xml'
+        : extension === 'jpg' || extension === 'jpeg'
+          ? 'image/jpeg'
+          : extension === 'webp'
+            ? 'image/webp'
+            : extension === 'gif'
+              ? 'image/gif'
+              : 'image/png';
+    return { buffer, mimeType };
+  }
+
   async save(user: AuthUser, jobId: string): Promise<void> {
     const studentId = await this.requireStudentId(user);
     const job = await this.jobsRepository.findOpenById(jobId);
@@ -163,7 +194,11 @@ export class JobsService {
     return toDto(job);
   }
 
-  async update(user: AuthUser, jobId: string, dto: UpdateJobDto): Promise<JobDto> {
+  async update(
+    user: AuthUser,
+    jobId: string,
+    dto: UpdateJobDto,
+  ): Promise<JobDto> {
     const companyId = await this.requireCompanyId(user);
     await this.requireOwnedJob(companyId, jobId);
     try {
@@ -296,6 +331,11 @@ function toDetail(
     companyName: string;
     businessType: string;
     companyDescription: string;
+    companyWebsiteUrl?: string;
+    companySize?: string;
+    companyPerks?: string[];
+    companyLocation?: string;
+    companyLogoObjectKey?: string | null;
   },
   saved: boolean,
 ): JobDetailDto {
@@ -313,6 +353,11 @@ function toDetail(
   dto.companyName = job.companyName;
   dto.businessType = job.businessType;
   dto.companyDescription = job.companyDescription;
+  dto.companyWebsiteUrl = job.companyWebsiteUrl ?? '';
+  dto.companySize = job.companySize ?? '';
+  dto.companyPerks = job.companyPerks ?? [];
+  dto.companyLocation = job.companyLocation ?? '';
+  dto.companyLogoAvailable = Boolean(job.companyLogoObjectKey);
   dto.saved = saved;
   return dto;
 }
