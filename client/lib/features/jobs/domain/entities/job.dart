@@ -121,6 +121,8 @@ class Job {
     required this.hasAllowance,
     required this.status,
     this.skills = const [],
+    this.createdAt,
+    this.companyLogoAvailable = false,
   });
 
   final String id;
@@ -132,6 +134,23 @@ class Job {
   final bool hasAllowance;
   final JobStatus status;
   final List<String> skills;
+  final DateTime? createdAt;
+  final bool companyLogoAvailable;
+}
+
+class JobPage {
+  const JobPage({
+    this.items = const [],
+    this.total = 0,
+    this.page = 1,
+    this.limit = 20,
+    this.totalPages = 0,
+  });
+  final List<Job> items;
+  final int total;
+  final int page;
+  final int limit;
+  final int totalPages;
 }
 
 class JobDetail {

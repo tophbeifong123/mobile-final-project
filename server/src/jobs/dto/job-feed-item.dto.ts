@@ -11,6 +11,12 @@ export class JobFeedItemDto {
   @ApiProperty({ example: 'InternFinder' })
   companyName: string;
 
+  @ApiProperty({ type: String, format: 'date-time', description: 'วันเวลาสร้างประกาศ ไม่ใช่วันที่บันทึกงาน' })
+  createdAt: Date;
+
+  @ApiProperty({ description: 'โหลดโลโก้ผ่าน GET /api/jobs/:id/company-logo เมื่อเป็น true' })
+  companyLogoAvailable: boolean;
+
   @ApiProperty({ example: 'สงขลา' })
   province: string;
 

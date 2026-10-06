@@ -111,6 +111,35 @@ test('persisted company profile reaches job detail, logo and Swagger', async () 
     assert.equal(latest.body.companyWebsiteUrl, '');
     assert.deepEqual(latest.body.companyPerks, []);
     assert.equal(latest.body.companyLocation, 'อาคาร B');
+    // Real feed pagination: 21 open jobs, not the count of the current page.
+    for (let index = 0; index < 20; index++) {
+      await dataSource.query('INSERT INTO jobs (id, company_id, title, description, province, work_mode, category, has_allowance, requirements, status) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)',
+        [randomUUID(), companyId, 'Extra Intern ' + index, 'Description', 'สงขลา', 'remote', 'IT', false, 'None', 'open']);
+    }
+    const firstPage = (await http.get('/api/jobs').set('x-test-role', 'student').expect(200)).body;
+    const secondPage = (await http.get('/api/jobs?page=2').set('x-test-role', 'student').expect(200)).body;
+    assert.equal(firstPage.items.length, 20);
+    assert.equal(secondPage.items.length, 1);
+    assert.equal(firstPage.total, 21);
+    assert.equal(secondPage.total, 21);
+    assert.equal(secondPage.totalPages, 2);
+    assert.equal(secondPage.page, 2);
+    assert.ok(!firstPage.items.some(item => item.id === secondPage.items[0].id));
+    for (const item of [...firstPage.items, ...secondPage.items]) {
+      assert.equal(item.companyLogoAvailable, true);
+      assert.ok(Number.isFinite(Date.parse(item.createdAt)));
+      assert.ok(!Object.hasOwn(item, 'companyLogoObjectKey'));
+    }
+    const noMatches = (await http.get('/api/jobs?search=no-matching-title').set('x-test-role', 'student').expect(200)).body;
+    assert.equal(noMatches.total, 0);
+    assert.equal(noMatches.totalPages, 0);
+    await dataSource.query('INSERT INTO saved_jobs (student_id, job_id) SELECT $1, id FROM jobs', [studentId]);
+    const savedPage = (await http.get('/api/jobs/saved?page=2').set('x-test-role', 'student').expect(200)).body;
+    assert.equal(savedPage.total, 21);
+    assert.equal(savedPage.totalPages, 2);
+    assert.equal(savedPage.items.length, 1);
+    const savedItem = savedPage.items[0];
+    assert.deepEqual(savedItem, [...firstPage.items, ...secondPage.items].find(item => item.id === savedItem.id));
     const response = await http.get('/api/jobs/' + jobId + '/company-logo').set('x-test-role', 'student').expect(200);
     assert.match(response.headers['content-type'], /image\/svg\+xml/);
     assert.equal(response.headers['x-content-type-options'], 'nosniff');
@@ -129,6 +158,9 @@ test('persisted company profile reaches job detail, logo and Swagger', async () 
       assert.ok(doc.components.schemas.JobDetailDto.properties[field]);
     assert.equal(doc.components.schemas.JobDetailDto.properties.companyPerks.type, 'array');
     assert.equal(doc.components.schemas.JobDetailDto.properties.companyLogoAvailable.type, 'boolean');
+    assert.equal(doc.components.schemas.JobFeedItemDto.properties.createdAt.format, 'date-time');
+    assert.equal(doc.components.schemas.JobFeedItemDto.properties.companyLogoAvailable.type, 'boolean');
+    assert.ok(doc.components.schemas.PaginatedJobsDto.properties.totalPages);
     assert.ok(!Object.keys(doc.paths).some(path => /companies\/[^/]+\/profile/.test(path)));
   } finally {
     if (app) await app.close();
