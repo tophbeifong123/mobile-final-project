@@ -109,17 +109,13 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('สมชาย ใจดี'), findsOneWidget);
-      expect(
-        find.text('จุฬาลงกรณ์มหาวิทยาลัย • วิทยาการคอมพิวเตอร์'),
-        findsOneWidget,
-      );
+      expect(find.text('จุฬาลงกรณ์มหาวิทยาลัย'), findsOneWidget);
+      expect(find.text('วิทยาการคอมพิวเตอร์'), findsOneWidget);
       expect(find.text('ยื่นใบสมัครแล้ว'), findsOneWidget);
 
       expect(find.text('สมหญิง จริงใจ'), findsOneWidget);
-      expect(
-        find.text('มหาวิทยาลัยเกษตรศาสตร์ • เทคโนโลยีสารสนเทศ'),
-        findsOneWidget,
-      );
+      expect(find.text('มหาวิทยาลัยเกษตรศาสตร์'), findsOneWidget);
+      expect(find.text('เทคโนโลยีสารสนเทศ'), findsOneWidget);
       expect(find.text('กำลังพิจารณา'), findsOneWidget);
     },
   );

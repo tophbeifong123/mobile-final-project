@@ -384,8 +384,12 @@ export class ApplicationsRepository {
       major: student?.major ?? '',
       skills: Array.isArray(student?.skills) ? student.skills : [],
       bio: student?.bio ?? '',
-      contactLinks: Array.isArray(student?.contactLinks) ? student.contactLinks : [],
-      portfolioLinks: Array.isArray(student?.portfolioLinks) ? student.portfolioLinks : [],
+      contactLinks: Array.isArray(student?.contactLinks)
+        ? student.contactLinks
+        : [],
+      portfolioLinks: Array.isArray(student?.portfolioLinks)
+        ? student.portfolioLinks
+        : [],
       portfolioUrl: student?.portfolioUrl ?? null,
       resumeFileName: appliedCvName,
       avatarObjectKey: student?.avatarObjectKey ?? null,
@@ -510,4 +514,3 @@ export class ApplicationsRepository {
     });
   }
 }
-

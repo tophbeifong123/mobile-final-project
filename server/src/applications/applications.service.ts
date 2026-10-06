@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { type AuthUser } from '../auth/auth-user.js';
 import { UserRole } from '../auth/user-role.js';
@@ -46,18 +47,16 @@ export class ApplicationsService {
   ): Promise<ApplicationDetailDto> {
     this.assertStudent(user);
 
-    const profile = await this.applicationsRepository.findStudentProfileByUserId(
-      user.userId,
-    );
+    const profile =
+      await this.applicationsRepository.findStudentProfileByUserId(user.userId);
     if (!profile) {
       throw new NotFoundException(PROFILE_NOT_FOUND);
     }
 
-    const application =
-      await this.applicationsRepository.findApplicationDetail(
-        applicationId,
-        profile.id,
-      );
+    const application = await this.applicationsRepository.findApplicationDetail(
+      applicationId,
+      profile.id,
+    );
     if (!application) {
       throw new NotFoundException(APPLICATION_NOT_FOUND);
     }
@@ -91,9 +90,8 @@ export class ApplicationsService {
   async getMine(user: AuthUser): Promise<MyApplicationItemDto[]> {
     this.assertStudent(user);
 
-    const profile = await this.applicationsRepository.findStudentProfileByUserId(
-      user.userId,
-    );
+    const profile =
+      await this.applicationsRepository.findStudentProfileByUserId(user.userId);
     if (!profile) {
       throw new NotFoundException(PROFILE_NOT_FOUND);
     }
@@ -126,9 +124,8 @@ export class ApplicationsService {
       throw new BadRequestException(COVER_LETTER_REQUIRED);
     }
 
-    const profile = await this.applicationsRepository.findStudentProfileByUserId(
-      user.userId,
-    );
+    const profile =
+      await this.applicationsRepository.findStudentProfileByUserId(user.userId);
     if (!profile) {
       throw new NotFoundException(PROFILE_NOT_FOUND);
     }
@@ -159,9 +156,7 @@ export class ApplicationsService {
     this.assertCompany(user);
 
     const companyProfile =
-      await this.applicationsRepository.findCompanyProfileByUserId(
-        user.userId,
-      );
+      await this.applicationsRepository.findCompanyProfileByUserId(user.userId);
     if (!companyProfile) {
       throw new NotFoundException(COMPANY_PROFILE_NOT_FOUND);
     }
@@ -197,9 +192,7 @@ export class ApplicationsService {
     this.assertCompany(user);
 
     const companyProfile =
-      await this.applicationsRepository.findCompanyProfileByUserId(
-        user.userId,
-      );
+      await this.applicationsRepository.findCompanyProfileByUserId(user.userId);
     if (!companyProfile) {
       throw new NotFoundException(COMPANY_PROFILE_NOT_FOUND);
     }
@@ -213,16 +206,42 @@ export class ApplicationsService {
       throw new ForbiddenException(NOT_YOUR_JOB);
     }
 
-    const detail =
-      await this.applicationsRepository.findCompanyApplicantDetail(
-        jobId,
-        applicationId,
-      );
+    const detail = await this.applicationsRepository.findCompanyApplicantDetail(
+      jobId,
+      applicationId,
+    );
     if (!detail) {
       throw new NotFoundException(APPLICATION_NOT_FOUND);
     }
 
     return this.toApplicantDetailDto(detail);
+  }
+
+  async getApplicantResume(
+    user: AuthUser,
+    jobId: string,
+    applicationId: string,
+  ): Promise<Buffer> {
+    // Reuse company/job/application ownership checks; never read the current student resume.
+    const detail = await this.getApplicantDetail(user, jobId, applicationId);
+    if (!detail.resumeObjectKey)
+      throw new NotFoundException('ไม่พบไฟล์ Resume ของใบสมัคร');
+    let buffer: Buffer | null;
+    try {
+      buffer = await this.storageService.get(detail.resumeObjectKey);
+    } catch {
+      throw new ServiceUnavailableException(
+        'เปิดไฟล์ Resume ไม่สำเร็จ กรุณาลองใหม่',
+      );
+    }
+    if (
+      !buffer ||
+      buffer.length < 4 ||
+      buffer.subarray(0, 4).toString() !== '%PDF'
+    ) {
+      throw new NotFoundException('ไม่พบไฟล์ Resume PDF ของใบสมัคร');
+    }
+    return buffer;
   }
 
   async getApplicantAvatar(
@@ -270,9 +289,7 @@ export class ApplicationsService {
     this.assertCompany(user);
 
     const companyProfile =
-      await this.applicationsRepository.findCompanyProfileByUserId(
-        user.userId,
-      );
+      await this.applicationsRepository.findCompanyProfileByUserId(user.userId);
     if (!companyProfile) {
       throw new NotFoundException(COMPANY_PROFILE_NOT_FOUND);
     }
@@ -302,11 +319,10 @@ export class ApplicationsService {
       actorUserId: user.userId,
     });
 
-    const detail =
-      await this.applicationsRepository.findCompanyApplicantDetail(
-        jobId,
-        applicationId,
-      );
+    const detail = await this.applicationsRepository.findCompanyApplicantDetail(
+      jobId,
+      applicationId,
+    );
     if (!detail) {
       throw new NotFoundException(APPLICATION_NOT_FOUND);
     }

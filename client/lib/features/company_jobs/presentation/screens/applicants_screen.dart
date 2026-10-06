@@ -8,11 +8,10 @@ import 'package:skeletonizer/skeletonizer.dart';
 import '../../../../core/error/app_exception.dart';
 import '../../../../core/theme/app_colors_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
-import '../../../../core/widgets/app_button.dart';
-import '../../../../core/widgets/app_card.dart';
+import '../../../../core/widgets/neo_button.dart';
+import '../widgets/company_applicant_widgets.dart';
 import '../../../../core/widgets/company_top_bar.dart';
 import '../../../../core/widgets/empty_state.dart';
-import '../../../../core/widgets/status_chip.dart';
 import '../../domain/entities/company_job.dart';
 import '../providers/company_jobs_controller.dart';
 
@@ -26,6 +25,7 @@ class ApplicantsScreen extends ConsumerWidget {
     final applicantsAsync = ref.watch(companyJobApplicantsProvider(jobId));
 
     return Scaffold(
+      backgroundColor: NeoColors.paperCanvas,
       appBar: const CompanyTopBar(
         title: 'รายชื่อผู้สมัคร',
         showBack: true,
@@ -39,7 +39,7 @@ class ApplicantsScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(kPagePadding),
             itemCount: 4,
             separatorBuilder: (context, index) => const Gap(12),
-            itemBuilder: (context, index) => const AppCard(
+            itemBuilder: (context, index) => const CompanyApplicantCard(
               child: Row(
                 children: [
                   CircleAvatar(radius: 22),
@@ -65,9 +65,8 @@ class ApplicantsScreen extends ConsumerWidget {
           icon: LucideIcons.users,
           title: 'โหลดรายชื่อผู้สมัครไม่ได้',
           message: userVisibleError(error),
-          action: AppButton(
-            variant: AppButtonVariant.outline,
-            size: AppButtonSize.sm,
+          action: NeoButton(
+            variant: NeoButtonVariant.outline,
             onPressed: () =>
                 ref.invalidate(companyJobApplicantsProvider(jobId)),
             text: 'ลองอีกครั้ง',
@@ -125,27 +124,12 @@ class _ApplicantCard extends StatelessWidget {
   final Applicant applicant;
   final VoidCallback onTap;
 
-  String _displayStatus(String status) {
-    switch (status.trim().toLowerCase()) {
-      case 'submitted':
-        return 'ยื่นใบสมัครแล้ว';
-      case 'reviewing':
-        return 'กำลังพิจารณา';
-      case 'accepted':
-        return 'ผ่านการคัดเลือก';
-      case 'rejected':
-        return 'ไม่ผ่านการคัดเลือก';
-      default:
-        return status;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final colors = context.colors;
 
-    return AppCard(
+    return CompanyApplicantCard(
       onTap: onTap,
       padding: const EdgeInsets.all(16),
       child: Row(
@@ -153,13 +137,18 @@ class _ApplicantCard extends StatelessWidget {
         children: [
           DecoratedBox(
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
-              shape: BoxShape.circle,
+              color: NeoColors.skyBlue,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: NeoColors.inkSolid, width: 1.5),
             ),
             child: const SizedBox(
               width: 44,
               height: 44,
-              child: Icon(LucideIcons.user, color: AppColors.primary, size: 22),
+              child: Icon(
+                LucideIcons.user,
+                color: NeoColors.inkSolid,
+                size: 22,
+              ),
             ),
           ),
           const Gap(12),
@@ -171,6 +160,8 @@ class _ApplicantCard extends StatelessWidget {
                   applicant.fullName.isEmpty
                       ? 'ไม่ระบุชื่อ'
                       : applicant.fullName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -187,22 +178,30 @@ class _ApplicantCard extends StatelessWidget {
                       ),
                       const Gap(4),
                       Expanded(
-                        child: Text(
-                          [
-                            applicant.university,
-                            applicant.major,
-                          ].where((s) => s.isNotEmpty).join(' • '),
-                          style: textTheme.bodySmall?.copyWith(
-                            color: colors.mutedForeground,
-                          ),
-                          overflow: TextOverflow.ellipsis,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            for (final value in [
+                              applicant.university,
+                              applicant.major,
+                            ])
+                              if (value.trim().isNotEmpty)
+                                Text(
+                                  value,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: textTheme.bodySmall?.copyWith(
+                                    color: colors.mutedForeground,
+                                  ),
+                                ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ],
                 const Gap(10),
-                StatusChip(label: _displayStatus(applicant.status)),
+                CompanyApplicantStatusChip(status: applicant.status),
               ],
             ),
           ),

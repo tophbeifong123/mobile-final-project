@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../data/datasources/company_job_remote_data_source.dart';
+import '../../data/datasources/applicant_resume_remote_data_source.dart';
 import '../../data/repositories/company_job_repository_impl.dart';
 import '../../domain/entities/company_job.dart';
 import '../../domain/repositories/company_job_repository.dart';
@@ -13,6 +14,13 @@ final companyJobRepositoryProvider = Provider<CompanyJobRepository>((ref) {
     CompanyJobRemoteDataSource(ref.watch(dioProvider)),
   );
 });
+
+final applicantResumeBytesProvider = FutureProvider.autoDispose
+    .family<List<int>, ({String jobId, String applicationId})>((ref, arg) {
+      return ApplicantResumeRemoteDataSource(
+        ref.watch(dioProvider),
+      ).fetch(arg.jobId, arg.applicationId);
+    });
 
 final companyJobListProvider = FutureProvider<List<CompanyJob>>((ref) {
   return ref.watch(companyJobRepositoryProvider).fetchMine();

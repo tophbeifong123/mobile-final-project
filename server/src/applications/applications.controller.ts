@@ -16,6 +16,7 @@ import {
   ApiOperation,
   ApiParam,
   ApiResponse,
+  ApiProduces,
   ApiTags,
 } from '@nestjs/swagger';
 import { type AuthUser } from '../auth/auth-user.js';
@@ -155,6 +156,53 @@ export class ApplicationsController {
       jobId,
       applicationId,
     );
+  }
+
+  @Get('company/jobs/:id/applications/:applicationId/resume')
+  @ApiOperation({
+    summary: 'เปิด PDF สำเนา Resume ตอนยื่นใบสมัคร เฉพาะบริษัทเจ้าของประกาศ',
+  })
+  @ApiProduces('application/pdf')
+  @ApiParam({ name: 'id', format: 'uuid', description: 'รหัสประกาศงาน' })
+  @ApiParam({
+    name: 'applicationId',
+    format: 'uuid',
+    description: 'รหัสใบสมัคร',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'ไฟล์ PDF ของใบสมัคร ไม่ใช่ Resume ล่าสุดของนักศึกษา',
+    content: {
+      'application/pdf': { schema: { type: 'string', format: 'binary' } },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'รหัสประกาศหรือใบสมัครไม่ใช่ UUID' })
+  @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
+  @ApiResponse({ status: 403, description: 'เฉพาะบริษัทเจ้าของประกาศ' })
+  @ApiResponse({
+    status: 404,
+    description: 'ไม่พบประกาศ ใบสมัคร โปรไฟล์ หรือไฟล์ PDF',
+  })
+  @ApiResponse({ status: 503, description: 'เปิดไฟล์ไม่ได้ กรุณาลองใหม่' })
+  async getApplicantResume(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ParseUUIDPipe()) jobId: string,
+    @Param('applicationId', new ParseUUIDPipe()) applicationId: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    const buffer = await this.applicationsService.getApplicantResume(
+      user,
+      jobId,
+      applicationId,
+    );
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      'inline; filename="application-resume.pdf"',
+    );
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.send(buffer);
   }
 
   @Get('company/jobs/:id/applications/:applicationId/avatar')
