@@ -8,15 +8,20 @@ import { UserRole } from '../auth/user-role.js';
 import { StorageService } from '../storage/storage.service.js';
 import { type UploadedFilePayload } from '../storage/uploaded-file.interface.js';
 import { UpdateStudentProfileDto } from './dto/update-student-profile.dto.js';
-import { StudentsRepository } from './students.repository.js';
+import { StudentsRepository, TooManyOtherDocumentsError } from './students.repository.js';
 import { StudentsService } from './students.service.js';
 
 describe('StudentsService', () => {
   const repository = {
     findByUserId: vi.fn(),
     updateByUserId: vi.fn(),
-    updateResume: vi.fn(),
     updateAvatar: vi.fn(),
+    findCv: vi.fn(),
+    saveDocument: vi.fn(),
+    isObjectReferencedByApplication: vi.fn(),
+    listDocuments: vi.fn(),
+    deleteDocument: vi.fn(),
+    findDocument: vi.fn(),
   };
 
   const storage = {
@@ -41,6 +46,8 @@ describe('StudentsService', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    repository.findCv.mockResolvedValue(null);
+    storage.delete.mockResolvedValue(undefined);
     const module = await Test.createTestingModule({
       providers: [
         StudentsService,
@@ -141,30 +148,29 @@ describe('StudentsService', () => {
       buffer: Buffer.from('%PDF-1.4 test resume content'),
     };
 
-    it('uploads a valid PDF resume and updates the student profile', async () => {
-      repository.findByUserId.mockResolvedValue(stored);
+    it('uploads a valid PDF resume to the student documents store', async () => {
+      repository.findByUserId.mockResolvedValue({ ...stored, id: 'student-profile-1' });
       storage.put.mockResolvedValue('resumes/user-1/generated-key.pdf');
-      repository.updateResume.mockResolvedValue({
-        ...stored,
-        resumeFileName: 'my-resume.pdf',
-        resumeObjectKey: 'resumes/user-1/generated-key.pdf',
-      });
+      repository.saveDocument.mockImplementation(async (input) => ({
+        document: { id: 'doc-1', ...input },
+        replacedDocument: null,
+      }));
 
       const result = await service.uploadResume(student, validPdfFile);
 
       expect(storage.put).toHaveBeenCalledWith(
-        expect.stringMatching(/^resumes\/user-1\/.+\.pdf$/),
+        expect.stringMatching(/^student-documents\/user-1\/cv\/.+\.pdf$/),
         validPdfFile.buffer,
         'application/pdf',
       );
-      expect(repository.updateResume).toHaveBeenCalledWith(
-        'user-1',
-        expect.stringMatching(/^resumes\/user-1\/.+\.pdf$/),
-        'my-resume.pdf',
-      );
+      expect(repository.saveDocument).toHaveBeenCalledWith(expect.objectContaining({
+        studentId: 'student-profile-1',
+        type: 'cv',
+        fileName: 'my-resume.pdf',
+      }));
       expect(result).toEqual({
         fileName: 'my-resume.pdf',
-        objectKey: 'resumes/user-1/generated-key.pdf',
+        objectKey: expect.stringMatching(/^student-documents\/user-1\/cv\/.+\.pdf$/),
       });
     });
 
@@ -245,6 +251,55 @@ describe('StudentsService', () => {
     it('rejects a company attempting to get student resume', async () => {
       await expect(service.getResumeFile(company)).rejects.toBeInstanceOf(
         ForbiddenException,
+      );
+    });
+  });
+
+  describe('student documents', () => {
+    it('rejects a renamed non-PDF before writing to storage', async () => {
+      repository.findByUserId.mockResolvedValue(stored);
+      const fakePdf: UploadedFilePayload = { fieldname: 'file', originalname: 'fake.pdf', encoding: '7bit', mimetype: 'application/pdf', size: 12, buffer: Buffer.from('not a pdf') };
+      await expect(service.uploadDocument(student, 'other' as never, fakePdf)).rejects.toBeInstanceOf(BadRequestException);
+      expect(storage.put).not.toHaveBeenCalled();
+    });
+
+    it('rejects a fourth other document and cleans up its uploaded object', async () => {
+      repository.findByUserId.mockResolvedValue(stored);
+      repository.saveDocument.mockRejectedValue(new TooManyOtherDocumentsError());
+      storage.delete.mockResolvedValue(undefined);
+      const pdf: UploadedFilePayload = { fieldname: 'file', originalname: 'file.pdf', encoding: '7bit', mimetype: 'application/pdf', size: 15, buffer: Buffer.from('%PDF-1.4 valid') };
+      await expect(service.uploadDocument(student, 'other' as never, pdf)).rejects.toBeInstanceOf(BadRequestException);
+      expect(storage.put).toHaveBeenCalledOnce();
+      expect(storage.delete).toHaveBeenCalledOnce();
+    });
+
+    it('deletes a CV and keeps an application snapshot', async () => {
+      repository.findByUserId.mockResolvedValue({ ...stored, id: 'student-profile-1' });
+      repository.deleteDocument.mockResolvedValue({
+        id: 'cv-1',
+        type: 'cv',
+        objectKey: 'student-documents/user-1/cv/current.pdf',
+      });
+      repository.isObjectReferencedByApplication.mockResolvedValue(true);
+
+      await service.deleteDocument(student, 'cv-1');
+
+      expect(storage.delete).not.toHaveBeenCalled();
+    });
+
+    it('deletes an unreferenced transcript object from storage', async () => {
+      repository.findByUserId.mockResolvedValue({ ...stored, id: 'student-profile-1' });
+      repository.deleteDocument.mockResolvedValue({
+        id: 'transcript-1',
+        type: 'transcript',
+        objectKey: 'student-documents/user-1/transcript/current.pdf',
+      });
+      repository.isObjectReferencedByApplication.mockResolvedValue(false);
+
+      await service.deleteDocument(student, 'transcript-1');
+
+      expect(storage.delete).toHaveBeenCalledWith(
+        'student-documents/user-1/transcript/current.pdf',
       );
     });
   });

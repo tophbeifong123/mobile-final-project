@@ -179,6 +179,26 @@ class CompanyJobRemoteDataSource {
     }
   }
 
+  Future<List<int>> downloadApplicantDocument({
+    required String jobId,
+    required String applicationId,
+    required String documentId,
+  }) async {
+    try {
+      final response = await _dio.get<List<int>>(
+        ApiConstants.applicantDocumentFile(jobId, applicationId, documentId),
+        options: Options(responseType: ResponseType.bytes),
+      );
+      final bytes = response.data;
+      if (bytes == null || bytes.isEmpty) {
+        throw const AppException('ไม่พบข้อมูลไฟล์เอกสาร');
+      }
+      return bytes;
+    } on DioException catch (error) {
+      throw mapCompanyJobError(error);
+    }
+  }
+
   Future<void> updateApplicantStatus({
     required String jobId,
     required String applicationId,

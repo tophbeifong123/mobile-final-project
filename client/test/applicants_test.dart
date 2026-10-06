@@ -298,6 +298,13 @@ class _FakeCompanyJobRepository implements CompanyJobRepository {
   }) async => throw UnimplementedError();
 
   @override
+  Future<List<int>> downloadApplicantDocument({
+    required String jobId,
+    required String applicationId,
+    required String documentId,
+  }) async => throw UnimplementedError();
+
+  @override
   Future<void> updateApplicantStatus({
     required String jobId,
     required String applicationId,

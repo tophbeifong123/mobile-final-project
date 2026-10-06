@@ -22,6 +22,7 @@ class ResumePreviewModal extends ConsumerWidget {
   const ResumePreviewModal({
     super.key,
     required this.fileName,
+    this.documentId,
     this.onReplace,
     this.pdfBytes,
     this.onRetry,
@@ -29,6 +30,7 @@ class ResumePreviewModal extends ConsumerWidget {
   }) : assert(!readOnly || (pdfBytes != null && onRetry != null));
 
   final String fileName;
+  final String? documentId;
   final VoidCallback? onReplace;
   final AsyncValue<List<int>>? pdfBytes;
   final VoidCallback? onRetry;
@@ -37,21 +39,28 @@ class ResumePreviewModal extends ConsumerWidget {
   static Future<void> show(
     BuildContext context, {
     required String fileName,
+    String? documentId,
     VoidCallback? onReplace,
   }) {
     return showDialog<void>(
       context: context,
       barrierDismissible: true,
       barrierColor: Colors.black.withValues(alpha: 0.6),
-      builder: (context) =>
-          ResumePreviewModal(fileName: fileName, onReplace: onReplace),
+      builder: (context) => ResumePreviewModal(
+        fileName: fileName,
+        documentId: documentId,
+        onReplace: onReplace,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final AsyncValue<List<int>> pdfBytesAsync =
-        pdfBytes ?? ref.watch<AsyncValue<List<int>>>(resumePdfBytesProvider);
+        pdfBytes ??
+        (documentId == null
+            ? ref.watch(resumePdfBytesProvider)
+            : ref.watch(studentDocumentPdfBytesProvider(documentId!)));
 
     return Dialog(
       backgroundColor: Colors.transparent,

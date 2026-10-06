@@ -240,6 +240,22 @@ export class ApplicationsController {
     res.send(buffer);
   }
 
+  @Get('company/jobs/:id/applications/:applicationId/documents/:documentId/file')
+  @ApiOperation({ summary: 'เปิด PDF เอกสารของผู้สมัคร' })
+  @ApiResponse({ status: 200, description: 'ไฟล์ PDF สำหรับบริษัทเจ้าของประกาศเท่านั้น' })
+  async getApplicantDocument(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ParseUUIDPipe()) jobId: string,
+    @Param('applicationId', new ParseUUIDPipe()) applicationId: string,
+    @Param('documentId') documentId: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    const { buffer, fileName } = await this.applicationsService.getApplicantDocument(user, jobId, applicationId, documentId);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(fileName)}"`);
+    res.send(buffer);
+  }
+
   @Patch('company/jobs/:id/applications/:applicationId/status')
   @ApiOperation({
     summary: 'เปลี่ยนสถานะผู้สมัคร (Reviewing, Accepted, Rejected)',
