@@ -4,6 +4,7 @@ import '../../../../core/network/dio_client.dart';
 import '../../data/datasources/job_remote_data_source.dart';
 import '../../data/repositories/job_repository_impl.dart';
 import '../../domain/entities/job.dart';
+import '../../domain/entities/company_logo.dart';
 import '../../domain/repositories/job_repository.dart';
 
 final jobRepositoryProvider = Provider<JobRepository>((ref) {
@@ -29,6 +30,16 @@ final jobFeedProvider = FutureProvider<List<Job>>((ref) {
   return ref.watch(jobRepositoryProvider).fetchFeed(filter);
 });
 
-final jobDetailProvider = FutureProvider.family<JobDetail, String>((ref, id) {
+final jobDetailProvider = FutureProvider.autoDispose.family<JobDetail, String>((
+  ref,
+  id,
+) {
   return ref.watch(jobRepositoryProvider).fetchDetail(id);
 });
+
+final jobCompanyLogoProvider = FutureProvider.autoDispose
+    .family<CompanyLogo?, String>((ref, id) async {
+      final detail = await ref.watch(jobDetailProvider(id).future);
+      if (!detail.companyLogoAvailable) return null;
+      return JobRemoteDataSource(ref.watch(dioProvider)).fetchCompanyLogo(id);
+    });

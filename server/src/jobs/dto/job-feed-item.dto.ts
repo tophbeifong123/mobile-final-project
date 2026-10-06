@@ -23,6 +23,27 @@ export class JobFeedItemDto {
   @ApiProperty()
   hasAllowance: boolean;
 
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    minimum: 1,
+    maximum: 2147483647,
+    example: 3,
+    description: 'จำนวนรับ; null เมื่อไม่ได้ระบุ',
+  })
+  openings: number | null;
+
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    minimum: 0,
+    maximum: 99999999.99,
+    example: 8000,
+    description:
+      'จำนวนเบี้ยเลี้ยงเงินบาท ทศนิยมไม่เกิน 2 ตำแหน่ง; null เมื่อไม่ได้ระบุหรือไม่มีเบี้ยเลี้ยง',
+  })
+  allowanceAmount: number | null;
+
   @ApiProperty({ type: [String], example: ['Flutter', 'Dart'] })
   skills: string[];
 

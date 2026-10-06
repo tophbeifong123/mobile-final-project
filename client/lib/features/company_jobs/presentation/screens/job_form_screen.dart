@@ -5,10 +5,12 @@ import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/error/app_exception.dart';
+import '../../../../core/provinces/thai_province_picker.dart';
 import '../../../../core/theme/app_colors_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/app_primary_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/company_top_bar.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/loading_view.dart';
 import '../../../../core/widgets/neo_button.dart';
@@ -32,11 +34,19 @@ class JobFormScreen extends ConsumerWidget {
     final detail = ref.watch(companyJobDetailProvider(jobId));
     return detail.when(
       loading: () => Scaffold(
-        appBar: AppBar(title: const Text('แก้ประกาศ')),
+        appBar: const CompanyTopBar(
+          title: 'แก้ประกาศ',
+          showBack: true,
+          backLocation: '/company/jobs',
+        ),
         body: const LoadingView(label: 'กำลังโหลดประกาศ'),
       ),
       error: (error, _) => Scaffold(
-        appBar: AppBar(title: const Text('แก้ประกาศ')),
+        appBar: const CompanyTopBar(
+          title: 'แก้ประกาศ',
+          showBack: true,
+          backLocation: '/company/jobs',
+        ),
         body: Center(
           child: AppErrorView(
             message: userVisibleError(error),
@@ -68,8 +78,11 @@ class _JobFormState extends ConsumerState<_JobForm> {
   late final TextEditingController _requirementsController;
   late WorkMode _workMode;
   late bool _hasAllowance;
+  late final TextEditingController _openingsController;
+  late final TextEditingController _allowanceAmountController;
   late int _version;
   late List<String> _skills;
+  int? _selectedProvinceId;
   String? _error;
   bool _submitting = false;
   bool _deleting = false;
@@ -91,6 +104,12 @@ class _JobFormState extends ConsumerState<_JobForm> {
     );
     _workMode = job == null ? WorkMode.hybrid : workModeFromApi(job.workMode);
     _hasAllowance = job?.hasAllowance ?? false;
+    _openingsController = TextEditingController(
+      text: job?.openings?.toString() ?? '',
+    );
+    _allowanceAmountController = TextEditingController(
+      text: job?.allowanceAmount?.toString() ?? '',
+    );
     _version = job?.version ?? 1;
     _skills = List<String>.from(job?.skills ?? const []);
   }
@@ -102,6 +121,8 @@ class _JobFormState extends ConsumerState<_JobForm> {
     _provinceController.dispose();
     _categoryController.dispose();
     _requirementsController.dispose();
+    _openingsController.dispose();
+    _allowanceAmountController.dispose();
     super.dispose();
   }
 
@@ -111,7 +132,11 @@ class _JobFormState extends ConsumerState<_JobForm> {
     final editing = widget.job != null;
 
     return Scaffold(
-      appBar: AppBar(title: Text(editing ? 'แก้ประกาศ' : 'สร้างประกาศ')),
+      appBar: CompanyTopBar(
+        title: editing ? 'แก้ประกาศ' : 'สร้างประกาศ',
+        showBack: true,
+        backLocation: '/company/jobs',
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -132,12 +157,20 @@ class _JobFormState extends ConsumerState<_JobForm> {
               validator: _required,
             ),
             const Gap(12),
-            AppTextField(
-              controller: _provinceController,
-              textInputAction: TextInputAction.next,
-              label: 'จังหวัด',
-              prefixIcon: const Icon(LucideIcons.mapPin, size: 18),
-              validator: _required,
+            InkWell(
+              key: const Key('job-province-picker'),
+              onTap: _busy ? null : _openProvincePicker,
+              child: IgnorePointer(
+                child: AppTextField(
+                  controller: _provinceController,
+                  label: 'จังหวัด',
+                  hintText: 'เลือกจากรายชื่อจังหวัด',
+                  readOnly: true,
+                  prefixIcon: const Icon(LucideIcons.mapPin, size: 18),
+                  suffixIcon: const Icon(Icons.keyboard_arrow_down),
+                  validator: _required,
+                ),
+              ),
             ),
             const Gap(12),
             DropdownButtonFormField<WorkMode>(
@@ -181,14 +214,54 @@ class _JobFormState extends ConsumerState<_JobForm> {
               validator: _required,
             ),
             const Gap(4),
+            AppTextField(
+              controller: _openingsController,
+              label: 'จำนวนรับ (ไม่บังคับ)',
+              keyboardType: TextInputType.number,
+              enabled: !_busy,
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) return null;
+                final number = int.tryParse(value.trim());
+                return number == null || number < 1 || number > 2147483647
+                    ? 'ระบุจำนวนเต็มบวก ไม่เกิน 2147483647'
+                    : null;
+              },
+            ),
+            const Gap(8),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('มีเบี้ยเลี้ยง'),
               value: _hasAllowance,
               onChanged: _busy
                   ? null
-                  : (value) => setState(() => _hasAllowance = value),
+                  : (value) => setState(() {
+                      _hasAllowance = value;
+                      if (!value) _allowanceAmountController.clear();
+                    }),
             ),
+            AppTextField(
+              controller: _allowanceAmountController,
+              label: 'เบี้ยเลี้ยง (บาท, ไม่บังคับ)',
+              helperText: 'เว้นว่างได้ ทศนิยมไม่เกิน 2 ตำแหน่ง',
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              enabled: _hasAllowance && !_busy,
+              validator: (value) {
+                if (!_hasAllowance || value == null || value.trim().isEmpty) {
+                  return null;
+                }
+                final text = value.trim();
+                final number = double.tryParse(text);
+                return !RegExp(r'^\d+(\.\d{1,2})?$').hasMatch(text) ||
+                        number == null ||
+                        number < 0 ||
+                        number > 99999999.99
+                    ? 'ระบุ 0 ถึง 99999999.99 บาท ทศนิยมไม่เกิน 2 ตำแหน่ง'
+                    : null;
+              },
+            ),
+            const Gap(12),
             AppTextField(
               controller: _requirementsController,
               minLines: 3,
@@ -214,10 +287,13 @@ class _JobFormState extends ConsumerState<_JobForm> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 10,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       const Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
                             LucideIcons.sparkles,
@@ -225,12 +301,14 @@ class _JobFormState extends ConsumerState<_JobForm> {
                             color: NeoColors.inkSolid,
                           ),
                           Gap(6),
-                          Text(
-                            'ทักษะที่ต้องการ (Skills)',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w800,
-                              color: NeoColors.inkSolid,
+                          Flexible(
+                            child: Text(
+                              'ทักษะที่ต้องการ (Skills)',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w800,
+                                color: NeoColors.inkSolid,
+                              ),
                             ),
                           ),
                         ],
@@ -361,6 +439,18 @@ class _JobFormState extends ConsumerState<_JobForm> {
     }
   }
 
+  Future<void> _openProvincePicker() async {
+    final selected = await showThaiProvincePicker(
+      context,
+      selectedProvinceId: _selectedProvinceId,
+    );
+    if (!mounted || selected == null) return;
+    setState(() {
+      _selectedProvinceId = selected.id;
+      _provinceController.text = selected.nameTh;
+    });
+  }
+
   String get _submitLabel {
     if (widget.job != null) {
       return _submitting ? 'กำลังบันทึก' : 'บันทึกประกาศ';
@@ -383,6 +473,10 @@ class _JobFormState extends ConsumerState<_JobForm> {
       workMode: workModeToApi(_workMode),
       category: _categoryController.text.trim(),
       hasAllowance: _hasAllowance,
+      openings: int.tryParse(_openingsController.text.trim()),
+      allowanceAmount: _hasAllowance
+          ? double.tryParse(_allowanceAmountController.text.trim())
+          : null,
       requirements: _requirementsController.text.trim(),
       skills: _skills,
     );

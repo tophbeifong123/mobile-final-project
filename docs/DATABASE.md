@@ -11,8 +11,10 @@
 ```text
 users ||--o| student_profiles : "role = student"
 users ||--o| company_profiles : "role = company"
+provinces ||--o{ company_profiles : "selected office province"
 users ||--o{ refresh_tokens : has
 users ||--o{ auth_identities : Google provider identity
+users ||--o| password_reset_tokens : recovery
 
 company_profiles ||--o{ jobs : posts
 student_profiles ||--o{ saved_jobs : saves
@@ -50,6 +52,7 @@ applications ||--o{ outbox_messages : "enqueue on status change"
 | id | uuid | PK |
 | email | varchar | unique, ไม่ซ้ำทั้งระบบ |
 | password_hash | varchar | เก็บค่า hash ไม่เก็บรหัสตรง |
+| token_version | integer | ค่าเริ่มต้น 0 เพิ่มหลังรีเซ็ตรหัสผ่านเพื่อยกเลิก access token เดิม |
 | role | user_role | ตั้งตอนสมัคร แก้ไม่ได้ |
 | created_at | timestamptz | |
 | updated_at | timestamptz | |
@@ -81,6 +84,18 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | revoked_at | timestamptz | null แปลว่ายังใช้ได้ |
 | created_at | timestamptz | |
 
+### password_reset_tokens
+
+| คอลัมน์ | ชนิด | หมายเหตุ |
+|---|---|---|
+| id | uuid | PK |
+| user_id | uuid | unique, FK → users.id ON DELETE CASCADE |
+| token_hash | varchar(64) | unique, SHA-256 ของ token; ไม่เก็บ token ดิบ |
+| expires_at | timestamptz | หมดอายุใน 15 นาที |
+| created_at | timestamptz | ใช้จำกัดอีเมลใหม่ไม่เกินหนึ่งครั้งต่อนาที |
+
+ตอนออกลิงก์และรีเซ็ตให้ล็อก user ก่อน token เสมอ ตอนรีเซ็ตให้เทียบรหัสใหม่กับ hash ปัจจุบันขณะถือ lock หากซ้ำให้ปฏิเสธโดยยังคงลิงก์ไว้ รีเซ็ตที่สำเร็จเปลี่ยน password_hash, เพิ่ม token_version, เพิกถอน refresh token และลบ reset token ใน transaction เดียว เพื่อกันใช้ลิงก์ซ้ำและ session ที่สร้างพร้อมกับการรีเซ็ต
+
 ### student_profiles
 
 | คอลัมน์ | ชนิด | หมายเหตุ |
@@ -110,10 +125,31 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | logo_object_key | varchar | คีย์ไฟล์ใน MinIO, null ได้ |
 | business_type | varchar | ประเภทกิจการ |
 | description | text | |
+| province_id | smallint | null ได้, FK → provinces.id; รหัสจังหวัดตามกรมการปกครอง |
+| location | text | คอลัมน์เดิม; ที่อยู่สั้นแยกจากจังหวัด จำกัดข้อมูลใหม่ 255 ตัวอักษรใน service ไม่ตัดข้อมูลเก่า |
+| website_url | varchar(1024) | เว็บไซต์ HTTP/HTTPS หรือค่าว่าง |
+| company_size | varchar(100) | ขนาดองค์กร หรือค่าว่าง |
+| perks | text[] | สวัสดิการที่บริษัทระบุ |
+| cover_object_key | varchar(1024) | คีย์รูปหน้าปกบริษัท, null ได้ |
 | created_at | timestamptz | |
 | updated_at | timestamptz | |
 
 ตัวเลขแดชบอร์ดไม่เก็บเป็นคอลัมน์ นับจาก `jobs` กับ `applications` แล้วเขียนทับค่าใน Redis ถ้า Redis หายให้นับจากตารางนี้ใหม่
+
+เว็บไซต์ ขนาดองค์กร สวัสดิการ ที่อยู่ และรูปหน้าปกมาจาก migration `1759300000000-add-details-and-cover-to-company-profiles` ที่มี up/down; IFND-141 อ่านข้อมูลล่าสุดผ่าน join ไม่เก็บสำเนาใน jobs. Migration `1791158400000-add-company-office-location` เพิ่มมาสเตอร์จังหวัดและ `province_id` โดยไม่เพิ่มหรือลบคอลัมน์ `location` เดิม. Migration `1791744000000-drop-office-pin` ลบ `latitude`/`longitude` ของโปรไฟล์และจุดกึ่งกลางจังหวัด เพราะไม่มีหน้าไหนแสดงแผนที่.
+
+### provinces
+
+มาสเตอร์จังหวัดไทย 77 แห่ง seed โดย migration `1791158400000-add-company-office-location` รหัส `id` เป็นรหัสจังหวัดตามกรมการปกครอง ชื่อไทยมาตรฐานเดียวกับคำที่ใช้กรองงาน และมีชื่อเรียกอื่นสำหรับค้นหา (เช่น `กทม.` → `กรุงเทพมหานคร`)
+
+| คอลัมน์ | ชนิด | หมายเหตุ |
+|---|---|---|
+| id | smallint | PK, รหัสจังหวัด |
+| name_th | varchar(100) | unique, ชื่อจังหวัดมาตรฐาน |
+| aliases | text[] | ชื่อเรียกสำหรับค้นหา |
+
+ข้อมูลรหัสและชื่ออิง [มาตรฐานจังหวัดกระทรวงพาณิชย์](https://std.moc.go.th/std/group/28) แอปใช้ข้อมูลนี้ในเครื่องหลังเรียก API ไม่เรียก geocoding ภายนอก
+
 
 ### jobs
 
@@ -123,10 +159,12 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | company_id | uuid | FK → company_profiles.id |
 | title | varchar | |
 | description | text | |
-| province | varchar | ใช้กรองจังหวัด |
+| province | varchar | ชื่อจังหวัดมาตรฐานตรงกับ `provinces.name_th`; ใช้กรองจังหวัด งานเดิมที่เป็นชื่อเรียกถูกปรับใน migration |
 | work_mode | work_mode | |
 | category | varchar | หมวดงาน |
 | has_allowance | boolean | มีเบี้ยเลี้ยงหรือไม่ |
+| openings | integer | null ได้; เมื่อระบุต้องเป็นจำนวนเต็มบวก ไม่เกิน 2147483647 |
+| allowance_amount | numeric(10,2) | null ได้; จำนวนเงินบาทตั้งแต่ 0 ถึง 99999999.99; มีค่าได้เฉพาะ has_allowance = true |
 | requirements | text | คุณสมบัติ |
 | skills | text[] | ทักษะที่เปิดรับ |
 | status | job_status | ค่าเริ่มต้น `open` |
@@ -135,6 +173,8 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | updated_at | timestamptz | |
 
 นักศึกษาเห็นและสมัครได้เฉพาะ `status = open` งาน `closed` ยังอยู่ในการจัดการของบริษัท
+
+Migration `1791840000000-add-job-openings-allowance` มี up/down: เพิ่มคอลัมน์ nullable สองช่องและ CHECK constraints โดยไม่เติม 0 ให้ประกาศเดิม; down ลบ constraints และคอลัมน์ใหม่เท่านั้น ไม่ลบประกาศ กติกาอยู่ใน JobsService และ Swagger ใช้ `openings`/`allowanceAmount` เป็น number หรือ null สำหรับฟอร์ม รายการงาน งานที่บันทึก และรายละเอียด ปิดมีเบี้ยเลี้ยงแล้ว service ล้าง allowance_amount เป็น null ในการบันทึกเดียวกัน
 
 ### saved_jobs
 
@@ -219,6 +259,7 @@ Worker ที่สำเร็จแล้วตั้ง `sent` เกิน�
 | notifications | student_id, created_at | หน้ารายการแจ้งเตือน |
 | outbox_messages | status, available_at | worker ดึงงานที่ถึงเวลา |
 | refresh_tokens | user_id | logout ของ user นั้น |
+| company_profiles | province_id | FK และการอ่านโปรไฟล์พร้อมจังหวัด |
 
 ## 5. Transaction และ lock
 
@@ -259,3 +300,12 @@ Google signup ทำใน transaction เดียวกัน: สร้าง
 ไม่เก็บไฟล์ PDF หรือรูป logo ในตาราง เก็บเฉพาะ object key ของ MinIO
 
 ไม่เก็บตัวเลขแดชบอร์ดเป็นตารางสรุป และไม่เก็บ access token
+
+## 7. ตรวจ migration และ API ที่ตั้งสำนักงาน
+
+หลัง `npm run build` ใน `server/` รัน `test/company-office-location.integration.mjs` กับ PostgreSQL สำหรับทดสอบในเครื่องที่พอร์ตแยกจาก 5432 โดยกำหนด `OFFICE_INTEGRATION_PORT` สคริปต์ใช้ผู้ใช้ `postgres` แบบ trust และสร้างฐานข้อมูลชื่อสุ่มของตัวเอง จากนั้นตรวจ `up`/`down`, ข้อมูลประกาศเดิม, กติกาพิกัด, การกรองงาน และชนิดข้อมูลใน Swagger ก่อนลบเฉพาะฐานข้อมูลทดสอบนั้น
+
+```powershell
+$env:OFFICE_INTEGRATION_PORT = '5443'
+node --test test/company-office-location.integration.mjs
+```

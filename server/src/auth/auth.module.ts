@@ -10,6 +10,7 @@ import { AuthRepository } from './auth.repository.js';
 import { AuthService } from './auth.service.js';
 import { CompanyProfile } from './entities/company-profile.entity.js';
 import { RefreshToken } from './entities/refresh-token.entity.js';
+import { PasswordResetToken } from './entities/password-reset-token.entity.js';
 import { StudentProfile } from './entities/student-profile.entity.js';
 import { User } from './entities/user.entity.js';
 import { JwtStrategy } from './jwt.strategy.js';
@@ -18,6 +19,9 @@ import {
   GOOGLE_TOKEN_VERIFIER,
   GoogleIdTokenVerifier,
 } from './google-token-verifier.js';
+import { PasswordResetMailer } from './password-reset-mailer.js';
+import { PasswordRecoveryService } from './password-recovery.service.js';
+import { PasswordRecoveryRateLimitGuard } from './password-recovery-rate-limit.guard.js';
 
 @Module({
   imports: [
@@ -25,6 +29,7 @@ import {
       User,
       AuthIdentity,
       RefreshToken,
+      PasswordResetToken,
       StudentProfile,
       CompanyProfile,
     ]),
@@ -55,6 +60,9 @@ import {
     AuthService,
     AuthRepository,
     JwtStrategy,
+    PasswordResetMailer,
+    PasswordRecoveryService,
+    PasswordRecoveryRateLimitGuard,
     { provide: PASSWORD_HASHER, useClass: BcryptPasswordHasher },
     { provide: GOOGLE_TOKEN_VERIFIER, useClass: GoogleIdTokenVerifier },
   ],

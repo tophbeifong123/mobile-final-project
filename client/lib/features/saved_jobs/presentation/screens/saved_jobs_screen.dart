@@ -43,7 +43,7 @@ class _SavedJobsScreenState extends ConsumerState<SavedJobsScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Top App Bar with Subtitle
-            const FeedTopBar(subtitle: 'งานที่บันทึกไว้ (Saved Jobs)'),
+            const FeedTopBar(),
 
             // Content Area
             Expanded(
@@ -197,10 +197,15 @@ class _SavedJobsScreenState extends ConsumerState<SavedJobsScreen> {
                         details: [
                           workModeLabel(job.workMode),
                           job.category,
-                          allowanceLabel(job.hasAllowance),
+                          allowanceLabel(job.hasAllowance, job.allowanceAmount),
+                          if (job.openings != null) 'รับ ${job.openings} คน',
                         ],
                         skills: job.skills,
                         hasAllowance: job.hasAllowance,
+                        allowanceText: allowanceLabel(
+                          job.hasAllowance,
+                          job.allowanceAmount,
+                        ),
                         isSaved: true,
                         onBookmarkTap: () => _handleRemoveJob(job),
                         onTap: () => context.push('/student/jobs/${job.id}'),

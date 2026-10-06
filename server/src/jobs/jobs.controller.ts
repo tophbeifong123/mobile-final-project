@@ -8,8 +8,10 @@ import {
   ParseUUIDPipe,
   Post,
   Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import { type Response } from 'express';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -36,6 +38,10 @@ export class JobsController {
   @Get()
   @ApiOperation({ summary: 'รายการงานที่เปิดรับ' })
   @ApiResponse({ status: 200, type: PaginatedJobsDto })
+  @ApiResponse({
+    status: 400,
+    description: 'จังหวัดที่กรองไม่อยู่ในรายการจังหวัดไทย',
+  })
   @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
   @ApiResponse({ status: 403, description: 'เฉพาะนักศึกษา' })
   list(
@@ -71,6 +77,43 @@ export class JobsController {
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<JobDetailDto> {
     return this.jobsService.getOpen(user, id);
+  }
+
+  @Get(':id/company-logo')
+  @ApiOperation({
+    summary: 'โลโก้บริษัทบนรายละเอียดงานที่เปิดรับ (เฉพาะนักศึกษา)',
+  })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiResponse({
+    status: 200,
+    description: 'ไฟล์โลโก้ PNG/JPEG/WEBP/GIF/SVG',
+    content: {
+      'image/png': { schema: { type: 'string', format: 'binary' } },
+      'image/jpeg': { schema: { type: 'string', format: 'binary' } },
+      'image/webp': { schema: { type: 'string', format: 'binary' } },
+      'image/gif': { schema: { type: 'string', format: 'binary' } },
+      'image/svg+xml': { schema: { type: 'string', format: 'binary' } },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'รหัสประกาศไม่ถูกต้อง' })
+  @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
+  @ApiResponse({ status: 403, description: 'เฉพาะนักศึกษา' })
+  @ApiResponse({ status: 404, description: 'ไม่พบประกาศที่เปิดรับหรือโลโก้' })
+  async getCompanyLogo(
+    @CurrentUser() user: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    const { buffer, mimeType } = await this.jobsService.getCompanyLogo(
+      user,
+      id,
+    );
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Content-Security-Policy', "sandbox; default-src 'none'");
+    res.setHeader('Content-Disposition', 'attachment');
+    res.send(buffer);
   }
 
   @Post(':id/save')

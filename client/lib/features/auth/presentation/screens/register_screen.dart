@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/app_toast.dart';
 import '../../domain/entities/auth_session.dart';
+import '../../domain/entities/registration_password_policy.dart';
 import '../providers/auth_controller.dart';
 import '../widgets/widgets.dart';
 
@@ -31,6 +32,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   bool _agreedToTerms = false;
   bool _submitting = false;
   String? _error;
+  bool _attemptedSubmit = false;
+
+  RegistrationPasswordPolicy get _passwordPolicy => RegistrationPasswordPolicy(
+    _passwordController.text,
+    _confirmPasswordController.text,
+  );
 
   @override
   void dispose() {
@@ -42,6 +49,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   Future<void> _submit() async {
+    setState(() => _attemptedSubmit = true);
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -123,6 +131,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                             padding: const EdgeInsets.fromLTRB(18, 16, 18, 28),
                             child: Form(
                               key: _formKey,
+                              autovalidateMode: _attemptedSubmit
+                                  ? AutovalidateMode.always
+                                  : AutovalidateMode.disabled,
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
@@ -245,7 +256,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                     controller: _passwordController,
                                     label: 'ตั้งรหัสผ่าน',
                                     isRequired: true,
-                                    helperText: 'อย่างน้อย 8 ตัวอักษร',
                                     obscureText: _obscurePassword,
                                     hintText: 'รหัสผ่าน 8 ตัวอักษรขึ้นไป',
                                     badgeColor: NeoColors.skyBlue,
@@ -267,18 +277,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                         color: NeoColors.inkSolid,
                                       ),
                                     ),
-                                    validator: (value) {
-                                      if (value == null || value.length < 8) {
-                                        return 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                  const Gap(6),
-
-                                  // Password Security Level Indicator
-                                  PasswordStrengthBar(
-                                    password: _passwordController.text,
+                                    validator: (_) =>
+                                        _passwordPolicy.passwordError,
                                   ),
                                   const Gap(14),
 
@@ -291,6 +291,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                     hintText: 'กรอกรหัสผ่านอีกครั้ง',
                                     badgeColor: NeoColors.pastelCoral,
                                     badgeIcon: Icons.history_rounded,
+                                    onChanged: (_) => setState(() {}),
                                     suffixIcon: IconButton(
                                       tooltip: _obscureConfirmPassword
                                           ? 'แสดงรหัสผ่าน'
@@ -307,15 +308,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                         color: NeoColors.inkSolid,
                                       ),
                                     ),
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'กรุณายืนยันรหัสผ่าน';
-                                      }
-                                      if (value != _passwordController.text) {
-                                        return 'รหัสผ่านทั้งสองช่องไม่ตรงกัน';
-                                      }
-                                      return null;
-                                    },
+                                    validator: (_) =>
+                                        _passwordPolicy.confirmationError,
+                                  ),
+                                  const Gap(12),
+                                  RegistrationPasswordChecklist(
+                                    policy: _passwordPolicy,
                                   ),
                                   const Gap(16),
 

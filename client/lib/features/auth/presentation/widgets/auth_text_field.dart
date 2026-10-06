@@ -20,6 +20,7 @@ class AuthTextField extends StatelessWidget {
     this.suffixIcon,
     this.onChanged,
     this.validator,
+    this.enabled = true,
   });
 
   final TextEditingController controller;
@@ -35,6 +36,7 @@ class AuthTextField extends StatelessWidget {
   final Widget? suffixIcon;
   final ValueChanged<String>? onChanged;
   final FormFieldValidator<String>? validator;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -105,6 +107,7 @@ class AuthTextField extends StatelessWidget {
           ),
           child: TextFormField(
             controller: controller,
+            enabled: enabled,
             obscureText: obscureText,
             keyboardType: keyboardType,
             onChanged: onChanged,
@@ -191,6 +194,7 @@ class AuthTextField extends StatelessWidget {
                 fontWeight: FontWeight.w700,
                 color: NeoColors.errorBorder,
               ),
+              errorMaxLines: 3,
             ),
           ),
         ),

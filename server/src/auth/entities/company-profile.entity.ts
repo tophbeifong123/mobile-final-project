@@ -2,9 +2,12 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Province } from '../../provinces/province.entity.js';
 
 @Entity('company_profiles')
 export class CompanyProfile {
@@ -30,6 +33,33 @@ export class CompanyProfile {
 
   @Column({ type: 'text', default: '' })
   description: string;
+
+  @Column({ name: 'province_id', type: 'smallint', nullable: true })
+  provinceId: number | null;
+
+  @ManyToOne(() => Province, { nullable: true, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'province_id' })
+  province: Province | null;
+
+  @Column({ type: 'text', default: '' })
+  location: string;
+
+  @Column({ name: 'website_url', type: 'varchar', length: 1024, default: '' })
+  websiteUrl: string;
+
+  @Column({ name: 'company_size', type: 'varchar', length: 100, default: '' })
+  companySize: string;
+
+  @Column({ type: 'text', array: true, default: '{}' })
+  perks: string[];
+
+  @Column({
+    name: 'cover_object_key',
+    type: 'varchar',
+    length: 1024,
+    nullable: true,
+  })
+  coverObjectKey: string | null;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;

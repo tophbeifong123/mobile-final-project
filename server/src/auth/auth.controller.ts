@@ -26,12 +26,46 @@ import { LoginDto } from './dto/login.dto.js';
 import { RefreshDto } from './dto/refresh.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { JwtAuthGuard } from './jwt-auth.guard.js';
+import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
+import { ResetPasswordDto } from './dto/reset-password.dto.js';
+import { PasswordRecoveryResponseDto } from './dto/password-recovery-response.dto.js';
+import { PasswordRecoveryService } from './password-recovery.service.js';
+import { PasswordRecoveryRateLimitGuard } from './password-recovery-rate-limit.guard.js';
 
 @ApiTags('Auth')
 @ApiExtraModels(AuthSessionDto, GoogleRoleRequiredDto)
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly recovery: PasswordRecoveryService,
+  ) {}
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(PasswordRecoveryRateLimitGuard)
+  @ApiOperation({ summary: 'ขอลิงก์รีเซ็ตรหัสผ่านด้วยอีเมลที่ใช้สมัครสมาชิก ไม่จำกัดโดเมน' })
+  @ApiBody({ type: ForgotPasswordDto })
+  @ApiResponse({ status: 200, type: PasswordRecoveryResponseDto })
+  @ApiResponse({ status: 400, description: 'รูปแบบอีเมลไม่ถูกต้อง' })
+  @ApiResponse({ status: 429, description: 'ส่งคำขอมากเกินไป' })
+  @ApiResponse({ status: 503, description: 'ระบบส่งอีเมลยังไม่พร้อมใช้งาน' })
+  forgotPassword(@Body() dto: ForgotPasswordDto): Promise<PasswordRecoveryResponseDto> {
+    return this.recovery.forgotPassword(dto);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(PasswordRecoveryRateLimitGuard)
+  @ApiOperation({ summary: 'ตั้งรหัสผ่านใหม่ด้วยลิงก์ที่ใช้ได้ครั้งเดียวภายใน 15 นาที' })
+  @ApiBody({ type: ResetPasswordDto })
+  @ApiResponse({ status: 200, type: PasswordRecoveryResponseDto })
+  @ApiResponse({ status: 400, description: 'ข้อมูลไม่ถูกต้อง ลิงก์ใช้ไม่ได้/หมดอายุ หรือบัญชีไม่มีอยู่แล้ว' })
+  @ApiResponse({ status: 409, description: 'รหัสผ่านใหม่ซ้ำกับรหัสผ่านเดิม ลิงก์ยังใช้ได้สำหรับการลองใหม่' })
+  @ApiResponse({ status: 429, description: 'ส่งคำขอมากเกินไป' })
+  resetPassword(@Body() dto: ResetPasswordDto): Promise<PasswordRecoveryResponseDto> {
+    return this.recovery.resetPassword(dto);
+  }
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)

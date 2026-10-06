@@ -183,6 +183,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _submitting = false;
       _error = result.error;
     });
+  void _openPasswordRecovery() {
+    if (_submitting) return;
+    context.go(
+      Uri(
+        path: '/forgot-password',
+        queryParameters: _emailController.text.trim().isEmpty
+            ? null
+            : {'email': _emailController.text.trim()},
+      ).toString(),
+    );
   }
 
   @override
@@ -193,7 +203,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         child: Column(
           children: [
             // Top App Bar
-            const AuthTopBar(title: 'เข้าสู่ระบบนักศึกษา'),
+            const AuthTopBar(title: 'เข้าสู่ระบบ InternFinder'),
 
             // Centered Scrollable Content
             Expanded(
@@ -234,12 +244,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                         // Email Field
                                         AuthTextField(
                                           controller: _emailController,
-                                          label: 'อีเมลนักศึกษา / มหาวิทยาลัย',
-                                          helperText:
-                                              'รหัสนักศึกษาหรืออีเมลมหาวิทยาลัย',
-                                          hintText: 'student@university.ac.th',
+                                          label: 'อีเมล',
+                                          helperText: 'อีเมลที่ใช้สมัครสมาชิก',
+                                          hintText: 'you@example.com',
                                           badgeColor: NeoColors.softLilac,
-                                          badgeIcon: Icons.school_outlined,
+                                          badgeIcon:
+                                              Icons.alternate_email_rounded,
                                           keyboardType:
                                               TextInputType.emailAddress,
                                           validator: (value) {
@@ -258,10 +268,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                         AuthTextField(
                                           controller: _passwordController,
                                           label: 'รหัสผ่าน',
-                                          helperText: 'ลืมรหัส PIN?',
-                                          onHelperTap: () => _showNotice(
-                                            'ระบบรีเซ็ต PIN กำลังอยู่ระหว่างการพัฒนา',
-                                          ),
                                           hintText: '••••••••••••',
                                           badgeColor: NeoColors.skyBlue,
                                           badgeIcon: Icons.lock_outline_rounded,
@@ -359,9 +365,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                               ),
                                             ),
                                             GestureDetector(
-                                              onTap: () => _showNotice(
-                                                'ระบบรีเซ็ตรหัสผ่านยังไม่เปิดให้บริการ',
-                                              ),
+                                              onTap: _openPasswordRecovery,
                                               child: const Text(
                                                 'ลืมรหัสผ่าน?',
                                                 style: TextStyle(

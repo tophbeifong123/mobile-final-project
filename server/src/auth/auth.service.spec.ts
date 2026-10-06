@@ -33,10 +33,13 @@ describe('AuthService', () => {
   let service: AuthService;
 
   beforeEach(async () => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     jwtService.signAsync.mockResolvedValue('access-token');
     passwords.hash.mockResolvedValue('hashed-password');
-    repository.saveRefreshToken.mockResolvedValue(undefined);
+    repository.saveRefreshToken.mockResolvedValue(true);
+    config.get.mockImplementation(
+      (_key: string, fallback?: string) => fallback ?? '7d',
+    );
 
     const module = await Test.createTestingModule({
       providers: [
@@ -78,6 +81,7 @@ describe('AuthService', () => {
     expect(jwtService.signAsync).toHaveBeenCalledWith({
       sub: 'user-1',
       role: UserRole.Student,
+      tokenVersion: 0,
     });
   });
 
@@ -202,5 +206,87 @@ describe('AuthService', () => {
       role: 'company',
     });
     expect(repository.createGoogleUserWithProfile).not.toHaveBeenCalled();
+  it('uses the current token version when issuing a login session', async () => {
+    repository.findByEmail.mockResolvedValue({
+      id: 'user-1',
+      email: 'student@example.com',
+      passwordHash: 'hashed-password',
+      role: UserRole.Student,
+      tokenVersion: 3,
+    });
+    passwords.verify.mockResolvedValue(true);
+
+    const session = await service.login({
+      email: ' Student@Example.com ',
+      password: 'password123',
+    });
+
+    expect(repository.findByEmail).toHaveBeenCalledWith('student@example.com');
+    expect(jwtService.signAsync).toHaveBeenCalledWith({
+      sub: 'user-1',
+      role: UserRole.Student,
+      tokenVersion: 3,
+    });
+    expect(repository.saveRefreshToken).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'user-1',
+        tokenVersion: 3,
+      }),
+    );
+    expect(repository.saveRefreshToken.mock.calls[0][0].tokenHash).not.toBe(
+      session.refreshToken,
+    );
+  });
+
+  it('refuses a stale login if a password reset occurred before refresh storage', async () => {
+    repository.findByEmail.mockResolvedValue({
+      id: 'user-1',
+      passwordHash: 'old-hash',
+      role: UserRole.Student,
+      tokenVersion: 0,
+    });
+    passwords.verify.mockResolvedValue(true);
+    repository.saveRefreshToken.mockResolvedValue(false);
+
+    await expect(
+      service.login({
+        email: 'student@example.com',
+        password: 'old-password',
+      }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(repository.saveRefreshToken).toHaveBeenCalledWith(
+      expect.objectContaining({ tokenVersion: 0 }),
+    );
+  });
+
+  it('includes the user version supplied by atomic refresh rotation', async () => {
+    repository.rotateRefreshToken.mockResolvedValue({
+      userId: 'user-1',
+      role: UserRole.Student,
+      tokenVersion: 4,
+    });
+
+    const session = await service.refresh({
+      refreshToken: 'previous-refresh-token',
+    });
+
+    expect(jwtService.signAsync).toHaveBeenCalledWith({
+      sub: 'user-1',
+      role: UserRole.Student,
+      tokenVersion: 4,
+    });
+    expect(session.refreshToken).not.toBe('previous-refresh-token');
+    expect(repository.rotateRefreshToken.mock.calls[0][0].currentHash).not.toBe(
+      'previous-refresh-token',
+    );
+  });
+
+  it('rejects a revoked refresh token without signing another access token', async () => {
+    repository.rotateRefreshToken.mockResolvedValue(null);
+
+    await expect(
+      service.refresh({ refreshToken: 'revoked-refresh-token' }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(jwtService.signAsync).not.toHaveBeenCalled();
   });
 });

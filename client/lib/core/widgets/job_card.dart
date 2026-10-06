@@ -51,15 +51,24 @@ class JobCard extends StatelessWidget {
 
   Color _getTagColor(String tag) {
     final lower = tag.toLowerCase();
-    if (lower.contains('hybrid')) return NeoColors.softLilac;
-    if (lower.contains('remote') || lower.contains('online'))
+    if (lower.contains('hybrid')) {
+      return NeoColors.softLilac;
+    }
+    if (lower.contains('remote') || lower.contains('online')) {
       return NeoColors.skyBlue;
-    if (lower.contains('on-site') || lower.contains('onsite'))
+    }
+    if (lower.contains('on-site') || lower.contains('onsite')) {
       return NeoColors.paperCanvas;
-    if (lower.contains('มีเบี้ยเลี้ยง')) return NeoColors.butterYellow;
-    if (lower.contains('ไม่มีเบี้ยเลี้ยง')) return NeoColors.paperCanvas;
-    if (lower.contains('figma') || lower.contains('design'))
+    }
+    if (lower.contains('มีเบี้ยเลี้ยง')) {
+      return NeoColors.butterYellow;
+    }
+    if (lower.contains('ไม่มีเบี้ยเลี้ยง')) {
+      return NeoColors.paperCanvas;
+    }
+    if (lower.contains('figma') || lower.contains('design')) {
       return NeoColors.freshMint;
+    }
     if (lower.contains('react') ||
         lower.contains('flutter') ||
         lower.contains('sql')) {

@@ -23,6 +23,9 @@ export class User {
   })
   passwordHash: string | null;
 
+  @Column({ name: 'token_version', type: 'integer', default: 0 })
+  tokenVersion: number;
+
   @Column({ type: 'enum', enum: UserRole, enumName: 'user_role' })
   role: UserRole;
 
