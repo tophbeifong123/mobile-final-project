@@ -43,7 +43,7 @@ class _SavedJobsScreenState extends ConsumerState<SavedJobsScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Top App Bar with Subtitle
-            const FeedTopBar(subtitle: 'งานที่บันทึกไว้ (Saved Jobs)'),
+            const FeedTopBar(),
 
             // Content Area
             Expanded(
