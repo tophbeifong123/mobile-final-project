@@ -14,17 +14,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   const provinces = [
-    ThaiProvince(
-      id: 90,
-      nameTh: 'สงขลา',
-      centerLatitude: 7.19,
-      centerLongitude: 100.59,
-    ),
+    ThaiProvince(id: 90, nameTh: 'สงขลา'),
     ThaiProvince(
       id: 10,
       nameTh: 'กรุงเทพมหานคร',
-      centerLatitude: 13.75,
-      centerLongitude: 100.50,
       aliases: ['กรุงเทพฯ', 'กทม.'],
     ),
   ];

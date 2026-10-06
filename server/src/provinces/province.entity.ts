@@ -10,10 +10,4 @@ export class Province {
 
   @Column({ type: 'text', array: true, default: '{}' })
   aliases: string[];
-
-  @Column({ name: 'center_latitude', type: 'double precision' })
-  centerLatitude: number;
-
-  @Column({ name: 'center_longitude', type: 'double precision' })
-  centerLongitude: number;
 }

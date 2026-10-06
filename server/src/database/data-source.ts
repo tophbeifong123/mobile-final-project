@@ -12,6 +12,7 @@ import { SavedJob } from '../jobs/entities/saved-job.entity.js';
 import { Notification } from '../notifications/entities/notification.entity.js';
 import { Province } from '../provinces/province.entity.js';
 import { AddCompanyOfficeLocation1791158400000 } from './migrations/1791158400000-add-company-office-location.js';
+import { DropOfficePin1791744000000 } from './migrations/1791744000000-drop-office-pin.js';
 import { AddAvatarToStudentProfiles1759200000000 } from './migrations/1759200000000-add-avatar-to-student-profiles.js';
 import { AddBioContactsPortfoliosToStudentProfiles1759100000000 } from './migrations/1759100000000-add-bio-contacts-portfolios-to-student-profiles.js';
 import { AddDetailsAndCoverToCompanyProfiles1759300000000 } from './migrations/1759300000000-add-details-and-cover-to-company-profiles.js';
@@ -58,5 +59,6 @@ export const AppDataSource = new DataSource({
     AddDraftStatusAndDeadlineToJobs1759400000000,
     AddPasswordRecovery1791072000000,
     AddCompanyOfficeLocation1791158400000,
+    DropOfficePin1791744000000,
   ],
 });

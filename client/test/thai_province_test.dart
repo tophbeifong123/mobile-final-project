@@ -19,8 +19,6 @@ void main() {
                   'id': 10,
                   'nameTh': 'กรุงเทพมหานคร',
                   'aliases': ['กรุงเทพฯ', 'กทม.'],
-                  'centerLatitude': 13.7563,
-                  'centerLongitude': '100.5018',
                 },
               ],
             ),
@@ -37,8 +35,6 @@ void main() {
 
     expect(provinces, hasLength(1));
     expect(provinces.single.nameTh, 'กรุงเทพมหานคร');
-    expect(provinces.single.centerLatitude, 13.7563);
-    expect(provinces.single.centerLongitude, 100.5018);
     expect(provinces.single.matches('กทม'), isTrue);
     expect(provinces.single.matches('กรุงเทพ'), isTrue);
     expect(provinces.single.matches('สงขลา'), isFalse);

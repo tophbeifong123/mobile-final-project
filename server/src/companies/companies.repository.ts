@@ -67,8 +67,6 @@ export class CompaniesRepository {
         | 'perks'
         | 'provinceId'
         | 'location'
-        | 'latitude'
-        | 'longitude'
       >
     >,
   ): Promise<CompanyProfile | null> {

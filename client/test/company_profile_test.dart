@@ -14,9 +14,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:client/core/provinces/thai_province.dart';
 import 'package:client/core/provinces/thai_provinces_provider.dart';
 import 'package:client/features/company_profile/data/models/company_profile_model.dart';
-import 'package:client/features/company_profile/presentation/widgets/office_map_picker.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
 
 void main() {
   const mockProfile = CompanyProfile(
@@ -40,8 +37,6 @@ void main() {
       'provinceId': 90,
       'provinceName': 'สงขลา',
       'location': 'อาคาร A ถนนนิพัทธ์อุทิศ',
-      'latitude': 7.0084,
-      'longitude': 100.4747,
     });
 
     expect(
@@ -60,45 +55,7 @@ void main() {
       'perks': <String>[],
       'provinceId': 90,
       'location': 'อาคาร A ถนนนิพัทธ์อุทิศ',
-      'latitude': 7.0084,
-      'longitude': 100.4747,
     });
-  });
-
-  testWidgets('office preview marker is draggable but not saved until moved', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(390, 900);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    LatLng? selected;
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: Padding(
-            padding: const EdgeInsets.all(16),
-            child: OfficeMapPicker(
-              province: _provinces.first,
-              pin: null,
-              onPinChanged: (position) => selected = position,
-            ),
-          ),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(selected, isNull);
-    expect(find.byKey(const Key('office-marker')), findsOneWidget);
-    await tester.drag(
-      find.byKey(const Key('office-marker')),
-      const Offset(60, 30),
-    );
-    await tester.pump();
-    expect(selected, isNotNull);
-    expect(selected, isNot(const LatLng(13.7563, 100.5018)));
   });
 
   testWidgets(
@@ -425,7 +382,7 @@ void main() {
       expect(find.text('Tech Solutions Co.'), findsWidgets);
     },
   );
-  testWidgets('province alias selects canonical province and map opens there', (
+  testWidgets('province alias selects the canonical province', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(390, 900);
@@ -460,22 +417,16 @@ void main() {
     await tester.tap(find.text('กรุงเทพมหานคร'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(OfficeMapPicker), findsOneWidget);
-    final map = tester.widget<FlutterMap>(find.byType(FlutterMap));
-    expect(map.options.initialCenter.latitude, 13.7563);
-    expect(map.options.initialCenter.longitude, 100.5018);
-    expect(find.textContaining('หมุดเริ่มที่กึ่งกลางจังหวัด'), findsOneWidget);
+    expect(find.text('ปักหมุดสำนักงาน'), findsNothing);
 
     await _tapSave(tester);
     await tester.pumpAndSettle();
 
     expect(repo.profile.provinceId, 10);
     expect(repo.profile.provinceName, 'กรุงเทพมหานคร');
-    expect(repo.profile.latitude, isNull);
-    expect(repo.profile.longitude, isNull);
   });
 
-  testWidgets('saved company office has separate address and coordinates', (
+  testWidgets('saved company office keeps province and short address', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(390, 900);
@@ -495,8 +446,6 @@ void main() {
         websiteUrl: 'https://example.com',
         companySize: '201-500',
         perks: ['Mentor'],
-        latitude: 7.0084,
-        longitude: 100.4747,
       ),
     );
     await tester.pumpWidget(
@@ -516,21 +465,18 @@ void main() {
 
     expect(find.text('สงขลา'), findsOneWidget);
     expect(find.text('อาคาร A ถนนนิพัทธ์อุทิศ'), findsOneWidget);
-    expect(find.byType(OfficeMapPicker), findsOneWidget);
-    expect(find.textContaining('พิกัด 7.008400, 100.474700'), findsOneWidget);
+    expect(find.text('ปักหมุดสำนักงาน'), findsNothing);
 
     await _tapSave(tester);
     await tester.pumpAndSettle();
     expect(repo.profile.provinceId, 90);
     expect(repo.profile.location, 'อาคาร A ถนนนิพัทธ์อุทิศ');
-    expect(repo.profile.latitude, 7.0084);
-    expect(repo.profile.longitude, 100.4747);
     expect(repo.profile.websiteUrl, 'https://example.com');
     expect(repo.profile.companySize, '201-500');
     expect(repo.profile.perks, ['Mentor']);
   });
 
-  testWidgets('clearing province also clears the office pin', (tester) async {
+  testWidgets('clearing province saves without a province', (tester) async {
     tester.view.physicalSize = const Size(390, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -544,8 +490,6 @@ void main() {
         logoObjectKey: null,
         provinceId: 90,
         provinceName: 'สงขลา',
-        latitude: 7.0084,
-        longitude: 100.4747,
       ),
     );
     await tester.pumpWidget(
@@ -570,16 +514,14 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('company-clear-province')));
     await tester.pumpAndSettle();
-    expect(find.byType(OfficeMapPicker), findsNothing);
+    expect(find.text('เลือกจังหวัด'), findsOneWidget);
 
     await _tapSave(tester);
     await tester.pumpAndSettle();
     expect(repo.profile.provinceId, isNull);
-    expect(repo.profile.latitude, isNull);
-    expect(repo.profile.longitude, isNull);
   });
 
-  testWidgets('changing province re-centers map and drops the old office pin', (
+  testWidgets('changing province saves the newly selected province', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(390, 900);
@@ -595,8 +537,6 @@ void main() {
         logoObjectKey: null,
         provinceId: 90,
         provinceName: 'สงขลา',
-        latitude: 7.0084,
-        longitude: 100.4747,
       ),
     );
     await tester.pumpWidget(
@@ -624,22 +564,14 @@ void main() {
     await tester.tap(find.text('กรุงเทพมหานคร'));
     await tester.pumpAndSettle();
 
-    final map = tester.widget<FlutterMap>(find.byType(FlutterMap));
-    expect(map.options.initialCenter.latitude, 13.7563);
-    expect(map.options.initialCenter.longitude, 100.5018);
-    expect(find.textContaining('หมุดเริ่มที่กึ่งกลางจังหวัด'), findsOneWidget);
-    expect(find.textContaining('พิกัด 7.008400'), findsNothing);
+    expect(find.text('กรุงเทพมหานคร'), findsOneWidget);
 
     await _tapSave(tester);
     await tester.pumpAndSettle();
     expect(repo.profile.provinceId, 10);
-    expect(repo.profile.latitude, isNull);
-    expect(repo.profile.longitude, isNull);
   });
 
-  testWidgets('logo update preserves unsaved form and office draft', (
-    tester,
-  ) async {
+  testWidgets('logo update preserves unsaved form', (tester) async {
     tester.view.physicalSize = const Size(390, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -654,8 +586,6 @@ void main() {
         provinceId: 90,
         provinceName: 'สงขลา',
         location: 'ที่อยู่เดิม',
-        latitude: 7.0084,
-        longitude: 100.4747,
       ),
     );
     final container = ProviderContainer(
@@ -701,22 +631,6 @@ void main() {
     await tester.tap(find.text('กรุงเทพมหานคร'));
     await tester.pumpAndSettle();
 
-    await tester.scrollUntilVisible(
-      find.byType(OfficeMapPicker),
-      250,
-      scrollable: find.byType(Scrollable).first,
-    );
-    await tester.ensureVisible(find.byType(OfficeMapPicker));
-    await tester.drag(
-      find.byKey(const Key('office-marker')),
-      const Offset(60, 30),
-    );
-    await tester.pumpAndSettle();
-    final draftPin = tester
-        .widget<OfficeMapPicker>(find.byType(OfficeMapPicker))
-        .pin;
-    expect(draftPin, isNotNull);
-
     // A logo response still contains the previously saved office data.
     await container
         .read(companyProfileControllerProvider.notifier)
@@ -743,15 +657,6 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('กรุงเทพมหานคร'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.byType(OfficeMapPicker),
-      250,
-      scrollable: find.byType(Scrollable).first,
-    );
-    final afterLogoPin = tester
-        .widget<OfficeMapPicker>(find.byType(OfficeMapPicker))
-        .pin;
-    expect(afterLogoPin, draftPin);
 
     await _tapSave(tester);
     await tester.pumpAndSettle();
@@ -760,8 +665,6 @@ void main() {
     expect(repo.lastUpdateRequest?.description, 'คำอธิบายใหม่');
     expect(repo.lastUpdateRequest?.location, 'อาคารใหม่ ถนนสีลม');
     expect(repo.lastUpdateRequest?.provinceId, 10);
-    expect(repo.lastUpdateRequest?.latitude, draftPin!.latitude);
-    expect(repo.lastUpdateRequest?.longitude, draftPin.longitude);
   });
 
   testWidgets('successful save applies authoritative profile response', (
@@ -782,8 +685,6 @@ void main() {
         provinceId: 10,
         provinceName: 'กรุงเทพมหานคร',
         location: 'ที่อยู่จากเซิร์ฟเวอร์',
-        latitude: 13.7563,
-        longitude: 100.5018,
       ),
     );
     await tester.pumpWidget(
@@ -823,27 +724,13 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('กรุงเทพมหานคร'), findsOneWidget);
-    expect(
-      tester.widget<OfficeMapPicker>(find.byType(OfficeMapPicker)).pin,
-      const LatLng(13.7563, 100.5018),
-    );
+    expect(find.text('ที่อยู่จากเซิร์ฟเวอร์'), findsWidgets);
   });
 }
 
 const _provinces = [
-  ThaiProvince(
-    id: 10,
-    nameTh: 'กรุงเทพมหานคร',
-    centerLatitude: 13.7563,
-    centerLongitude: 100.5018,
-    aliases: ['กทม.'],
-  ),
-  ThaiProvince(
-    id: 90,
-    nameTh: 'สงขลา',
-    centerLatitude: 7.0084,
-    centerLongitude: 100.4747,
-  ),
+  ThaiProvince(id: 10, nameTh: 'กรุงเทพมหานคร', aliases: ['กทม.']),
+  ThaiProvince(id: 90, nameTh: 'สงขลา'),
 ];
 
 Future<void> _tapSave(WidgetTester tester) async {

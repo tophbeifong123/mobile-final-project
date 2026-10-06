@@ -44,11 +44,6 @@ export class CompanyProfile {
   @Column({ type: 'text', default: '' })
   location: string;
 
-  @Column({ type: 'double precision', nullable: true })
-  latitude: number | null;
-
-  @Column({ type: 'double precision', nullable: true })
-  longitude: number | null;
   @Column({ name: 'website_url', type: 'varchar', length: 1024, default: '' })
   websiteUrl: string;
 
