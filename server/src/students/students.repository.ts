@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { StudentProfile } from '../auth/entities/student-profile.entity.js';
 import { University } from '../universities/university.entity.js';
+import { Major } from '../majors/major.entity.js';
 
 export interface ContactLinkRecord {
   id?: string;
@@ -21,7 +22,8 @@ export interface StudentProfileUpdate {
   fullName: string;
   universityId?: string | null;
   customUniversityName?: string | null;
-  major: string;
+  majorId?: string | null;
+  customMajorName?: string | null;
   skills: string[];
   bio?: string;
   contactLinks?: ContactLinkRecord[];
@@ -47,6 +49,14 @@ export class StudentsRepository {
     return university?.nameTh ?? '';
   }
 
+  async resolveDisplayMajor(profile: StudentProfile): Promise<string> {
+    if (!profile.majorId) return profile.customMajorName ?? '';
+    const major = await this.dataSource.getRepository(Major).findOne({
+      where: { id: profile.majorId },
+    });
+    return major?.nameTh ?? '';
+  }
+
   async updateByUserId(
     userId: string,
     input: StudentProfileUpdate,
@@ -62,7 +72,10 @@ export class StudentsRepository {
       profile.universityId = input.universityId ?? null;
       profile.customUniversityName = input.customUniversityName ?? null;
     }
-    profile.major = input.major;
+    if (input.majorId !== undefined || input.customMajorName !== undefined) {
+      profile.majorId = input.majorId ?? null;
+      profile.customMajorName = input.customMajorName ?? null;
+    }
     profile.skills = input.skills;
     if (input.bio !== undefined) {
       profile.bio = input.bio;

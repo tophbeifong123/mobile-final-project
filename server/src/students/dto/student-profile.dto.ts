@@ -15,7 +15,13 @@ export class StudentProfileDto {
   @ApiProperty({ example: 'มหาวิทยาลัยสงขลานครินทร์', description: 'ชื่อสำหรับแสดงผลจากมาสเตอร์หรือชื่อที่กรอกเอง' })
   university: string;
 
-  @ApiProperty({ example: 'วิทยาการคอมพิวเตอร์' })
+  @ApiProperty({ nullable: true, required: false })
+  majorId: string | null;
+
+  @ApiProperty({ nullable: true, required: false })
+  customMajorName: string | null;
+
+  @ApiProperty({ example: 'วิทยาการคอมพิวเตอร์', description: 'ชื่อสำหรับแสดงผลจากมาสเตอร์หรือชื่อที่กรอกเอง' })
   major: string;
 
   @ApiProperty({ type: [String], example: ['Flutter', 'SQL'] })

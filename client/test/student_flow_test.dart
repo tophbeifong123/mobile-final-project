@@ -17,6 +17,7 @@ import 'package:client/features/saved_jobs/presentation/providers/saved_jobs_con
 import 'package:client/features/saved_jobs/presentation/screens/saved_jobs_screen.dart';
 import 'package:client/features/student_profile/domain/entities/student_profile.dart';
 import 'package:client/features/student_profile/domain/entities/university.dart';
+import 'package:client/features/student_profile/domain/entities/major.dart';
 import 'package:client/features/student_profile/domain/repositories/student_profile_repository.dart';
 import 'package:client/features/student_profile/presentation/providers/student_profile_controller.dart';
 import 'package:client/features/student_profile/presentation/screens/student_profile_screen.dart';
@@ -157,6 +158,8 @@ class _FakeStudentProfileRepository implements StudentProfileRepository {
 
   @override
   Future<List<University>> searchUniversities(String query) async => const [];
+  @override
+  Future<List<Major>> searchMajors(String query) async => const [];
 
   @override
   Future<StudentProfile> fetchMe() async {

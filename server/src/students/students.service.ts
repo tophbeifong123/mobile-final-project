@@ -14,6 +14,7 @@ import { StudentProfileDto } from './dto/student-profile.dto.js';
 import { UpdateStudentProfileDto } from './dto/update-student-profile.dto.js';
 import { StudentsRepository } from './students.repository.js';
 import { UniversitiesService } from '../universities/universities.service.js';
+import { MajorsService } from '../majors/majors.service.js';
 import { type StudentProfile } from '../auth/entities/student-profile.entity.js';
 
 const STUDENT_ONLY = 'เฉพาะนักศึกษาเท่านั้น';
@@ -28,6 +29,7 @@ export class StudentsService {
     private readonly studentsRepository: StudentsRepository,
     private readonly storageService: StorageService,
     private readonly universitiesService: UniversitiesService,
+    private readonly majorsService: MajorsService,
   ) {}
 
   async getMine(user: AuthUser): Promise<StudentProfileDto> {
@@ -57,6 +59,18 @@ export class StudentsService {
       if (universityId) await this.universitiesService.requireById(universityId);
     }
 
+    let majorId: string | null | undefined;
+    let customMajorName: string | null | undefined;
+    if (dto.majorId !== undefined || dto.customMajorName !== undefined) {
+      const custom = dto.customMajorName?.trim() || null;
+      if (dto.majorId != null && custom != null) {
+        throw new BadRequestException('เลือกสาขาจากรายการหรือกรอกชื่อเองได้อย่างใดอย่างหนึ่ง');
+      }
+      majorId = dto.majorId ?? null;
+      customMajorName = majorId ? null : custom;
+      if (majorId) await this.majorsService.requireById(majorId);
+    }
+
     const contactLinks = dto.contactLinks
       ? dto.contactLinks.map((item) => ({
           id: item.id || randomUUID(),
@@ -84,7 +98,8 @@ export class StudentsService {
       fullName: dto.fullName.trim(),
       universityId,
       customUniversityName,
-      major: dto.major.trim(),
+      majorId,
+      customMajorName,
       skills: dto.skills
         .map((skill) => skill.trim())
         .filter((skill) => skill.length > 0),
@@ -348,7 +363,11 @@ export class StudentsService {
   }
 
   private async toDto(profile: StudentProfile): Promise<StudentProfileDto> {
-    return toDto(profile, await this.studentsRepository.resolveDisplayUniversity(profile));
+    return toDto(
+      profile,
+      await this.studentsRepository.resolveDisplayUniversity(profile),
+      await this.studentsRepository.resolveDisplayMajor(profile),
+    );
   }
 }
 
@@ -356,7 +375,8 @@ function toDto(profile: {
   universityId?: string | null;
   customUniversityName?: string | null;
   fullName: string;
-  major: string;
+  majorId?: string | null;
+  customMajorName?: string | null;
   skills: string[];
   bio?: string | null;
   contactLinks?: Array<{
@@ -375,13 +395,15 @@ function toDto(profile: {
   resumeFileName?: string | null;
   resumeObjectKey?: string | null;
   avatarObjectKey?: string | null;
-}, university = ''): StudentProfileDto {
+}, university = '', major = ''): StudentProfileDto {
   const dto = new StudentProfileDto();
   dto.fullName = profile.fullName;
   dto.universityId = profile.universityId ?? null;
   dto.customUniversityName = profile.customUniversityName ?? null;
   dto.university = university;
-  dto.major = profile.major;
+  dto.majorId = profile.majorId ?? null;
+  dto.customMajorName = profile.customMajorName ?? null;
+  dto.major = major;
   dto.skills = profile.skills;
   dto.bio = profile.bio ?? '';
   dto.contactLinks = (profile.contactLinks ?? []).map((c) => ({

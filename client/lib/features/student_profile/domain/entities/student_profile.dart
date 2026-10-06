@@ -41,12 +41,16 @@ class StudentProfile {
     this.avatarObjectKey,
     this.universityId,
     this.customUniversityName,
+    this.majorId,
+    this.customMajorName,
   });
 
   final String fullName;
   final String university;
   final String? universityId;
   final String? customUniversityName;
+  final String? majorId;
+  final String? customMajorName;
   final String major;
   final List<String> skills;
   final String bio;
@@ -62,6 +66,8 @@ class StudentProfile {
     String? university,
     Object? universityId = _unset,
     Object? customUniversityName = _unset,
+    Object? majorId = _unset,
+    Object? customMajorName = _unset,
     String? major,
     List<String>? skills,
     String? bio,
@@ -81,6 +87,10 @@ class StudentProfile {
       customUniversityName: identical(customUniversityName, _unset)
           ? this.customUniversityName
           : customUniversityName as String?,
+      majorId: identical(majorId, _unset) ? this.majorId : majorId as String?,
+      customMajorName: identical(customMajorName, _unset)
+          ? this.customMajorName
+          : customMajorName as String?,
       major: major ?? this.major,
       skills: skills ?? this.skills,
       bio: bio ?? this.bio,

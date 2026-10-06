@@ -25,8 +25,12 @@ export class StudentProfile {
   @Column({ name: 'custom_university_name', type: 'varchar', length: 255, nullable: true })
   customUniversityName: string | null;
 
-  @Column({ type: 'varchar', length: 255, default: '' })
-  major: string;
+  @Index('IDX_student_profiles_major_id')
+  @Column({ name: 'major_id', type: 'uuid', nullable: true })
+  majorId: string | null;
+
+  @Column({ name: 'custom_major_name', type: 'varchar', length: 255, nullable: true })
+  customMajorName: string | null;
 
   @Column({ type: 'text', array: true, default: () => "'{}'" })
   skills: string[];

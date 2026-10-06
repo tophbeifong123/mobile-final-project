@@ -8,6 +8,7 @@ import { DataSource, QueryFailedError } from 'typeorm';
 import { CompanyProfile } from '../auth/entities/company-profile.entity.js';
 import { StudentProfile } from '../auth/entities/student-profile.entity.js';
 import { University } from '../universities/university.entity.js';
+import { Major } from '../majors/major.entity.js';
 import { Job } from '../jobs/entities/job.entity.js';
 import { JobStatus, WorkMode } from '../jobs/job-enums.js';
 import { Notification } from '../notifications/entities/notification.entity.js';
@@ -312,11 +313,12 @@ export class ApplicationsRepository {
       .createQueryBuilder('app')
       .innerJoin(StudentProfile, 'student', 'student.id = app.studentId')
       .leftJoin(University, 'university', 'university.id = student.universityId')
+      .leftJoin(Major, 'major', 'major.id = student.majorId')
       .where('app.jobId = :jobId', { jobId })
       .select('app.id', 'applicationId')
       .addSelect('student.fullName', 'fullName')
       .addSelect(`COALESCE(student.customUniversityName, university.nameTh, '')`, 'university')
-      .addSelect('student.major', 'major')
+      .addSelect(`COALESCE(student.customMajorName, major.nameTh, '')`, 'major')
       .addSelect('app.status', 'status')
       .addSelect('app.coverLetter', 'coverLetter')
       .addSelect('app.createdAt', 'createdAt')
@@ -355,6 +357,9 @@ export class ApplicationsRepository {
     const university = student?.universityId
       ? await this.dataSource.getRepository(University).findOne({ where: { id: student.universityId } })
       : null;
+    const major = student?.majorId
+      ? await this.dataSource.getRepository(Major).findOne({ where: { id: student.majorId } })
+      : null;
 
     return {
       applicationId: application.id,
@@ -362,7 +367,7 @@ export class ApplicationsRepository {
       studentId: application.studentId,
       fullName: student?.fullName ?? '',
       university: student?.customUniversityName ?? university?.nameTh ?? '',
-      major: student?.major ?? '',
+      major: student?.customMajorName ?? major?.nameTh ?? '',
       skills: Array.isArray(student?.skills) ? student.skills : [],
       bio: student?.bio ?? '',
       contactLinks: Array.isArray(student?.contactLinks) ? student.contactLinks : [],

@@ -22,6 +22,7 @@ import '../widgets/student_profile_links_card.dart';
 import '../widgets/student_profile_resume_card.dart';
 import '../widgets/student_profile_skills_card.dart';
 import '../widgets/university_picker.dart';
+import '../widgets/major_picker.dart';
 
 class StudentProfileScreen extends ConsumerWidget {
   const StudentProfileScreen({super.key});
@@ -109,7 +110,9 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
   late String _universityName;
   String? _universityId;
   String? _customUniversityName;
-  late final TextEditingController _majorController;
+  late String _majorName;
+  String? _majorId;
+  String? _customMajorName;
   late final TextEditingController _bioController;
   late List<String> _skills;
   late List<ContactLink> _links;
@@ -124,7 +127,9 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
     _universityName = profile.university;
     _universityId = profile.universityId;
     _customUniversityName = profile.customUniversityName;
-    _majorController = TextEditingController(text: profile.major);
+    _majorName = profile.major;
+    _majorId = profile.majorId;
+    _customMajorName = profile.customMajorName;
     _bioController = TextEditingController(text: profile.bio);
     _skills = List<String>.from(profile.skills);
     _links = List<ContactLink>.from(profile.contactLinks);
@@ -159,7 +164,6 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
   @override
   void dispose() {
     _nameController.dispose();
-    _majorController.dispose();
     _bioController.dispose();
     super.dispose();
   }
@@ -197,7 +201,13 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
               _customUniversityName = null;
               _universityName = '';
             }),
-            majorController: _majorController,
+            majorName: _majorName,
+            onChooseMajor: _chooseMajor,
+            onClearMajor: () => setState(() {
+              _majorName = '';
+              _majorId = null;
+              _customMajorName = null;
+            }),
             requiredValidator: _required,
           ),
           const Gap(14),
@@ -669,6 +679,20 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
     });
   }
 
+  Future<void> _chooseMajor() async {
+    final choice = await showMajorPicker(
+      context,
+      selectedId: _majorId,
+      customName: _customMajorName,
+    );
+    if (choice == null || !mounted) return;
+    setState(() {
+      _majorName = choice.name;
+      _majorId = choice.id;
+      _customMajorName = choice.customName;
+    });
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -704,7 +728,9 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
       university: _universityName,
       universityId: _universityId,
       customUniversityName: _customUniversityName,
-      major: _majorController.text.trim(),
+      major: _majorName,
+      majorId: _majorId,
+      customMajorName: _customMajorName,
       skills: _skills,
       bio: _bioController.text.trim(),
       contactLinks: _links,

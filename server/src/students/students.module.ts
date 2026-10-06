@@ -2,12 +2,13 @@ import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module.js';
 import { StorageModule } from '../storage/storage.module.js';
 import { UniversitiesModule } from '../universities/universities.module.js';
+import { MajorsModule } from '../majors/majors.module.js';
 import { StudentsController } from './students.controller.js';
 import { StudentsRepository } from './students.repository.js';
 import { StudentsService } from './students.service.js';
 
 @Module({
-  imports: [AuthModule, StorageModule, UniversitiesModule],
+  imports: [AuthModule, StorageModule, UniversitiesModule, MajorsModule],
   controllers: [StudentsController],
   providers: [StudentsService, StudentsRepository],
 })
