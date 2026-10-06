@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:ui' as ui;
+import 'dart:typed_data';
 import 'package:client/core/error/app_exception.dart';
 import 'package:client/core/network/dio_client.dart';
 import 'package:client/core/storage/token_storage.dart';
@@ -17,7 +18,6 @@ import 'package:client/features/resume/presentation/providers/resume_controller.
 import 'package:client/features/student_profile/presentation/widgets/resume_preview_modal.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pdfx/pdfx.dart';
@@ -221,34 +221,8 @@ void main() {
       picture.dispose();
       return bytes;
     });
-    Uint8List? opened;
-    var closed = false;
-    const channel = MethodChannel('io.scer.pdf_renderer');
-    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, (
-      call,
-    ) async {
-      if (call.method == 'open.document.file') {
-        throw PlatformException(code: 'test-use-memory');
-      }
-      if (call.method == 'open.document.data') {
-        opened = call.arguments as Uint8List;
-        return {'id': 'snapshot', 'pagesCount': 1};
-      }
-      if (call.method == 'open.page') {
-        return {'id': 'page', 'width': 100, 'height': 100};
-      }
-      if (call.method == 'render') {
-        return {'width': 1, 'height': 1, 'data': png};
-      }
-      if (call.method == 'close.document') closed = true;
-      return null;
-    });
-    addTearDown(
-      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-        channel,
-        null,
-      ),
-    );
+    List<int>? opened;
+    final document = _SnapshotPdfDocument(png!);
     await tester.pumpWidget(
       ProviderScope(
         retry: (count, error) => null,
@@ -260,6 +234,12 @@ void main() {
           applicantResumeBytesProvider(
             arg,
           ).overrideWith((ref) async => pdfBytes),
+          resumePdfDocumentLoaderProvider.overrideWith(
+            (ref) => (bytes) async {
+              opened = bytes;
+              return document;
+            },
+          ),
         ],
         child: MaterialApp(
           theme: AppTheme.lightTheme,
@@ -289,7 +269,7 @@ void main() {
     await tester.runAsync(() async {
       await Future<void>.delayed(const Duration(milliseconds: 100));
     });
-    expect(closed, isTrue);
+    expect(document.isClosed, isTrue);
     expect(find.byType(ApplicantDetailScreen), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
@@ -384,4 +364,66 @@ void main() {
       dio.close();
     });
   }
+}
+
+// Model the renderer itself instead of relying on a desktop OS plugin.
+// The same embedded PdfView, rendered page, submitted bytes and close lifecycle
+// are exercised on Windows and on the Linux CI runner.
+class _SnapshotPdfDocument extends PdfDocument {
+  _SnapshotPdfDocument(this.png)
+    : super(sourceName: 'snapshot', id: 'snapshot', pagesCount: 1);
+  final Uint8List png;
+  @override
+  Future<PdfPage> getPage(
+    int pageNumber, {
+    bool autoCloseAndroid = false,
+  }) async => _SnapshotPdfPage(this, png);
+  @override
+  Future<void> close() async {
+    isClosed = true;
+  }
+}
+
+class _SnapshotPdfPage extends PdfPage {
+  _SnapshotPdfPage(PdfDocument document, this.png)
+    : super(
+        document: document,
+        id: 'page',
+        pageNumber: 1,
+        width: 100,
+        height: 100,
+        autoCloseAndroid: false,
+      );
+  final Uint8List png;
+  @override
+  Future<PdfPageImage?> render({
+    required double width,
+    required double height,
+    PdfPageImageFormat format = PdfPageImageFormat.jpeg,
+    String? backgroundColor,
+    Rect? cropRect,
+    int quality = 100,
+    bool forPrint = false,
+    bool removeTempFile = true,
+  }) async => _SnapshotPdfImage(png);
+  @override
+  Future<PdfPageTexture> createTexture() =>
+      throw UnimplementedError('PdfView does not use textures');
+  @override
+  Future<void> close() async {
+    isClosed = true;
+  }
+}
+
+class _SnapshotPdfImage extends PdfPageImage {
+  _SnapshotPdfImage(Uint8List bytes)
+    : super(
+        id: 'page',
+        pageNumber: 1,
+        width: 1,
+        height: 1,
+        bytes: bytes,
+        format: PdfPageImageFormat.png,
+        quality: 100,
+      );
 }

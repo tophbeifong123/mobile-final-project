@@ -13,6 +13,10 @@ import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/neo_button.dart';
 import '../../../resume/presentation/providers/resume_controller.dart';
 
+/// Injectable renderer boundary; production uses the existing native/web PDF loader.
+final resumePdfDocumentLoaderProvider =
+    Provider<Future<PdfDocument> Function(List<int>)?>((ref) => null);
+
 /// Neo-Brutalist Resume PDF Preview Modal Dialog
 class ResumePreviewModal extends ConsumerWidget {
   const ResumePreviewModal({
@@ -82,8 +86,11 @@ class ResumePreviewModal extends ConsumerWidget {
                       message: 'กำลังดาวน์โหลดเอกสาร PDF...',
                     ),
                     error: (err, _) => _buildErrorState(ref, err),
-                    data: (bytes) =>
-                        _PdfViewerCanvas(bytes: bytes, fileName: fileName),
+                    data: (bytes) => _PdfViewerCanvas(
+                      bytes: bytes,
+                      fileName: fileName,
+                      openDocument: ref.watch(resumePdfDocumentLoaderProvider),
+                    ),
                   ),
                 ),
 
@@ -288,7 +295,13 @@ class ResumePreviewModal extends ConsumerWidget {
 
 /// Dedicated PDF Viewer Canvas that isolates the PdfController lifecycle
 class _PdfViewerCanvas extends StatefulWidget {
-  const _PdfViewerCanvas({required this.bytes, required this.fileName});
+  const _PdfViewerCanvas({
+    required this.bytes,
+    required this.fileName,
+    this.openDocument,
+  });
+
+  final Future<PdfDocument> Function(List<int>)? openDocument;
 
   final List<int> bytes;
   final String fileName;
@@ -306,13 +319,15 @@ class _PdfViewerCanvasState extends State<_PdfViewerCanvas> {
   @override
   void initState() {
     super.initState();
-    _documentFuture = _openDocument(widget.bytes);
+    _documentFuture =
+        widget.openDocument?.call(widget.bytes) ?? _openDocument(widget.bytes);
     _controller = PdfController(document: _documentFuture);
   }
 
   // Support both Web (in-memory openData via pdf.js) and Native (temp file openFile
   // to avoid Android IPC 64KB pipe-buffer limit)
   Future<PdfDocument> _openDocument(List<int> bytes) async {
+    if (!await hasPdfSupport()) throw PlatformNotSupportedException();
     if (kIsWeb) {
       return PdfDocument.openData(Uint8List.fromList(bytes));
     }
