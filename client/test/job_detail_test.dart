@@ -20,6 +20,10 @@ void main() {
     testWidgets(
       'company logo raster/failure renders without blocking the job: $fails',
       (tester) async {
+        tester.view.physicalSize = const Size(390, 2400);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
         final detail = const JobDetail(
           id: 'job-1',
           title: 'Job',
@@ -89,6 +93,9 @@ void main() {
         'companyLocation': 'อาคาร A',
         'companyPerks': ['MacBook'],
         'companyLogoAvailable': true,
+        'companyCoverAvailable': true,
+        'createdAt': '2026-10-01T12:00:00.000Z',
+        'deadline': '2026-12-31T00:00:00.000Z',
       };
       final detail = JobDetailModel.fromJson(json).toEntity();
       expect(detail.companyWebsiteUrl, 'https://example.com');
@@ -96,12 +103,16 @@ void main() {
       expect(detail.companyLocation, 'อาคาร A');
       expect(detail.companyPerks, ['MacBook']);
       expect(detail.companyLogoAvailable, isTrue);
+      expect(detail.companyCoverAvailable, isTrue);
+      expect(detail.createdAt, DateTime.parse('2026-10-01T12:00:00.000Z'));
+      expect(detail.deadline, DateTime.parse('2026-12-31T00:00:00.000Z'));
       for (final key in [
         'companyWebsiteUrl',
         'companySize',
         'companyLocation',
         'companyPerks',
         'companyLogoAvailable',
+        'companyCoverAvailable',
       ]) {
         json.remove(key);
       }
@@ -109,13 +120,19 @@ void main() {
       expect(legacy.companyPerks, isEmpty);
       expect(legacy.companyWebsiteUrl, isEmpty);
       expect(legacy.companyLogoAvailable, isFalse);
+      expect(legacy.companyCoverAvailable, isFalse);
+      json.remove('createdAt');
+      json.remove('deadline');
+      final withoutDates = JobDetailModel.fromJson(json).toEntity();
+      expect(withoutDates.createdAt, isNull);
+      expect(withoutDates.deadline, isNull);
     },
   );
 
   testWidgets('student sees all saved company metadata and SVG logo in the job', (
     tester,
   ) async {
-    tester.view.physicalSize = const Size(390, 844);
+    tester.view.physicalSize = const Size(390, 2400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -159,7 +176,8 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Saved Company'), findsNWidgets(2));
+    expect(find.text('Saved Company'), findsOneWidget);
+    expect(find.byKey(const Key('company-cover')), findsOneWidget);
     expect(find.text('Software'), findsOneWidget);
     expect(find.text('Saved description'), findsOneWidget);
     expect(find.text('https://example.com'), findsOneWidget);
@@ -174,7 +192,7 @@ void main() {
     expect(find.text('สมัครงาน'), findsOneWidget);
   });
   testWidgets('job detail shows the posting and the company', (tester) async {
-    tester.view.physicalSize = const Size(390, 844);
+    tester.view.physicalSize = const Size(390, 2400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -194,16 +212,25 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Flutter Intern'), findsOneWidget);
-    expect(find.text('InternFinder'), findsNWidgets(2));
+    expect(find.text('InternFinder'), findsOneWidget);
+    expect(find.byKey(const Key('company-cover')), findsOneWidget);
+    expect(find.byKey(const Key('company-cover-image')), findsNothing);
     expect(find.text('ซอฟต์แวร์'), findsOneWidget);
     expect(find.text('ช่วยพัฒนาแอป'), findsOneWidget);
     expect(find.text('ใช้ Flutter ได้'), findsOneWidget);
     expect(find.text('สงขลา'), findsOneWidget);
     expect(find.text('On-site'), findsOneWidget);
     expect(find.text('เปิดรับ'), findsOneWidget);
+    expect(find.text('IT'), findsOneWidget);
+    expect(find.text('รับ 3 คน'), findsOneWidget);
+    expect(find.text('มีเบี้ยเลี้ยง 8,000 บาท'), findsOneWidget);
+    expect(find.text('ถึง 31 ธ.ค. 2569'), findsOneWidget);
+    expect(find.text('วันนี้'), findsOneWidget);
+    expect(find.text('Flutter'), findsOneWidget);
     expect(find.text('สมัครงาน'), findsOneWidget);
     expect(find.text('บันทึก'), findsOneWidget);
     expect(find.text('ยังไม่มีข้อมูล'), findsNothing);
+    expect(find.text('ยังไม่ได้ระบุ'), findsNothing);
   });
 }
 
@@ -213,7 +240,7 @@ class _DetailJobRepository implements JobRepository {
 
   @override
   Future<JobDetail> fetchDetail(String jobId) async {
-    return const JobDetail(
+    return JobDetail(
       id: 'job-1',
       title: 'Flutter Intern',
       description: 'ช่วยพัฒนาแอป',
@@ -221,8 +248,13 @@ class _DetailJobRepository implements JobRepository {
       workMode: WorkMode.onSite,
       category: 'IT',
       hasAllowance: true,
+      openings: 3,
+      allowanceAmount: 8000,
       requirements: 'ใช้ Flutter ได้',
+      skills: const ['Flutter'],
       status: JobStatus.open,
+      createdAt: DateTime.now(),
+      deadline: DateTime(2026, 12, 31),
       companyName: 'InternFinder',
       businessType: 'ซอฟต์แวร์',
       companyDescription: 'แพลตฟอร์มฝึกงาน',

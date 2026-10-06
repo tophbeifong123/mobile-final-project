@@ -105,7 +105,11 @@ test('persisted company profile reaches job detail, logo and Swagger', async () 
     assert.deepEqual(detail.body.companyPerks, fields.perks);
     assert.equal(detail.body.companyLocation, fields.location);
     assert.equal(detail.body.companyLogoAvailable, true);
+    assert.equal(detail.body.companyCoverAvailable, false);
+    assert.ok(Number.isFinite(Date.parse(detail.body.createdAt)));
+    assert.equal(detail.body.deadline, null);
     assert.ok(!Object.hasOwn(detail.body, 'companyLogoObjectKey'));
+    assert.ok(!Object.hasOwn(detail.body, 'companyCoverObjectKey'));
     // Subsequent profile edits appear in the job without rewriting the job.
     await http.patch('/api/companies/me').set('x-test-role', 'company').send({ ...fields, websiteUrl: '', perks: [], location: 'อาคาร B' }).expect(200);
     const latest = await http.get('/api/jobs/' + jobId).set('x-test-role', 'student').expect(200);
@@ -184,10 +188,13 @@ test('persisted company profile reaches job detail, logo and Swagger', async () 
     await http.get('/api/jobs/' + jobId + '/company-logo').set('x-test-role', 'student').expect(404);
     const doc = SwaggerModule.createDocument(app, new DocumentBuilder().setTitle('Test').addBearerAuth().build());
     assert.ok(doc.paths['/api/jobs/{id}/company-logo'].get);
-    for (const field of ['companyWebsiteUrl', 'companySize', 'companyLocation', 'companyPerks', 'companyLogoAvailable'])
+    assert.ok(doc.paths['/api/jobs/{id}/company-cover'].get);
+    for (const field of ['companyWebsiteUrl', 'companySize', 'companyLocation', 'companyPerks', 'companyLogoAvailable', 'companyCoverAvailable'])
       assert.ok(doc.components.schemas.JobDetailDto.properties[field]);
     assert.equal(doc.components.schemas.JobDetailDto.properties.companyPerks.type, 'array');
     assert.equal(doc.components.schemas.JobDetailDto.properties.companyLogoAvailable.type, 'boolean');
+    assert.equal(doc.components.schemas.JobDetailDto.properties.createdAt.format, 'date-time');
+    assert.equal(doc.components.schemas.JobDetailDto.properties.deadline.nullable, true);
     assert.equal(doc.components.schemas.JobFeedItemDto.properties.createdAt.format, 'date-time');
     assert.equal(doc.components.schemas.JobFeedItemDto.properties.companyLogoAvailable.type, 'boolean');
     assert.ok(doc.components.schemas.PaginatedJobsDto.properties.totalPages);

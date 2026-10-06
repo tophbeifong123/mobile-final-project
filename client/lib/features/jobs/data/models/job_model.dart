@@ -94,7 +94,10 @@ class JobDetailModel {
     this.companyLocation = '',
     this.companyPerks = const [],
     this.companyLogoAvailable = false,
+    this.companyCoverAvailable = false,
     this.skills = const [],
+    this.createdAt,
+    this.deadline,
   });
 
   factory JobDetailModel.fromJson(Map<String, dynamic> json) {
@@ -122,12 +125,15 @@ class JobDetailModel {
               .toList() ??
           const [],
       companyLogoAvailable: json['companyLogoAvailable'] as bool? ?? false,
+      companyCoverAvailable: json['companyCoverAvailable'] as bool? ?? false,
       saved: json['saved'] as bool? ?? false,
       skills:
           (json['skills'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const [],
+      createdAt: _dateOrNull(json['createdAt']),
+      deadline: _dateOrNull(json['deadline']),
     );
   }
 
@@ -150,8 +156,11 @@ class JobDetailModel {
   final String companyLocation;
   final List<String> companyPerks;
   final bool companyLogoAvailable;
+  final bool companyCoverAvailable;
   final bool saved;
   final List<String> skills;
+  final DateTime? createdAt;
+  final DateTime? deadline;
 
   JobDetail toEntity() {
     return JobDetail(
@@ -174,8 +183,16 @@ class JobDetailModel {
       companyLocation: companyLocation,
       companyPerks: companyPerks,
       companyLogoAvailable: companyLogoAvailable,
+      companyCoverAvailable: companyCoverAvailable,
       saved: saved,
       skills: skills,
+      createdAt: createdAt,
+      deadline: deadline,
     );
   }
+}
+
+DateTime? _dateOrNull(Object? value) {
+  if (value is! String || value.isEmpty) return null;
+  return DateTime.tryParse(value);
 }

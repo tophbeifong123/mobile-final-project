@@ -152,6 +152,7 @@ Password recovery รองรับอีเมลที่ใช้สมั�
 | GET | /api/jobs | Home / Job Feed |
 | GET | /api/jobs/:id | Job Detail |
 | GET | /api/jobs/:id/company-logo | โลโก้บริษัทบนฟีด รายละเอียดงาน และ Saved Jobs เฉพาะประกาศที่เปิดรับและนักศึกษาที่ login แล้ว |
+| GET | /api/jobs/:id/company-cover | รูปหน้าปกบริษัทบนรายละเอียดงาน เฉพาะประกาศที่เปิดรับและนักศึกษาที่ login แล้ว |
 | POST, DELETE | /api/jobs/:id/save | Save จาก Job Detail |
 | GET | /api/jobs/saved | Saved Jobs |
 | POST | /api/jobs/:id/applications | Apply Job |
@@ -166,7 +167,7 @@ Password recovery รองรับอีเมลที่ใช้สมั�
 
 Route `GET /api/jobs/saved` ต้องประกาศก่อน `GET /api/jobs/:id` เพื่อไม่ให้คำว่า `saved` ถูกจับเป็น id
 
-`GET /api/jobs/:id` join โปรไฟล์บริษัทล่าสุดและคืน `companyWebsiteUrl`, `companySize`, `companyPerks`, `companyLocation`, `companyLogoAvailable` ร่วมกับชื่อ ประเภทกิจการ และคำอธิบาย ไม่เปิดเผย object key ของโลโก้ให้นักศึกษา โหลดโลโก้ผ่านเส้นทางประกาศที่ตรวจ role และสถานะงานก่อนอ่าน storage รองรับ PNG/JPEG/WEBP/GIF/SVG และคืน 404 เมื่อไม่มีไฟล์ งานปิดแล้วไม่สามารถใช้เส้นทางนี้ได้
+`GET /api/jobs/:id` join โปรไฟล์บริษัทล่าสุดและคืน `companyWebsiteUrl`, `companySize`, `companyPerks`, `companyLocation`, `companyLogoAvailable`, `companyCoverAvailable` ร่วมกับชื่อ ประเภทกิจการ คำอธิบาย `createdAt` และ `deadline` ไม่เปิดเผย object key ของโลโก้หรือรูปหน้าปกให้นักศึกษา โหลดไฟล์ผ่านเส้นทางประกาศที่ตรวจ role และสถานะงานก่อนอ่าน storage รองรับ PNG/JPEG/WEBP/GIF/SVG และคืน 404 เมื่อไม่มีไฟล์ งานปิดแล้วไม่สามารถใช้เส้นทางนี้ได้
 
 Flutter โหลดรายละเอียดใหม่เมื่อกลับมาเปิดหน้าและโหลดโลโก้ด้วย Dio ที่มี token ไม่ใช้ URL รูปแบบสาธารณะหรือเพิ่มหน้าโปรไฟล์บริษัท แสดงตัวอักษรชื่อบริษัทแทนเมื่อไม่มีโลโก้หรือโหลดล้มเหลว; SVG แสดงด้วย `flutter_svg`
 

@@ -50,7 +50,16 @@ final jobDetailProvider = FutureProvider.autoDispose.family<JobDetail, String>((
 
 final jobCompanyLogoProvider = FutureProvider.autoDispose
     .family<CompanyLogo?, String>((ref, id) async {
+      ref.keepAlive();
       final detail = await ref.watch(jobDetailProvider(id).future);
       if (!detail.companyLogoAvailable) return null;
       return JobRemoteDataSource(ref.watch(dioProvider)).fetchCompanyLogo(id);
+    });
+
+final jobCompanyCoverProvider = FutureProvider.autoDispose
+    .family<CompanyLogo?, String>((ref, id) async {
+      ref.keepAlive();
+      final detail = await ref.watch(jobDetailProvider(id).future);
+      if (!detail.companyCoverAvailable) return null;
+      return JobRemoteDataSource(ref.watch(dioProvider)).fetchCompanyCover(id);
     });

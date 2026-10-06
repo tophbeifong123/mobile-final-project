@@ -45,6 +45,21 @@ export class JobDetailDto {
   @ApiProperty({ enum: JobStatus, example: JobStatus.Open })
   status: JobStatus;
 
+  @ApiProperty({
+    type: String,
+    format: 'date-time',
+    description: 'วันเวลาสร้างประกาศ',
+  })
+  createdAt: Date;
+
+  @ApiPropertyOptional({
+    type: String,
+    format: 'date-time',
+    nullable: true,
+    description: 'วันปิดรับ; null เมื่อไม่ได้ระบุ',
+  })
+  deadline: Date | null;
+
   @ApiProperty({ example: 'InternFinder' })
   companyName: string;
 
@@ -76,6 +91,11 @@ export class JobDetailDto {
     description: 'มีโลโก้บริษัท; ดาวน์โหลดผ่าน GET /api/jobs/:id/company-logo',
   })
   companyLogoAvailable: boolean;
+
+  @ApiProperty({
+    description: 'มีรูปหน้าปกบริษัท; ดาวน์โหลดผ่าน GET /api/jobs/:id/company-cover',
+  })
+  companyCoverAvailable: boolean;
 
   @ApiProperty({ description: 'นักศึกษานี้บันทึกประกาศนี้ไว้แล้วหรือยัง' })
   saved: boolean;

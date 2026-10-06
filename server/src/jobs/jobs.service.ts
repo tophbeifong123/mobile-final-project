@@ -157,18 +157,23 @@ export class JobsService {
     if (!key) throw new NotFoundException('ไม่พบโลโก้บริษัท');
     const buffer = await this.storageService.get(key);
     if (!buffer) throw new NotFoundException('ไม่พบโลโก้บริษัท');
-    const extension = key.split('.').pop()?.toLowerCase();
-    const mimeType =
-      extension === 'svg'
-        ? 'image/svg+xml'
-        : extension === 'jpg' || extension === 'jpeg'
-          ? 'image/jpeg'
-          : extension === 'webp'
-            ? 'image/webp'
-            : extension === 'gif'
-              ? 'image/gif'
-              : 'image/png';
-    return { buffer, mimeType };
+    return { buffer, mimeType: imageMimeType(key) };
+  }
+
+  async getCompanyCover(
+    user: AuthUser,
+    jobId: string,
+  ): Promise<{ buffer: Buffer; mimeType: string }> {
+    if (user.role !== UserRole.Student) {
+      throw new ForbiddenException(STUDENT_ONLY);
+    }
+    const job = await this.jobsRepository.findOpenById(jobId);
+    if (!job) throw new NotFoundException(JOB_NOT_FOUND);
+    const key = job.companyCoverObjectKey;
+    if (!key) throw new NotFoundException('ไม่พบรูปหน้าปกบริษัท');
+    const buffer = await this.storageService.get(key);
+    if (!buffer) throw new NotFoundException('ไม่พบรูปหน้าปกบริษัท');
+    return { buffer, mimeType: imageMimeType(key) };
   }
 
   async save(user: AuthUser, jobId: string): Promise<void> {
@@ -379,6 +384,8 @@ function toDetail(
     requirements: string;
     skills?: string[];
     status: JobStatus;
+    createdAt: Date;
+    deadline?: Date | null;
     companyName: string;
     businessType: string;
     companyDescription: string;
@@ -387,6 +394,7 @@ function toDetail(
     companyPerks?: string[];
     companyLocation?: string;
     companyLogoObjectKey?: string | null;
+    companyCoverObjectKey?: string | null;
   },
   saved: boolean,
 ): JobDetailDto {
@@ -403,6 +411,8 @@ function toDetail(
   dto.requirements = job.requirements;
   dto.skills = job.skills ?? [];
   dto.status = job.status;
+  dto.createdAt = job.createdAt;
+  dto.deadline = job.deadline ?? null;
   dto.companyName = job.companyName;
   dto.businessType = job.businessType;
   dto.companyDescription = job.companyDescription;
@@ -411,6 +421,7 @@ function toDetail(
   dto.companyPerks = job.companyPerks ?? [];
   dto.companyLocation = job.companyLocation ?? '';
   dto.companyLogoAvailable = Boolean(job.companyLogoObjectKey);
+  dto.companyCoverAvailable = Boolean(job.companyCoverObjectKey);
   dto.saved = saved;
   return dto;
 }
@@ -485,6 +496,23 @@ function openingsOf(value: number | null | undefined): number | null {
     );
   }
   return openings;
+}
+
+function imageMimeType(key: string): string {
+  const extension = key.split('.').pop()?.toLowerCase();
+  switch (extension) {
+    case 'svg':
+      return 'image/svg+xml';
+    case 'jpg':
+    case 'jpeg':
+      return 'image/jpeg';
+    case 'webp':
+      return 'image/webp';
+    case 'gif':
+      return 'image/gif';
+    default:
+      return 'image/png';
+  }
 }
 
 function toFeedItem(job: {

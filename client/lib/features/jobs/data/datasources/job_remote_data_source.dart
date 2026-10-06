@@ -73,10 +73,18 @@ class JobRemoteDataSource {
     }
   }
 
-  Future<CompanyLogo?> fetchCompanyLogo(String jobId) async {
+  Future<CompanyLogo?> fetchCompanyLogo(String jobId) {
+    return _fetchImage('${ApiConstants.jobs}/$jobId/company-logo');
+  }
+
+  Future<CompanyLogo?> fetchCompanyCover(String jobId) {
+    return _fetchImage('${ApiConstants.jobs}/$jobId/company-cover');
+  }
+
+  Future<CompanyLogo?> _fetchImage(String path) async {
     try {
       final response = await _dio.get<List<int>>(
-        '${ApiConstants.jobs}/$jobId/company-logo',
+        path,
         options: Options(responseType: ResponseType.bytes),
       );
       final bytes = response.data;

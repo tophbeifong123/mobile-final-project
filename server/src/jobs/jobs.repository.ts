@@ -40,6 +40,7 @@ export interface OpenJobRecord {
 export interface OpenJobDetail extends OpenJobRecord {
   description: string;
   requirements: string;
+  deadline: Date | null;
   businessType: string;
   companyDescription: string;
   companyWebsiteUrl: string;
@@ -47,6 +48,7 @@ export interface OpenJobDetail extends OpenJobRecord {
   companyPerks: string[];
   companyLocation: string;
   companyLogoObjectKey: string | null;
+  companyCoverObjectKey: string | null;
 }
 
 export interface CompanyJobRecord {
@@ -395,6 +397,7 @@ export class JobsRepository {
       .addSelect('job.title', 'title')
       .addSelect('job.description', 'description')
       .addSelect('job.createdAt', 'createdAt')
+      .addSelect('job.deadline', 'deadline')
       .addSelect('job.province', 'province')
       .addSelect('job.workMode', 'workMode')
       .addSelect('job.category', 'category')
@@ -412,6 +415,7 @@ export class JobsRepository {
       .addSelect('company.perks', 'companyPerks')
       .addSelect('company.location', 'companyLocation')
       .addSelect('company.logoObjectKey', 'companyLogoObjectKey')
+      .addSelect('company.coverObjectKey', 'companyCoverObjectKey')
       .getRawOne<Record<string, unknown>>()
       .then((row) => (row ? toOpenJobDetail(row) : null));
   }
@@ -474,6 +478,7 @@ function toOpenJobDetail(row: Record<string, unknown>): OpenJobDetail {
     ...toOpenJob(row),
     description: String(readField(row, 'description') ?? ''),
     requirements: String(readField(row, 'requirements') ?? ''),
+    deadline: readOptionalDate(row, 'deadline'),
     businessType: String(readField(row, 'businessType') ?? ''),
     companyDescription: String(readField(row, 'companyDescription') ?? ''),
     companyWebsiteUrl: String(readField(row, 'companyWebsiteUrl') ?? ''),
@@ -484,11 +489,14 @@ function toOpenJobDetail(row: Record<string, unknown>): OpenJobDetail {
       readField(row, 'companyLogoObjectKey') == null
         ? null
         : String(readField(row, 'companyLogoObjectKey')),
+    companyCoverObjectKey:
+      readField(row, 'companyCoverObjectKey') == null
+        ? null
+        : String(readField(row, 'companyCoverObjectKey')),
   };
 }
 
 function toCompanyJobRecord(row: Record<string, unknown>): CompanyJobRecord {
-  const deadline = readField(row, 'deadline');
   return {
     id: String(readField(row, 'id')),
     title: String(readField(row, 'title') ?? ''),
@@ -496,13 +504,20 @@ function toCompanyJobRecord(row: Record<string, unknown>): CompanyJobRecord {
     workMode: readField(row, 'workMode') as WorkMode,
     applicantCount: Number(readField(row, 'applicantCount') ?? 0),
     pendingApplicantCount: Number(readField(row, 'pendingApplicantCount') ?? 0),
-    deadline:
-      deadline instanceof Date
-        ? deadline
-        : deadline
-          ? new Date(String(deadline))
-          : null,
+    deadline: readOptionalDate(row, 'deadline'),
   };
+}
+
+function readOptionalDate(
+  row: Record<string, unknown>,
+  key: string,
+): Date | null {
+  const value = readField(row, key);
+  if (value == null || value === '') {
+    return null;
+  }
+  const date = value instanceof Date ? value : new Date(String(value));
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
 function readCount(row: Record<string, unknown>, key: string): number | null {

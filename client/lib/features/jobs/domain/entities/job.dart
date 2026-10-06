@@ -179,7 +179,10 @@ class JobDetail {
     this.companyLocation = '',
     this.companyPerks = const [],
     this.companyLogoAvailable = false,
+    this.companyCoverAvailable = false,
     this.skills = const [],
+    this.createdAt,
+    this.deadline,
   });
 
   final String id;
@@ -201,8 +204,11 @@ class JobDetail {
   final String companyLocation;
   final List<String> companyPerks;
   final bool companyLogoAvailable;
+  final bool companyCoverAvailable;
   final bool saved;
   final List<String> skills;
+  final DateTime? createdAt;
+  final DateTime? deadline;
 }
 
 String workModeToApi(WorkMode mode) {
