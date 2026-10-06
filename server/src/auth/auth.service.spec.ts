@@ -37,6 +37,10 @@ describe('AuthService', () => {
     jwtService.signAsync.mockResolvedValue('access-token');
     passwords.hash.mockResolvedValue('hashed-password');
     repository.saveRefreshToken.mockResolvedValue(true);
+    googleTokens.verify.mockResolvedValue({
+      subject: 'google-sub-1',
+      email: 'new@example.com',
+    });
     config.get.mockImplementation(
       (_key: string, fallback?: string) => fallback ?? '7d',
     );
@@ -206,6 +210,8 @@ describe('AuthService', () => {
       role: 'company',
     });
     expect(repository.createGoogleUserWithProfile).not.toHaveBeenCalled();
+  });
+
   it('uses the current token version when issuing a login session', async () => {
     repository.findByEmail.mockResolvedValue({
       id: 'user-1',
