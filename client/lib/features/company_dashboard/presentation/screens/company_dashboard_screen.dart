@@ -10,17 +10,63 @@ import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/widgets.dart';
 import '../providers/company_dashboard_controller.dart';
 
-class CompanyDashboardScreen extends ConsumerWidget {
+class CompanyDashboardScreen extends ConsumerStatefulWidget {
   const CompanyDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final summaryAsync = ref.watch(companyDashboardSummaryProvider);
+  ConsumerState<CompanyDashboardScreen> createState() =>
+      _CompanyDashboardScreenState();
+}
 
-    Future<void> openPage(String path) async {
-      await context.push<void>(path);
-      if (context.mounted) ref.invalidate(companyDashboardSummaryProvider);
+class _CompanyDashboardScreenState
+    extends ConsumerState<CompanyDashboardScreen> {
+  GoRouter? _router;
+  String? _lastPath;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final router = GoRouter.maybeOf(context);
+    if (identical(router, _router)) return;
+    _router?.routerDelegate.removeListener(_onRouteChanged);
+    _router = router;
+    _lastPath = router?.state.uri.path;
+    router?.routerDelegate.addListener(_onRouteChanged);
+  }
+
+  @override
+  void dispose() {
+    _router?.routerDelegate.removeListener(_onRouteChanged);
+    super.dispose();
+  }
+
+  void _onRouteChanged() {
+    if (!mounted || _router == null) return;
+    final path = _router!.state.uri.path;
+    final returnedToDashboard =
+        path == '/company/dashboard' && _lastPath != null && _lastPath != path;
+    _lastPath = path;
+    if (!returnedToDashboard) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.invalidate(companyDashboardSummaryProvider);
+    });
+  }
+
+  Future<void> _openPage(String path) async {
+    // The jobs list is another shell branch. push() stacks it on the
+    // dashboard branch, so choosing Dashboard later restores that jobs page.
+    if (path == '/company/jobs') {
+      context.go(path);
+      return;
     }
+    await context.push<void>(path);
+    if (context.mounted) ref.invalidate(companyDashboardSummaryProvider);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final summaryAsync = ref.watch(companyDashboardSummaryProvider);
 
     return Scaffold(
       backgroundColor: NeoColors.paperCanvas,
@@ -76,7 +122,7 @@ class CompanyDashboardScreen extends ConsumerWidget {
                       icon: Icons.work_outline,
                       iconColor: NeoColors.inkSolid,
                       iconBgColor: NeoColors.skyBlue,
-                      onTap: () => openPage('/company/jobs'),
+                      onTap: () => _openPage('/company/jobs'),
                     ),
                     const Gap(12),
                     _StatCard(
@@ -86,7 +132,7 @@ class CompanyDashboardScreen extends ConsumerWidget {
                       icon: Icons.check_circle_outline,
                       iconColor: NeoColors.inkSolid,
                       iconBgColor: NeoColors.freshMint,
-                      onTap: () => openPage('/company/jobs'),
+                      onTap: () => _openPage('/company/jobs'),
                     ),
                     const Gap(12),
                     _StatCard(
@@ -96,7 +142,7 @@ class CompanyDashboardScreen extends ConsumerWidget {
                       icon: Icons.people_outline,
                       iconColor: NeoColors.inkSolid,
                       iconBgColor: NeoColors.softLilac,
-                      onTap: () => openPage('/company/jobs'),
+                      onTap: () => _openPage('/company/jobs'),
                     ),
                     const Gap(12),
                     _StatCard(
@@ -106,7 +152,7 @@ class CompanyDashboardScreen extends ConsumerWidget {
                       icon: Icons.pending_actions_outlined,
                       iconColor: NeoColors.inkSolid,
                       iconBgColor: NeoColors.butterYellow,
-                      onTap: () => openPage('/company/jobs'),
+                      onTap: () => _openPage('/company/jobs'),
                     ),
                   ],
                 ),
@@ -122,7 +168,7 @@ class CompanyDashboardScreen extends ConsumerWidget {
               NeoButton(
                 variant: NeoButtonVariant.secondary,
                 isFullWidth: true,
-                onPressed: () => openPage('/company/jobs/new'),
+                onPressed: () => _openPage('/company/jobs/new'),
                 icon: const Icon(Icons.add, size: 18),
                 text: 'สร้างประกาศ',
               ),
@@ -130,7 +176,7 @@ class CompanyDashboardScreen extends ConsumerWidget {
               NeoButton(
                 variant: NeoButtonVariant.outline,
                 isFullWidth: true,
-                onPressed: () => openPage('/company/jobs'),
+                onPressed: () => _openPage('/company/jobs'),
                 icon: const Icon(Icons.format_list_bulleted, size: 18),
                 text: 'จัดการประกาศ',
               ),

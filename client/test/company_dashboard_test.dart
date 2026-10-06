@@ -1,5 +1,6 @@
 import 'package:client/core/error/app_exception.dart';
 import 'package:client/core/network/dio_client.dart';
+import 'package:client/core/router/company_shell.dart';
 import 'package:client/core/storage/token_storage.dart';
 import 'package:client/core/theme/app_theme.dart';
 import 'package:client/features/company_dashboard/domain/entities/company_dashboard_summary.dart';
@@ -68,6 +69,87 @@ void main() {
       for (final count in ['19', '11', '37', '23']) {
         expect(find.text(count), findsOneWidget);
       }
+    },
+  );
+
+  testWidgets(
+    'dashboard tab returns after opening the jobs page from a shortcut',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final router = GoRouter(
+        initialLocation: '/company/dashboard',
+        routes: [
+          StatefulShellRoute.indexedStack(
+            builder: (context, state, navigationShell) {
+              return CompanyShell(navigationShell: navigationShell);
+            },
+            branches: [
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/company/dashboard',
+                    builder: (_, _) => const CompanyDashboardScreen(),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/company/jobs',
+                    builder: (_, _) =>
+                        const Scaffold(body: Text('Manage Jobs Destination')),
+                  ),
+                ],
+              ),
+              StatefulShellBranch(
+                routes: [
+                  GoRoute(
+                    path: '/company/profile',
+                    builder: (_, _) => const Scaffold(body: Text('Profile')),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            companyDashboardRepositoryProvider.overrideWithValue(
+              _MockDashboardRepository(
+                summary: const CompanyDashboardSummary(
+                  totalJobs: 4,
+                  openJobs: 2,
+                  totalApplicants: 1,
+                ),
+              ),
+            ),
+          ],
+          child: MaterialApp.router(
+            theme: AppTheme.lightTheme,
+            routerConfig: router,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('จัดการประกาศ'), 200);
+      await tester.tap(find.text('จัดการประกาศ'));
+      await tester.pumpAndSettle();
+      expect(find.text('Manage Jobs Destination'), findsOneWidget);
+
+      await tester.tap(find.text('Jobs'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Dashboard'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('แดชบอร์ดบริษัท'), findsOneWidget);
+      expect(find.text('Manage Jobs Destination'), findsNothing);
+      expect(router.state.uri.path, '/company/dashboard');
     },
   );
 
