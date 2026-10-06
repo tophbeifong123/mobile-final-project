@@ -170,6 +170,8 @@ mobile-final-project/
 docker compose up -d
 ```
 
+อิมเมจเซิร์ฟเวอร์รัน migration ที่ค้างก่อนเปิด API ถ้า migration ล้มเหลวคอนเทนเนอร์จะไม่รับคำขอ
+
 ---
 
 ### 3. แอปมือถือ (`client/`)
