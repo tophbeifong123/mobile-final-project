@@ -6,7 +6,6 @@ import { RefreshToken } from './entities/refresh-token.entity.js';
 import { StudentProfile } from './entities/student-profile.entity.js';
 import { User } from './entities/user.entity.js';
 import { UserRole } from './user-role.js';
-import { isPasswordRecoveryEmailAllowed } from './password-recovery-email.js';
 
 export interface NewUser {
   email: string;
@@ -130,7 +129,7 @@ export class AuthRepository {
         where: { id: input.userId },
         lock: { mode: 'pessimistic_write' },
       });
-      if (!user || !isPasswordRecoveryEmailAllowed(user.email)) {
+      if (!user) {
         return false;
       }
       const previous = await manager.findOne(PasswordResetToken, {
@@ -167,8 +166,8 @@ export class AuthRepository {
         where: { id: candidate.userId },
         lock: { mode: 'pessimistic_write' },
       });
-      // Recheck under the user lock so an old link cannot bypass the current policy.
-      if (!user || !isPasswordRecoveryEmailAllowed(user.email)) {
+      // Ensure the owner still exists while holding the user lock.
+      if (!user) {
         return null;
       }
       const token = await manager.findOne(PasswordResetToken, {

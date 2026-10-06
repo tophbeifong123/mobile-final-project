@@ -140,7 +140,7 @@ Register รับ email, password และ role `student` หรือ `compan
 
 Access token อายุสั้น Refresh token หมุนทุกครั้งที่ใช้ และเก็บเป็นค่า hash Logout คือเพิกถอน refresh token
 
-Password recovery รองรับเฉพาะบัญชี `@email.psu.ac.th` และ `@psu.ac.th` ตรวจทั้งตอนขอลิงก์และตอนใช้ token รวมถึงตรวจซ้ำใต้ user lock เพื่อกันลิงก์เก่าของโดเมนอื่น ระบบส่งลิงก์ด้วย SMTP เก็บเฉพาะ SHA-256 ของ token ใน PostgreSQL ใช้ได้ครั้งเดียวภายใน 15 นาที รีเซ็ตรหัสผ่านและเพิกถอน refresh token ใน transaction เดียว พร้อมเพิ่ม `users.token_version` เพื่อยกเลิก access token เดิมทันที ไม่ขึ้นกับ Google Login รายละเอียด SMTP อยู่ใน [PASSWORD_RECOVERY.md](PASSWORD_RECOVERY.md)
+Password recovery รองรับอีเมลที่ใช้สมัครของ Student และ Company ทุกโดเมน DTO และ PasswordRecoveryService ตรวจรูปแบบอีเมล ไม่ตรวจโดเมนตอนขอลิงก์หรือตอนใช้ token อีเมลรูปแบบถูกต้องได้คำตอบเดียวกันไม่ว่าบัญชีมีอยู่หรือไม่ ระบบส่งลิงก์ไปยังอีเมลที่บันทึกไว้ด้วย SMTP เก็บเฉพาะ SHA-256 ของ token ใน PostgreSQL ใช้ได้ครั้งเดียวภายใน 15 นาที รีเซ็ตรหัสผ่านและเพิกถอน refresh token ใน transaction เดียวใต้ user/token lock พร้อมเพิ่ม `users.token_version` เพื่อยกเลิก access token เดิมทันที ไม่ขึ้นกับ Google Login รายละเอียด SMTP อยู่ใน [PASSWORD_RECOVERY.md](PASSWORD_RECOVERY.md)
 
 ### นักศึกษา
 
