@@ -3,6 +3,10 @@ import { Transform } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
+  IsInt,
+  IsNumber,
+  Min,
+  Max,
   IsEnum,
   IsOptional,
   IsString,
@@ -55,6 +59,35 @@ export class CreateJobDto {
   @ApiProperty({ example: true })
   @IsBoolean()
   hasAllowance: boolean;
+
+  @ApiPropertyOptional({
+    type: Number,
+    nullable: true,
+    minimum: 1,
+    maximum: 2147483647,
+    example: 3,
+    description: 'จำนวนรับ เป็นจำนวนเต็มบวก; ไม่ระบุหรือ null ได้',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(2147483647)
+  openings?: number | null;
+
+  @ApiPropertyOptional({
+    type: Number,
+    nullable: true,
+    minimum: 0,
+    maximum: 99999999.99,
+    example: 8000,
+    description:
+      'เบี้ยเลี้ยงเงินบาท ทศนิยมไม่เกิน 2 ตำแหน่ง; null ได้; hasAllowance=false ระบบล้างเป็น null',
+  })
+  @IsOptional()
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(99999999.99)
+  allowanceAmount?: number | null;
 
   @ApiProperty({ example: 'กำลังศึกษาอยู่และใช้ Flutter ได้' })
   @Transform(trimString)

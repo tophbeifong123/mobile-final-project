@@ -23,6 +23,10 @@ void main() {
   ];
 
   testWidgets('company creates an open job posting', (tester) async {
+    tester.view.physicalSize = const Size(390, 2000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     final repository = _FakeCompanyJobRepository();
     final router = GoRouter(
       initialLocation: '/company/jobs/new',
@@ -72,6 +76,34 @@ void main() {
       find.widgetWithText(TextFormField, 'คุณสมบัติ'),
       'ใช้ Flutter ได้',
     );
+    await tester.ensureVisible(find.byType(SwitchListTile));
+    await tester.tap(find.byType(SwitchListTile));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'จำนวนรับ (ไม่บังคับ)'),
+      '0',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'เบี้ยเลี้ยง (บาท, ไม่บังคับ)'),
+      '1.234',
+    );
+    await tester.ensureVisible(find.text('สร้างประกาศ').last);
+    await tester.tap(find.text('สร้างประกาศ').last);
+    await tester.pumpAndSettle();
+    expect(repository.lastPosting, isNull);
+    expect(find.text('ระบุจำนวนเต็มบวก ไม่เกิน 2147483647'), findsOneWidget);
+    expect(
+      find.text('ระบุ 0 ถึง 99999999.99 บาท ทศนิยมไม่เกิน 2 ตำแหน่ง'),
+      findsOneWidget,
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'จำนวนรับ (ไม่บังคับ)'),
+      '3',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'เบี้ยเลี้ยง (บาท, ไม่บังคับ)'),
+      '8000',
+    );
     await tester.ensureVisible(find.text('สร้างประกาศ').last);
     await tester.tap(find.text('สร้างประกาศ').last);
     await tester.pumpAndSettle();
@@ -79,11 +111,17 @@ void main() {
     expect(repository.lastPosting?.title, 'Flutter Intern');
     expect(repository.lastPosting?.province, 'สงขลา');
     expect(repository.lastPosting?.workMode, 'hybrid');
-    expect(repository.lastPosting?.hasAllowance, isFalse);
+    expect(repository.lastPosting?.hasAllowance, isTrue);
+    expect(repository.lastPosting?.openings, 3);
+    expect(repository.lastPosting?.allowanceAmount, 8000);
     expect(find.text('รายการประกาศ'), findsOneWidget);
   });
 
   testWidgets('company edits and deletes its own posting', (tester) async {
+    tester.view.physicalSize = const Size(390, 2000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     final repository = _FakeCompanyJobRepository();
     final router = GoRouter(
       initialLocation: '/company/jobs/job-1/edit',
@@ -122,12 +160,49 @@ void main() {
       find.widgetWithText(TextFormField, 'ชื่องาน'),
       'Backend Intern',
     );
+    expect(
+      tester
+          .widget<TextFormField>(
+            find.widgetWithText(TextFormField, 'จำนวนรับ (ไม่บังคับ)'),
+          )
+          .controller
+          ?.text,
+      '3',
+    );
+    expect(
+      tester
+          .widget<TextFormField>(
+            find.widgetWithText(TextFormField, 'เบี้ยเลี้ยง (บาท, ไม่บังคับ)'),
+          )
+          .controller
+          ?.text,
+      '8000.0',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'จำนวนรับ (ไม่บังคับ)'),
+      '4',
+    );
+    await tester.ensureVisible(find.byType(SwitchListTile));
+    await tester.tap(find.byType(SwitchListTile));
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<TextFormField>(
+            find.widgetWithText(TextFormField, 'เบี้ยเลี้ยง (บาท, ไม่บังคับ)'),
+          )
+          .controller
+          ?.text,
+      '',
+    );
     await tester.ensureVisible(find.text('บันทึกประกาศ'));
     await tester.tap(find.text('บันทึกประกาศ'));
     await tester.pumpAndSettle();
 
     expect(repository.lastPosting?.title, 'Backend Intern');
     expect(repository.lastVersion, 1);
+    expect(repository.lastPosting?.openings, 4);
+    expect(repository.lastPosting?.allowanceAmount, isNull);
+    expect(repository.lastPosting?.hasAllowance, isFalse);
     expect(find.text('รายการประกาศ'), findsOneWidget);
 
     router.go('/company/jobs/job-1/edit');
@@ -163,7 +238,9 @@ class _FakeCompanyJobRepository implements CompanyJobRepository {
       province: 'สงขลา',
       workMode: 'hybrid',
       category: 'IT',
-      hasAllowance: false,
+      hasAllowance: true,
+      openings: 3,
+      allowanceAmount: 8000,
       requirements: 'ใช้ Flutter ได้',
       status: 'open',
       version: 1,
@@ -186,6 +263,8 @@ class _FakeCompanyJobRepository implements CompanyJobRepository {
       workMode: posting.workMode,
       category: posting.category,
       hasAllowance: posting.hasAllowance,
+      openings: posting.openings,
+      allowanceAmount: posting.allowanceAmount,
       requirements: posting.requirements,
       status: 'open',
       version: version + 1,
