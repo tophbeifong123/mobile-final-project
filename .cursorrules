@@ -6,4 +6,4 @@
 
 - คง NestJS บน Express และ Swagger ที่ /api/docs
 - Role มี student กับ company เปลี่ยนทีหลังไม่ได้
-- ห้ามเพิ่มแชท นัดสัมภาษณ์ หรือฟีเจอร์ที่ REQUIREMENTS.md ตัดออก
+- ห้ามเพิ่มแชท นัดสัมภาษณ์ social login อื่นนอกจาก Google Login ที่อนุมัติ หรือฟีเจอร์ที่ REQUIREMENTS.md ตัดออก

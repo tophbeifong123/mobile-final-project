@@ -192,6 +192,11 @@ class _AuthRepository implements AuthRepository {
     required String password,
   }) async => throw UnimplementedError();
   @override
+  Future<bool> authenticateWithGoogle({
+    required String idToken,
+    UserRole? role,
+  }) async => throw UnimplementedError();
+  @override
   Future<AuthSession> register({
     required String email,
     required String password,
