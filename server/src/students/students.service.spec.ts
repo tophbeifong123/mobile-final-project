@@ -77,6 +77,24 @@ describe('StudentsService', () => {
     expect(result.resumeObjectKey).toBe('resumes/user-1/123.pdf');
   });
 
+  it.each([
+    ['  กิตติ  ', '  มหาวิทยาลัยสงขลานครินทร์  ', 'กิตติ', 'มหาวิทยาลัยสงขลานครินทร์'],
+    ['กิตติ', '', 'กิตติ', ''],
+    ['  ', '\t', '', ''],
+    ['', 'มหาวิทยาลัยสงขลานครินทร์', '', 'มหาวิทยาลัยสงขลานครินทร์'],
+  ])('returns saved identity without invented defaults (%s / %s)', async (fullName, university, expectedName, expectedUniversity) => {
+    repository.findByUserId.mockResolvedValue({
+      ...stored,
+      fullName,
+      universityId: null,
+      customUniversityName: university,
+    });
+    const result = await service.getMine(student);
+    expect(repository.findByUserId).toHaveBeenCalledWith(student.userId);
+    expect(result.fullName).toBe(expectedName);
+    expect(result.university).toBe(expectedUniversity);
+  });
+
   it('rejects a company reading a student profile', async () => {
     await expect(service.getMine(company)).rejects.toBeInstanceOf(
       ForbiddenException,

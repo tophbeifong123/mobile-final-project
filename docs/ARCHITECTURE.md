@@ -64,9 +64,10 @@ Prefix ของ API คือ `/api` ตาม `app.setGlobalPrefix('api')` ใ
 |---|---|
 | AuthModule | สมัคร, login, refresh, logout, forgot/reset password |
 | StudentsModule | โปรไฟล์นักศึกษาและ Resume |
-| CompaniesModule | โปรไฟล์บริษัท, logo, จังหวัดและหมุดสำนักงาน, ตัวเลขแดชบอร์ด |
-| ProvincesModule | มาสเตอร์จังหวัด 77 จังหวัด ชื่อเรียก และจุดกึ่งกลางสำหรับเปิดแผนที่ |
+| CompaniesModule | โปรไฟล์บริษัท, logo, จังหวัดและที่อยู่สั้น, ตัวเลขแดชบอร์ด |
+| ProvincesModule | มาสเตอร์จังหวัด 77 จังหวัดและชื่อเรียก |
 | UniversitiesModule | ค้นหามาสเตอร์สถาบันอุดมศึกษาไทยด้วยชื่อเต็มและ aliases |
+| MajorsModule | ค้นหามาสเตอร์สาขายอดนิยมเพื่อใช้เป็นคำแนะนำ |
 | JobsModule | ประกาศ, feed, บันทึกงาน, เปิดหรือปิดรับสมัคร |
 | ApplicationsModule | สมัครงาน, timeline, เปลี่ยนสถานะ |
 | NotificationsModule | แจ้งเตือนในแอปและ BullMQ worker |
@@ -124,7 +125,7 @@ Filter ของหน้า Home เป็น query ของ `GET /jobs` ไ�
 |---|---|---|
 | GET | /api/provinces | Company Profile, Create / Edit Job, Filter |
 
-ผลลัพธ์มีรหัสจังหวัด ชื่อมาตรฐาน ชื่อเรียกที่ค้นหาได้ และจุดกึ่งกลางสำหรับเปิดแผนที่ ไม่เรียกบริการค้นหาที่อยู่ภายนอก
+ผลลัพธ์มีรหัสจังหวัด ชื่อมาตรฐาน และชื่อเรียกที่ค้นหาได้ ไม่เรียกบริการค้นหาที่อยู่ภายนอก
 
 ### มหาวิทยาลัย
 
@@ -140,16 +141,19 @@ Filter ของหน้า Home เป็น query ของ `GET /jobs` ไ�
 |---|---|---|
 | POST | /api/auth/register | ยังไม่ login |
 | POST | /api/auth/login | ยังไม่ login |
+| POST | /api/auth/google | ยังไม่ login; ยืนยัน Google ID token และสมัคร/เข้าสู่ระบบ |
 | POST | /api/auth/refresh | มี refresh token |
 | POST | /api/auth/logout | login แล้ว |
 | POST | /api/auth/forgot-password | ยังไม่ login, ส่ง email เพื่อขอลิงก์ |
 | POST | /api/auth/reset-password | มีลิงก์ token ที่ยังไม่หมดอายุ |
 
-Register รับ email, password และ role `student` หรือ `company` role เปลี่ยนทีหลังไม่ได้
+Register รับ email/password หรือ Google ID token และ role student/company. role เปลี่ยนทีหลังไม่ได้.
+
+Google sign-in ใช้ POST /api/auth/google รับ { idToken, role? }. Backend ตรวจลายเซ็น, issuer, expiry, audience allowlist, sub, email และ email_verified ด้วย Google Auth Library. จำกัด endpoint นี้ 10 ครั้งต่อนาทีต่อ client IP ด้วย NestJS throttler. Google identity ผูกด้วย (provider, provider_subject) ไม่ใช่ email. บัญชีเดิมที่ผูก sub แล้วได้ session เดิม; ถ้า email ตรงบัญชี password ให้ตอบ 409 และไม่ผูกให้อัตโนมัติ. บัญชีใหม่ที่ไม่ส่ง role ตอบ 200 { code: role_required } โดยไม่สร้างข้อมูล; ส่ง role student/company แล้วสร้าง user, provider identity และ profile ใน transaction เดียว ก่อนออก session ปกติ. ถ้าชน unique ระหว่างสร้าง ให้ค้น identity/email ใหม่และตอบผลเดิมอย่างปลอดภัย.
 
 Access token อายุสั้น Refresh token หมุนทุกครั้งที่ใช้ และเก็บเป็นค่า hash Logout คือเพิกถอน refresh token
 
-Password recovery รองรับเฉพาะบัญชี `@email.psu.ac.th` และ `@psu.ac.th` ตรวจทั้งตอนขอลิงก์และตอนใช้ token รวมถึงตรวจซ้ำใต้ user lock เพื่อกันลิงก์เก่าของโดเมนอื่น ระบบส่งลิงก์ด้วย SMTP เก็บเฉพาะ SHA-256 ของ token ใน PostgreSQL ใช้ได้ครั้งเดียวภายใน 15 นาที รีเซ็ตรหัสผ่านและเพิกถอน refresh token ใน transaction เดียว พร้อมเพิ่ม `users.token_version` เพื่อยกเลิก access token เดิมทันที ไม่ขึ้นกับ Google Login รายละเอียด SMTP อยู่ใน [PASSWORD_RECOVERY.md](PASSWORD_RECOVERY.md)
+Password recovery รองรับอีเมลที่ใช้สมัครของ Student และ Company ทุกโดเมน DTO และ PasswordRecoveryService ตรวจรูปแบบอีเมล ไม่ตรวจโดเมนตอนขอลิงก์หรือตอนใช้ token อีเมลรูปแบบถูกต้องได้คำตอบเดียวกันไม่ว่าบัญชีมีอยู่หรือไม่ ระบบส่งลิงก์ไปยังอีเมลที่บันทึกไว้ด้วย SMTP เก็บเฉพาะ SHA-256 ของ token ใน PostgreSQL ใช้ได้ครั้งเดียวภายใน 15 นาที รีเซ็ตรหัสผ่านและเพิกถอน refresh token ใน transaction เดียวใต้ user/token lock พร้อมเพิ่ม `users.token_version` เพื่อยกเลิก access token เดิมทันที ไม่ขึ้นกับ Google Login รายละเอียด SMTP อยู่ใน [PASSWORD_RECOVERY.md](PASSWORD_RECOVERY.md)
 
 ### นักศึกษา
 
@@ -160,7 +164,7 @@ Password recovery รองรับเฉพาะบัญชี `@email.psu.a
 | GET | /api/students/me/resume/file | Resume Preview / Download |
 | GET | /api/jobs | Home / Job Feed |
 | GET | /api/jobs/:id | Job Detail |
-| GET | /api/jobs/:id/company-logo | โลโก้บริษัทบน Job Detail เฉพาะประกาศที่เปิดรับและนักศึกษาที่ login แล้ว |
+| GET | /api/jobs/:id/company-logo | โลโก้บริษัทบนฟีด รายละเอียดงาน และ Saved Jobs เฉพาะประกาศที่เปิดรับและนักศึกษาที่ login แล้ว |
 | POST, DELETE | /api/jobs/:id/save | Save จาก Job Detail |
 | GET | /api/jobs/saved | Saved Jobs |
 | POST | /api/jobs/:id/applications | Apply Job |
@@ -169,7 +173,7 @@ Password recovery รองรับเฉพาะบัญชี `@email.psu.a
 | GET | /api/notifications | Notifications |
 | GET | /api/notifications/stream | ช่อง SSE ของแจ้งเตือน |
 
-`GET /api/jobs` รับ `search`, `province`, `workMode`, `category`, `hasAllowance`, `skills` (กรองด้วย PostgreSQL array overlap operator) และคืนเฉพาะงานสถานะ `open`
+`GET /api/jobs` รับ `search`, `province`, `workMode`, `category` จากรายการเดียวกันกับตอนสร้างประกาศ, `hasAllowance`, `skills` (กรองด้วย PostgreSQL array overlap operator) และคืนเฉพาะงานสถานะ `open` ถ้าประกาศมีเบี้ยเลี้ยงต้องมี `allowanceAmount` เป็นบาท
 
 `PATCH /api/students/me` รับ `universityId` หรือ `customUniversityName` อย่างใดอย่างหนึ่ง. ละสองฟิลด์ไว้เพื่อคงเดิม, ส่งทั้งคู่ `null` เพื่อล้างค่า; response คืนสองฟิลด์นี้และ `university` ที่ derive เป็นชื่อเต็มสำหรับแสดง.
 
@@ -191,15 +195,20 @@ Flutter โหลดรายละเอียดใหม่เมื่อก
 | GET, PATCH | /api/companies/me | Company Profile |
 | POST | /api/companies/me/logo | อัปโหลด logo |
 | GET, POST | /api/company/jobs | Manage Jobs, Create Job |
-| GET, PATCH, DELETE | /api/company/jobs/:id | อ่าน แก้ หรือลบประกาศของบริษัทนี้ |
+| GET, PATCH, DELETE | /api/company/jobs/:id | อ่านรายละเอียดประกาศของบริษัทนี้พร้อมจำนวนผู้สมัคร ใบรอตรวจ และวันปิดรับ, แก้ หรือลบ |
 | PATCH | /api/company/jobs/:id/status | เปิดหรือปิดรับสมัคร |
 | GET | /api/company/jobs/:id/applications | Applicants List |
 | GET | /api/company/jobs/:id/applications/:applicationId | Applicant Detail |
+| GET | /api/company/jobs/:id/applications/:applicationId/resume | เปิด PDF สำเนาของใบสมัครในแอป เฉพาะบริษัทเจ้าของประกาศ |
 | PATCH | /api/company/jobs/:id/applications/:applicationId/status | เปลี่ยนสถานะผู้สมัคร |
 
 บริษัทเรียกได้เฉพาะประกาศและผู้สมัครของบริษัทตัวเอง ไม่เช่นนั้นตอบ 403
 
-`PATCH /api/companies/me` รับ `provinceId`, `location` (ที่อยู่สั้น), และ `latitude`/`longitude` เป็นคู่ พิกัดต้องมีจังหวัดก่อน และการเปลี่ยนจังหวัดโดยไม่ส่งพิกัดใหม่จะล้างหมุดเก่า แผนที่บนแอปใช้แผนที่เปิด ไม่ใช้ Google Maps key
+เส้นทาง Resume ตรวจ role บริษัท เจ้าของประกาศ และคู่ job/application ใน ApplicationsService ก่อนอ่าน storage จากคีย์ของใบสมัคร ไม่อ่าน Resume ล่าสุดจาก Student Profile ส่ง application/pdf แบบ inline พร้อม private, no-store และ nosniff; ไม่มีไฟล์ตอบ 404 และ storage ล้มเหลวตอบ 503 โดยไม่เปิดเผยรายละเอียดภายใน Flutter เปิด modal PDF อ่านอย่างเดียวโดยใช้ Dio พร้อม token ไม่เรียกเส้นทาง Resume ของนักศึกษา และยังอยู่หน้ารายละเอียดหลังปิดหรือโหลดล้มเหลว
+
+`GET /api/companies/me/dashboard` คืน `totalJobs`, `openJobs`, `totalApplicants` และ `pendingApplicants`. CompaniesService กำหนดสถานะรอตรวจเป็น `submitted` และ `reviewing`; repository นับใบสมัครผ่านประกาศของบริษัทนี้เท่านั้น รวมประกาศที่ปิดแล้วและไม่นับ timeline ซ้ำ. รายการประกาศของบริษัทใช้คำว่า `pendingApplicantCount` ในความหมายเดียวกัน. ไม่มีข้อมูลเป็น 0; query ล้มเหลวไม่แทนด้วย 0. Flutter แสดงตัวเลขเป็นสรุป แล้วแสดงประกาศที่รอตรวจกับฉบับร่างหรือประกาศที่ครบกำหนดภายใน 7 วันหรือเลยกำหนด เปิดหน้าใหม่โหลดใหม่ ดึงลงเพื่อ refresh และลองใหม่ได้เมื่อเกิดข้อผิดพลาด.
+
+`PATCH /api/companies/me` รับ `provinceId` และ `location` (ที่อยู่สั้น) ไม่รับพิกัดสำนักงาน
 
 `PATCH /api/companies/me` บันทึกเว็บไซต์ ขนาดองค์กร สวัสดิการ และที่อยู่ด้วยคอลัมน์เดิม เว็บไซต์ตรวจใน CompaniesService: ว่างได้ หรือ URL HTTP/HTTPS แบบเต็มที่ไม่มี credentials ค่าไม่ถูกต้องคืน 400 พร้อมเหตุผลโดยไม่บันทึกข้อมูลส่วนอื่น Swagger ระบุฟิลด์และกติกานี้ที่ `/api/docs`
 
@@ -225,6 +234,8 @@ Flutter โหลดรายละเอียดใหม่เมื่อก
 เมื่อสร้าง แก้ หรือปิดงาน ให้ `INCR jobs:feed:version` คีย์เก่าหลุดเองตาม TTL ไม่ลบคีย์ feed ทั้งก้อน
 
 ### แดชบอร์ดเป็น write-through
+
+API แดชบอร์ดปัจจุบันอ่านจำนวนจาก PostgreSQL โดยตรงทุก request ไม่ใช้ Redis counter; แผน write-through ด้านล่างเป็นแนวทางในอนาคตและต้องไม่ทำให้ยอดรอตรวจค้างหลังเปลี่ยนสถานะ.
 
 ตอนสร้างประกาศหรือมีใบสมัครใหม่ ให้ `INCR` ตัวเลขของบริษัทนั้นใน Redis คู่กับการเขียน PostgreSQL ถ้า Redis หาย ให้สร้างตัวเลขใหม่จากฐานข้อมูล แหล่งความจริงคือ PostgreSQL
 
@@ -273,8 +284,8 @@ Profile update ตรวจว่าเลือก ID ที่มีอยู�
 - `go_router` นำทางและตัดสินเส้นทางจาก token
 - `dio` เรียก API
 - `flutter_secure_storage` เก็บ access token และ refresh token
+- google_sign_in ขอ Google ID token บน Android; Web ใช้ GIS-rendered button และ client ID ใน web/index.html
 - `file_picker` เลือก Resume PDF และ logo
-- `flutter_map` และปลั๊กอินหมุดลากได้แสดงที่ตั้งสำนักงานบนแผนที่เปิด พร้อมเครดิต OpenStreetMap
 
 ไม่ใช้ GetX, Bloc หรือ `build_runner` กติกาธุรกิจอยู่ที่ API แอปไม่มีคลาส use case แยก
 
@@ -333,7 +344,7 @@ Dio ใน `auth_interceptor.dart` ใส่ access token และเมื่�
 
 ## 9. การสังเกตระบบและอิมเมจ
 
-`server/Dockerfile` คงสองสเตจจาก `node:22-alpine` แล้วรันด้วย user ที่ไม่ใช่ root
+`server/Dockerfile` คงสองสเตจจาก `node:22-alpine` แล้วรันด้วย user ที่ไม่ใช่ root คอนเทนเนอร์เริ่มที่ `docker-entrypoint.sh` ซึ่งรัน migration ที่ค้างก่อน แล้วจึง `exec` โปรเซส API ถ้า migration ล้มเหลวคอนเทนเนอร์จบและไม่เปิดรับคำขอ
 
 Log ใน request path เป็น JSON และมี request id ไม่ใช้ `console.log` เป็น log ของธุรกิจ
 
@@ -341,4 +352,4 @@ CORS เปิดให้แอปมือถือเรียกได้ต
 
 ## 10. นอกแบบนี้
 
-ไม่ทำแชท, นัดสัมภาษณ์, ยืนยัน email, login ด้วยโซเชียล, ถอนใบสมัคร, หน้าโปรไฟล์บริษัทแยก, Admin, push notification นอกแอป หรือการเปลี่ยน role หลังสมัคร
+ไม่ทำแชท, นัดสัมภาษณ์, ยืนยัน email, login ด้วย social provider อื่นนอกจาก Google, ถอนใบสมัคร, หน้าโปรไฟล์บริษัทแยก, Admin, push notification นอกแอป หรือการเปลี่ยน role หลังสมัคร. Google Login รองรับ Android และ Web สำหรับทดสอบ; iOS ยังไม่อยู่ในขอบเขตนี้.

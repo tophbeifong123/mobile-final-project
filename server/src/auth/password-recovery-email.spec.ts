@@ -1,34 +1,33 @@
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
-import { isPasswordRecoveryEmailAllowed } from './password-recovery-email.js';
+import { isPasswordRecoveryEmailValid } from './password-recovery-email.js';
 
-describe('Password recovery PSU email policy', () => {
+describe('Password recovery email format policy', () => {
   it.each([
     'student@email.psu.ac.th',
     'faculty@psu.ac.th',
     ' Student@EMAIL.PSU.AC.TH ',
     ' FACULTY@PSU.AC.TH ',
-  ])('allows the exact normalized PSU address %s', (email) => {
-    expect(isPasswordRecoveryEmailAllowed(email)).toBe(true);
+    'student@gmail.com',
+    'company@outlook.com',
+    'student+intern@example.com',
+    'student@department.psu.ac.th',
+  ])('allows any normalized valid address %s', (email) => {
+    expect(isPasswordRecoveryEmailValid(email)).toBe(true);
   });
 
   it.each([
-    'student@gmail.com',
-    'student@outlook.com',
-    'student@example.com',
-    'student@department.psu.ac.th',
-    'student@department.email.psu.ac.th',
-    'student@psu.ac.th.attacker.example',
-    'student@fakepsu.ac.th',
     'student@psu.ac.th.',
-    'student@emailpsu.ac.th',
+    'student name@example.com',
+    'student@example',
+    `${'a'.repeat(65)}@example.com`,
     'student@@psu.ac.th',
     '@psu.ac.th',
     '',
     'psu.ac.th',
-  ])('rejects an unapproved domain or malformed address %s', (email) => {
-    expect(isPasswordRecoveryEmailAllowed(email)).toBe(false);
+  ])('rejects a malformed address %s', (email) => {
+    expect(isPasswordRecoveryEmailValid(email)).toBe(false);
   });
 });
 
@@ -52,23 +51,16 @@ describe('ForgotPasswordDto input validation', () => {
 
   it.each([
     'student@gmail.com',
+    'company@outlook.com',
+    'student+intern@example.com',
     'student@department.psu.ac.th',
     'student@psu.ac.th.attacker.example',
   ])(
-    'rejects syntactically valid but unapproved email %s at the API boundary',
+    'accepts syntactically valid email %s at the API boundary regardless of domain',
     async (email) => {
       const dto = plainToInstance(ForgotPasswordDto, { email });
 
-      expect(await validate(dto)).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            property: 'email',
-            constraints: expect.objectContaining({
-              matches: expect.any(String),
-            }),
-          }),
-        ]),
-      );
+      expect(await validate(dto)).toEqual([]);
     },
   );
 

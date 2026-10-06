@@ -23,6 +23,7 @@ import '../widgets/feed_pagination_bar.dart';
 import '../widgets/feed_search_bar.dart';
 import '../widgets/feed_top_bar.dart';
 import '../widgets/job_filter_sheet.dart';
+import '../widgets/student_job_card.dart';
 
 class JobFeedScreen extends ConsumerStatefulWidget {
   const JobFeedScreen({super.key});
@@ -32,11 +33,11 @@ class JobFeedScreen extends ConsumerStatefulWidget {
 }
 
 class _JobFeedScreenState extends ConsumerState<JobFeedScreen> {
-  static const _filterModes = <({WorkMode? mode, String label})>[
+  static final _filterModes = <({WorkMode? mode, String label})>[
     (mode: null, label: 'ทั้งหมด'),
-    (mode: WorkMode.remote, label: 'Online'),
-    (mode: WorkMode.onSite, label: 'Onsite'),
-    (mode: WorkMode.hybrid, label: 'Hybrid'),
+    (mode: WorkMode.remote, label: workModeLabel(WorkMode.remote)),
+    (mode: WorkMode.onSite, label: workModeLabel(WorkMode.onSite)),
+    (mode: WorkMode.hybrid, label: workModeLabel(WorkMode.hybrid)),
   ];
 
   final _searchController = TextEditingController();
@@ -229,7 +230,17 @@ class _JobFeedScreenState extends ConsumerState<JobFeedScreen> {
 
             // Job Cards Stream
             Expanded(
-              child: _FeedList(feed: feed, filter: filter),
+              child: _FeedList(
+                feed: feed,
+                filter: filter,
+                onClear: () {
+                  _searchDebounce?.cancel();
+                  _searchController.clear();
+                  ref
+                      .read(jobsControllerProvider.notifier)
+                      .apply(const JobFilter());
+                },
+              ),
             ),
           ],
         ),
@@ -263,12 +274,12 @@ class _JobFeedScreenState extends ConsumerState<JobFeedScreen> {
     ref
         .read(jobsControllerProvider.notifier)
         .apply(
-          JobFilter(
+          current.copyWith(
             search: search ?? current.search,
-            province: current.province,
-            workMode: clearWorkMode ? null : workMode ?? current.workMode,
-            category: clearCategory ? null : category ?? current.category,
-            hasAllowance: current.hasAllowance,
+            workMode: workMode,
+            clearWorkMode: clearWorkMode,
+            category: category,
+            clearCategory: clearCategory,
             page: page ?? current.page,
           ),
         );
@@ -294,10 +305,15 @@ class _JobFeedScreenState extends ConsumerState<JobFeedScreen> {
 }
 
 class _FeedList extends ConsumerWidget {
-  const _FeedList({required this.feed, required this.filter});
+  const _FeedList({
+    required this.feed,
+    required this.filter,
+    required this.onClear,
+  });
 
-  final AsyncValue<List<Job>> feed;
+  final AsyncValue<JobPage> feed;
   final JobFilter filter;
+  final VoidCallback onClear;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -305,7 +321,7 @@ class _FeedList extends ConsumerWidget {
     final savedJobIds = savedJobs.map((s) => s.id).toSet();
 
     return feed.when(
-      skipLoadingOnReload: true,
+      skipLoadingOnReload: false,
       loading: () => Skeletonizer(
         enabled: true,
         child: ListView.separated(
@@ -331,88 +347,117 @@ class _FeedList extends ConsumerWidget {
           text: 'ลองอีกครั้ง',
         ),
       ),
-      data: (jobs) {
+      data: (page) {
+        final jobs = page.items;
         if (jobs.isEmpty) {
-          return EmptyState(
-            icon: LucideIcons.briefcase,
-            title: filter.hasCriteria
-                ? 'ไม่พบงานที่ตรงกับตัวกรอง'
-                : 'ยังไม่มีงานที่เปิดรับ',
-            message: filter.hasCriteria
-                ? 'ลองล้างตัวกรอง หรือเปลี่ยนคำค้น'
-                : 'เมื่อมีประกาศสถานะ Open จะเห็นชื่องาน บริษัท จังหวัด รูปแบบงาน หมวดงาน และเบี้ยเลี้ยง',
+          return RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(jobFeedProvider);
+              try {
+                await ref.read(jobFeedProvider.future);
+              } catch (_) {
+                /* Provider displays the error. */
+              }
+            },
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                EmptyState(
+                  icon: LucideIcons.briefcase,
+                  title: filter.hasCriteria
+                      ? 'ไม่พบงานที่ตรงกับตัวกรอง'
+                      : 'ยังไม่มีงานที่เปิดรับ',
+                  message: filter.hasCriteria
+                      ? 'ลองล้างตัวกรอง หรือเปลี่ยนคำค้น'
+                      : 'เมื่อมีประกาศสถานะ Open จะเห็นชื่องาน บริษัท จังหวัด รูปแบบงาน หมวดงาน และเบี้ยเลี้ยง',
+                  action: filter.hasCriteria
+                      ? AppButton(text: 'ล้างตัวกรอง', onPressed: onClear)
+                      : null,
+                ),
+              ],
+            ),
           );
         }
 
-        return ListView(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-          children: [
-            for (int i = 0; i < jobs.length; i++) ...[
-              if (i > 0) const Gap(12),
-              Builder(
-                builder: (context) {
-                  final job = jobs[i];
-                  final isSaved = savedJobIds.contains(job.id);
-                  return JobCard(
-                    title: job.title,
-                    companyName: job.companyName,
-                    province: job.province,
-                    details: [
-                      workModeLabel(job.workMode),
-                      job.category,
-                      allowanceLabel(job.hasAllowance),
-                    ],
-                    skills: job.skills,
-                    hasAllowance: job.hasAllowance,
-                    isSaved: isSaved,
-                    isNew: i == 0,
-                    onBookmarkTap: () async {
-                      final repository = ref.read(jobRepositoryProvider);
-                      try {
-                        if (isSaved) {
-                          await repository.unsave(job.id);
-                          ref.invalidate(savedJobsProvider);
-                          if (context.mounted) {
-                            AppToast.info(
-                              context,
-                              'ลบ "${job.title}" ออกจากรายการแล้ว',
-                            );
+        return RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(jobFeedProvider);
+            try {
+              await ref.read(jobFeedProvider.future);
+            } catch (_) {
+              /* Provider displays the error. */
+            }
+          },
+          child: ListView(
+            key: ValueKey(filter),
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+            children: [
+              Text(
+                'พบ ${page.total} ตำแหน่ง',
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+              const Gap(8),
+              for (int i = 0; i < jobs.length; i++) ...[
+                if (i > 0) const Gap(12),
+                Builder(
+                  builder: (context) {
+                    final job = jobs[i];
+                    final isSaved = savedJobIds.contains(job.id);
+                    return StudentJobCard(
+                      key: ValueKey(job.id),
+                      job: job,
+                      isSaved: isSaved,
+                      onBookmarkTap: () async {
+                        final repository = ref.read(jobRepositoryProvider);
+                        try {
+                          if (isSaved) {
+                            await repository.unsave(job.id);
+                            ref.invalidate(savedJobsProvider);
+                            if (context.mounted) {
+                              AppToast.info(
+                                context,
+                                'ลบ "${job.title}" ออกจากรายการแล้ว',
+                              );
+                            }
+                          } else {
+                            await repository.save(job.id);
+                            ref.invalidate(savedJobsProvider);
+                            if (context.mounted) {
+                              AppToast.success(
+                                context,
+                                'บันทึก "${job.title}" แล้ว',
+                              );
+                            }
                           }
-                        } else {
-                          await repository.save(job.id);
-                          ref.invalidate(savedJobsProvider);
+                        } catch (_) {
                           if (context.mounted) {
-                            AppToast.success(
+                            AppToast.error(
                               context,
-                              'บันทึก "${job.title}" แล้ว',
+                              'เกิดข้อผิดพลาด กรุณาลองอีกครั้ง',
                             );
                           }
                         }
-                      } catch (_) {
-                        if (context.mounted) {
-                          AppToast.error(
-                            context,
-                            'เกิดข้อผิดพลาด กรุณาลองอีกครั้ง',
-                          );
-                        }
-                      }
-                    },
-                    onTap: () => context.push('/student/jobs/${job.id}'),
-                  );
+                      },
+                      onTap: () => context.push('/student/jobs/${job.id}'),
+                    );
+                  },
+                ),
+              ],
+              // Pagination Bar
+              FeedPaginationBar(
+                currentPage: page.page,
+                totalItems: page.total,
+                totalPages: page.totalPages,
+                pageSize: page.limit,
+                onPageSelected: (page) {
+                  ref
+                      .read(jobsControllerProvider.notifier)
+                      .apply(filter.copyWith(page: page));
                 },
               ),
             ],
-            // Pagination Bar
-            FeedPaginationBar(
-              currentPage: filter.page,
-              totalItems: jobs.length,
-              onPageSelected: (page) {
-                ref
-                    .read(jobsControllerProvider.notifier)
-                    .apply(filter.copyWith(page: page));
-              },
-            ),
-          ],
+          ),
         );
       },
     );

@@ -18,4 +18,10 @@ export class CompanyDashboardSummaryDto {
     description: 'จำนวนผู้สมัครทั้งหมดในทุกประกาศของบริษัท',
   })
   totalApplicants: number;
+
+  @ApiProperty({
+    type: 'integer', minimum: 0, example: 7,
+    description: 'จำนวนใบสมัครที่รอตรวจ สถานะ submitted หรือ reviewing ในทุกประกาศของบริษัท (รวมประกาศที่ปิดแล้ว)',
+  })
+  pendingApplicants: number;
 }

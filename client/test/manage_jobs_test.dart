@@ -128,6 +128,11 @@ class _CompanyJobs implements CompanyJobRepository {
   }
 
   @override
+  Future<CompanyOwnedJob> fetchOwned(String jobId) {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<CreatedJob> create(JobPosting posting) {
     throw UnimplementedError();
   }

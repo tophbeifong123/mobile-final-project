@@ -370,10 +370,17 @@ export class ApplicationsRepository {
       major: student?.customMajorName ?? major?.nameTh ?? '',
       skills: Array.isArray(student?.skills) ? student.skills : [],
       bio: student?.bio ?? '',
-      contactLinks: Array.isArray(student?.contactLinks) ? student.contactLinks : [],
-      portfolioLinks: Array.isArray(student?.portfolioLinks) ? student.portfolioLinks : [],
+      contactLinks: Array.isArray(student?.contactLinks)
+        ? student.contactLinks
+        : [],
+      portfolioLinks: Array.isArray(student?.portfolioLinks)
+        ? student.portfolioLinks
+        : [],
       portfolioUrl: student?.portfolioUrl ?? null,
-      resumeFileName: student?.resumeFileName ?? null,
+      resumeFileName:
+        student?.resumeObjectKey === application.resumeObjectKey
+          ? (student.resumeFileName ?? null)
+          : 'Resume ที่ใช้สมัคร.pdf',
       avatarObjectKey: student?.avatarObjectKey ?? null,
       status: application.status,
       coverLetter: application.coverLetter,
@@ -471,4 +478,3 @@ export class ApplicationsRepository {
     });
   }
 }
-

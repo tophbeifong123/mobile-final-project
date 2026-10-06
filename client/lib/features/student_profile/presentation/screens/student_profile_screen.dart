@@ -37,7 +37,7 @@ class StudentProfileScreen extends ConsumerWidget {
         child: Column(
           children: [
             // Top App Bar
-            const FeedTopBar(subtitle: '7. โปรไฟล์นักศึกษา (Student Profile)'),
+            const FeedTopBar(),
 
             // Content Area
             Expanded(

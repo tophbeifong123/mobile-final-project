@@ -90,16 +90,20 @@ describe('PasswordRecoveryService', () => {
     return result;
   }
 
-  it('returns the same generic message for registered and unknown accounts', async () => {
-    const known = await request('student@email.psu.ac.th');
-    repository.findByEmail.mockResolvedValue(null);
-    const unknown = await request('unknown@email.psu.ac.th');
+  it.each(['email.psu.ac.th', 'psu.ac.th', 'gmail.com', 'outlook.com', 'example.com'])(
+    'returns the same generic message for registered and unknown accounts at %s',
+    async (domain) => {
+      repository.findByEmail.mockResolvedValue({ id: 'user-1', email: `known@${domain}` });
+      const known = await request(`known@${domain}`);
+      repository.findByEmail.mockResolvedValue(null);
+      const unknown = await request(`unknown@${domain}`);
 
-    expect(known).toEqual({ message: PASSWORD_RESET_REQUEST_MESSAGE });
-    expect(unknown).toEqual(known);
-    expect(repository.replacePasswordResetToken).toHaveBeenCalledTimes(1);
-    expect(mailer.sendResetLink).toHaveBeenCalledTimes(1);
-  });
+      expect(known).toEqual({ message: PASSWORD_RESET_REQUEST_MESSAGE });
+      expect(unknown).toEqual(known);
+      expect(repository.replacePasswordResetToken).toHaveBeenCalledTimes(1);
+      expect(mailer.sendResetLink).toHaveBeenCalledTimes(1);
+    },
+  );
 
   it('normalizes email and stores only the SHA-256 hash of a random token expiring in 15 minutes', async () => {
     await request(' Student@Email.Psu.Ac.Th ');
@@ -161,8 +165,8 @@ describe('PasswordRecoveryService', () => {
     expect(repository.findByEmail).not.toHaveBeenCalled();
   });
 
-  it.each(['student@email.psu.ac.th', 'faculty@psu.ac.th'])(
-    'allows the exact PSU recovery domain in %s',
+  it.each(['student@email.psu.ac.th', 'faculty@psu.ac.th', 'student@gmail.com', 'company@outlook.com', 'student@example.com', 'faculty@department.psu.ac.th'])(
+    'sends a link to the registered email regardless of domain: %s',
     async (email) => {
       repository.findByEmail.mockResolvedValue({ id: 'user-1', email });
 
@@ -178,15 +182,13 @@ describe('PasswordRecoveryService', () => {
   );
 
   it.each([
-    'student@gmail.com',
-    'student@outlook.com',
-    'student@example.com',
-    'student@department.psu.ac.th',
-    'student@department.email.psu.ac.th',
-    'student@psu.ac.th.attacker.example',
-    'student@fakepsu.ac.th',
+    'student@@example.com',
+    '@example.com',
+    'student@example',
+    'student name@example.com',
+    '',
   ])(
-    'rejects non-allowed recovery address %s before SMTP or account lookup',
+    'rejects malformed email %s before SMTP or account lookup',
     async (email) => {
       mailer.assertConfigured.mockImplementation(() => {
         throw new ServiceUnavailableException();
@@ -331,19 +333,19 @@ describe('PasswordRecoveryService', () => {
     );
   });
 
-  it.each(['student@gmail.com', 'faculty@department.psu.ac.th'])(
-    'rejects a valid token owned by %s before hashing or consumption',
+  it.each(['student@gmail.com', 'company@outlook.com', 'faculty@department.psu.ac.th'])(
+    'resets a valid token owned by any registered email: %s',
     async (email) => {
       repository.findById.mockResolvedValue({ id: 'user-1', email });
-
-      await expect(service.resetPassword(dto)).rejects.toBeInstanceOf(
-        BadRequestException,
+      repository.consumePasswordResetToken.mockResolvedValue({ status: 'consumed', email });
+      await expect(service.resetPassword(dto)).resolves.toEqual(
+        expect.objectContaining({ message: expect.any(String) }),
       );
       expect(repository.findById).toHaveBeenCalledWith('user-1');
       expect(passwords.verify).not.toHaveBeenCalled();
-      expect(passwords.hash).not.toHaveBeenCalled();
-      expect(repository.consumePasswordResetToken).not.toHaveBeenCalled();
-      expect(mailer.sendPasswordChanged).not.toHaveBeenCalled();
+      expect(passwords.hash).toHaveBeenCalledWith(dto.password);
+      expect(repository.consumePasswordResetToken).toHaveBeenCalledWith(tokenHash, 'secure-password-hash', expect.any(Function));
+      expect(mailer.sendPasswordChanged).toHaveBeenCalledWith(email);
     },
   );
 

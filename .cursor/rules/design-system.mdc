@@ -194,13 +194,10 @@ box-shadow: 1px 1px 0px #18181B;
 ### Part 3: Company / Recruiter Flow (6 Screens)
 
 #### 13. Company Dashboard
-- **Metric Cards (2x2 Grid):**
-  - *Active Roles* (`4`)
-  - *Applicants* (`38`)
-  - *Pending Review* (`9`)
-  - *Shortlisted* (`6`)
-- **Quick Action CTA:** "Post New Job" button.
-- **Recent Candidates List:** Direct access to review incoming applicants.
+- **Read-only metric tiles (2x2):** total jobs, open jobs, all applicants, pending review (`submitted` and `reviewing`).
+- **Needs review:** up to five jobs that still have pending applications. A row opens that job's applicant list.
+- **Needs attention:** up to five drafts, plus open jobs due within 7 days or overdue. A row opens the edit form.
+- **Empty company:** one "สร้างประกาศ" button. No shortcut menu and no applicant names.
 
 #### 14. Company Profile Screen
 - Company avatar, verified partner badge, industry tags, office location, official careers URL, and recruiter leads.

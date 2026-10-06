@@ -18,17 +18,28 @@ class JobsController extends Notifier<JobFilter> {
     return const JobFilter();
   }
 
-  void apply(JobFilter filter) => state = filter;
+  void apply(JobFilter filter) {
+    final criteriaChanged = filter.copyWith(page: 1) != state.copyWith(page: 1);
+    state = criteriaChanged ? filter.copyWith(page: 1) : filter;
+  }
 }
 
 final jobsControllerProvider = NotifierProvider<JobsController, JobFilter>(
   JobsController.new,
 );
 
-final jobFeedProvider = FutureProvider<List<Job>>((ref) {
+final jobFeedProvider = FutureProvider<JobPage>((ref) {
   final filter = ref.watch(jobsControllerProvider);
   return ref.watch(jobRepositoryProvider).fetchFeed(filter);
 });
+
+// Cards already have the availability flag; avoid fetching full job detail.
+// keepAlive so a save/unsave rebuild does not drop the logo and flash the letter.
+final jobCardLogoProvider = FutureProvider.autoDispose
+    .family<CompanyLogo?, String>((ref, id) {
+      ref.keepAlive();
+      return JobRemoteDataSource(ref.watch(dioProvider)).fetchCompanyLogo(id);
+    });
 
 final jobDetailProvider = FutureProvider.autoDispose.family<JobDetail, String>((
   ref,

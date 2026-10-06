@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/app_toast.dart';
+import '../../domain/entities/auth_session.dart';
 import '../providers/auth_controller.dart';
 import '../widgets/widgets.dart';
 
@@ -61,6 +62,129 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     AppToast.info(context, message);
   }
 
+  Widget _roleChoiceButton(
+    BuildContext dialogContext, {
+    required String label,
+    required UserRole role,
+  }) {
+    return SizedBox(
+      width: 104,
+      child: GestureDetector(
+        onTap: () => Navigator.pop(dialogContext, role),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+          decoration: BoxDecoration(
+            color: NeoColors.butterYellow,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: NeoColors.inkSolid, width: 2),
+            boxShadow: NeoShadows.elevation3,
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              color: NeoColors.inkSolid,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<UserRole?> _chooseGoogleRole() {
+    return showDialog<UserRole>(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 380),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 22),
+            decoration: BoxDecoration(
+              color: NeoColors.pureWhite,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: NeoColors.inkSolid, width: 2.5),
+              boxShadow: NeoShadows.elevation3,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'เลือกประเภทบัญชี',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: NeoColors.inkSolid,
+                  ),
+                ),
+                const Gap(8),
+                const Text(
+                  'เลือกบทบาทสำหรับบัญชีใหม่ บทบาทนี้เปลี่ยนภายหลังไม่ได้',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: NeoColors.subtleInk,
+                  ),
+                ),
+                const Gap(20),
+                Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _roleChoiceButton(
+                        context,
+                        label: 'นักศึกษา',
+                        role: UserRole.student,
+                      ),
+                      const Gap(12),
+                      _roleChoiceButton(
+                        context,
+                        label: 'บริษัท',
+                        role: UserRole.company,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _onGoogleIdToken(String idToken) async {
+    if (_submitting) return;
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
+    var result = await ref
+        .read(authControllerProvider.notifier)
+        .authenticateWithGoogle(idToken: idToken);
+    if (mounted && result.roleRequired) {
+      setState(() => _submitting = false);
+      final role = await _chooseGoogleRole();
+      if (role == null || !mounted) return;
+      setState(() => _submitting = true);
+      result = await ref
+          .read(authControllerProvider.notifier)
+          .authenticateWithGoogle(idToken: idToken, role: role);
+    }
+    if (!mounted) return;
+    setState(() {
+      _submitting = false;
+      _error = result.error;
+    });
+  }
+
   void _openPasswordRecovery() {
     if (_submitting) return;
     context.go(
@@ -81,7 +205,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         child: Column(
           children: [
             // Top App Bar
-            const AuthTopBar(title: 'เข้าสู่ระบบนักศึกษา'),
+            const AuthTopBar(title: 'เข้าสู่ระบบ InternFinder'),
 
             // Centered Scrollable Content
             Expanded(
@@ -122,12 +246,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                         // Email Field
                                         AuthTextField(
                                           controller: _emailController,
-                                          label: 'อีเมลนักศึกษา / มหาวิทยาลัย',
-                                          helperText:
-                                              'รหัสนักศึกษาหรืออีเมลมหาวิทยาลัย',
-                                          hintText: 'student@university.ac.th',
+                                          label: 'อีเมล',
+                                          helperText: 'อีเมลที่ใช้สมัครสมาชิก',
+                                          hintText: 'you@example.com',
                                           badgeColor: NeoColors.softLilac,
-                                          badgeIcon: Icons.school_outlined,
+                                          badgeIcon:
+                                              Icons.alternate_email_rounded,
                                           keyboardType:
                                               TextInputType.emailAddress,
                                           validator: (value) {
@@ -146,8 +270,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                         AuthTextField(
                                           controller: _passwordController,
                                           label: 'รหัสผ่าน',
-                                          helperText: 'ลืมรหัส PIN?',
-                                          onHelperTap: _openPasswordRecovery,
                                           hintText: '••••••••••••',
                                           badgeColor: NeoColors.skyBlue,
                                           badgeIcon: Icons.lock_outline_rounded,
@@ -314,12 +436,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                         Row(
                                           children: [
                                             Expanded(
-                                              child: AuthSocialButton(
-                                                label: 'Google',
-                                                icon: const GoogleGIcon(),
-                                                onTap: () => _showNotice(
-                                                  'ระบบเข้าสู่ระบบด้วย Google จะเปิดให้บริการในเร็วๆ นี้',
-                                                ),
+                                              child: GoogleSignInButton(
+                                                onIdToken: _onGoogleIdToken,
+                                                onError: (message) {
+                                                  if (mounted) {
+                                                    setState(() {
+                                                      _submitting = false;
+                                                      _error = message;
+                                                    });
+                                                  }
+                                                },
                                               ),
                                             ),
                                             const Gap(12),
