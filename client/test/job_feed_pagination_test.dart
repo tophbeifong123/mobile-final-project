@@ -165,7 +165,7 @@ void main() {
                     title: long,
                     companyName: long,
                     province: long,
-                    details: [long, 'Remote'],
+                    details: [long, 'Online'],
                     createdAt: DateTime.now(),
                   ),
                 ),
@@ -249,7 +249,7 @@ void main() {
       );
       await tester.tap(find.byTooltip('หน้าถัดไป'));
       await tester.pumpAndSettle();
-      await tester.tap(find.widgetWithText(FilterChip, 'Remote'));
+      await tester.tap(find.widgetWithText(FilterChip, 'Online'));
       await tester.pumpAndSettle();
       expect(repository.filters.last.page, 1);
       expect(repository.filters.last.workMode, WorkMode.remote);
@@ -288,7 +288,7 @@ void main() {
         expect(find.byType(StudentJobCard), findsWidgets);
         expect(find.bySemanticsLabel('โลโก้บริษัท Company'), findsWidgets);
         final card = tester.widget<JobCard>(find.byType(JobCard).first);
-        expect(card.details, ['IT', 'Remote']);
+        expect(card.details, ['IT', 'Online']);
         expect(card.createdAt, isNotNull);
         expect(card.hasAllowance, false);
         expect(find.text('ใหม่'), findsNothing);

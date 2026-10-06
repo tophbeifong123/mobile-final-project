@@ -10,6 +10,7 @@ import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/app_toast.dart';
 import '../../../../core/widgets/company_top_bar.dart';
 import '../../../../core/widgets/neo_button.dart';
+import '../../../jobs/presentation/job_labels.dart';
 import '../../domain/entities/company_job.dart';
 import '../providers/company_jobs_controller.dart';
 
@@ -18,7 +19,6 @@ import '../providers/company_jobs_controller.dart';
 enum _FilterTab {
   all('ทั้งหมด', null),
   open('เปิดรับสมัคร', 'open'),
-  draft('ฉบับร่าง', 'draft'),
   closed('ปิดรับสมัคร', 'closed');
 
   const _FilterTab(this.label, this.statusValue);
@@ -51,6 +51,7 @@ class _ManageJobsScreenState extends ConsumerState<ManageJobsScreen> {
           children: [
             _JobSummary(jobsAsync: jobsAsync),
             _FilterTabBar(
+              jobsAsync: jobsAsync,
               selected: _selectedTab,
               onSelect: (tab) => setState(() => _selectedTab = tab),
             ),
@@ -73,15 +74,17 @@ class _JobSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final count = jobsAsync.asData?.value.length ?? 0;
+    final jobs = jobsAsync.asData?.value;
+    if (jobs == null) return const SizedBox(height: 12);
+    final openCount = jobs.where((job) => job.status == 'open').length;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       child: Text(
-        'ประกาศทั้งหมด $count ตำแหน่ง — สร้าง แก้ไข และจัดการประกาศงานของบริษัทคุณ',
+        'ทั้งหมด ${jobs.length} ตำแหน่ง · เปิดรับ $openCount',
         style: const TextStyle(
           fontSize: 13,
           color: NeoColors.subtleInk,
-          fontWeight: FontWeight.w500,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
@@ -91,60 +94,99 @@ class _JobSummary extends StatelessWidget {
 // ── Filter Tab Bar ────────────────────────────────────────────────────────────
 
 class _FilterTabBar extends StatelessWidget {
-  const _FilterTabBar({required this.selected, required this.onSelect});
+  const _FilterTabBar({
+    required this.jobsAsync,
+    required this.selected,
+    required this.onSelect,
+  });
+
+  final AsyncValue<List<CompanyJob>> jobsAsync;
   final _FilterTab selected;
   final ValueChanged<_FilterTab> onSelect;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: NeoColors.surfaceCream,
-        border: Border.symmetric(
-          horizontal: BorderSide(color: NeoColors.inkSolid, width: 1.5),
-        ),
+    final jobs = jobsAsync.asData?.value;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+      child: Row(
+        children: [
+          for (var index = 0; index < _FilterTab.values.length; index++) ...[
+            if (index > 0) const Gap(8),
+            Expanded(
+              child: _FilterSegment(
+                tab: _FilterTab.values[index],
+                count: jobs == null
+                    ? null
+                    : _countFor(_FilterTab.values[index], jobs),
+                selected: selected == _FilterTab.values[index],
+                onTap: () => onSelect(_FilterTab.values[index]),
+              ),
+            ),
+          ],
+        ],
       ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Row(
-          children: _FilterTab.values.map((tab) {
-            final isActive = selected == tab;
-            return Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: GestureDetector(
-                onTap: () => onSelect(tab),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 150),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isActive ? NeoColors.inkSolid : NeoColors.pureWhite,
-                    border: Border.all(color: NeoColors.inkSolid, width: 1.8),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: isActive
-                        ? null
-                        : const [
-                            BoxShadow(
-                              color: NeoColors.inkSolid,
-                              offset: Offset(1.5, 1.5),
-                            ),
-                          ],
-                  ),
-                  child: Text(
-                    tab.label,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: isActive ? Colors.white : NeoColors.inkSolid,
-                    ),
-                  ),
+    );
+  }
+
+  int _countFor(_FilterTab tab, List<CompanyJob> jobs) {
+    if (tab.statusValue == null) return jobs.length;
+    return jobs.where((job) => job.status == tab.statusValue).length;
+  }
+}
+
+class _FilterSegment extends StatelessWidget {
+  const _FilterSegment({
+    required this.tab,
+    required this.count,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final _FilterTab tab;
+  final int? count;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? NeoColors.inkSolid : NeoColors.pureWhite,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: NeoColors.inkSolid, width: 1.8),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: SizedBox(
+          height: 48,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                tab.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                  color: selected ? Colors.white : NeoColors.inkSolid,
                 ),
               ),
-            );
-          }).toList(),
+              if (count != null)
+                Text(
+                  '$count',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: selected
+                        ? NeoColors.butterYellow
+                        : NeoColors.subtleInk,
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -172,13 +214,11 @@ class _JobListBody extends ConsumerWidget {
           return _EmptyState(noJobsAtAll: items.isEmpty);
         }
         return ListView.separated(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-          itemCount: filtered.length + 1,
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          itemCount: filtered.length,
           separatorBuilder: (_, _) => const Gap(12),
-          itemBuilder: (context, index) {
-            if (index == filtered.length) return const _RecruiterTipCard();
-            return _CompanyJobCard(job: filtered[index]);
-          },
+          itemBuilder: (context, index) =>
+              _CompanyJobCard(job: filtered[index]),
         );
       },
     );
@@ -351,166 +391,92 @@ class _CompanyJobCardState extends ConsumerState<_CompanyJobCard> {
     }
   }
 
-  Future<void> _delete() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('ลบประกาศ?'),
-        content: Text(
-          'ต้องการลบ "${widget.job.title}" หรือไม่? การกระทำนี้ไม่สามารถยกเลิกได้',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('ยกเลิก'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: TextButton.styleFrom(foregroundColor: NeoColors.errorText),
-            child: const Text('ลบ'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
-    setState(() => _isLoading = true);
-    try {
-      await ref
-          .read(companyJobsControllerProvider.notifier)
-          .remove(widget.job.id);
-      if (mounted) AppToast.info(context, 'ลบประกาศแล้ว');
-    } catch (e) {
-      if (mounted) AppToast.error(context, userVisibleError(e));
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final job = widget.job;
-    final isDraft = job.status == 'draft';
     final isOpen = job.status == 'open';
-
-    final badgeColor = isDraft
-        ? NeoColors.pastelCoral
-        : isOpen
-        ? NeoColors.freshMint
-        : NeoColors.skyBlue;
-    final statusLabel = isDraft
-        ? 'ฉบับร่าง'
-        : isOpen
-        ? 'เปิดรับสมัคร'
-        : 'ปิดรับสมัคร';
+    final statusLabel = isOpen ? 'เปิดรับสมัคร' : 'ปิดรับสมัคร';
 
     return Container(
       decoration: BoxDecoration(
-        color: isDraft ? NeoColors.surfaceCream : NeoColors.pureWhite,
-        border: Border.all(
-          color: NeoColors.inkSolid,
-          width: isDraft ? 2.0 : 2.5,
-        ),
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: isDraft ? NeoShadows.elevation1 : NeoShadows.elevation2,
+        color: NeoColors.pureWhite,
+        border: Border.all(color: NeoColors.inkSolid, width: 2.2),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: NeoShadows.elevation2,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: GestureDetector(
-                    onTap: () => context.push('/company/jobs/${job.id}'),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(14, 14, 14, 0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _StatusBadge(
-                                label: statusLabel,
-                                color: badgeColor,
-                              ),
-                              const Gap(6),
-                              Text(
-                                job.title,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w800,
-                                  color: NeoColors.inkSolid,
-                                  height: 1.25,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Gap(10),
-                        if (!isDraft)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 14),
-                            child: Wrap(
-                              spacing: 6,
-                              runSpacing: 6,
-                              children: [
-                                _MetaTag(
-                                  icon: LucideIcons.monitor,
-                                  label: _workModeLabel(job.workMode),
-                                ),
-                                if (job.deadline != null)
-                                  _MetaTag(
-                                    icon: LucideIcons.calendarDays,
-                                    label:
-                                        'ถึง ${_formatDeadline(job.deadline!)}',
-                                  ),
-                              ],
-                            ),
-                          ),
-                        if (!isDraft) const Gap(10),
-                        if (!isDraft)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 14),
-                            child: _ApplicantRibbon(
-                              applicantCount: job.applicantCount,
-                              pendingCount: job.pendingApplicantCount,
-                            ),
-                          )
-                        else
-                          const Padding(
-                            padding: EdgeInsets.fromLTRB(14, 0, 14, 0),
-                            child: _DraftApplicantBadge(),
-                          ),
-                        const Gap(12),
-                      ],
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    _StatusBadge(
+                      label: statusLabel,
+                      color: isOpen
+                          ? NeoColors.freshMint
+                          : NeoColors.surfaceCream,
                     ),
+                    const Spacer(),
+                    _StatusAction(
+                      label: isOpen ? 'ปิดรับ' : 'เปิดรับ',
+                      isLoading: _isLoading,
+                      onPressed: () =>
+                          _changeStatus(isOpen ? 'closed' : 'open'),
+                    ),
+                  ],
+                ),
+                const Gap(8),
+                InkWell(
+                  onTap: () => context.push('/company/jobs/${job.id}'),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        job.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: NeoColors.inkSolid,
+                          height: 1.25,
+                        ),
+                      ),
+                      const Gap(8),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          _MetaTag(
+                            icon: LucideIcons.monitor,
+                            label: workModeLabelFromApi(job.workMode),
+                          ),
+                          if (job.deadline != null)
+                            _MetaTag(
+                              icon: LucideIcons.calendarDays,
+                              label: 'ถึง ${_formatDeadline(job.deadline!)}',
+                            ),
+                        ],
+                      ),
+                      const Gap(10),
+                      _ApplicantLine(
+                        applicantCount: job.applicantCount,
+                        pendingCount: job.pendingApplicantCount,
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              if (!isDraft)
-                Padding(
-                  padding: const EdgeInsets.only(top: 14, right: 14),
-                  child: _MoreMenuButton(
-                    isOpen: isOpen,
-                    isLoading: _isLoading,
-                    onToggle: () => _changeStatus(isOpen ? 'closed' : 'open'),
-                  ),
-                ),
-            ],
+              ],
+            ),
           ),
-          const Divider(height: 1, thickness: 1, color: NeoColors.inkSolid),
+          const Divider(height: 1, thickness: 1.5, color: NeoColors.inkSolid),
           Padding(
             padding: const EdgeInsets.all(10),
-            child: isDraft
-                ? _DraftActions(
-                    isLoading: _isLoading,
-                    onDelete: _delete,
-                    jobId: job.id,
-                  )
-                : _ActiveActions(isLoading: _isLoading, jobId: job.id),
+            child: _ActiveActions(jobId: job.id),
           ),
         ],
       ),
@@ -582,156 +548,108 @@ class _MetaTag extends StatelessWidget {
   }
 }
 
-class _ApplicantRibbon extends StatelessWidget {
-  const _ApplicantRibbon({
+class _ApplicantLine extends StatelessWidget {
+  const _ApplicantLine({
     required this.applicantCount,
     required this.pendingCount,
   });
+
   final int applicantCount;
   final int pendingCount;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: NeoColors.butterYellow,
-        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
-        borderRadius: BorderRadius.circular(6),
-        boxShadow: const [
-          BoxShadow(color: NeoColors.inkSolid, offset: Offset(1.5, 1.5)),
-        ],
-      ),
-      child: Row(
-        children: [
-          const Icon(LucideIcons.users, size: 16, color: NeoColors.inkSolid),
-          const Gap(8),
-          Expanded(
-            child: Text(
-              'ผู้สมัครทั้งหมด $applicantCount คน',
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: NeoColors.inkSolid,
-              ),
-            ),
-          ),
-          if (pendingCount > 0)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: NeoColors.inkSolid,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                '$pendingCount รอพิจารณา',
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DraftApplicantBadge extends StatelessWidget {
-  const _DraftApplicantBadge();
-
-  @override
-  Widget build(BuildContext context) {
     return Row(
       children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: NeoColors.surfaceCream,
-            border: Border.all(color: NeoColors.mutedInk, width: 1.2),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(LucideIcons.users, size: 13, color: NeoColors.mutedInk),
-              Gap(4),
-              Text(
-                '0 ผู้สมัคร',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: NeoColors.mutedInk,
-                ),
-              ),
-            ],
+        const Icon(LucideIcons.users, size: 16, color: NeoColors.inkSolid),
+        const Gap(6),
+        Expanded(
+          child: Text(
+            'ผู้สมัครทั้งหมด $applicantCount คน',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: NeoColors.inkSolid,
+            ),
           ),
         ),
+        if (pendingCount > 0) ...[
+          const Gap(8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+            decoration: BoxDecoration(
+              color: NeoColors.butterYellow,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: NeoColors.inkSolid, width: 1.4),
+            ),
+            child: Text(
+              '$pendingCount รอตรวจ',
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w800,
+                color: NeoColors.inkSolid,
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }
 }
 
-class _MoreMenuButton extends StatelessWidget {
-  const _MoreMenuButton({
-    required this.isOpen,
+class _StatusAction extends StatelessWidget {
+  const _StatusAction({
+    required this.label,
     required this.isLoading,
-    required this.onToggle,
+    required this.onPressed,
   });
-  final bool isOpen;
+
+  final String label;
   final bool isLoading;
-  final VoidCallback onToggle;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<String>(
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(),
-      enabled: !isLoading,
-      onSelected: (value) {
-        if (value == 'toggle') onToggle();
-      },
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          color: NeoColors.pureWhite,
-          border: Border.all(color: NeoColors.inkSolid, width: 1.5),
-          borderRadius: BorderRadius.circular(6),
-          boxShadow: const [
-            BoxShadow(color: NeoColors.inkSolid, offset: Offset(1.5, 1.5)),
-          ],
-        ),
-        child: const Icon(
-          LucideIcons.ellipsisVertical,
-          size: 16,
-          color: NeoColors.inkSolid,
-        ),
+    return Material(
+      color: NeoColors.pureWhite,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+        side: const BorderSide(color: NeoColors.inkSolid, width: 1.8),
       ),
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          value: 'toggle',
-          child: Row(
-            children: [
-              Icon(
-                isOpen ? LucideIcons.x : LucideIcons.check,
-                size: 16,
-                color: NeoColors.inkSolid,
-              ),
-              const Gap(8),
-              Text(isOpen ? 'ปิดรับสมัคร' : 'เปิดรับสมัครอีกครั้ง'),
-            ],
+      child: InkWell(
+        onTap: isLoading ? null : onPressed,
+        borderRadius: BorderRadius.circular(10),
+        child: SizedBox(
+          height: 36,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Center(
+              child: isLoading
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(
+                      label,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: NeoColors.inkSolid,
+                      ),
+                    ),
+            ),
           ),
         ),
-      ],
+      ),
     );
   }
 }
 
 class _ActiveActions extends StatelessWidget {
-  const _ActiveActions({required this.isLoading, required this.jobId});
-  final bool isLoading;
+  const _ActiveActions({required this.jobId});
   final String jobId;
 
   @override
@@ -743,7 +661,7 @@ class _ActiveActions extends StatelessWidget {
             variant: NeoButtonVariant.outline,
             text: 'แก้ไข',
             icon: const Icon(LucideIcons.pencil, size: 16),
-            isLoading: isLoading,
+            height: 44,
             onPressed: () => context.push('/company/jobs/$jobId/edit'),
           ),
         ),
@@ -753,111 +671,11 @@ class _ActiveActions extends StatelessWidget {
             variant: NeoButtonVariant.secondary,
             text: 'ผู้สมัคร',
             icon: const Icon(LucideIcons.users, size: 16),
-            isLoading: isLoading,
+            height: 44,
             onPressed: () => context.push('/company/jobs/$jobId/applicants'),
           ),
         ),
       ],
-    );
-  }
-}
-
-class _DraftActions extends StatelessWidget {
-  const _DraftActions({
-    required this.isLoading,
-    required this.onDelete,
-    required this.jobId,
-  });
-  final bool isLoading;
-  final VoidCallback onDelete;
-  final String jobId;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        NeoButton(
-          variant: NeoButtonVariant.destructive,
-          text: 'ลบ',
-          icon: const Icon(LucideIcons.trash2, size: 16),
-          isLoading: isLoading,
-          onPressed: onDelete,
-        ),
-        const Gap(8),
-        Expanded(
-          child: NeoButton(
-            variant: NeoButtonVariant.primary,
-            text: 'แก้ไขต่อ & เผยแพร่',
-            icon: const Icon(LucideIcons.send, size: 16),
-            isLoading: isLoading,
-            onPressed: () => context.push('/company/jobs/$jobId/edit'),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ── Recruiter Tip Card ────────────────────────────────────────────────────────
-
-class _RecruiterTipCard extends StatelessWidget {
-  const _RecruiterTipCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: NeoColors.butterYellow,
-        border: Border.all(color: NeoColors.inkSolid, width: 2),
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: NeoShadows.elevation1,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: NeoColors.pureWhite,
-              border: Border.all(color: NeoColors.inkSolid, width: 1.5),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: const Icon(
-              LucideIcons.lightbulb,
-              size: 18,
-              color: NeoColors.inkSolid,
-            ),
-          ),
-          const Gap(12),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Recruiter Tip',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: NeoColors.inkSolid,
-                  ),
-                ),
-                Gap(4),
-                Text(
-                  'ประกาศที่มีข้อมูลครบถ้วนได้รับผู้สมัครมากกว่า 3 เท่า '
-                  'ลองเพิ่มทักษะที่ต้องการและวันสิ้นสุดการรับสมัครให้ครบนะ!',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: NeoColors.inkSolid,
-                    height: 1.4,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -889,7 +707,7 @@ class _JobSkeletonList extends StatelessWidget {
               Gap(8),
               Text('ตำแหน่งงานตัวอย่าง Flutter Developer Intern'),
               Gap(8),
-              Text('ออนไซต์ · ถึง 31 ธ.ค. 2568'),
+              Text('On-site · ถึง 31 ธ.ค. 2568'),
               Gap(8),
               Text('ผู้สมัครทั้งหมด 0 คน'),
             ],
@@ -901,19 +719,6 @@ class _JobSkeletonList extends StatelessWidget {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-String _workModeLabel(String workMode) {
-  switch (workMode) {
-    case 'on_site':
-      return 'ออนไซต์';
-    case 'hybrid':
-      return 'ไฮบริด';
-    case 'remote':
-      return 'รีโมต';
-    default:
-      return workMode;
-  }
-}
 
 String _formatDeadline(DateTime deadline) {
   const months = [

@@ -16,6 +16,7 @@ import '../../../../core/widgets/job_card.dart';
 import '../../../saved_jobs/presentation/providers/saved_jobs_controller.dart';
 import '../../../student_profile/presentation/providers/student_profile_controller.dart';
 import '../../domain/entities/job.dart';
+import '../job_labels.dart';
 import '../providers/jobs_controller.dart';
 import '../widgets/feed_greeting_header.dart';
 import '../widgets/feed_pagination_bar.dart';
@@ -32,11 +33,11 @@ class JobFeedScreen extends ConsumerStatefulWidget {
 }
 
 class _JobFeedScreenState extends ConsumerState<JobFeedScreen> {
-  static const _filterModes = <({WorkMode? mode, String label})>[
+  static final _filterModes = <({WorkMode? mode, String label})>[
     (mode: null, label: 'ทั้งหมด'),
-    (mode: WorkMode.remote, label: 'Remote'),
-    (mode: WorkMode.onSite, label: 'On-site'),
-    (mode: WorkMode.hybrid, label: 'Hybrid'),
+    (mode: WorkMode.remote, label: workModeLabel(WorkMode.remote)),
+    (mode: WorkMode.onSite, label: workModeLabel(WorkMode.onSite)),
+    (mode: WorkMode.hybrid, label: workModeLabel(WorkMode.hybrid)),
   ];
 
   final _searchController = TextEditingController();
@@ -404,6 +405,7 @@ class _FeedList extends ConsumerWidget {
                     final job = jobs[i];
                     final isSaved = savedJobIds.contains(job.id);
                     return StudentJobCard(
+                      key: ValueKey(job.id),
                       job: job,
                       isSaved: isSaved,
                       onBookmarkTap: () async {

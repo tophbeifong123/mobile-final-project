@@ -34,8 +34,10 @@ final jobFeedProvider = FutureProvider<JobPage>((ref) {
 });
 
 // Cards already have the availability flag; avoid fetching full job detail.
+// keepAlive so a save/unsave rebuild does not drop the logo and flash the letter.
 final jobCardLogoProvider = FutureProvider.autoDispose
     .family<CompanyLogo?, String>((ref, id) {
+      ref.keepAlive();
       return JobRemoteDataSource(ref.watch(dioProvider)).fetchCompanyLogo(id);
     });
 

@@ -16,6 +16,7 @@ import '../../../../core/widgets/skill_picker_sheet.dart';
 import '../../../jobs/domain/entities/job.dart';
 import '../../../jobs/presentation/job_categories.dart';
 import '../../../jobs/presentation/job_labels.dart';
+import '../../../jobs/presentation/widgets/job_category_picker.dart';
 import '../../domain/entities/company_job.dart';
 import '../providers/company_jobs_controller.dart';
 
@@ -79,6 +80,7 @@ class _JobFormState extends ConsumerState<_JobForm> {
   late final TextEditingController _allowanceAmountController;
   late WorkMode _workMode;
   late String _category;
+  late final TextEditingController _categoryController;
   late bool _hasAllowance;
   late final TextEditingController _openingsController;
   late int _version;
@@ -107,6 +109,7 @@ class _JobFormState extends ConsumerState<_JobForm> {
     );
     _workMode = job == null ? WorkMode.hybrid : workModeFromApi(job.workMode);
     _category = isJobCategory(job?.category ?? '') ? job!.category : '';
+    _categoryController = TextEditingController(text: _category);
     _hasAllowance = job?.hasAllowance ?? false;
     _openingsController = TextEditingController(
       text: job?.openings?.toString() ?? '',
@@ -123,6 +126,7 @@ class _JobFormState extends ConsumerState<_JobForm> {
     _requirementsController.dispose();
     _openingsController.dispose();
     _allowanceAmountController.dispose();
+    _categoryController.dispose();
     super.dispose();
   }
 
@@ -164,10 +168,22 @@ class _JobFormState extends ConsumerState<_JobForm> {
         enabled: !_busy,
         onChanged: (value) => setState(() => _workMode = value),
       ),
-      category: _CategoryPicker(
-        value: _category,
-        enabled: !_busy,
-        onChanged: (value) => setState(() => _category = value),
+      category: InkWell(
+        key: const Key('job-category-picker'),
+        onTap: _busy ? null : _openCategoryPicker,
+        child: IgnorePointer(
+          child: _field(
+            fieldKey: const Key('job-category-field'),
+            controller: _categoryController,
+            label: 'หมวดงาน',
+            hintText: 'เลือกจากรายการหมวดงาน',
+            readOnly: true,
+            prefixIcon: const Icon(LucideIcons.tag, size: 18),
+            suffixIcon: const Icon(Icons.keyboard_arrow_down),
+            validator: (value) =>
+                isJobCategory(value ?? '') ? null : 'เลือกหมวดงาน',
+          ),
+        ),
       ),
       openings: _field(
         fieldKey: const Key('job-openings-field'),
@@ -334,6 +350,18 @@ class _JobFormState extends ConsumerState<_JobForm> {
         focusedErrorBorder: _fieldBorder(NeoColors.errorBorder, 2),
       ),
     );
+  }
+
+  Future<void> _openCategoryPicker() async {
+    final selected = await showJobCategoryPicker(
+      context,
+      selected: _category.isEmpty ? null : _category,
+    );
+    if (!mounted || selected == null) return;
+    setState(() {
+      _category = selected;
+      _categoryController.text = selected;
+    });
   }
 
   Future<void> _openSkillPicker() async {
@@ -720,68 +748,6 @@ class _FormActions extends StatelessWidget {
             onPressed: onDelete,
           ),
         ],
-      ],
-    );
-  }
-}
-
-class _CategoryPicker extends StatelessWidget {
-  const _CategoryPicker({
-    required this.value,
-    required this.enabled,
-    required this.onChanged,
-  });
-
-  final String value;
-  final bool enabled;
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'หมวดงาน',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w800,
-            color: NeoColors.inkSolid,
-          ),
-        ),
-        const Gap(8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final category in jobCategories)
-              GestureDetector(
-                onTap: enabled ? () => onChanged(category) : null,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: category == value
-                        ? NeoColors.butterYellow
-                        : NeoColors.paperCanvas,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: NeoColors.inkSolid, width: 1.8),
-                    boxShadow: category == value ? NeoShadows.elevation1 : null,
-                  ),
-                  child: Text(
-                    category,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: NeoColors.inkSolid,
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        ),
       ],
     );
   }

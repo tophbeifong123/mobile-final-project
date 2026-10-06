@@ -77,10 +77,11 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('province-90')));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('IT & Software'));
+    await tester.ensureVisible(find.byKey(const Key('job-category-picker')));
+    await tester.tap(find.byKey(const Key('job-category-picker')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('IT & Software'));
-    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('category-IT & Software')));
+    await tester.pumpAndSettle();
     await tester.ensureVisible(find.byKey(const Key('job-requirements-field')));
     await tester.enterText(
       find.byKey(const Key('job-requirements-field')),
@@ -113,6 +114,10 @@ void main() {
   testWidgets('allowance requires an amount before the posting is saved', (
     tester,
   ) async {
+    tester.view.physicalSize = const Size(390, 2000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     final repository = _FakeCompanyJobRepository();
     final router = GoRouter(
       initialLocation: '/company/jobs/new',
@@ -156,10 +161,11 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('province-90')));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('IT & Software'));
+    await tester.ensureVisible(find.byKey(const Key('job-category-picker')));
+    await tester.tap(find.byKey(const Key('job-category-picker')));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('IT & Software'));
-    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey('category-IT & Software')));
+    await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('มีเบี้ยเลี้ยง'));
     await tester.tap(find.text('มีเบี้ยเลี้ยง'));
     await tester.pumpAndSettle();

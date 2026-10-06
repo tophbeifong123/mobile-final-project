@@ -7,6 +7,7 @@ import '../../../../core/widgets/skill_picker_sheet.dart';
 import '../../domain/entities/job.dart';
 import '../job_categories.dart';
 import '../job_labels.dart';
+import 'job_category_picker.dart';
 
 class JobFilterSheet extends StatefulWidget {
   const JobFilterSheet({
@@ -26,6 +27,7 @@ class _JobFilterSheetState extends State<JobFilterSheet> {
   late final TextEditingController _province = TextEditingController(
     text: widget.initial.province ?? '',
   );
+  late final TextEditingController _categoryField;
   String? _category;
   WorkMode? _workMode;
   bool? _hasAllowance;
@@ -39,6 +41,7 @@ class _JobFilterSheetState extends State<JobFilterSheet> {
     _category = isJobCategory(widget.initial.category ?? '')
         ? widget.initial.category
         : null;
+    _categoryField = TextEditingController(text: _category ?? '');
     _hasAllowance = widget.initial.hasAllowance;
     _skills = List<String>.from(widget.initial.skills);
   }
@@ -46,6 +49,7 @@ class _JobFilterSheetState extends State<JobFilterSheet> {
   @override
   void dispose() {
     _province.dispose();
+    _categoryField.dispose();
     super.dispose();
   }
 
@@ -104,21 +108,26 @@ class _JobFilterSheetState extends State<JobFilterSheet> {
                 onChanged: (value) => setState(() => _workMode = value),
               ),
               const SizedBox(height: 12),
-              Text('หมวดงาน', style: textTheme.titleMedium),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final category in jobCategories)
-                    _AllowanceChoice(
-                      label: category,
-                      selected: _category == category,
-                      onSelected: () => setState(() {
-                        _category = _category == category ? null : category;
-                      }),
-                    ),
-                ],
+              TextField(
+                key: const Key('filter-category-picker'),
+                controller: _categoryField,
+                readOnly: true,
+                onTap: _openCategoryPicker,
+                decoration: InputDecoration(
+                  labelText: 'หมวดงาน',
+                  hintText: 'เลือกจากรายการหมวดงาน',
+                  prefixIcon: const Icon(Icons.category_outlined),
+                  suffixIcon: _category == null
+                      ? const Icon(Icons.keyboard_arrow_down)
+                      : IconButton(
+                          tooltip: 'ล้างหมวดงาน',
+                          onPressed: () => setState(() {
+                            _category = null;
+                            _categoryField.clear();
+                          }),
+                          icon: const Icon(Icons.close),
+                        ),
+                ),
               ),
               const SizedBox(height: 16),
               Text('เบี้ยเลี้ยง', style: textTheme.titleMedium),
@@ -253,6 +262,15 @@ class _JobFilterSheetState extends State<JobFilterSheet> {
       hasAllowance: _hasAllowance,
       skills: _skills,
     );
+  }
+
+  Future<void> _openCategoryPicker() async {
+    final selected = await showJobCategoryPicker(context, selected: _category);
+    if (!mounted || selected == null) return;
+    setState(() {
+      _category = selected;
+      _categoryField.text = selected;
+    });
   }
 
   Future<void> _openProvincePicker() async {

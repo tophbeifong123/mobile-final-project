@@ -12,6 +12,7 @@ import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/job_card.dart';
 import '../../../jobs/presentation/widgets/student_job_card.dart';
 import '../../../jobs/domain/entities/job.dart';
+import '../../../jobs/presentation/job_labels.dart';
 import '../../../jobs/presentation/providers/jobs_controller.dart';
 import '../../../jobs/presentation/widgets/feed_top_bar.dart';
 import '../../domain/entities/saved_job.dart';
@@ -137,17 +138,17 @@ class _SavedJobsScreenState extends ConsumerState<SavedJobsScreen> {
       WorkModeFilterItem(mode: null, label: 'ทั้งหมด', count: allJobs.length),
       WorkModeFilterItem(
         mode: WorkMode.remote,
-        label: 'Remote',
+        label: workModeLabel(WorkMode.remote),
         count: onlineCount,
       ),
       WorkModeFilterItem(
         mode: WorkMode.onSite,
-        label: 'On-site',
+        label: workModeLabel(WorkMode.onSite),
         count: onSiteCount,
       ),
       WorkModeFilterItem(
         mode: WorkMode.hybrid,
-        label: 'Hybrid',
+        label: workModeLabel(WorkMode.hybrid),
         count: hybridCount,
       ),
     ];
@@ -191,6 +192,7 @@ class _SavedJobsScreenState extends ConsumerState<SavedJobsScreen> {
                     builder: (cardContext) {
                       final job = filteredJobs[i];
                       return StudentJobCard(
+                        key: ValueKey(job.id),
                         job: job,
                         isSaved: true,
                         onBookmarkTap: () => _handleRemoveJob(job),

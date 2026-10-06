@@ -4,7 +4,17 @@ String workModeLabel(WorkMode mode) {
   return switch (mode) {
     WorkMode.onSite => 'On-site',
     WorkMode.hybrid => 'Hybrid',
-    WorkMode.remote => 'Remote',
+    WorkMode.remote => 'Online',
+  };
+}
+
+/// Display label for a work-mode value stored by the API.
+String workModeLabelFromApi(String value) {
+  return switch (value) {
+    'on_site' => workModeLabel(WorkMode.onSite),
+    'hybrid' => workModeLabel(WorkMode.hybrid),
+    'remote' => workModeLabel(WorkMode.remote),
+    _ => value,
   };
 }
 

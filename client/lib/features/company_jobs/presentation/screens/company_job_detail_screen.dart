@@ -183,7 +183,7 @@ class _PostingColumn extends StatelessWidget {
               _MetaChip(icon: LucideIcons.mapPin, label: job.province),
             _MetaChip(
               icon: LucideIcons.monitor,
-              label: _workModeLabel(job.workMode),
+              label: workModeLabelFromApi(job.workMode),
             ),
             if (job.category.trim().isNotEmpty)
               _MetaChip(icon: LucideIcons.tag, label: job.category),
@@ -577,15 +577,6 @@ class _MetaChip extends StatelessWidget {
       ),
     );
   }
-}
-
-String _workModeLabel(String workMode) {
-  return switch (workMode) {
-    'on_site' => 'On-site',
-    'hybrid' => 'Hybrid',
-    'remote' => 'Remote',
-    _ => workMode,
-  };
 }
 
 String _formatDeadline(DateTime deadline) {

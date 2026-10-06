@@ -91,7 +91,7 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.descendant(of: find.byType(JobCard), matching: find.text('Remote')),
+      find.descendant(of: find.byType(JobCard), matching: find.text('Online')),
       findsOneWidget,
     );
   });
@@ -131,7 +131,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap Online chip
-      final onlineChip = find.widgetWithText(FilterChip, 'Remote');
+      final onlineChip = find.widgetWithText(FilterChip, 'Online');
       expect(onlineChip, findsOneWidget);
       await tester.tap(onlineChip);
       await tester.pumpAndSettle();
