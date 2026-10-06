@@ -46,6 +46,8 @@ export class StudentsRepository {
       where: { id: profile.universityId },
     });
     return university?.nameTh ?? '';
+  }
+
   listDocuments(studentId: string): Promise<StudentDocument[]> {
     return this.dataSource.getRepository(StudentDocument).find({
       where: { studentId },
