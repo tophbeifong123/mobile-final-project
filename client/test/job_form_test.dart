@@ -23,6 +23,10 @@ void main() {
   ];
 
   testWidgets('company creates an open job posting', (tester) async {
+    tester.view.physicalSize = const Size(390, 2000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     final repository = _FakeCompanyJobRepository();
     final router = GoRouter(
       initialLocation: '/company/jobs/new',
@@ -82,6 +86,15 @@ void main() {
       find.byKey(const Key('job-requirements-field')),
       'ใช้ Flutter ได้',
     );
+    await tester.ensureVisible(find.byKey(const Key('job-openings-field')));
+    await tester.enterText(find.byKey(const Key('job-openings-field')), '0');
+    await tester.ensureVisible(find.text('สร้างประกาศ').last);
+    await tester.tap(find.text('สร้างประกาศ').last);
+    await tester.pump();
+    expect(repository.lastPosting, isNull);
+    expect(find.text('ระบุจำนวนเต็มบวก ไม่เกิน 2147483647'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const Key('job-openings-field')), '3');
     await tester.ensureVisible(find.text('สร้างประกาศ').last);
     await tester.tap(find.text('สร้างประกาศ').last);
     await tester.pumpAndSettle();
@@ -91,6 +104,7 @@ void main() {
     expect(repository.lastPosting?.workMode, 'hybrid');
     expect(repository.lastPosting?.hasAllowance, isFalse);
     expect(repository.lastPosting?.allowanceAmount, isNull);
+    expect(repository.lastPosting?.openings, 3);
     expect(repository.lastPosting?.category, 'IT & Software');
     expect(find.text('รายละเอียด job-1'), findsOneWidget);
     await tester.pump(const Duration(milliseconds: 2800));
@@ -175,6 +189,10 @@ void main() {
   });
 
   testWidgets('company edits and deletes its own posting', (tester) async {
+    tester.view.physicalSize = const Size(390, 2000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     final repository = _FakeCompanyJobRepository();
     final router = GoRouter(
       initialLocation: '/company/jobs/job-1/edit',
@@ -219,12 +237,34 @@ void main() {
       find.byKey(const Key('job-title-field')),
       'Backend Intern',
     );
+    expect(
+      tester
+          .widget<TextFormField>(find.byKey(const Key('job-openings-field')))
+          .controller
+          ?.text,
+      '3',
+    );
+    expect(
+      tester
+          .widget<TextFormField>(find.byKey(const Key('job-allowance-amount')))
+          .controller
+          ?.text,
+      '8000',
+    );
+    await tester.enterText(find.byKey(const Key('job-openings-field')), '4');
+    await tester.ensureVisible(find.text('มีเบี้ยเลี้ยง'));
+    await tester.tap(find.text('มีเบี้ยเลี้ยง'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('job-allowance-amount')), findsNothing);
     await tester.ensureVisible(find.text('บันทึกประกาศ'));
     await tester.tap(find.text('บันทึกประกาศ'));
     await tester.pumpAndSettle();
 
     expect(repository.lastPosting?.title, 'Backend Intern');
     expect(repository.lastVersion, 1);
+    expect(repository.lastPosting?.openings, 4);
+    expect(repository.lastPosting?.allowanceAmount, isNull);
+    expect(repository.lastPosting?.hasAllowance, isFalse);
     expect(find.text('รายละเอียด job-1'), findsOneWidget);
     await tester.pump(const Duration(milliseconds: 2800));
 
@@ -305,7 +345,9 @@ class _FakeCompanyJobRepository implements CompanyJobRepository {
       province: 'สงขลา',
       workMode: 'hybrid',
       category: 'IT & Software',
-      hasAllowance: false,
+      hasAllowance: true,
+      openings: 3,
+      allowanceAmount: 8000,
       requirements: 'ใช้ Flutter ได้',
       status: 'open',
       version: 1,
@@ -328,6 +370,8 @@ class _FakeCompanyJobRepository implements CompanyJobRepository {
       workMode: posting.workMode,
       category: posting.category,
       hasAllowance: posting.hasAllowance,
+      openings: posting.openings,
+      allowanceAmount: posting.allowanceAmount,
       requirements: posting.requirements,
       status: 'open',
       version: version + 1,

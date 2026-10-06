@@ -16,36 +16,24 @@ export class AddAllowanceAmountAndJobCategories1791830400000
       END
     `);
     await queryRunner.query(`
+      ALTER TABLE "jobs" DROP CONSTRAINT IF EXISTS "CHK_jobs_category"
+    `);
+    await queryRunner.query(`
       ALTER TABLE "jobs"
       ADD CONSTRAINT "CHK_jobs_category"
       CHECK ("category" IN ('IT & Software', 'Design & UX/UI', 'Marketing', 'Data'))
     `);
     await queryRunner.query(
-      `ALTER TABLE "jobs" ADD "allowance_amount" integer`,
+      `ALTER TABLE "jobs" ADD COLUMN IF NOT EXISTS "allowance_amount" integer`,
     );
-    await queryRunner.query(`
-      ALTER TABLE "jobs"
-      ADD CONSTRAINT "CHK_jobs_allowance_amount"
-      CHECK (
-        "allowance_amount" IS NULL
-        OR (
-          "has_allowance" = true
-          AND "allowance_amount" >= 1
-          AND "allowance_amount" <= 1000000
-        )
-      )
-    `);
   }
 
   async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
-      `ALTER TABLE "jobs" DROP CONSTRAINT "CHK_jobs_allowance_amount"`,
+      `ALTER TABLE "jobs" DROP COLUMN IF EXISTS "allowance_amount"`,
     );
     await queryRunner.query(
-      `ALTER TABLE "jobs" DROP COLUMN "allowance_amount"`,
-    );
-    await queryRunner.query(
-      `ALTER TABLE "jobs" DROP CONSTRAINT "CHK_jobs_category"`,
+      `ALTER TABLE "jobs" DROP CONSTRAINT IF EXISTS "CHK_jobs_category"`,
     );
   }
 }

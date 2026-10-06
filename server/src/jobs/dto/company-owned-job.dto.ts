@@ -23,6 +23,14 @@ export class CompanyOwnedJobDto {
   @ApiProperty()
   hasAllowance: boolean;
 
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    example: 3,
+    description: 'จำนวนรับ; null เมื่อไม่ได้ระบุ',
+  })
+  openings: number | null;
+
   @ApiPropertyOptional({ example: 8000, nullable: true })
   allowanceAmount: number | null;
 

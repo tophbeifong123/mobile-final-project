@@ -148,6 +148,7 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | work_mode | work_mode | |
 | category | varchar | หมวดงานจากรายการเดียวกันทั้งบริษัทและนักศึกษา: IT & Software, Design & UX/UI, Marketing, Data |
 | has_allowance | boolean | มีเบี้ยเลี้ยงหรือไม่ |
+| openings | integer | null ได้; เมื่อระบุต้องเป็นจำนวนเต็มบวก |
 | allowance_amount | integer | null ได้เมื่อไม่มีเบี้ยเลี้ยง; เมื่อมีต้องเป็นจำนวนบาท 1 ถึง 1,000,000 |
 | requirements | text | คุณสมบัติ |
 | skills | text[] | ทักษะที่เปิดรับ |
@@ -157,6 +158,8 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | updated_at | timestamptz | |
 
 นักศึกษาเห็นและสมัครได้เฉพาะ `status = open` งาน `closed` ยังอยู่ในการจัดการของบริษัท
+
+จำนวนรับเป็นช่องว่างได้ ถ้ามีเบี้ยเลี้ยงต้องเก็บจำนวนเงินเป็นบาทจำนวนเต็ม ถ้าไม่มีต้องไม่เก็บจำนวนเงิน ประกาศเดิมที่เคยเก็บทศนิยมหรือศูนย์จะถูกล้างตอน migration แล้วคอลัมน์ถูกปรับเป็น integer
 
 ### saved_jobs
 

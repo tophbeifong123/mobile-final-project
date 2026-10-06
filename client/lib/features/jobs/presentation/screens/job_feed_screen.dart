@@ -361,6 +361,7 @@ class _FeedList extends ConsumerWidget {
                       workModeLabel(job.workMode),
                       job.category,
                       allowanceLabel(job.hasAllowance, job.allowanceAmount),
+                      if (job.openings != null) 'รับ ${job.openings} คน',
                     ],
                     skills: job.skills,
                     hasAllowance: job.hasAllowance,

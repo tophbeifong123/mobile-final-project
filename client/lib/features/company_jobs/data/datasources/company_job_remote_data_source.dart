@@ -72,6 +72,7 @@ class CompanyJobRemoteDataSource {
           'workMode': posting.workMode,
           'category': posting.category,
           'hasAllowance': posting.hasAllowance,
+          'openings': posting.openings,
           if (posting.allowanceAmount != null)
             'allowanceAmount': posting.allowanceAmount,
           'requirements': posting.requirements,
@@ -103,6 +104,7 @@ class CompanyJobRemoteDataSource {
           'workMode': posting.workMode,
           'category': posting.category,
           'hasAllowance': posting.hasAllowance,
+          'openings': posting.openings,
           if (posting.allowanceAmount != null)
             'allowanceAmount': posting.allowanceAmount,
           'requirements': posting.requirements,

@@ -61,6 +61,20 @@ export class CreateJobDto {
   hasAllowance: boolean;
 
   @ApiPropertyOptional({
+    type: Number,
+    nullable: true,
+    minimum: 1,
+    maximum: 2147483647,
+    example: 3,
+    description: 'จำนวนรับ เป็นจำนวนเต็มบวก; ไม่ระบุหรือ null ได้',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(2147483647)
+  openings?: number | null;
+
+  @ApiPropertyOptional({
     example: 8000,
     nullable: true,
     description: 'จำนวนเงินบาท บังคับเมื่อมีเบี้ยเลี้ยง และต้องว่างเมื่อไม่มี',

@@ -84,6 +84,7 @@ export class JobsService {
 
     const province = await this.provincesService.resolveName(dto.province);
     const job = await this.jobsRepository.create({
+      openings: openingsOf(dto.openings),
       companyId,
       title: dto.title.trim(),
       description: dto.description.trim(),
@@ -245,6 +246,7 @@ export class JobsService {
     const province = await this.provincesService.resolveName(dto.province);
     try {
       const updated = await this.jobsRepository.updateOwned({
+        openings: openingsOf(dto.openings),
         id: jobId,
         companyId,
         version: dto.version,
@@ -339,6 +341,7 @@ function toDto(job: {
   workMode: JobDto['workMode'];
   category: string;
   hasAllowance: boolean;
+  openings?: number | null;
   allowanceAmount?: number | null;
   requirements: string;
   skills?: string[];
@@ -353,6 +356,7 @@ function toDto(job: {
   dto.workMode = job.workMode;
   dto.category = job.category;
   dto.hasAllowance = job.hasAllowance;
+  dto.openings = job.openings ?? null;
   dto.allowanceAmount = job.allowanceAmount ?? null;
   dto.requirements = job.requirements;
   dto.skills = job.skills ?? [];
@@ -370,6 +374,7 @@ function toDetail(
     workMode: JobDetailDto['workMode'];
     category: string;
     hasAllowance: boolean;
+    openings?: number | null;
     allowanceAmount?: number | null;
     requirements: string;
     skills?: string[];
@@ -393,6 +398,7 @@ function toDetail(
   dto.workMode = job.workMode;
   dto.category = job.category;
   dto.hasAllowance = job.hasAllowance;
+  dto.openings = job.openings ?? null;
   dto.allowanceAmount = job.allowanceAmount ?? null;
   dto.requirements = job.requirements;
   dto.skills = job.skills ?? [];
@@ -418,6 +424,7 @@ function toOwnedDto(
     workMode: CompanyOwnedJobDto['workMode'];
     category: string;
     hasAllowance: boolean;
+    openings?: number | null;
     allowanceAmount?: number | null;
     requirements: string;
     skills?: string[];
@@ -435,6 +442,7 @@ function toOwnedDto(
   dto.workMode = job.workMode;
   dto.category = job.category;
   dto.hasAllowance = job.hasAllowance;
+  dto.openings = job.openings ?? null;
   dto.allowanceAmount = job.allowanceAmount ?? null;
   dto.requirements = job.requirements;
   dto.skills = job.skills ?? [];
@@ -466,6 +474,19 @@ function toCompanyItem(job: {
   return dto;
 }
 
+function openingsOf(value: number | null | undefined): number | null {
+  const openings = value ?? null;
+  if (
+    openings !== null &&
+    (!Number.isInteger(openings) || openings < 1 || openings > 2147483647)
+  ) {
+    throw new BadRequestException(
+      'จำนวนรับต้องเป็นจำนวนเต็มบวก ไม่เกิน 2147483647',
+    );
+  }
+  return openings;
+}
+
 function toFeedItem(job: {
   id: string;
   title: string;
@@ -474,6 +495,7 @@ function toFeedItem(job: {
   workMode: JobFeedItemDto['workMode'];
   category: string;
   hasAllowance: boolean;
+  openings?: number | null;
   allowanceAmount?: number | null;
   skills?: string[];
   status: JobStatus;
@@ -486,6 +508,7 @@ function toFeedItem(job: {
   dto.workMode = job.workMode;
   dto.category = job.category;
   dto.hasAllowance = job.hasAllowance;
+  dto.openings = job.openings ?? null;
   dto.allowanceAmount = job.allowanceAmount ?? null;
   dto.skills = job.skills ?? [];
   dto.status = job.status;

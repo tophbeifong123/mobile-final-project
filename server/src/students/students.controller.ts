@@ -37,7 +37,10 @@ export class StudentsController {
   constructor(private readonly studentsService: StudentsService) {}
 
   @Get('me')
-  @ApiOperation({ summary: 'อ่านโปรไฟล์นักศึกษา' })
+  @ApiOperation({
+    summary: 'อ่านโปรไฟล์นักศึกษา',
+    description: 'อ่านข้อมูลของนักศึกษาที่เข้าสู่ระบบ สำหรับหน้าโปรไฟล์และหัวหน้าแรก ชื่อและมหาวิทยาลัยที่ยังไม่กรอกเป็นค่าว่าง ไม่เติมข้อมูลสมมติ',
+  })
   @ApiResponse({ status: 200, type: StudentProfileDto })
   @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
   @ApiResponse({ status: 403, description: 'เฉพาะนักศึกษา' })

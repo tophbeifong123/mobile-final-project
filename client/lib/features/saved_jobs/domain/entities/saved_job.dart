@@ -9,8 +9,9 @@ class SavedJob {
     required this.workMode,
     required this.category,
     required this.hasAllowance,
-    required this.status,
+    this.openings,
     this.allowanceAmount,
+    required this.status,
     this.skills = const [],
   });
 
@@ -21,6 +22,7 @@ class SavedJob {
   final WorkMode workMode;
   final String category;
   final bool hasAllowance;
+  final int? openings;
   final int? allowanceAmount;
   final JobStatus status;
   final List<String> skills;

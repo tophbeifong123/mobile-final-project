@@ -80,6 +80,7 @@ class _JobFormState extends ConsumerState<_JobForm> {
   late WorkMode _workMode;
   late String _category;
   late bool _hasAllowance;
+  late final TextEditingController _openingsController;
   late int _version;
   late List<String> _skills;
   int? _selectedProvinceId;
@@ -107,6 +108,9 @@ class _JobFormState extends ConsumerState<_JobForm> {
     _workMode = job == null ? WorkMode.hybrid : workModeFromApi(job.workMode);
     _category = isJobCategory(job?.category ?? '') ? job!.category : '';
     _hasAllowance = job?.hasAllowance ?? false;
+    _openingsController = TextEditingController(
+      text: job?.openings?.toString() ?? '',
+    );
     _version = job?.version ?? 1;
     _skills = List<String>.from(job?.skills ?? const []);
   }
@@ -117,6 +121,7 @@ class _JobFormState extends ConsumerState<_JobForm> {
     _descriptionController.dispose();
     _provinceController.dispose();
     _requirementsController.dispose();
+    _openingsController.dispose();
     _allowanceAmountController.dispose();
     super.dispose();
   }
@@ -163,6 +168,13 @@ class _JobFormState extends ConsumerState<_JobForm> {
         value: _category,
         enabled: !_busy,
         onChanged: (value) => setState(() => _category = value),
+      ),
+      openings: _field(
+        fieldKey: const Key('job-openings-field'),
+        controller: _openingsController,
+        label: 'จำนวนรับ (ไม่บังคับ)',
+        keyboardType: TextInputType.number,
+        validator: _openings,
       ),
       allowance: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -362,6 +374,18 @@ class _JobFormState extends ConsumerState<_JobForm> {
     return null;
   }
 
+  String? _openings(String? value) {
+    final text = value?.trim() ?? '';
+    if (text.isEmpty) {
+      return null;
+    }
+    final number = int.tryParse(text);
+    if (number == null || number < 1 || number > 2147483647) {
+      return 'ระบุจำนวนเต็มบวก ไม่เกิน 2147483647';
+    }
+    return null;
+  }
+
   String? _amount(String? value) {
     final amount = int.tryParse(value?.trim() ?? '');
     if (amount == null || amount < 1 || amount > 1000000) {
@@ -378,6 +402,7 @@ class _JobFormState extends ConsumerState<_JobForm> {
       workMode: workModeToApi(_workMode),
       category: _category,
       hasAllowance: _hasAllowance,
+      openings: int.tryParse(_openingsController.text.trim()),
       allowanceAmount: _hasAllowance
           ? int.parse(_allowanceAmountController.text.trim())
           : null,
@@ -517,6 +542,7 @@ class _FormColumn extends StatelessWidget {
     required this.province,
     required this.workMode,
     required this.category,
+    required this.openings,
     required this.allowance,
     required this.requirements,
     required this.skills,
@@ -528,6 +554,7 @@ class _FormColumn extends StatelessWidget {
   final Widget province;
   final Widget workMode;
   final Widget category;
+  final Widget openings;
   final Widget allowance;
   final Widget requirements;
   final Widget skills;
@@ -556,6 +583,8 @@ class _FormColumn extends StatelessWidget {
               workMode,
               const Gap(12),
               category,
+              const Gap(12),
+              openings,
               const Gap(12),
               allowance,
             ],

@@ -187,6 +187,11 @@ class _PostingColumn extends StatelessWidget {
             ),
             if (job.category.trim().isNotEmpty)
               _MetaChip(icon: LucideIcons.tag, label: job.category),
+            if (job.openings != null)
+              _MetaChip(
+                icon: LucideIcons.users,
+                label: 'รับ ${job.openings} คน',
+              ),
             _MetaChip(
               icon: LucideIcons.wallet,
               label: allowanceLabel(job.hasAllowance, job.allowanceAmount),

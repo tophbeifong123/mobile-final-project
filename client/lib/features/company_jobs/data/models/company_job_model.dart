@@ -56,6 +56,7 @@ class CompanyOwnedJobModel {
     required this.workMode,
     required this.category,
     required this.hasAllowance,
+    this.openings,
     this.allowanceAmount,
     required this.requirements,
     required this.status,
@@ -75,6 +76,7 @@ class CompanyOwnedJobModel {
       workMode: json['workMode'] as String? ?? 'hybrid',
       category: json['category'] as String? ?? '',
       hasAllowance: json['hasAllowance'] as bool? ?? false,
+      openings: json['openings'] as int?,
       allowanceAmount: json['allowanceAmount'] as int?,
       requirements: json['requirements'] as String? ?? '',
       status: json['status'] as String? ?? 'open',
@@ -99,6 +101,7 @@ class CompanyOwnedJobModel {
   final String workMode;
   final String category;
   final bool hasAllowance;
+  final int? openings;
   final int? allowanceAmount;
   final String requirements;
   final String status;
@@ -117,6 +120,7 @@ class CompanyOwnedJobModel {
       workMode: workMode,
       category: category,
       hasAllowance: hasAllowance,
+      openings: openings,
       allowanceAmount: allowanceAmount,
       requirements: requirements,
       status: status,
@@ -156,6 +160,7 @@ class EditableJobModel {
     required this.workMode,
     required this.category,
     required this.hasAllowance,
+    this.openings,
     this.allowanceAmount,
     required this.requirements,
     required this.status,
@@ -172,6 +177,7 @@ class EditableJobModel {
       workMode: json['workMode'] as String? ?? 'hybrid',
       category: json['category'] as String? ?? '',
       hasAllowance: json['hasAllowance'] as bool? ?? false,
+      openings: json['openings'] as int?,
       allowanceAmount: json['allowanceAmount'] as int?,
       requirements: json['requirements'] as String? ?? '',
       status: json['status'] as String? ?? 'open',
@@ -191,6 +197,7 @@ class EditableJobModel {
   final String workMode;
   final String category;
   final bool hasAllowance;
+  final int? openings;
   final int? allowanceAmount;
   final String requirements;
   final String status;
@@ -206,6 +213,7 @@ class EditableJobModel {
       workMode: workMode,
       category: category,
       hasAllowance: hasAllowance,
+      openings: openings,
       allowanceAmount: allowanceAmount,
       requirements: requirements,
       status: status,
