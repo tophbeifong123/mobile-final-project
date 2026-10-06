@@ -27,7 +27,7 @@ class JobModel {
       category: json['category'] as String,
       hasAllowance: json['hasAllowance'] as bool,
       openings: json['openings'] as int?,
-      allowanceAmount: (json['allowanceAmount'] as num?)?.toDouble(),
+      allowanceAmount: json['allowanceAmount'] as int?,
       status: JobStatus.values.byName(json['status'] as String),
       createdAt: DateTime.tryParse(json['createdAt'] as String? ?? ''),
       companyLogoAvailable: json['companyLogoAvailable'] as bool? ?? false,
@@ -47,7 +47,7 @@ class JobModel {
   final String category;
   final bool hasAllowance;
   final int? openings;
-  final double? allowanceAmount;
+  final int? allowanceAmount;
   final JobStatus status;
   final List<String> skills;
   final DateTime? createdAt;
@@ -107,7 +107,7 @@ class JobDetailModel {
       category: json['category'] as String,
       hasAllowance: json['hasAllowance'] as bool,
       openings: json['openings'] as int?,
-      allowanceAmount: (json['allowanceAmount'] as num?)?.toDouble(),
+      allowanceAmount: json['allowanceAmount'] as int?,
       requirements: json['requirements'] as String,
       status: JobStatus.values.byName(json['status'] as String),
       companyName: json['companyName'] as String,
@@ -139,7 +139,7 @@ class JobDetailModel {
   final String category;
   final bool hasAllowance;
   final int? openings;
-  final double? allowanceAmount;
+  final int? allowanceAmount;
   final String requirements;
   final JobStatus status;
   final String companyName;

@@ -29,8 +29,8 @@ export interface OpenJobRecord {
   workMode: WorkMode;
   category: string;
   hasAllowance: boolean;
-  openings?: number | null;
-  allowanceAmount?: number | null;
+  openings: number | null;
+  allowanceAmount: number | null;
   skills: string[];
   status: JobStatus;
   createdAt: Date;
@@ -67,8 +67,8 @@ export interface NewJob {
   workMode: WorkMode;
   category: string;
   hasAllowance: boolean;
-  openings?: number | null;
-  allowanceAmount?: number | null;
+  openings: number | null;
+  allowanceAmount: number | null;
   requirements: string;
   skills?: string[];
 }
@@ -83,8 +83,8 @@ export interface OwnedJobUpdate {
   workMode: WorkMode;
   category: string;
   hasAllowance: boolean;
-  openings?: number | null;
-  allowanceAmount?: number | null;
+  openings: number | null;
+  allowanceAmount: number | null;
   requirements: string;
   skills?: string[];
 }
@@ -226,7 +226,7 @@ export class JobsRepository {
         category: input.category,
         hasAllowance: input.hasAllowance,
         openings: input.openings ?? null,
-        allowanceAmount: input.allowanceAmount ?? null,
+        allowanceAmount: input.allowanceAmount,
         requirements: input.requirements,
         skills: input.skills ?? [],
         status: JobStatus.Open,
@@ -236,6 +236,25 @@ export class JobsRepository {
 
   findById(id: string): Promise<Job | null> {
     return this.dataSource.getRepository(Job).findOne({ where: { id } });
+  }
+
+  async countApplicants(jobId: string): Promise<{
+    applicantCount: number;
+    pendingApplicantCount: number;
+  }> {
+    const rows = await this.dataSource.query<
+      Array<{ applicantCount: number; pendingApplicantCount: number }>
+    >(
+      `SELECT COUNT(a.id)::int AS "applicantCount",
+              COUNT(a.id) FILTER (WHERE a.status IN ('submitted', 'reviewing'))::int AS "pendingApplicantCount"
+       FROM applications a
+       WHERE a.job_id = $1`,
+      [jobId],
+    );
+    return {
+      applicantCount: Number(rows[0]?.applicantCount ?? 0),
+      pendingApplicantCount: Number(rows[0]?.pendingApplicantCount ?? 0),
+    };
   }
 
   async updateOwned(input: OwnedJobUpdate): Promise<Job | null> {
@@ -253,7 +272,7 @@ export class JobsRepository {
     job.category = input.category;
     job.hasAllowance = input.hasAllowance;
     job.openings = input.openings ?? null;
-    job.allowanceAmount = input.allowanceAmount ?? null;
+    job.allowanceAmount = input.allowanceAmount;
     job.requirements = input.requirements;
     if (input.skills !== undefined) {
       job.skills = input.skills;
@@ -441,8 +460,8 @@ function toOpenJob(row: Record<string, unknown>): OpenJobRecord {
     workMode: readField(row, 'workMode') as WorkMode,
     category: String(readField(row, 'category') ?? ''),
     hasAllowance: readBoolean(row, 'hasAllowance'),
-    openings: row.openings == null ? null : Number(row.openings),
-    allowanceAmount: row.allowanceAmount == null ? null : Number(row.allowanceAmount),
+    openings: readCount(row, 'openings'),
+    allowanceAmount: readAmount(row, 'allowanceAmount'),
     skills: readArray(row, 'skills'),
     status: readField(row, 'status') as JobStatus,
     createdAt: new Date(readField(row, 'createdAt') as string | Date),
@@ -484,6 +503,22 @@ function toCompanyJobRecord(row: Record<string, unknown>): CompanyJobRecord {
           ? new Date(String(deadline))
           : null,
   };
+}
+
+function readCount(row: Record<string, unknown>, key: string): number | null {
+  const value = readField(row, key);
+  if (value == null || value === '') return null;
+  const count = Number(value);
+  return Number.isInteger(count) ? count : null;
+}
+
+function readAmount(row: Record<string, unknown>, key: string): number | null {
+  const value = readField(row, key);
+  if (value == null || value === '') {
+    return null;
+  }
+  const amount = Number(value);
+  return Number.isInteger(amount) ? amount : null;
 }
 
 function readBoolean(row: Record<string, unknown>, key: string): boolean {

@@ -135,7 +135,7 @@ class Job {
   final String category;
   final bool hasAllowance;
   final int? openings;
-  final double? allowanceAmount;
+  final int? allowanceAmount;
   final JobStatus status;
   final List<String> skills;
   final DateTime? createdAt;
@@ -190,7 +190,7 @@ class JobDetail {
   final String category;
   final bool hasAllowance;
   final int? openings;
-  final double? allowanceAmount;
+  final int? allowanceAmount;
   final String requirements;
   final JobStatus status;
   final String companyName;

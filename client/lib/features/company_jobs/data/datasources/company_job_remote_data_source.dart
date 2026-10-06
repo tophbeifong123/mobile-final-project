@@ -37,6 +37,16 @@ class CompanyJobRemoteDataSource {
   }
 
   Future<EditableJobModel> fetchOne(String jobId) async {
+    final data = await _getJob(jobId);
+    return EditableJobModel.fromJson(data);
+  }
+
+  Future<CompanyOwnedJobModel> fetchOwned(String jobId) async {
+    final data = await _getJob(jobId);
+    return CompanyOwnedJobModel.fromJson(data);
+  }
+
+  Future<Map<String, dynamic>> _getJob(String jobId) async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
         '${ApiConstants.companyJobs}/$jobId',
@@ -45,7 +55,7 @@ class CompanyJobRemoteDataSource {
       if (data == null) {
         throw const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
       }
-      return EditableJobModel.fromJson(data);
+      return data;
     } on DioException catch (error) {
       throw mapCompanyJobError(error);
     }
@@ -63,9 +73,8 @@ class CompanyJobRemoteDataSource {
           'category': posting.category,
           'hasAllowance': posting.hasAllowance,
           'openings': posting.openings,
-          'allowanceAmount': posting.hasAllowance
-              ? posting.allowanceAmount
-              : null,
+          if (posting.allowanceAmount != null)
+            'allowanceAmount': posting.allowanceAmount,
           'requirements': posting.requirements,
           'skills': posting.skills,
         },
@@ -96,9 +105,8 @@ class CompanyJobRemoteDataSource {
           'category': posting.category,
           'hasAllowance': posting.hasAllowance,
           'openings': posting.openings,
-          'allowanceAmount': posting.hasAllowance
-              ? posting.allowanceAmount
-              : null,
+          if (posting.allowanceAmount != null)
+            'allowanceAmount': posting.allowanceAmount,
           'requirements': posting.requirements,
           'skills': posting.skills,
           'version': version,

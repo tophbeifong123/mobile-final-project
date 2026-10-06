@@ -1,21 +1,15 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { JobStatus, WorkMode } from '../job-enums.js';
 
-export class JobFeedItemDto {
+export class CompanyOwnedJobDto {
   @ApiProperty()
   id: string;
 
   @ApiProperty({ example: 'Flutter Mobile Developer Intern' })
   title: string;
 
-  @ApiProperty({ example: 'InternFinder' })
-  companyName: string;
-
-  @ApiProperty({ type: String, format: 'date-time', description: 'วันเวลาสร้างประกาศ ไม่ใช่วันที่บันทึกงาน' })
-  createdAt: Date;
-
-  @ApiProperty({ description: 'โหลดโลโก้ผ่าน GET /api/jobs/:id/company-logo เมื่อเป็น true' })
-  companyLogoAvailable: boolean;
+  @ApiProperty()
+  description: string;
 
   @ApiProperty({ example: 'สงขลา' })
   province: string;
@@ -32,8 +26,6 @@ export class JobFeedItemDto {
   @ApiProperty({
     type: Number,
     nullable: true,
-    minimum: 1,
-    maximum: 2147483647,
     example: 3,
     description: 'จำนวนรับ; null เมื่อไม่ได้ระบุ',
   })
@@ -42,9 +34,27 @@ export class JobFeedItemDto {
   @ApiPropertyOptional({ example: 8000, nullable: true })
   allowanceAmount: number | null;
 
+  @ApiProperty()
+  requirements: string;
+
   @ApiProperty({ type: [String], example: ['Flutter', 'Dart'] })
   skills: string[];
 
   @ApiProperty({ enum: JobStatus, example: JobStatus.Open })
   status: JobStatus;
+
+  @ApiProperty({ example: 1 })
+  version: number;
+
+  @ApiProperty({ example: 0 })
+  applicantCount: number;
+
+  @ApiProperty({
+    example: 0,
+    description: 'ใบสมัครที่รอตรวจ สถานะ submitted หรือ reviewing',
+  })
+  pendingApplicantCount: number;
+
+  @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })
+  deadline: Date | null;
 }

@@ -35,6 +35,7 @@ const _companyPages = [
   (path: '/company/jobs', title: 'ประกาศของบริษัท', secondary: false),
   (path: '/company/profile', title: 'โปรไฟล์บริษัท', secondary: false),
   (path: '/company/jobs/new', title: 'สร้างประกาศ', secondary: true),
+  (path: '/company/jobs/job-1', title: 'รายละเอียดประกาศ', secondary: true),
   (path: '/company/jobs/job-1/edit', title: 'แก้ประกาศ', secondary: true),
   (
     path: '/company/jobs/job-1/applicants',
@@ -292,6 +293,9 @@ Future<GoRouter> _mountApp(
       companyJobDetailProvider.overrideWith(
         (ref, jobId) => _result(loadState, _editableJob),
       ),
+      companyOwnedJobProvider.overrideWith(
+        (ref, jobId) => _result(loadState, _ownedJob),
+      ),
       companyJobApplicantsProvider.overrideWith(
         (ref, jobId) => _result(loadState, const []),
       ),
@@ -354,6 +358,20 @@ Iterable<String> _registeredPaths(
   }
 }
 
+const _ownedJob = CompanyOwnedJob(
+  id: 'job-1',
+  title: 'Flutter Intern',
+  description: 'Build mobile apps',
+  province: 'สงขลา',
+  workMode: 'hybrid',
+  category: 'Software',
+  hasAllowance: false,
+  requirements: 'Flutter',
+  status: 'open',
+  version: 1,
+  applicantCount: 1,
+  pendingApplicantCount: 0,
+);
 const _editableJob = EditableJob(
   id: 'job-1',
   title: 'Flutter Intern',

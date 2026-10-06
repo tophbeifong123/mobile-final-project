@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { JobStatus, WorkMode } from '../job-enums.js';
 
 export class JobDetailDto {
@@ -33,15 +33,7 @@ export class JobDetailDto {
   })
   openings: number | null;
 
-  @ApiProperty({
-    type: Number,
-    nullable: true,
-    minimum: 0,
-    maximum: 99999999.99,
-    example: 8000,
-    description:
-      'จำนวนเบี้ยเลี้ยงเงินบาท ทศนิยมไม่เกิน 2 ตำแหน่ง; null เมื่อไม่ได้ระบุหรือไม่มีเบี้ยเลี้ยง',
-  })
+  @ApiPropertyOptional({ example: 8000, nullable: true })
   allowanceAmount: number | null;
 
   @ApiProperty()

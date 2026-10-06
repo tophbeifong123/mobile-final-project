@@ -160,7 +160,7 @@ Password recovery รองรับอีเมลที่ใช้สมั�
 | GET | /api/notifications | Notifications |
 | GET | /api/notifications/stream | ช่อง SSE ของแจ้งเตือน |
 
-`GET /api/jobs` รับ `search`, `province`, `workMode`, `category`, `hasAllowance`, `skills` (กรองด้วย PostgreSQL array overlap operator) และคืนเฉพาะงานสถานะ `open`
+`GET /api/jobs` รับ `search`, `province`, `workMode`, `category` จากรายการเดียวกันกับตอนสร้างประกาศ, `hasAllowance`, `skills` (กรองด้วย PostgreSQL array overlap operator) และคืนเฉพาะงานสถานะ `open` ถ้าประกาศมีเบี้ยเลี้ยงต้องมี `allowanceAmount` เป็นบาท
 
 ค่า `province` และชื่อจังหวัดที่บันทึกในประกาศถูกแปลงเป็นชื่อมาตรฐานเดียวกันก่อนกรอง เพื่อรองรับชื่อเรียกอย่าง `กทม.` และข้อมูลเก่าอย่าง `กรุงเทพฯ`
 
@@ -178,7 +178,7 @@ Flutter โหลดรายละเอียดใหม่เมื่อก
 | GET, PATCH | /api/companies/me | Company Profile |
 | POST | /api/companies/me/logo | อัปโหลด logo |
 | GET, POST | /api/company/jobs | Manage Jobs, Create Job |
-| GET, PATCH, DELETE | /api/company/jobs/:id | อ่าน แก้ หรือลบประกาศของบริษัทนี้ |
+| GET, PATCH, DELETE | /api/company/jobs/:id | อ่านรายละเอียดประกาศของบริษัทนี้พร้อมจำนวนผู้สมัคร ใบรอตรวจ และวันปิดรับ, แก้ หรือลบ |
 | PATCH | /api/company/jobs/:id/status | เปิดหรือปิดรับสมัคร |
 | GET | /api/company/jobs/:id/applications | Applicants List |
 | GET | /api/company/jobs/:id/applications/:applicationId | Applicant Detail |

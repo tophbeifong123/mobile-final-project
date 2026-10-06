@@ -23,6 +23,7 @@ import {
 import { type AuthUser } from '../auth/auth-user.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
+import { CompanyOwnedJobDto } from './dto/company-owned-job.dto.js';
 import { CreateJobDto } from './dto/create-job.dto.js';
 import { JobDto } from './dto/job.dto.js';
 import { PaginatedCompanyJobsDto } from './dto/paginated-company-jobs.dto.js';
@@ -52,9 +53,12 @@ export class CompanyJobsController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'อ่านประกาศของบริษัทนี้เพื่อแก้ไข' })
+  @ApiOperation({
+    summary:
+      'อ่านประกาศของบริษัทนี้ พร้อมจำนวนผู้สมัคร จำนวนที่รอตรวจ และวันปิดรับ',
+  })
   @ApiParam({ name: 'id', format: 'uuid' })
-  @ApiResponse({ status: 200, type: JobDto })
+  @ApiResponse({ status: 200, type: CompanyOwnedJobDto })
   @ApiResponse({ status: 400, description: 'รหัสประกาศไม่ถูกต้อง' })
   @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
   @ApiResponse({ status: 403, description: 'เฉพาะบริษัท หรือไม่ใช่ประกาศของบริษัทนี้' })
@@ -62,7 +66,7 @@ export class CompanyJobsController {
   getOne(
     @CurrentUser() user: AuthUser,
     @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<JobDto> {
+  ): Promise<CompanyOwnedJobDto> {
     return this.jobsService.getMine(user, id);
   }
 

@@ -14,6 +14,8 @@ import { Notification } from '../notifications/entities/notification.entity.js';
 import { Province } from '../provinces/province.entity.js';
 import { AddCompanyOfficeLocation1791158400000 } from './migrations/1791158400000-add-company-office-location.js';
 import { DropOfficePin1791744000000 } from './migrations/1791744000000-drop-office-pin.js';
+import { AddAllowanceAmountAndJobCategories1791830400000 } from './migrations/1791830400000-add-allowance-amount-and-job-categories.js';
+import { NormalizeAllowanceAmount1791850000000 } from './migrations/1791850000000-normalize-allowance-amount.js';
 import { AddAvatarToStudentProfiles1759200000000 } from './migrations/1759200000000-add-avatar-to-student-profiles.js';
 import { AddBioContactsPortfoliosToStudentProfiles1759100000000 } from './migrations/1759100000000-add-bio-contacts-portfolios-to-student-profiles.js';
 import { AddDetailsAndCoverToCompanyProfiles1759300000000 } from './migrations/1759300000000-add-details-and-cover-to-company-profiles.js';
@@ -61,6 +63,8 @@ export const AppDataSource = new DataSource({
     AddPasswordRecovery1791072000000,
     AddCompanyOfficeLocation1791158400000,
     DropOfficePin1791744000000,
+    AddAllowanceAmountAndJobCategories1791830400000,
     AddJobOpeningsAllowance1791840000000,
+    NormalizeAllowanceAmount1791850000000,
   ],
 });

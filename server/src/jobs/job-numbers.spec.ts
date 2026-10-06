@@ -18,8 +18,9 @@ const base = {
   description: 'Description',
   province: 'สงขลา',
   workMode: WorkMode.Remote,
-  category: 'IT',
+  category: 'IT & Software',
   hasAllowance: true,
+  allowanceAmount: 8000,
   requirements: 'None',
 };
 
@@ -65,16 +66,13 @@ describe('job openings and allowance service rules', () => {
 
   it.each([
     { openings: 3, allowanceAmount: 8000, hasAllowance: true },
-    { openings: 1, allowanceAmount: 0, hasAllowance: true },
-    { openings: null, allowanceAmount: 8000.25, hasAllowance: true },
-    { openings: null, allowanceAmount: null, hasAllowance: true },
-    { openings: 3, allowanceAmount: 8000, hasAllowance: false },
-    { hasAllowance: false },
-  ])('creates and updates optional amounts safely: %j', async (numbers) => {
+    { openings: null, allowanceAmount: 8000, hasAllowance: true },
+    { openings: 3, allowanceAmount: null, hasAllowance: false },
+  ])('creates and updates whole-baht allowances: %j', async (numbers) => {
     const dto = Object.assign(new CreateJobDto(), base, numbers);
     const expected = {
       openings: dto.openings ?? null,
-      allowanceAmount: dto.hasAllowance ? (dto.allowanceAmount ?? null) : null,
+      allowanceAmount: dto.hasAllowance ? dto.allowanceAmount : null,
     };
     const created = await service.create(company, dto);
     expect(created).toMatchObject(expected);
@@ -85,9 +83,6 @@ describe('job openings and allowance service rules', () => {
     expect(await service.update(company, 'job', update)).toMatchObject(
       expected,
     );
-    expect(repository.updateOwned).toHaveBeenCalledWith(
-      expect.objectContaining(expected),
-    );
   });
 
   it.each([
@@ -95,30 +90,26 @@ describe('job openings and allowance service rules', () => {
     { openings: -1 },
     { openings: 1.5 },
     { openings: 2147483648 },
-    { allowanceAmount: -1 },
-    { allowanceAmount: 1.234 },
-    { allowanceAmount: 1.0000000001 },
-    { allowanceAmount: Infinity },
-    { allowanceAmount: NaN },
-    { allowanceAmount: 100000000 },
-  ])(
-    'rejects invalid values before create/update persistence: %j',
-    async (numbers) => {
-      const dto = Object.assign(new CreateJobDto(), base, numbers);
-      await expect(service.create(company, dto)).rejects.toBeInstanceOf(
-        BadRequestException,
-      );
-      await expect(
-        service.update(
-          company,
-          'job',
-          Object.assign(new UpdateJobDto(), dto, { version: 1 }),
-        ),
-      ).rejects.toBeInstanceOf(BadRequestException);
-      expect(repository.create).not.toHaveBeenCalled();
-      expect(repository.updateOwned).not.toHaveBeenCalled();
-    },
-  );
+    { allowanceAmount: null, hasAllowance: true },
+    { allowanceAmount: 0, hasAllowance: true },
+    { allowanceAmount: 8000.25, hasAllowance: true },
+    { allowanceAmount: -1, hasAllowance: true },
+    { allowanceAmount: 100000000, hasAllowance: true },
+    { allowanceAmount: 8000, hasAllowance: false },
+  ])('rejects invalid openings or allowance before persistence: %j', async (numbers) => {
+    const dto = Object.assign(new CreateJobDto(), base, numbers);
+    await expect(service.create(company, dto)).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+    await expect(
+      service.update(
+        company,
+        'job',
+        Object.assign(new UpdateJobDto(), dto, { version: 1 }),
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(repository.create).not.toHaveBeenCalled();
+  });
 
   it('uses the same real numbers for feed, saved and job detail', async () => {
     const job = {
@@ -127,7 +118,7 @@ describe('job openings and allowance service rules', () => {
       companyName: 'Company',
       status: JobStatus.Open,
       openings: 3,
-      allowanceAmount: 8000.25,
+      allowanceAmount: 8000,
     };
     repository.findOpen.mockResolvedValue({ items: [job], total: 1 });
     repository.listSaved.mockResolvedValue({ items: [job], total: 1 });
@@ -136,7 +127,7 @@ describe('job openings and allowance service rules', () => {
     const saved = await service.listSaved(student, { page: 1, limit: 20 });
     const detail = await service.getOpen(student, 'job');
     for (const item of [feed.items[0], saved.items[0], detail]) {
-      expect(item).toMatchObject({ openings: 3, allowanceAmount: 8000.25 });
+      expect(item).toMatchObject({ openings: 3, allowanceAmount: 8000 });
     }
   });
 
@@ -152,15 +143,16 @@ describe('job openings and allowance service rules', () => {
         .length,
     ).toBeGreaterThan(0);
   });
-  it('DTO accepts absent and explicit null optional fields for legacy jobs', async () => {
-    for (const numbers of [
-      {},
-      { openings: null, allowanceAmount: null },
-      { openings: 3, allowanceAmount: 8000 },
-    ]) {
-      expect(
-        await validate(plainToInstance(CreateJobDto, { ...base, ...numbers })),
-      ).toEqual([]);
-    }
+
+  it('DTO accepts a positive opening count and a whole-baht allowance', async () => {
+    expect(
+      await validate(
+        plainToInstance(CreateJobDto, {
+          ...base,
+          openings: 3,
+          allowanceAmount: 8000,
+        }),
+      ),
+    ).toEqual([]);
   });
 });

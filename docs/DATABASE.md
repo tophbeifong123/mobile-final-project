@@ -146,10 +146,10 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | description | text | |
 | province | varchar | ชื่อจังหวัดมาตรฐานตรงกับ `provinces.name_th`; ใช้กรองจังหวัด งานเดิมที่เป็นชื่อเรียกถูกปรับใน migration |
 | work_mode | work_mode | |
-| category | varchar | หมวดงาน |
+| category | varchar | หมวดงานจากรายการเดียวกันทั้งบริษัทและนักศึกษา: IT & Software, Design & UX/UI, Marketing, Data |
 | has_allowance | boolean | มีเบี้ยเลี้ยงหรือไม่ |
-| openings | integer | null ได้; เมื่อระบุต้องเป็นจำนวนเต็มบวก ไม่เกิน 2147483647 |
-| allowance_amount | numeric(10,2) | null ได้; จำนวนเงินบาทตั้งแต่ 0 ถึง 99999999.99; มีค่าได้เฉพาะ has_allowance = true |
+| openings | integer | null ได้; เมื่อระบุต้องเป็นจำนวนเต็มบวก |
+| allowance_amount | integer | null ได้เมื่อไม่มีเบี้ยเลี้ยง; เมื่อมีต้องเป็นจำนวนบาท 1 ถึง 1,000,000 |
 | requirements | text | คุณสมบัติ |
 | skills | text[] | ทักษะที่เปิดรับ |
 | status | job_status | ค่าเริ่มต้น `open` |
@@ -159,7 +159,7 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 
 นักศึกษาเห็นและสมัครได้เฉพาะ `status = open` งาน `closed` ยังอยู่ในการจัดการของบริษัท
 
-Migration `1791840000000-add-job-openings-allowance` มี up/down: เพิ่มคอลัมน์ nullable สองช่องและ CHECK constraints โดยไม่เติม 0 ให้ประกาศเดิม; down ลบ constraints และคอลัมน์ใหม่เท่านั้น ไม่ลบประกาศ กติกาอยู่ใน JobsService และ Swagger ใช้ `openings`/`allowanceAmount` เป็น number หรือ null สำหรับฟอร์ม รายการงาน งานที่บันทึก และรายละเอียด ปิดมีเบี้ยเลี้ยงแล้ว service ล้าง allowance_amount เป็น null ในการบันทึกเดียวกัน
+จำนวนรับเป็นช่องว่างได้ ถ้ามีเบี้ยเลี้ยงต้องเก็บจำนวนเงินเป็นบาทจำนวนเต็ม ถ้าไม่มีต้องไม่เก็บจำนวนเงิน ประกาศเดิมที่เคยเก็บทศนิยมหรือศูนย์จะถูกล้างตอน migration แล้วคอลัมน์ถูกปรับเป็น integer
 
 ### saved_jobs
 

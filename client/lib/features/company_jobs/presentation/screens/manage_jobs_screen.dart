@@ -416,79 +416,91 @@ class _CompanyJobCardState extends ConsumerState<_CompanyJobCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ── Card Header ─────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 0),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _StatusBadge(label: statusLabel, color: badgeColor),
-                      const Gap(6),
-                      Text(
-                        job.title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: NeoColors.inkSolid,
-                          height: 1.25,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    onTap: () => context.push('/company/jobs/${job.id}'),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(14, 14, 14, 0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _StatusBadge(
+                                label: statusLabel,
+                                color: badgeColor,
+                              ),
+                              const Gap(6),
+                              Text(
+                                job.title,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  color: NeoColors.inkSolid,
+                                  height: 1.25,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                        const Gap(10),
+                        if (!isDraft)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            child: Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: [
+                                _MetaTag(
+                                  icon: LucideIcons.monitor,
+                                  label: _workModeLabel(job.workMode),
+                                ),
+                                if (job.deadline != null)
+                                  _MetaTag(
+                                    icon: LucideIcons.calendarDays,
+                                    label:
+                                        'ถึง ${_formatDeadline(job.deadline!)}',
+                                  ),
+                              ],
+                            ),
+                          ),
+                        if (!isDraft) const Gap(10),
+                        if (!isDraft)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            child: _ApplicantRibbon(
+                              applicantCount: job.applicantCount,
+                              pendingCount: job.pendingApplicantCount,
+                            ),
+                          )
+                        else
+                          const Padding(
+                            padding: EdgeInsets.fromLTRB(14, 0, 14, 0),
+                            child: _DraftApplicantBadge(),
+                          ),
+                        const Gap(12),
+                      ],
+                    ),
                   ),
                 ),
-                if (!isDraft) ...[
-                  const Gap(8),
-                  _MoreMenuButton(
+              ),
+              if (!isDraft)
+                Padding(
+                  padding: const EdgeInsets.only(top: 14, right: 14),
+                  child: _MoreMenuButton(
                     isOpen: isOpen,
                     isLoading: _isLoading,
                     onToggle: () => _changeStatus(isOpen ? 'closed' : 'open'),
                   ),
-                ],
-              ],
-            ),
+                ),
+            ],
           ),
-          const Gap(10),
-          // ── Meta Tags ───────────────────────────────────────────
-          if (!isDraft)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: [
-                  _MetaTag(
-                    icon: LucideIcons.monitor,
-                    label: _workModeLabel(job.workMode),
-                  ),
-                  if (job.deadline != null)
-                    _MetaTag(
-                      icon: LucideIcons.calendarDays,
-                      label: 'ถึง ${_formatDeadline(job.deadline!)}',
-                    ),
-                ],
-              ),
-            ),
-          if (!isDraft) const Gap(10),
-          // ── Applicant Ribbon ────────────────────────────────────
-          if (!isDraft)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: _ApplicantRibbon(
-                applicantCount: job.applicantCount,
-                pendingCount: job.pendingApplicantCount,
-              ),
-            )
-          else
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 0, 14, 0),
-              child: const _DraftApplicantBadge(),
-            ),
-          const Gap(12),
-          // ── Divider & Actions ───────────────────────────────────
           const Divider(height: 1, thickness: 1, color: NeoColors.inkSolid),
           Padding(
             padding: const EdgeInsets.all(10),

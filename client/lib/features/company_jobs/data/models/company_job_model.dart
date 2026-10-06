@@ -47,6 +47,92 @@ class CompanyJobModel {
   }
 }
 
+class CompanyOwnedJobModel {
+  const CompanyOwnedJobModel({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.province,
+    required this.workMode,
+    required this.category,
+    required this.hasAllowance,
+    this.openings,
+    this.allowanceAmount,
+    required this.requirements,
+    required this.status,
+    required this.version,
+    required this.applicantCount,
+    required this.pendingApplicantCount,
+    this.skills = const [],
+    this.deadline,
+  });
+
+  factory CompanyOwnedJobModel.fromJson(Map<String, dynamic> json) {
+    return CompanyOwnedJobModel(
+      id: json['id'] as String,
+      title: json['title'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      province: json['province'] as String? ?? '',
+      workMode: json['workMode'] as String? ?? 'hybrid',
+      category: json['category'] as String? ?? '',
+      hasAllowance: json['hasAllowance'] as bool? ?? false,
+      openings: json['openings'] as int?,
+      allowanceAmount: json['allowanceAmount'] as int?,
+      requirements: json['requirements'] as String? ?? '',
+      status: json['status'] as String? ?? 'open',
+      version: json['version'] as int? ?? 1,
+      applicantCount: json['applicantCount'] as int? ?? 0,
+      pendingApplicantCount: json['pendingApplicantCount'] as int? ?? 0,
+      skills:
+          (json['skills'] as List<dynamic>?)
+              ?.map((skill) => skill.toString())
+              .toList() ??
+          const [],
+      deadline: json['deadline'] != null
+          ? DateTime.tryParse(json['deadline'] as String)
+          : null,
+    );
+  }
+
+  final String id;
+  final String title;
+  final String description;
+  final String province;
+  final String workMode;
+  final String category;
+  final bool hasAllowance;
+  final int? openings;
+  final int? allowanceAmount;
+  final String requirements;
+  final String status;
+  final int version;
+  final int applicantCount;
+  final int pendingApplicantCount;
+  final List<String> skills;
+  final DateTime? deadline;
+
+  CompanyOwnedJob toEntity() {
+    return CompanyOwnedJob(
+      id: id,
+      title: title,
+      description: description,
+      province: province,
+      workMode: workMode,
+      category: category,
+      hasAllowance: hasAllowance,
+      openings: openings,
+      allowanceAmount: allowanceAmount,
+      requirements: requirements,
+      status: status,
+      version: version,
+      applicantCount: applicantCount,
+      pendingApplicantCount: pendingApplicantCount,
+      skills: skills,
+      deadline: deadline,
+    );
+  }
+}
+
 class CreatedJobModel {
   const CreatedJobModel({required this.id, required this.status});
 
@@ -92,7 +178,7 @@ class EditableJobModel {
       category: json['category'] as String? ?? '',
       hasAllowance: json['hasAllowance'] as bool? ?? false,
       openings: json['openings'] as int?,
-      allowanceAmount: (json['allowanceAmount'] as num?)?.toDouble(),
+      allowanceAmount: json['allowanceAmount'] as int?,
       requirements: json['requirements'] as String? ?? '',
       status: json['status'] as String? ?? 'open',
       version: json['version'] as int? ?? 1,
@@ -112,7 +198,7 @@ class EditableJobModel {
   final String category;
   final bool hasAllowance;
   final int? openings;
-  final double? allowanceAmount;
+  final int? allowanceAmount;
   final String requirements;
   final String status;
   final int version;

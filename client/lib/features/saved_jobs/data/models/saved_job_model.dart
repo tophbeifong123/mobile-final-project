@@ -28,7 +28,7 @@ class SavedJobModel {
       category: json['category'] as String,
       hasAllowance: json['hasAllowance'] as bool,
       openings: json['openings'] as int?,
-      allowanceAmount: (json['allowanceAmount'] as num?)?.toDouble(),
+      allowanceAmount: json['allowanceAmount'] as int?,
       status: JobStatus.values.byName(json['status'] as String),
       createdAt: DateTime.tryParse(json['createdAt'] as String? ?? ''),
       companyLogoAvailable: json['companyLogoAvailable'] as bool? ?? false,
@@ -48,7 +48,7 @@ class SavedJobModel {
   final String category;
   final bool hasAllowance;
   final int? openings;
-  final double? allowanceAmount;
+  final int? allowanceAmount;
   final JobStatus status;
   final List<String> skills;
   final DateTime? createdAt;

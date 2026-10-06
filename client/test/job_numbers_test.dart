@@ -28,7 +28,7 @@ Map<String, dynamic> payload({bool numbers = true, bool paid = true}) => {
   'requirements': 'None',
   'version': 1,
   'saved': true,
-  if (numbers) ...{'openings': 3, 'allowanceAmount': 8000.25},
+  if (numbers) ...{'openings': 3, 'allowanceAmount': 8000},
 };
 
 void main() {
@@ -51,7 +51,7 @@ void main() {
           detail.allowanceAmount,
           edit.allowanceAmount,
         ],
-        [8000.25, 8000.25, 8000.25, 8000.25],
+        [8000, 8000, 8000, 8000],
       );
       final legacy = JobModel.fromJson(payload(numbers: false)).toEntity();
       expect(legacy.openings, isNull);
@@ -59,9 +59,7 @@ void main() {
     },
   );
   test('allowance labels show only known money and retain yes/no fallback', () {
-    expect(allowanceLabel(true, 8000), '8,000 บาท');
-    expect(allowanceLabel(true, 8000.25), '8,000.25 บาท');
-    expect(allowanceLabel(true, 0), '0 บาท');
+    expect(allowanceLabel(true, 8000), 'มีเบี้ยเลี้ยง 8,000 บาท');
     expect(allowanceLabel(true), 'มีเบี้ยเลี้ยง');
     expect(allowanceLabel(false, 8000), 'ไม่มีเบี้ยเลี้ยง');
   });
@@ -99,7 +97,7 @@ void main() {
             numbers ? findsOneWidget : findsNothing,
           );
           expect(
-            find.text('8,000.25 บาท'),
+            find.text('มีเบี้ยเลี้ยง 8,000 บาท'),
             numbers ? findsWidgets : findsNothing,
           );
           if (!numbers) expect(find.text('มีเบี้ยเลี้ยง'), findsWidgets);
@@ -133,7 +131,7 @@ void main() {
       scrollable: find.byType(Scrollable).last,
     );
     expect(find.text('รับ 3 คน'), findsOneWidget);
-    expect(find.text('8,000.25 บาท'), findsOneWidget);
+    expect(find.text('มีเบี้ยเลี้ยง 8,000 บาท'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

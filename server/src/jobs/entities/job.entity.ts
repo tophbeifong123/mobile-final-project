@@ -42,17 +42,7 @@ export class Job {
   @Column({ type: 'integer', nullable: true })
   openings: number | null;
 
-  @Column({
-    name: 'allowance_amount',
-    type: 'numeric',
-    precision: 10,
-    scale: 2,
-    nullable: true,
-    transformer: {
-      to: (value: number | null) => value,
-      from: (value: string | null) => (value === null ? null : Number(value)),
-    },
-  })
+  @Column({ name: 'allowance_amount', type: 'int', nullable: true })
   allowanceAmount: number | null;
 
   @Column({ type: 'text' })
