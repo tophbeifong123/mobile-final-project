@@ -79,7 +79,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
       title: 'กู้คืนบัญชี',
       heading: 'ลืมรหัสผ่านใช่ไหม?',
       description:
-          'กรอกอีเมล @email.psu.ac.th หรือ @psu.ac.th ที่ใช้สมัครสมาชิก ระบบจะส่งลิงก์ตั้งรหัสผ่านใหม่ไปยังอีเมลนั้น',
+          'กรอกอีเมลที่ใช้สมัครสมาชิก ไม่ว่าจะเป็น Gmail, Outlook หรืออีเมลอื่น ๆ ระบบจะส่งลิงก์ตั้งรหัสผ่านใหม่ไปยังอีเมลนั้น',
       icon: Icons.mark_email_unread_outlined,
       child: Form(
         key: _formKey,
@@ -89,7 +89,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             AuthTextField(
               controller: _emailController,
               label: 'อีเมลที่ใช้สมัครสมาชิก',
-              hintText: 'student@email.psu.ac.th',
+              hintText: 'you@example.com',
               badgeColor: NeoColors.skyBlue,
               badgeIcon: Icons.alternate_email_rounded,
               keyboardType: TextInputType.emailAddress,

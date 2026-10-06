@@ -38,10 +38,10 @@ export class AuthController {
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
   @UseGuards(PasswordRecoveryRateLimitGuard)
-  @ApiOperation({ summary: 'ขอลิงก์รีเซ็ตรหัสผ่านสำหรับอีเมล @email.psu.ac.th หรือ @psu.ac.th' })
+  @ApiOperation({ summary: 'ขอลิงก์รีเซ็ตรหัสผ่านด้วยอีเมลที่ใช้สมัครสมาชิก ไม่จำกัดโดเมน' })
   @ApiBody({ type: ForgotPasswordDto })
   @ApiResponse({ status: 200, type: PasswordRecoveryResponseDto })
-  @ApiResponse({ status: 400, description: 'รูปแบบอีเมลไม่ถูกต้อง หรือไม่ใช่ @email.psu.ac.th / @psu.ac.th' })
+  @ApiResponse({ status: 400, description: 'รูปแบบอีเมลไม่ถูกต้อง' })
   @ApiResponse({ status: 429, description: 'ส่งคำขอมากเกินไป' })
   @ApiResponse({ status: 503, description: 'ระบบส่งอีเมลยังไม่พร้อมใช้งาน' })
   forgotPassword(@Body() dto: ForgotPasswordDto): Promise<PasswordRecoveryResponseDto> {
@@ -54,7 +54,7 @@ export class AuthController {
   @ApiOperation({ summary: 'ตั้งรหัสผ่านใหม่ด้วยลิงก์ที่ใช้ได้ครั้งเดียวภายใน 15 นาที' })
   @ApiBody({ type: ResetPasswordDto })
   @ApiResponse({ status: 200, type: PasswordRecoveryResponseDto })
-  @ApiResponse({ status: 400, description: 'ข้อมูลไม่ถูกต้อง ลิงก์ใช้ไม่ได้/หมดอายุ หรือเจ้าของบัญชีไม่ใช่อีเมล PSU ที่รองรับ' })
+  @ApiResponse({ status: 400, description: 'ข้อมูลไม่ถูกต้อง ลิงก์ใช้ไม่ได้/หมดอายุ หรือบัญชีไม่มีอยู่แล้ว' })
   @ApiResponse({ status: 409, description: 'รหัสผ่านใหม่ซ้ำกับรหัสผ่านเดิม ลิงก์ยังใช้ได้สำหรับการลองใหม่' })
   @ApiResponse({ status: 429, description: 'ส่งคำขอมากเกินไป' })
   resetPassword(@Body() dto: ResetPasswordDto): Promise<PasswordRecoveryResponseDto> {

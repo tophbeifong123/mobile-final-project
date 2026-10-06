@@ -61,17 +61,14 @@ void main() {
     final repository = _FakeRecoveryRepository();
     await openApp(
       tester,
-      location: '/forgot-password?email=student%2Bintern%40email.psu.ac.th',
+      location: '/forgot-password?email=student%2Bintern%40gmail.com',
       recovery: repository,
     );
     expect(find.byType(ForgotPasswordScreen), findsOneWidget);
-    expect(
-      find.textContaining('กรอกอีเมล @email.psu.ac.th หรือ @psu.ac.th'),
-      findsOneWidget,
-    );
+    expect(find.textContaining('กรอกอีเมลที่ใช้สมัครสมาชิก'), findsOneWidget);
     expect(
       tester.widget<TextFormField>(find.byType(TextFormField)).controller!.text,
-      'student+intern@email.psu.ac.th',
+      'student+intern@gmail.com',
     );
     await tester.enterText(find.byType(TextFormField), 'invalid');
     await tester.tap(find.text('ส่งลิงก์รีเซ็ตรหัสผ่าน'));
@@ -115,16 +112,37 @@ void main() {
     'student@notemail.psu.ac.th',
     'student@notpsu.ac.th',
   ]) {
-    testWidgets('rejects recovery outside exact PSU domains: $email', (
-      tester,
-    ) async {
+    testWidgets('accepts recovery outside PSU domains: $email', (tester) async {
       final repository = _FakeRecoveryRepository();
       await openApp(tester, location: '/forgot-password', recovery: repository);
       await tester.enterText(find.byType(TextFormField), email);
       await tester.tap(find.text('ส่งลิงก์รีเซ็ตรหัสผ่าน'));
       await tester.pumpAndSettle();
       expect(
-        find.text(PasswordRecoveryEmailPolicy.allowedDomainMessage),
+        find.text('หากอีเมลนี้มีบัญชีอยู่ ระบบจะส่งลิงก์รีเซ็ตรหัสผ่านให้คุณ'),
+        findsOneWidget,
+      );
+      expect(repository.requestCalls, 1);
+      expect(repository.lastEmail, email);
+      await tester.pumpWidget(const SizedBox());
+    });
+  }
+
+  for (final email in [
+    '',
+    'invalid',
+    'user@@example.com',
+    '@example.com',
+    'user name@example.com',
+  ]) {
+    testWidgets('rejects malformed recovery email: $email', (tester) async {
+      final repository = _FakeRecoveryRepository();
+      await openApp(tester, location: '/forgot-password', recovery: repository);
+      await tester.enterText(find.byType(TextFormField), email);
+      await tester.tap(find.text('ส่งลิงก์รีเซ็ตรหัสผ่าน'));
+      await tester.pumpAndSettle();
+      expect(
+        find.text(PasswordRecoveryEmailPolicy.invalidEmailMessage),
         findsOneWidget,
       );
       expect(repository.requestCalls, 0);

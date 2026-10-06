@@ -50,7 +50,7 @@ class PasswordRecoveryRemoteDataSource {
           throw PasswordRecoveryException(
             reset
                 ? 'ลิงก์รีเซ็ตรหัสผ่านไม่ถูกต้องหรือหมดอายุแล้ว กรุณาขอลิงก์ใหม่'
-                : PasswordRecoveryEmailPolicy.allowedDomainMessage,
+                : PasswordRecoveryEmailPolicy.invalidEmailMessage,
             invalidLink: reset,
           );
         case 429:
