@@ -3,6 +3,7 @@ import { AddJobOpeningsAllowance1791840000000 } from './migrations/1791840000000
 import { DataSource } from 'typeorm';
 import { ApplicationStatusEvent } from '../applications/entities/application-status-event.entity.js';
 import { Application } from '../applications/entities/application.entity.js';
+import { AuthIdentity } from '../auth/entities/auth-identity.entity.js';
 import { CompanyProfile } from '../auth/entities/company-profile.entity.js';
 import { RefreshToken } from '../auth/entities/refresh-token.entity.js';
 import { PasswordResetToken } from '../auth/entities/password-reset-token.entity.js';
@@ -18,6 +19,7 @@ import { AddAllowanceAmountAndJobCategories1791830400000 } from './migrations/17
 import { NormalizeAllowanceAmount1791850000000 } from './migrations/1791850000000-normalize-allowance-amount.js';
 import { AddCompanyContactLinks1791860000000 } from './migrations/1791860000000-add-company-contact-links.js';
 import { AddAvatarToStudentProfiles1759200000000 } from './migrations/1759200000000-add-avatar-to-student-profiles.js';
+import { AddGoogleAuthIdentities1759300000000 } from './migrations/1759300000000-add-google-auth-identities.js';
 import { AddBioContactsPortfoliosToStudentProfiles1759100000000 } from './migrations/1759100000000-add-bio-contacts-portfolios-to-student-profiles.js';
 import { AddDetailsAndCoverToCompanyProfiles1759300000000 } from './migrations/1759300000000-add-details-and-cover-to-company-profiles.js';
 import { AddDraftStatusAndDeadlineToJobs1759400000000 } from './migrations/1759400000000-add-draft-status-and-deadline-to-jobs.js';
@@ -39,6 +41,7 @@ export const AppDataSource = new DataSource({
   synchronize: false,
   entities: [
     User,
+    AuthIdentity,
     RefreshToken,
     PasswordResetToken,
     StudentProfile,
@@ -59,6 +62,7 @@ export const AppDataSource = new DataSource({
     AddSkillsToJobs1759000000000,
     AddBioContactsPortfoliosToStudentProfiles1759100000000,
     AddAvatarToStudentProfiles1759200000000,
+    AddGoogleAuthIdentities1759300000000,
     AddDetailsAndCoverToCompanyProfiles1759300000000,
     AddDraftStatusAndDeadlineToJobs1759400000000,
     AddPasswordRecovery1791072000000,

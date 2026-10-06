@@ -40,6 +40,23 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<bool> authenticateWithGoogle({
+    required String idToken,
+    UserRole? role,
+  }) async {
+    final response = await remote.authenticateWithGoogle(
+      idToken: idToken,
+      role: role?.name,
+    );
+    final model = response.session;
+    if (model == null) {
+      return response.roleRequired;
+    }
+    await tokenStorage.write(model.toEntity());
+    return false;
+  }
+
+  @override
   Future<void> logout() async {
     try {
       await remote.logout();

@@ -40,6 +40,27 @@ class AuthController extends AsyncNotifier<AuthSession?> {
     );
   }
 
+  Future<GoogleAuthResult> authenticateWithGoogle({
+    required String idToken,
+    UserRole? role,
+  }) async {
+    try {
+      final roleRequired = await ref
+          .read(authRepositoryProvider)
+          .authenticateWithGoogle(idToken: idToken, role: role);
+      if (!roleRequired) {
+        state = await AsyncValue.guard(
+          () => ref.read(authRepositoryProvider).restore(),
+        );
+      }
+      return GoogleAuthResult(roleRequired: roleRequired);
+    } on AppException catch (error) {
+      return GoogleAuthResult(error: error.message);
+    } catch (_) {
+      return const GoogleAuthResult(error: 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
+    }
+  }
+
   Future<void> logout() async {
     await ref.read(authRepositoryProvider).logout();
     state = const AsyncData(null);

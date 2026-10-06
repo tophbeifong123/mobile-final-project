@@ -5,12 +5,15 @@ import { Test } from '@nestjs/testing';
 import { AuthRepository } from './auth.repository.js';
 import { AuthService } from './auth.service.js';
 import { PASSWORD_HASHER } from './password-hasher.js';
+import { GOOGLE_TOKEN_VERIFIER } from './google-token-verifier.js';
 import { UserRole } from './user-role.js';
 
 describe('AuthService', () => {
   const repository = {
     findByEmail: vi.fn(),
+    findByGoogleSubject: vi.fn(),
     createUserWithProfile: vi.fn(),
+    createGoogleUserWithProfile: vi.fn(),
     saveRefreshToken: vi.fn(),
     rotateRefreshToken: vi.fn(),
     revokeAllForUser: vi.fn(),
@@ -20,6 +23,12 @@ describe('AuthService', () => {
   const config = {
     get: vi.fn((_key: string, fallback?: string) => fallback ?? '7d'),
   };
+  const googleTokens = {
+    verify: vi.fn().mockResolvedValue({
+      subject: 'google-sub-1',
+      email: 'new@example.com',
+    }),
+  };
 
   let service: AuthService;
 
@@ -28,6 +37,10 @@ describe('AuthService', () => {
     jwtService.signAsync.mockResolvedValue('access-token');
     passwords.hash.mockResolvedValue('hashed-password');
     repository.saveRefreshToken.mockResolvedValue(true);
+    googleTokens.verify.mockResolvedValue({
+      subject: 'google-sub-1',
+      email: 'new@example.com',
+    });
     config.get.mockImplementation(
       (_key: string, fallback?: string) => fallback ?? '7d',
     );
@@ -39,6 +52,7 @@ describe('AuthService', () => {
         { provide: JwtService, useValue: jwtService },
         { provide: PASSWORD_HASHER, useValue: passwords },
         { provide: ConfigService, useValue: config },
+        { provide: GOOGLE_TOKEN_VERIFIER, useValue: googleTokens },
       ],
     }).compile();
 
@@ -104,6 +118,98 @@ describe('AuthService', () => {
       }),
     ).rejects.toBeInstanceOf(UnauthorizedException);
     expect(repository.saveRefreshToken).not.toHaveBeenCalled();
+  });
+
+  it('rejects password login for an account without a password credential', async () => {
+    repository.findByEmail.mockResolvedValue({
+      id: 'google-user',
+      email: 'student@example.com',
+      passwordHash: null,
+      role: UserRole.Student,
+    });
+
+    await expect(
+      service.login({
+        email: 'student@example.com',
+        password: 'password123',
+      }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(passwords.verify).not.toHaveBeenCalled();
+  });
+  it('requires a role before creating a new Google account', async () => {
+    repository.findByGoogleSubject.mockResolvedValue(null);
+    repository.findByEmail.mockResolvedValue(null);
+
+    await expect(
+      service.googleAuth({ idToken: 'google-id-token' }),
+    ).resolves.toEqual({
+      code: 'role_required',
+    });
+    expect(repository.createGoogleUserWithProfile).not.toHaveBeenCalled();
+  });
+
+  it('creates a Google user and profile with the selected role', async () => {
+    repository.findByGoogleSubject.mockResolvedValue(null);
+    repository.findByEmail.mockResolvedValue(null);
+    repository.createGoogleUserWithProfile.mockResolvedValue({
+      id: 'google-user',
+      email: 'new@example.com',
+      passwordHash: null,
+      role: UserRole.Company,
+    });
+
+    const result = await service.googleAuth({
+      idToken: 'google-id-token',
+      role: UserRole.Company,
+    });
+
+    expect(repository.createGoogleUserWithProfile).toHaveBeenCalledWith({
+      email: 'new@example.com',
+      providerSubject: 'google-sub-1',
+      role: UserRole.Company,
+    });
+    expect(result).toMatchObject({
+      accessToken: 'access-token',
+      role: 'company',
+    });
+  });
+
+  it('does not auto-link a Google identity to an existing password account', async () => {
+    repository.findByGoogleSubject.mockResolvedValue(null);
+    repository.findByEmail.mockResolvedValue({
+      id: 'password-user',
+      email: 'new@example.com',
+      passwordHash: 'existing-hash',
+      role: UserRole.Student,
+    });
+
+    await expect(
+      service.googleAuth({
+        idToken: 'google-id-token',
+        role: UserRole.Student,
+      }),
+    ).rejects.toBeInstanceOf(ConflictException);
+    expect(repository.createGoogleUserWithProfile).not.toHaveBeenCalled();
+  });
+
+  it('uses the stored role for an existing Google identity', async () => {
+    repository.findByGoogleSubject.mockResolvedValue({
+      id: 'google-user',
+      email: 'new@example.com',
+      passwordHash: null,
+      role: UserRole.Company,
+    });
+
+    const result = await service.googleAuth({
+      idToken: 'google-id-token',
+      role: UserRole.Student,
+    });
+
+    expect(result).toMatchObject({
+      accessToken: 'access-token',
+      role: 'company',
+    });
+    expect(repository.createGoogleUserWithProfile).not.toHaveBeenCalled();
   });
 
   it('uses the current token version when issuing a login session', async () => {
