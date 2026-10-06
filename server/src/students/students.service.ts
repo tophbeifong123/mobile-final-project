@@ -13,6 +13,8 @@ import { ResumeResponseDto } from './dto/resume-response.dto.js';
 import { StudentProfileDto } from './dto/student-profile.dto.js';
 import { UpdateStudentProfileDto } from './dto/update-student-profile.dto.js';
 import { StudentsRepository } from './students.repository.js';
+import { UniversitiesService } from '../universities/universities.service.js';
+import { type StudentProfile } from '../auth/entities/student-profile.entity.js';
 
 const STUDENT_ONLY = 'เฉพาะนักศึกษาเท่านั้น';
 const PROFILE_NOT_FOUND = 'ไม่พบโปรไฟล์';
@@ -25,6 +27,7 @@ export class StudentsService {
   constructor(
     private readonly studentsRepository: StudentsRepository,
     private readonly storageService: StorageService,
+    private readonly universitiesService: UniversitiesService,
   ) {}
 
   async getMine(user: AuthUser): Promise<StudentProfileDto> {
@@ -33,7 +36,7 @@ export class StudentsService {
     if (!profile) {
       throw new NotFoundException(PROFILE_NOT_FOUND);
     }
-    return toDto(profile);
+    return this.toDto(profile);
   }
 
   async updateMine(
@@ -41,6 +44,18 @@ export class StudentsService {
     dto: UpdateStudentProfileDto,
   ): Promise<StudentProfileDto> {
     this.assertStudent(user);
+
+    let universityId: string | null | undefined;
+    let customUniversityName: string | null | undefined;
+    if (dto.universityId !== undefined || dto.customUniversityName !== undefined) {
+      const custom = dto.customUniversityName?.trim() || null;
+      if (dto.universityId != null && custom != null) {
+        throw new BadRequestException('เลือกมหาวิทยาลัยจากรายการหรือกรอกชื่อเองได้อย่างใดอย่างหนึ่ง');
+      }
+      universityId = dto.universityId ?? null;
+      customUniversityName = universityId ? null : custom;
+      if (universityId) await this.universitiesService.requireById(universityId);
+    }
 
     const contactLinks = dto.contactLinks
       ? dto.contactLinks.map((item) => ({
@@ -67,7 +82,8 @@ export class StudentsService {
 
     const saved = await this.studentsRepository.updateByUserId(user.userId, {
       fullName: dto.fullName.trim(),
-      university: dto.university.trim(),
+      universityId,
+      customUniversityName,
       major: dto.major.trim(),
       skills: dto.skills
         .map((skill) => skill.trim())
@@ -80,7 +96,7 @@ export class StudentsService {
     if (!saved) {
       throw new NotFoundException(PROFILE_NOT_FOUND);
     }
-    return toDto(saved);
+    return this.toDto(saved);
   }
 
   async uploadResume(
@@ -274,7 +290,7 @@ export class StudentsService {
     if (!updated) {
       throw new NotFoundException(PROFILE_NOT_FOUND);
     }
-    return toDto(updated);
+    return this.toDto(updated);
   }
 
   async getAvatarFile(
@@ -322,7 +338,7 @@ export class StudentsService {
     if (!updated) {
       throw new NotFoundException(PROFILE_NOT_FOUND);
     }
-    return toDto(updated);
+    return this.toDto(updated);
   }
 
   private assertStudent(user: AuthUser): void {
@@ -330,11 +346,16 @@ export class StudentsService {
       throw new ForbiddenException(STUDENT_ONLY);
     }
   }
+
+  private async toDto(profile: StudentProfile): Promise<StudentProfileDto> {
+    return toDto(profile, await this.studentsRepository.resolveDisplayUniversity(profile));
+  }
 }
 
 function toDto(profile: {
+  universityId?: string | null;
+  customUniversityName?: string | null;
   fullName: string;
-  university: string;
   major: string;
   skills: string[];
   bio?: string | null;
@@ -354,10 +375,12 @@ function toDto(profile: {
   resumeFileName?: string | null;
   resumeObjectKey?: string | null;
   avatarObjectKey?: string | null;
-}): StudentProfileDto {
+}, university = ''): StudentProfileDto {
   const dto = new StudentProfileDto();
   dto.fullName = profile.fullName;
-  dto.university = profile.university;
+  dto.universityId = profile.universityId ?? null;
+  dto.customUniversityName = profile.customUniversityName ?? null;
+  dto.university = university;
   dto.major = profile.major;
   dto.skills = profile.skills;
   dto.bio = profile.bio ?? '';

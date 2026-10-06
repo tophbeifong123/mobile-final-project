@@ -11,6 +11,7 @@ import { Job } from '../jobs/entities/job.entity.js';
 import { SavedJob } from '../jobs/entities/saved-job.entity.js';
 import { Notification } from '../notifications/entities/notification.entity.js';
 import { Province } from '../provinces/province.entity.js';
+import { University } from '../universities/university.entity.js';
 import { AddCompanyOfficeLocation1791158400000 } from './migrations/1791158400000-add-company-office-location.js';
 import { AddAvatarToStudentProfiles1759200000000 } from './migrations/1759200000000-add-avatar-to-student-profiles.js';
 import { AddBioContactsPortfoliosToStudentProfiles1759100000000 } from './migrations/1759100000000-add-bio-contacts-portfolios-to-student-profiles.js';
@@ -23,6 +24,7 @@ import { CreateJobsTable1758600000000 } from './migrations/1758600000000-create-
 import { CreateNotificationsTable1758900000000 } from './migrations/1758900000000-create-notifications-table.js';
 import { CreateSavedJobsTable1758700000000 } from './migrations/1758700000000-create-saved-jobs.js';
 import { AddPasswordRecovery1791072000000 } from './migrations/1791072000000-add-password-recovery.js';
+import { AddStudentUniversityMaster1791244800000 } from './migrations/1791244800000-add-student-university-master.js';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -44,6 +46,7 @@ export const AppDataSource = new DataSource({
     ApplicationStatusEvent,
     Notification,
     Province,
+    University,
   ],
   migrations: [
     CreateAuthTables1758556800000,
@@ -58,5 +61,6 @@ export const AppDataSource = new DataSource({
     AddDraftStatusAndDeadlineToJobs1759400000000,
     AddPasswordRecovery1791072000000,
     AddCompanyOfficeLocation1791158400000,
+    AddStudentUniversityMaster1791244800000,
   ],
 });

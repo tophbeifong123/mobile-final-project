@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  Index,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -17,8 +18,12 @@ export class StudentProfile {
   @Column({ name: 'full_name', type: 'varchar', length: 255, default: '' })
   fullName: string;
 
-  @Column({ type: 'varchar', length: 255, default: '' })
-  university: string;
+  @Index('IDX_student_profiles_university_id')
+  @Column({ name: 'university_id', type: 'uuid', nullable: true })
+  universityId: string | null;
+
+  @Column({ name: 'custom_university_name', type: 'varchar', length: 255, nullable: true })
+  customUniversityName: string | null;
 
   @Column({ type: 'varchar', length: 255, default: '' })
   major: string;

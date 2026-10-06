@@ -24,6 +24,7 @@ jobs ||--o{ applications : receives
 applications ||--o{ application_status_events : timeline
 applications ||--o{ notifications : notifies
 student_profiles ||--o{ notifications : receives
+universities ||--o{ student_profiles : selected_university
 
 applications ||--o{ outbox_messages : "enqueue on status change"
 ```
@@ -88,7 +89,8 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | id | uuid | PK |
 | user_id | uuid | unique, FK → users.id |
 | full_name | varchar | |
-| university | varchar | |
+| university_id | uuid | null ได้, FK → universities.id |
+| custom_university_name | varchar(255) | null ได้; ใช้เมื่อไม่ได้เลือกจากมาสเตอร์ |
 | major | varchar | สาขา |
 | skills | text[] | ทักษะ |
 | bio | text | ข้อมูลเกี่ยวกับฉัน / แนะนำตัว |
@@ -99,6 +101,16 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | resume_file_name | varchar | ชื่อไฟล์ที่ผู้ใช้เลือก |
 | created_at | timestamptz | |
 | updated_at | timestamptz | |
+
+`university_id` และ `custom_university_name` มี CHECK constraint `university_id IS NULL OR custom_university_name IS NULL`; ทั้งคู่ null หมายถึงยังไม่ได้ระบุ. Migration `1791244800000-add-student-university-master` สร้างมาสเตอร์และ backfill ชื่อเดิมโดย normalize whitespace/periods แล้ว match แบบ exact กับชื่อหรือ alias; ชื่อ unmatched/ambiguous เก็บเป็น custom โดยไม่เดา. Rollback คืนชื่อที่แสดงปัจจุบันลงคอลัมน์เดิมก่อนถอด FK/คอลัมน์ใหม่และตารางมาสเตอร์.
+
+มาสเตอร์ seed จาก [MHESI Open Data: รายชื่อสถาบันอุดมศึกษา](https://data.mhesi.go.th/dataset/univ_uni_11_03) (academic year 2563; metadata ระบุข้อมูลล่าสุด 1 มีนาคม 2564 และปรับปรุงชุดข้อมูล 24 สิงหาคม 2568). Migration ฝัง snapshot ไม่เรียก network. ชื่อวิทยาเขตที่ระบุชัดถูกรวมที่สถาบันต้นสังกัด และเพิ่ม aliases สำหรับคำย่อที่ค้นหาบ่อย เช่น `ม.อ.` และ `PSU`. เนื่องจาก metadata ของแหล่งข้อมูลระบุปีการศึกษา 2563 ให้ผู้ตรวจยืนยันว่าขอบเขต snapshot นี้เพียงพอก่อน release.
+
+| คอลัมน์ | ชนิด | หมายเหตุ |
+|---|---|---|
+| id | uuid | PK, deterministic จากชื่อมาตรฐาน |
+| name_th | varchar(255) | unique, ชื่อสำหรับแสดง |
+| aliases | text[] | ชื่อเรียกอื่นและคำย่อสำหรับค้นหา |
 
 ### company_profiles
 
@@ -246,6 +258,7 @@ Worker ที่สำเร็จแล้วตั้ง `sent` เกิน�
 | notifications | student_id, created_at | หน้ารายการแจ้งเตือน |
 | outbox_messages | status, available_at | worker ดึงงานที่ถึงเวลา |
 | refresh_tokens | user_id | logout ของ user นั้น |
+| student_profiles | university_id | join ชื่อมหาวิทยาลัยใน applicant list |
 | company_profiles | province_id | FK และการอ่านโปรไฟล์พร้อมจังหวัด |
 
 ## 5. Transaction และ lock

@@ -6,6 +6,7 @@ import 'package:client/features/resume/domain/repositories/resume_repository.dar
 import 'package:client/features/resume/presentation/providers/resume_controller.dart';
 import 'package:client/features/resume/presentation/screens/resume_upload_screen.dart';
 import 'package:client/features/student_profile/domain/entities/student_profile.dart';
+import 'package:client/features/student_profile/domain/entities/university.dart';
 import 'package:client/features/student_profile/domain/repositories/student_profile_repository.dart';
 import 'package:client/features/student_profile/presentation/providers/student_profile_controller.dart';
 import 'package:client/features/student_profile/presentation/screens/student_profile_screen.dart';
@@ -128,6 +129,9 @@ class _FakeStudentProfileRepository implements StudentProfileRepository {
   _FakeStudentProfileRepository(this.profile);
 
   StudentProfile profile;
+
+  @override
+  Future<List<University>> searchUniversities(String query) async => const [];
 
   @override
   Future<StudentProfile> fetchMe() async => profile;

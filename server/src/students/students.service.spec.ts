@@ -10,6 +10,7 @@ import { type UploadedFilePayload } from '../storage/uploaded-file.interface.js'
 import { UpdateStudentProfileDto } from './dto/update-student-profile.dto.js';
 import { StudentsRepository } from './students.repository.js';
 import { StudentsService } from './students.service.js';
+import { UniversitiesService } from '../universities/universities.service.js';
 
 describe('StudentsService', () => {
   const repository = {
@@ -17,6 +18,7 @@ describe('StudentsService', () => {
     updateByUserId: vi.fn(),
     updateResume: vi.fn(),
     updateAvatar: vi.fn(),
+    resolveDisplayUniversity: vi.fn(),
   };
 
   const storage = {
@@ -24,6 +26,7 @@ describe('StudentsService', () => {
     get: vi.fn(),
     delete: vi.fn(),
   };
+  const universities = { requireById: vi.fn() };
 
   let service: StudentsService;
 
@@ -31,7 +34,8 @@ describe('StudentsService', () => {
   const company = { userId: 'user-2', role: UserRole.Company };
   const stored = {
     fullName: 'มีนา',
-    university: 'PSU',
+    universityId: null,
+    customUniversityName: 'PSU',
     major: 'IT',
     skills: ['Flutter'],
     portfolioUrl: null,
@@ -41,11 +45,16 @@ describe('StudentsService', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    repository.resolveDisplayUniversity.mockImplementation(async (profile) =>
+      profile.customUniversityName ?? (profile.universityId ? 'มหาวิทยาลัยสงขลานครินทร์' : ''),
+    );
+    universities.requireById.mockResolvedValue({ id: 'uni-psu', nameTh: 'มหาวิทยาลัยสงขลานครินทร์' });
     const module = await Test.createTestingModule({
       providers: [
         StudentsService,
         { provide: StudentsRepository, useValue: repository },
         { provide: StorageService, useValue: storage },
+        { provide: UniversitiesService, useValue: universities },
       ],
     }).compile();
     service = module.get(StudentsService);
@@ -77,17 +86,17 @@ describe('StudentsService', () => {
     );
   });
 
-  it('saves trimmed profile fields and clears a blank portfolio', async () => {
+  it('saves other profile fields without changing a blank university and clears a blank portfolio', async () => {
     repository.updateByUserId.mockResolvedValue({
       fullName: 'มีนา',
-      university: 'PSU',
+      universityId: null,
+      customUniversityName: 'PSU',
       major: 'IT',
       skills: ['Flutter', 'SQL'],
       portfolioUrl: null,
     });
     const dto = new UpdateStudentProfileDto();
     dto.fullName = '  มีนา  ';
-    dto.university = ' PSU ';
     dto.major = ' IT ';
     dto.skills = [' Flutter ', '', 'SQL'];
     dto.portfolioUrl = '   ';
@@ -96,7 +105,8 @@ describe('StudentsService', () => {
 
     expect(repository.updateByUserId).toHaveBeenCalledWith('user-1', {
       fullName: 'มีนา',
-      university: 'PSU',
+      universityId: undefined,
+      customUniversityName: undefined,
       major: 'IT',
       skills: ['Flutter', 'SQL'],
       portfolioUrl: null,
@@ -108,13 +118,38 @@ describe('StudentsService', () => {
   it('rejects a company updating a student profile', async () => {
     const dto = new UpdateStudentProfileDto();
     dto.fullName = 'บริษัท';
-    dto.university = 'PSU';
     dto.major = 'IT';
     dto.skills = [];
 
     await expect(service.updateMine(company, dto)).rejects.toBeInstanceOf(
       ForbiddenException,
     );
+    expect(repository.updateByUserId).not.toHaveBeenCalled();
+  });
+
+  it('selects a master university and clears a previous custom value', async () => {
+    repository.updateByUserId.mockResolvedValue({
+      fullName: 'มีนา', universityId: 'uni-psu', customUniversityName: null,
+      major: 'IT', skills: [], portfolioUrl: null,
+    });
+    const dto = new UpdateStudentProfileDto();
+    dto.fullName = 'มีนา'; dto.universityId = 'uni-psu'; dto.major = 'IT'; dto.skills = [];
+
+    const result = await service.updateMine(student, dto);
+
+    expect(universities.requireById).toHaveBeenCalledWith('uni-psu');
+    expect(repository.updateByUserId).toHaveBeenCalledWith('user-1', expect.objectContaining({
+      universityId: 'uni-psu', customUniversityName: null,
+    }));
+    expect(result.university).toBe('มหาวิทยาลัยสงขลานครินทร์');
+  });
+
+  it('rejects both master and custom university values before writing', async () => {
+    const dto = new UpdateStudentProfileDto();
+    dto.fullName = 'มีนา'; dto.universityId = 'uni-psu';
+    dto.customUniversityName = 'ชื่อที่พิมพ์เอง'; dto.major = 'IT'; dto.skills = [];
+
+    await expect(service.updateMine(student, dto)).rejects.toBeInstanceOf(BadRequestException);
     expect(repository.updateByUserId).not.toHaveBeenCalled();
   });
 

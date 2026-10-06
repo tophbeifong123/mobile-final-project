@@ -6,7 +6,13 @@ export class StudentProfileDto {
   @ApiProperty({ example: 'มีนา เพ็งชัย' })
   fullName: string;
 
-  @ApiProperty({ example: 'มหาวิทยาลัยสงขลานครินทร์' })
+  @ApiProperty({ nullable: true, required: false })
+  universityId: string | null;
+
+  @ApiProperty({ nullable: true, required: false })
+  customUniversityName: string | null;
+
+  @ApiProperty({ example: 'มหาวิทยาลัยสงขลานครินทร์', description: 'ชื่อสำหรับแสดงผลจากมาสเตอร์หรือชื่อที่กรอกเอง' })
   university: string;
 
   @ApiProperty({ example: 'วิทยาการคอมพิวเตอร์' })

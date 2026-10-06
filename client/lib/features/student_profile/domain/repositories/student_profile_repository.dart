@@ -1,7 +1,9 @@
 import '../entities/student_profile.dart';
+import '../entities/university.dart';
 
 abstract class StudentProfileRepository {
   Future<StudentProfile> fetchMe();
+  Future<List<University>> searchUniversities(String query) async => const [];
 
   Future<StudentProfile> update(StudentProfile profile);
 

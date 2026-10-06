@@ -7,6 +7,7 @@ import {
 import { DataSource, QueryFailedError } from 'typeorm';
 import { CompanyProfile } from '../auth/entities/company-profile.entity.js';
 import { StudentProfile } from '../auth/entities/student-profile.entity.js';
+import { University } from '../universities/university.entity.js';
 import { Job } from '../jobs/entities/job.entity.js';
 import { JobStatus, WorkMode } from '../jobs/job-enums.js';
 import { Notification } from '../notifications/entities/notification.entity.js';
@@ -310,10 +311,11 @@ export class ApplicationsRepository {
       .getRepository(Application)
       .createQueryBuilder('app')
       .innerJoin(StudentProfile, 'student', 'student.id = app.studentId')
+      .leftJoin(University, 'university', 'university.id = student.universityId')
       .where('app.jobId = :jobId', { jobId })
       .select('app.id', 'applicationId')
       .addSelect('student.fullName', 'fullName')
-      .addSelect('student.university', 'university')
+      .addSelect(`COALESCE(student.customUniversityName, university.nameTh, '')`, 'university')
       .addSelect('student.major', 'major')
       .addSelect('app.status', 'status')
       .addSelect('app.coverLetter', 'coverLetter')
@@ -350,13 +352,16 @@ export class ApplicationsRepository {
       .findOne({
         where: { id: application.studentId },
       });
+    const university = student?.universityId
+      ? await this.dataSource.getRepository(University).findOne({ where: { id: student.universityId } })
+      : null;
 
     return {
       applicationId: application.id,
       jobId: application.jobId,
       studentId: application.studentId,
       fullName: student?.fullName ?? '',
-      university: student?.university ?? '',
+      university: student?.customUniversityName ?? university?.nameTh ?? '',
       major: student?.major ?? '',
       skills: Array.isArray(student?.skills) ? student.skills : [],
       bio: student?.bio ?? '',

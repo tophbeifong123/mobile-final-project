@@ -13,9 +13,7 @@ class FeedGreetingHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final displayName = name?.trim() ?? '';
-    final displayUniversity = (university?.trim().isNotEmpty ?? false)
-        ? university!.trim()
-        : 'ม.ธรรมศาสตร์';
+    final displayUniversity = university?.trim();
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
@@ -112,7 +110,9 @@ class FeedGreetingHeader extends StatelessWidget {
                 ),
                 const Gap(2),
                 Text(
-                  '$displayUniversity • พร้อมเริ่มฝึกงาน',
+                  displayUniversity?.isNotEmpty == true
+                      ? '$displayUniversity • พร้อมเริ่มฝึกงาน'
+                      : 'พร้อมเริ่มฝึกงาน',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(

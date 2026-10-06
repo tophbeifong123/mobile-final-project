@@ -9,6 +9,7 @@ import { CompaniesModule } from './companies/companies.module.js';
 import { JobsModule } from './jobs/jobs.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
 import { ProvincesModule } from './provinces/provinces.module.js';
+import { UniversitiesModule } from './universities/universities.module.js';
 import { StorageModule } from './storage/storage.module.js';
 import { StudentsModule } from './students/students.module.js';
 
@@ -37,6 +38,7 @@ import { StudentsModule } from './students/students.module.js';
     ApplicationsModule,
     NotificationsModule,
     ProvincesModule,
+    UniversitiesModule,
     CompaniesModule,
   ],
   controllers: [AppController],

@@ -30,6 +30,7 @@ class ApiConstants {
   static const String jobs = '/jobs';
   static const String savedJobs = '/jobs/saved';
   static const String studentProfile = '/students/me';
+  static const String universities = '/universities';
   static const String studentResume = '/students/me/resume';
   static const String studentResumeFile = '/students/me/resume/file';
   static const String studentAvatar = '/students/me/avatar';
