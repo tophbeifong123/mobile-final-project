@@ -22,7 +22,10 @@ export class PasswordResetMailer implements OnModuleDestroy {
 
   async sendResetLink(email: string, token: string): Promise<void> {
     const url = this.frontendUrl();
-    url.hash = `/reset-password?token=${encodeURIComponent(token)}`;
+    const directory = url.pathname.replace(/\/$/, '');
+    url.pathname = `${directory}/reset-password`;
+    url.search = '';
+    url.hash = `token=${token}`;
     await this.send(email, 'รีเซ็ตรหัสผ่าน InternFinder', [
       'คุณได้รับอีเมลนี้เพราะมีการขอรีเซ็ตรหัสผ่านบัญชี InternFinder ของคุณ',
       `เปิดลิงก์นี้เพื่อตั้งรหัสผ่านใหม่ (ใช้ได้ครั้งเดียวภายใน 15 นาที):\n${url.toString()}`,
@@ -39,7 +42,7 @@ export class PasswordResetMailer implements OnModuleDestroy {
     const production = this.config.get<string>('NODE_ENV') === 'production';
     const configured = this.config.get<string>('APP_WEB_URL');
     try {
-      const url = new URL(configured || (production ? '' : 'http://127.0.0.1:8085'));
+      const url = new URL(configured || (production ? '' : 'http://127.0.0.1:3000'));
       if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || (production && url.protocol !== 'https:')) {
         throw new Error('Invalid reset destination');
       }
