@@ -260,7 +260,7 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
                 ))
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
-                    child: AppCard(
+                    child: CompanyApplicantCard(
                       child: ListTile(
                         leading: const Icon(
                           Icons.picture_as_pdf_outlined,
@@ -910,6 +910,7 @@ class _ResumeCard extends ConsumerWidget {
     required this.applicationId,
     this.resumeFileName,
     this.resumeObjectKey,
+    this.onOpen,
   });
 
   final String jobId;
@@ -941,11 +942,14 @@ class _ResumeCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
     final colors = context.colors;
+    final openResume =
+        onOpen ??
+        (resumeObjectKey != null && resumeObjectKey!.isNotEmpty
+            ? () => _openPreview(context)
+            : null);
 
     return CompanyApplicantCard(
-      onTap: resumeObjectKey != null && resumeObjectKey!.isNotEmpty
-          ? () => _openPreview(context)
-          : null,
+      onTap: openResume,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1002,20 +1006,20 @@ class _ResumeCard extends ConsumerWidget {
                 ),
                 IconButton(
                   tooltip: 'เปิด CV PDF',
-                  onPressed: onOpen,
+                  onPressed: openResume,
                   icon: const Icon(Icons.open_in_new),
                 ),
               ],
             ),
           ),
-          if (resumeObjectKey != null && resumeObjectKey!.isNotEmpty) ...[
+          if (openResume != null) ...[
             const Gap(12),
             NeoButton(
               text: 'เปิด Resume (PDF)',
               variant: NeoButtonVariant.secondary,
               icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
               isFullWidth: true,
-              onPressed: () => _openPreview(context),
+              onPressed: openResume,
             ),
           ],
         ],

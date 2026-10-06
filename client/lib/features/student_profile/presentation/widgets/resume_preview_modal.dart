@@ -56,11 +56,11 @@ class ResumePreviewModal extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final pdfBytesAsync = documentId == null
-        ? ref.watch(resumePdfBytesProvider)
-        : ref.watch(studentDocumentPdfBytesProvider(documentId!));
     final AsyncValue<List<int>> pdfBytesAsync =
-        pdfBytes ?? ref.watch<AsyncValue<List<int>>>(resumePdfBytesProvider);
+        pdfBytes ??
+        (documentId == null
+            ? ref.watch(resumePdfBytesProvider)
+            : ref.watch(studentDocumentPdfBytesProvider(documentId!)));
 
     return Dialog(
       backgroundColor: Colors.transparent,
