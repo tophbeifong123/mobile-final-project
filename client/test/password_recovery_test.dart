@@ -424,7 +424,7 @@ void main() {
     );
     await tester.tap(find.text('เข้าสู่ระบบด้วยรหัสผ่านใหม่'));
     await tester.pumpAndSettle();
-    expect(find.text('เข้าสู่ระบบนักศึกษา'), findsOneWidget);
+    expect(find.text('เข้าสู่ระบบ InternFinder'), findsOneWidget);
   });
 
   testWidgets('reset finishing before restore cannot resurrect old session', (
