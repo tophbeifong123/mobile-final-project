@@ -185,9 +185,12 @@ Flutter โหลดรายละเอียดใหม่เมื่อก
 | PATCH | /api/company/jobs/:id/status | เปิดหรือปิดรับสมัคร |
 | GET | /api/company/jobs/:id/applications | Applicants List |
 | GET | /api/company/jobs/:id/applications/:applicationId | Applicant Detail |
+| GET | /api/company/jobs/:id/applications/:applicationId/resume | เปิด PDF สำเนาของใบสมัครในแอป เฉพาะบริษัทเจ้าของประกาศ |
 | PATCH | /api/company/jobs/:id/applications/:applicationId/status | เปลี่ยนสถานะผู้สมัคร |
 
 บริษัทเรียกได้เฉพาะประกาศและผู้สมัครของบริษัทตัวเอง ไม่เช่นนั้นตอบ 403
+
+เส้นทาง Resume ตรวจ role บริษัท เจ้าของประกาศ และคู่ job/application ใน ApplicationsService ก่อนอ่าน storage จากคีย์ของใบสมัคร ไม่อ่าน Resume ล่าสุดจาก Student Profile ส่ง application/pdf แบบ inline พร้อม private, no-store และ nosniff; ไม่มีไฟล์ตอบ 404 และ storage ล้มเหลวตอบ 503 โดยไม่เปิดเผยรายละเอียดภายใน Flutter เปิด modal PDF อ่านอย่างเดียวโดยใช้ Dio พร้อม token ไม่เรียกเส้นทาง Resume ของนักศึกษา และยังอยู่หน้ารายละเอียดหลังปิดหรือโหลดล้มเหลว
 
 `GET /api/companies/me/dashboard` คืน `totalJobs`, `openJobs`, `totalApplicants` และ `pendingApplicants`. CompaniesService กำหนดสถานะรอตรวจเป็น `submitted` และ `reviewing`; repository นับใบสมัครผ่านประกาศของบริษัทนี้เท่านั้น รวมประกาศที่ปิดแล้วและไม่นับ timeline ซ้ำ. รายการประกาศของบริษัทใช้คำว่า `pendingApplicantCount` ในความหมายเดียวกัน. ไม่มีข้อมูลเป็น 0; query ล้มเหลวไม่แทนด้วย 0. Flutter แสดงตัวเลขเป็นสรุป แล้วแสดงประกาศที่รอตรวจกับฉบับร่างหรือประกาศที่ครบกำหนดภายใน 7 วันหรือเลยกำหนด เปิดหน้าใหม่โหลดใหม่ ดึงลงเพื่อ refresh และลองใหม่ได้เมื่อเกิดข้อผิดพลาด.
 
