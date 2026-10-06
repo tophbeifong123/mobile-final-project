@@ -130,7 +130,7 @@ class StudentProfileResumeCard extends ConsumerWidget {
                   onTap: hasResume
                       ? () => ResumePreviewModal.show(
                           context,
-                          fileName: activeResumeName!,
+                          fileName: activeResumeName,
                           documentId: cv?.id,
                         )
                       : null,

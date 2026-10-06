@@ -46,7 +46,7 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
             applicationId: widget.applicationId,
             documentId: document.id,
           );
-      if (bytes == null || bytes.isEmpty || !mounted) return;
+      if (bytes.isEmpty || !mounted) return;
       final controller = PdfControllerPinch(
         document: PdfDocument.openData(Uint8List.fromList(bytes)),
       );
