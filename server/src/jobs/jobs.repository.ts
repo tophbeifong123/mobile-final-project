@@ -233,6 +233,25 @@ export class JobsRepository {
     return this.dataSource.getRepository(Job).findOne({ where: { id } });
   }
 
+  async countApplicants(jobId: string): Promise<{
+    applicantCount: number;
+    pendingApplicantCount: number;
+  }> {
+    const rows = await this.dataSource.query<
+      Array<{ applicantCount: number; pendingApplicantCount: number }>
+    >(
+      `SELECT COUNT(a.id)::int AS "applicantCount",
+              COUNT(a.id) FILTER (WHERE a.status IN ('submitted', 'reviewing'))::int AS "pendingApplicantCount"
+       FROM applications a
+       WHERE a.job_id = $1`,
+      [jobId],
+    );
+    return {
+      applicantCount: Number(rows[0]?.applicantCount ?? 0),
+      pendingApplicantCount: Number(rows[0]?.pendingApplicantCount ?? 0),
+    };
+  }
+
   async updateOwned(input: OwnedJobUpdate): Promise<Job | null> {
     const jobs = this.dataSource.getRepository(Job);
     const job = await jobs.findOne({
