@@ -148,6 +148,8 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | work_mode | work_mode | |
 | category | varchar | หมวดงาน |
 | has_allowance | boolean | มีเบี้ยเลี้ยงหรือไม่ |
+| openings | integer | null ได้; เมื่อระบุต้องเป็นจำนวนเต็มบวก ไม่เกิน 2147483647 |
+| allowance_amount | numeric(10,2) | null ได้; จำนวนเงินบาทตั้งแต่ 0 ถึง 99999999.99; มีค่าได้เฉพาะ has_allowance = true |
 | requirements | text | คุณสมบัติ |
 | skills | text[] | ทักษะที่เปิดรับ |
 | status | job_status | ค่าเริ่มต้น `open` |
@@ -156,6 +158,8 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | updated_at | timestamptz | |
 
 นักศึกษาเห็นและสมัครได้เฉพาะ `status = open` งาน `closed` ยังอยู่ในการจัดการของบริษัท
+
+Migration `1791840000000-add-job-openings-allowance` มี up/down: เพิ่มคอลัมน์ nullable สองช่องและ CHECK constraints โดยไม่เติม 0 ให้ประกาศเดิม; down ลบ constraints และคอลัมน์ใหม่เท่านั้น ไม่ลบประกาศ กติกาอยู่ใน JobsService และ Swagger ใช้ `openings`/`allowanceAmount` เป็น number หรือ null สำหรับฟอร์ม รายการงาน งานที่บันทึก และรายละเอียด ปิดมีเบี้ยเลี้ยงแล้ว service ล้าง allowance_amount เป็น null ในการบันทึกเดียวกัน
 
 ### saved_jobs
 

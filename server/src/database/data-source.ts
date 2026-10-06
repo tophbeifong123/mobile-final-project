@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import { AddJobOpeningsAllowance1791840000000 } from './migrations/1791840000000-add-job-openings-allowance.js';
 import { DataSource } from 'typeorm';
 import { ApplicationStatusEvent } from '../applications/entities/application-status-event.entity.js';
 import { Application } from '../applications/entities/application.entity.js';
@@ -60,5 +61,6 @@ export const AppDataSource = new DataSource({
     AddPasswordRecovery1791072000000,
     AddCompanyOfficeLocation1791158400000,
     DropOfficePin1791744000000,
+    AddJobOpeningsAllowance1791840000000,
   ],
 });

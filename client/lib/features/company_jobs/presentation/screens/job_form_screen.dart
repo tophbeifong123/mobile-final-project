@@ -78,6 +78,8 @@ class _JobFormState extends ConsumerState<_JobForm> {
   late final TextEditingController _requirementsController;
   late WorkMode _workMode;
   late bool _hasAllowance;
+  late final TextEditingController _openingsController;
+  late final TextEditingController _allowanceAmountController;
   late int _version;
   late List<String> _skills;
   int? _selectedProvinceId;
@@ -102,6 +104,12 @@ class _JobFormState extends ConsumerState<_JobForm> {
     );
     _workMode = job == null ? WorkMode.hybrid : workModeFromApi(job.workMode);
     _hasAllowance = job?.hasAllowance ?? false;
+    _openingsController = TextEditingController(
+      text: job?.openings?.toString() ?? '',
+    );
+    _allowanceAmountController = TextEditingController(
+      text: job?.allowanceAmount?.toString() ?? '',
+    );
     _version = job?.version ?? 1;
     _skills = List<String>.from(job?.skills ?? const []);
   }
@@ -113,6 +121,8 @@ class _JobFormState extends ConsumerState<_JobForm> {
     _provinceController.dispose();
     _categoryController.dispose();
     _requirementsController.dispose();
+    _openingsController.dispose();
+    _allowanceAmountController.dispose();
     super.dispose();
   }
 
@@ -204,14 +214,54 @@ class _JobFormState extends ConsumerState<_JobForm> {
               validator: _required,
             ),
             const Gap(4),
+            AppTextField(
+              controller: _openingsController,
+              label: 'จำนวนรับ (ไม่บังคับ)',
+              keyboardType: TextInputType.number,
+              enabled: !_busy,
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) return null;
+                final number = int.tryParse(value.trim());
+                return number == null || number < 1 || number > 2147483647
+                    ? 'ระบุจำนวนเต็มบวก ไม่เกิน 2147483647'
+                    : null;
+              },
+            ),
+            const Gap(8),
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               title: const Text('มีเบี้ยเลี้ยง'),
               value: _hasAllowance,
               onChanged: _busy
                   ? null
-                  : (value) => setState(() => _hasAllowance = value),
+                  : (value) => setState(() {
+                      _hasAllowance = value;
+                      if (!value) _allowanceAmountController.clear();
+                    }),
             ),
+            AppTextField(
+              controller: _allowanceAmountController,
+              label: 'เบี้ยเลี้ยง (บาท, ไม่บังคับ)',
+              helperText: 'เว้นว่างได้ ทศนิยมไม่เกิน 2 ตำแหน่ง',
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              enabled: _hasAllowance && !_busy,
+              validator: (value) {
+                if (!_hasAllowance || value == null || value.trim().isEmpty) {
+                  return null;
+                }
+                final text = value.trim();
+                final number = double.tryParse(text);
+                return !RegExp(r'^\d+(\.\d{1,2})?$').hasMatch(text) ||
+                        number == null ||
+                        number < 0 ||
+                        number > 99999999.99
+                    ? 'ระบุ 0 ถึง 99999999.99 บาท ทศนิยมไม่เกิน 2 ตำแหน่ง'
+                    : null;
+              },
+            ),
+            const Gap(12),
             AppTextField(
               controller: _requirementsController,
               minLines: 3,
@@ -423,6 +473,10 @@ class _JobFormState extends ConsumerState<_JobForm> {
       workMode: workModeToApi(_workMode),
       category: _categoryController.text.trim(),
       hasAllowance: _hasAllowance,
+      openings: int.tryParse(_openingsController.text.trim()),
+      allowanceAmount: _hasAllowance
+          ? double.tryParse(_allowanceAmountController.text.trim())
+          : null,
       requirements: _requirementsController.text.trim(),
       skills: _skills,
     );

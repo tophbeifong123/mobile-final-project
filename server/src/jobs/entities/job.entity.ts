@@ -39,10 +39,26 @@ export class Job {
   @Column({ name: 'has_allowance', type: 'boolean' })
   hasAllowance: boolean;
 
+  @Column({ type: 'integer', nullable: true })
+  openings: number | null;
+
+  @Column({
+    name: 'allowance_amount',
+    type: 'numeric',
+    precision: 10,
+    scale: 2,
+    nullable: true,
+    transformer: {
+      to: (value: number | null) => value,
+      from: (value: string | null) => (value === null ? null : Number(value)),
+    },
+  })
+  allowanceAmount: number | null;
+
   @Column({ type: 'text' })
   requirements: string;
 
-  @Column('text', { array: true, default: () => "ARRAY[]::text[]" })
+  @Column('text', { array: true, default: () => 'ARRAY[]::text[]' })
   skills: string[];
 
   @Column({
