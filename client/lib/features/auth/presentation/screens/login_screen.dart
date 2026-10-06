@@ -183,6 +183,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _submitting = false;
       _error = result.error;
     });
+  }
+
   void _openPasswordRecovery() {
     if (_submitting) return;
     context.go(
@@ -438,12 +440,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                                 onIdToken: _onGoogleIdToken,
                                                 onError: (message) {
                                                   if (mounted) {
-                                                    setState(
-                                                      () {
-                                                        _submitting = false;
-                                                        _error = message;
-                                                      },
-                                                    );
+                                                    setState(() {
+                                                      _submitting = false;
+                                                      _error = message;
+                                                    });
                                                   }
                                                 },
                                               ),
