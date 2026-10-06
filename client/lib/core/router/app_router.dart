@@ -14,6 +14,7 @@ import '../../features/auth/presentation/screens/reset_password_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/company_dashboard/presentation/screens/company_dashboard_screen.dart';
 import '../../features/company_jobs/presentation/screens/applicant_detail_screen.dart';
+import '../../features/company_jobs/presentation/screens/company_job_detail_screen.dart';
 import '../../features/company_jobs/presentation/screens/applicants_screen.dart';
 import '../../features/company_jobs/presentation/screens/job_form_screen.dart';
 import '../../features/company_jobs/presentation/screens/manage_jobs_screen.dart';
@@ -195,6 +196,15 @@ List<RouteBase> _routes(GlobalKey<NavigatorState> rootNavigatorKey) {
                   path: 'new',
                   parentNavigatorKey: rootNavigatorKey,
                   builder: (context, state) => const JobFormScreen(),
+                ),
+                GoRoute(
+                  path: ':jobId',
+                  parentNavigatorKey: rootNavigatorKey,
+                  builder: (context, state) {
+                    return CompanyJobDetailScreen(
+                      jobId: state.pathParameters['jobId']!,
+                    );
+                  },
                 ),
                 GoRoute(
                   path: ':jobId/edit',

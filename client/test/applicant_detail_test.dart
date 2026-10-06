@@ -680,6 +680,10 @@ class _FakeCompanyJobRepository implements CompanyJobRepository {
       throw UnimplementedError();
 
   @override
+  Future<CompanyOwnedJob> fetchOwned(String jobId) async =>
+      throw UnimplementedError();
+
+  @override
   Future<CreatedJob> create(JobPosting posting) async =>
       throw UnimplementedError();
 

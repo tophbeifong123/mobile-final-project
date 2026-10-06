@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { JobStatus, WorkMode } from '../job-enums.js';
 
 export class JobFeedItemDto {
@@ -22,6 +22,9 @@ export class JobFeedItemDto {
 
   @ApiProperty()
   hasAllowance: boolean;
+
+  @ApiPropertyOptional({ example: 8000, nullable: true })
+  allowanceAmount: number | null;
 
   @ApiProperty({ type: [String], example: ['Flutter', 'Dart'] })
   skills: string[];

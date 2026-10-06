@@ -6,16 +6,15 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/error/app_exception.dart';
 import '../../../../core/provinces/thai_province_picker.dart';
-import '../../../../core/theme/app_colors_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
-import '../../../../core/widgets/app_primary_button.dart';
-import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/app_toast.dart';
 import '../../../../core/widgets/company_top_bar.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/loading_view.dart';
 import '../../../../core/widgets/neo_button.dart';
 import '../../../../core/widgets/skill_picker_sheet.dart';
 import '../../../jobs/domain/entities/job.dart';
+import '../../../jobs/presentation/job_categories.dart';
 import '../../../jobs/presentation/job_labels.dart';
 import '../../domain/entities/company_job.dart';
 import '../providers/company_jobs_controller.dart';
@@ -34,18 +33,20 @@ class JobFormScreen extends ConsumerWidget {
     final detail = ref.watch(companyJobDetailProvider(jobId));
     return detail.when(
       loading: () => Scaffold(
-        appBar: const CompanyTopBar(
+        backgroundColor: NeoColors.paperCanvas,
+        appBar: CompanyTopBar(
           title: 'แก้ประกาศ',
           showBack: true,
-          backLocation: '/company/jobs',
+          backLocation: '/company/jobs/$jobId',
         ),
         body: const LoadingView(label: 'กำลังโหลดประกาศ'),
       ),
       error: (error, _) => Scaffold(
-        appBar: const CompanyTopBar(
+        backgroundColor: NeoColors.paperCanvas,
+        appBar: CompanyTopBar(
           title: 'แก้ประกาศ',
           showBack: true,
-          backLocation: '/company/jobs',
+          backLocation: '/company/jobs/$jobId',
         ),
         body: Center(
           child: AppErrorView(
@@ -74,9 +75,10 @@ class _JobFormState extends ConsumerState<_JobForm> {
   late final TextEditingController _titleController;
   late final TextEditingController _descriptionController;
   late final TextEditingController _provinceController;
-  late final TextEditingController _categoryController;
   late final TextEditingController _requirementsController;
+  late final TextEditingController _allowanceAmountController;
   late WorkMode _workMode;
+  late String _category;
   late bool _hasAllowance;
   late int _version;
   late List<String> _skills;
@@ -96,11 +98,14 @@ class _JobFormState extends ConsumerState<_JobForm> {
       text: job?.description ?? '',
     );
     _provinceController = TextEditingController(text: job?.province ?? '');
-    _categoryController = TextEditingController(text: job?.category ?? '');
     _requirementsController = TextEditingController(
       text: job?.requirements ?? '',
     );
+    _allowanceAmountController = TextEditingController(
+      text: job?.allowanceAmount?.toString() ?? '',
+    );
     _workMode = job == null ? WorkMode.hybrid : workModeFromApi(job.workMode);
+    _category = isJobCategory(job?.category ?? '') ? job!.category : '';
     _hasAllowance = job?.hasAllowance ?? false;
     _version = job?.version ?? 1;
     _skills = List<String>.from(job?.skills ?? const []);
@@ -111,268 +116,210 @@ class _JobFormState extends ConsumerState<_JobForm> {
     _titleController.dispose();
     _descriptionController.dispose();
     _provinceController.dispose();
-    _categoryController.dispose();
     _requirementsController.dispose();
+    _allowanceAmountController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final colors = context.colors;
     final editing = widget.job != null;
+    final wide = MediaQuery.sizeOf(context).width >= 960;
+    final form = _FormColumn(
+      title: _field(
+        fieldKey: const Key('job-title-field'),
+        controller: _titleController,
+        label: 'ชื่องาน',
+        textInputAction: TextInputAction.next,
+      ),
+      description: _field(
+        fieldKey: const Key('job-description-field'),
+        controller: _descriptionController,
+        label: 'รายละเอียด',
+        minLines: 4,
+        maxLines: 6,
+      ),
+      province: InkWell(
+        key: const Key('job-province-picker'),
+        onTap: _busy ? null : _openProvincePicker,
+        child: IgnorePointer(
+          child: _field(
+            fieldKey: const Key('job-province-field'),
+            controller: _provinceController,
+            label: 'จังหวัด',
+            hintText: 'เลือกจากรายชื่อจังหวัด',
+            readOnly: true,
+            prefixIcon: const Icon(LucideIcons.mapPin, size: 18),
+            suffixIcon: const Icon(Icons.keyboard_arrow_down),
+          ),
+        ),
+      ),
+      workMode: _WorkModePicker(
+        value: _workMode,
+        enabled: !_busy,
+        onChanged: (value) => setState(() => _workMode = value),
+      ),
+      category: _CategoryPicker(
+        value: _category,
+        enabled: !_busy,
+        onChanged: (value) => setState(() => _category = value),
+      ),
+      allowance: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _AllowanceToggle(
+            value: _hasAllowance,
+            enabled: !_busy,
+            onChanged: (value) => setState(() {
+              _hasAllowance = value;
+              if (!value) _allowanceAmountController.clear();
+            }),
+          ),
+          if (_hasAllowance) ...[
+            const Gap(12),
+            _field(
+              fieldKey: const Key('job-allowance-amount'),
+              controller: _allowanceAmountController,
+              label: 'จำนวนเงิน (บาท)',
+              keyboardType: TextInputType.number,
+              validator: _amount,
+            ),
+          ],
+        ],
+      ),
+      requirements: _field(
+        fieldKey: const Key('job-requirements-field'),
+        controller: _requirementsController,
+        label: 'คุณสมบัติ',
+        minLines: 3,
+        maxLines: 5,
+      ),
+      skills: _SkillsEditor(
+        skills: _skills,
+        enabled: !_busy,
+        onPick: _openSkillPicker,
+        onRemove: (skill) => setState(() => _skills.remove(skill)),
+      ),
+      error: _error,
+    );
+    final actions = _FormActions(
+      editing: editing,
+      submitting: _submitting,
+      deleting: _deleting,
+      submitLabel: _submitLabel,
+      onSubmit: _busy ? null : _submit,
+      onDelete: _busy ? null : _confirmDelete,
+    );
 
     return Scaffold(
+      backgroundColor: NeoColors.paperCanvas,
       appBar: CompanyTopBar(
         title: editing ? 'แก้ประกาศ' : 'สร้างประกาศ',
         showBack: true,
-        backLocation: '/company/jobs',
+        backLocation: editing
+            ? '/company/jobs/${widget.job!.id}'
+            : '/company/jobs',
       ),
       body: Form(
         key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(kPagePadding),
-          children: [
-            AppTextField(
-              controller: _titleController,
-              textInputAction: TextInputAction.next,
-              label: 'ชื่องาน',
-              validator: _required,
-            ),
-            const Gap(12),
-            AppTextField(
-              controller: _descriptionController,
-              minLines: 4,
-              maxLines: 6,
-              label: 'รายละเอียด',
-              validator: _required,
-            ),
-            const Gap(12),
-            InkWell(
-              key: const Key('job-province-picker'),
-              onTap: _busy ? null : _openProvincePicker,
-              child: IgnorePointer(
-                child: AppTextField(
-                  controller: _provinceController,
-                  label: 'จังหวัด',
-                  hintText: 'เลือกจากรายชื่อจังหวัด',
-                  readOnly: true,
-                  prefixIcon: const Icon(LucideIcons.mapPin, size: 18),
-                  suffixIcon: const Icon(Icons.keyboard_arrow_down),
-                  validator: _required,
-                ),
-              ),
-            ),
-            const Gap(12),
-            DropdownButtonFormField<WorkMode>(
-              key: ValueKey(_workMode),
-              initialValue: _workMode,
-              decoration: InputDecoration(
-                labelText: 'รูปแบบงาน',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: colors.border),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: colors.border),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: colors.ring, width: 1.5),
-                ),
-              ),
-              items: [
-                for (final mode in WorkMode.values)
-                  DropdownMenuItem(
-                    value: mode,
-                    child: Text(workModeLabel(mode)),
-                  ),
-              ],
-              onChanged: _busy
-                  ? null
-                  : (value) {
-                      if (value != null) {
-                        setState(() => _workMode = value);
-                      }
-                    },
-            ),
-            const Gap(12),
-            AppTextField(
-              controller: _categoryController,
-              textInputAction: TextInputAction.next,
-              label: 'หมวดงาน',
-              validator: _required,
-            ),
-            const Gap(4),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('มีเบี้ยเลี้ยง'),
-              value: _hasAllowance,
-              onChanged: _busy
-                  ? null
-                  : (value) => setState(() => _hasAllowance = value),
-            ),
-            AppTextField(
-              controller: _requirementsController,
-              minLines: 3,
-              maxLines: 5,
-              label: 'คุณสมบัติ',
-              validator: _required,
-            ),
-            const Gap(12),
-            Container(
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: NeoColors.pureWhite,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: NeoColors.inkSolid, width: 1.5),
-                boxShadow: const [
-                  BoxShadow(
-                    color: NeoColors.inkSolid,
-                    offset: Offset(2, 2),
-                    blurRadius: 0,
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 10,
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    children: [
-                      const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            LucideIcons.sparkles,
-                            size: 16,
-                            color: NeoColors.inkSolid,
-                          ),
-                          Gap(6),
-                          Flexible(
-                            child: Text(
-                              'ทักษะที่ต้องการ (Skills)',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w800,
-                                color: NeoColors.inkSolid,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      NeoButton(
-                        onPressed: _busy ? null : _openSkillPicker,
-                        text: _skills.isEmpty
-                            ? '+ เลือกทักษะ'
-                            : 'แก้ไข (${_skills.length})',
-                        variant: NeoButtonVariant.primary,
-                        height: 32,
-                        icon: const Icon(
-                          LucideIcons.plus,
-                          size: 14,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (_skills.isNotEmpty) ...[
-                    const Gap(10),
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
+        child: Align(
+          alignment: Alignment.topCenter,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1080),
+            child: wide
+                ? Padding(
+                    padding: const EdgeInsets.fromLTRB(32, 24, 32, 32),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        for (final skill in _skills)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 5,
-                            ),
-                            decoration: BoxDecoration(
-                              color: NeoColors.surfaceCream,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: NeoColors.inkSolid,
-                                width: 1.2,
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  skill,
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w700,
-                                    color: NeoColors.inkSolid,
-                                  ),
-                                ),
-                                const Gap(6),
-                                GestureDetector(
-                                  onTap: _busy
-                                      ? null
-                                      : () => setState(
-                                          () => _skills.remove(skill),
-                                        ),
-                                  child: const Icon(
-                                    LucideIcons.x,
-                                    size: 14,
-                                    color: NeoColors.inkSolid,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                        Expanded(child: form),
+                        const Gap(24),
+                        SizedBox(width: 320, child: actions),
                       ],
                     ),
-                  ] else ...[
-                    const Gap(6),
-                    const Text(
-                      'ยังไม่ได้ระบุทักษะ (ช่วยให้นักศึกษาค้นหาประกาศเจอง่ายขึ้น)',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: NeoColors.subtleInk,
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-            if (_error != null) ...[
-              const Gap(12),
-              Text(
-                _error!,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: colors.destructive),
-              ),
-            ],
-          ],
-        ),
-      ),
-      bottomNavigationBar: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(kPagePadding, 8, kPagePadding, 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (editing) ...[
-                TextButton(
-                  onPressed: _busy ? null : _confirmDelete,
-                  child: Text(_deleting ? 'กำลังลบ' : 'ลบประกาศ'),
-                ),
-                const Gap(4),
-              ],
-              AppPrimaryButton(
-                onPressed: _busy ? null : _submit,
-                child: Text(_submitLabel),
-              ),
-            ],
+                  )
+                : form,
           ),
         ),
+      ),
+      bottomNavigationBar: wide
+          ? null
+          : Material(
+              color: NeoColors.paperCanvas,
+              child: SafeArea(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    border: Border(
+                      top: BorderSide(color: NeoColors.inkSolid, width: 2),
+                    ),
+                  ),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                  child: actions,
+                ),
+              ),
+            ),
+    );
+  }
+
+  Widget _field({
+    Key? fieldKey,
+    required TextEditingController controller,
+    required String label,
+    String? hintText,
+    int minLines = 1,
+    int maxLines = 1,
+    bool readOnly = false,
+    TextInputType? keyboardType,
+    FormFieldValidator<String>? validator,
+    Widget? prefixIcon,
+    Widget? suffixIcon,
+    TextInputAction? textInputAction,
+  }) {
+    return TextFormField(
+      key: fieldKey,
+      controller: controller,
+      minLines: minLines,
+      maxLines: maxLines,
+      readOnly: readOnly,
+      keyboardType: keyboardType,
+      textInputAction: textInputAction,
+      validator: validator ?? _required,
+      style: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: NeoColors.inkSolid,
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hintText,
+        prefixIcon: prefixIcon,
+        suffixIcon: suffixIcon,
+        filled: true,
+        fillColor: NeoColors.paperCanvas,
+        labelStyle: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w800,
+          color: NeoColors.subtleInk,
+        ),
+        floatingLabelStyle: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w800,
+          color: NeoColors.inkSolid,
+        ),
+        hintStyle: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+          color: NeoColors.mutedInk,
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 14,
+        ),
+        border: _fieldBorder(NeoColors.inkSolid, 2),
+        enabledBorder: _fieldBorder(NeoColors.inkSolid, 2),
+        focusedBorder: _fieldBorder(NeoColors.electricIndigo, 2.2),
+        errorBorder: _fieldBorder(NeoColors.errorBorder, 2),
+        focusedErrorBorder: _fieldBorder(NeoColors.errorBorder, 2),
       ),
     );
   }
@@ -415,21 +362,37 @@ class _JobFormState extends ConsumerState<_JobForm> {
     return null;
   }
 
+  String? _amount(String? value) {
+    final amount = int.tryParse(value?.trim() ?? '');
+    if (amount == null || amount < 1 || amount > 1000000) {
+      return 'ระบุจำนวนเงินเป็นบาท';
+    }
+    return null;
+  }
+
   JobPosting _posting() {
     return JobPosting(
       title: _titleController.text.trim(),
       description: _descriptionController.text.trim(),
       province: _provinceController.text.trim(),
       workMode: workModeToApi(_workMode),
-      category: _categoryController.text.trim(),
+      category: _category,
       hasAllowance: _hasAllowance,
+      allowanceAmount: _hasAllowance
+          ? int.parse(_allowanceAmountController.text.trim())
+          : null,
       requirements: _requirementsController.text.trim(),
       skills: _skills,
     );
   }
 
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) {
+    final fieldsValid = _formKey.currentState!.validate();
+    if (!isJobCategory(_category)) {
+      setState(() => _error = 'เลือกหมวดงาน');
+      return;
+    }
+    if (!fieldsValid) {
       return;
     }
     setState(() {
@@ -446,32 +409,35 @@ class _JobFormState extends ConsumerState<_JobForm> {
         if (!mounted) {
           return;
         }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('สร้างประกาศแล้ว สถานะ ${created.status}')),
-        );
-      } else {
-        await ref
-            .read(companyJobsControllerProvider.notifier)
-            .update(jobId: existing.id, posting: posting, version: _version);
-        if (!mounted) {
-          return;
-        }
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('บันทึกประกาศแล้ว')));
+        AppToast.success(context, 'สร้างประกาศแล้ว');
+        ref.invalidate(companyJobListProvider);
+        context.go('/company/jobs/${created.id}');
+        return;
       }
+      await ref
+          .read(companyJobsControllerProvider.notifier)
+          .update(jobId: existing.id, posting: posting, version: _version);
+      if (!mounted) {
+        return;
+      }
+      AppToast.success(context, 'บันทึกประกาศแล้ว');
       ref.invalidate(companyJobListProvider);
-      context.go('/company/jobs');
+      ref.invalidate(companyJobDetailProvider(existing.id));
+      ref.invalidate(companyOwnedJobProvider(existing.id));
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/company/jobs/${existing.id}');
+      }
     } catch (error) {
       if (!mounted) {
         return;
       }
       final message = userVisibleError(error);
       if (existing != null && message == 'ประกาศถูกแก้ไปแล้ว โหลดข้อมูลใหม่') {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(message)));
+        AppToast.error(context, message);
         ref.invalidate(companyJobDetailProvider(existing.id));
+        ref.invalidate(companyOwnedJobProvider(existing.id));
         return;
       }
       setState(() => _error = message);
@@ -520,10 +486,9 @@ class _JobFormState extends ConsumerState<_JobForm> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('ลบประกาศแล้ว')));
+      AppToast.info(context, 'ลบประกาศแล้ว');
       ref.invalidate(companyJobListProvider);
+      ref.invalidate(companyOwnedJobProvider(existing.id));
       context.go('/company/jobs');
     } catch (error) {
       if (!mounted) {
@@ -535,5 +500,465 @@ class _JobFormState extends ConsumerState<_JobForm> {
         setState(() => _deleting = false);
       }
     }
+  }
+}
+
+OutlineInputBorder _fieldBorder(Color color, double width) {
+  return OutlineInputBorder(
+    borderRadius: BorderRadius.circular(12),
+    borderSide: BorderSide(color: color, width: width),
+  );
+}
+
+class _FormColumn extends StatelessWidget {
+  const _FormColumn({
+    required this.title,
+    required this.description,
+    required this.province,
+    required this.workMode,
+    required this.category,
+    required this.allowance,
+    required this.requirements,
+    required this.skills,
+    required this.error,
+  });
+
+  final Widget title;
+  final Widget description;
+  final Widget province;
+  final Widget workMode;
+  final Widget category;
+  final Widget allowance;
+  final Widget requirements;
+  final Widget skills;
+  final String? error;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      children: [
+        _FormCard(
+          icon: LucideIcons.briefcase,
+          iconBg: NeoColors.butterYellow,
+          title: 'ข้อมูลประกาศ',
+          child: Column(children: [title, const Gap(12), description]),
+        ),
+        const Gap(16),
+        _FormCard(
+          icon: LucideIcons.mapPin,
+          iconBg: NeoColors.skyBlue,
+          title: 'สถานที่และเงื่อนไข',
+          child: Column(
+            children: [
+              province,
+              const Gap(12),
+              workMode,
+              const Gap(12),
+              category,
+              const Gap(12),
+              allowance,
+            ],
+          ),
+        ),
+        const Gap(16),
+        _FormCard(
+          icon: LucideIcons.listChecks,
+          iconBg: NeoColors.freshMint,
+          title: 'คุณสมบัติ',
+          child: requirements,
+        ),
+        const Gap(16),
+        skills,
+        if (error != null) ...[
+          const Gap(12),
+          Text(
+            error!,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
+              color: NeoColors.errorText,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _FormCard extends StatelessWidget {
+  const _FormCard({
+    required this.icon,
+    required this.iconBg,
+    required this.title,
+    required this.child,
+  });
+
+  final IconData icon;
+  final Color iconBg;
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: NeoColors.pureWhite,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: NeoColors.inkSolid, width: 2.2),
+        boxShadow: NeoShadows.elevation2,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: iconBg,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                ),
+                child: Icon(icon, size: 16, color: NeoColors.inkSolid),
+              ),
+              const Gap(8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: NeoColors.inkSolid,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const Gap(10),
+          const Divider(color: NeoColors.inkSolid, height: 1, thickness: 1.5),
+          const Gap(14),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _FormActions extends StatelessWidget {
+  const _FormActions({
+    required this.editing,
+    required this.submitting,
+    required this.deleting,
+    required this.submitLabel,
+    required this.onSubmit,
+    required this.onDelete,
+  });
+
+  final bool editing;
+  final bool submitting;
+  final bool deleting;
+  final String submitLabel;
+  final VoidCallback? onSubmit;
+  final VoidCallback? onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        NeoButton(
+          variant: NeoButtonVariant.secondary,
+          text: submitLabel,
+          icon: Icon(editing ? LucideIcons.save : LucideIcons.plus, size: 18),
+          isFullWidth: true,
+          isLoading: submitting,
+          onPressed: onSubmit,
+        ),
+        if (editing) ...[
+          const Gap(8),
+          NeoButton(
+            variant: NeoButtonVariant.destructive,
+            text: deleting ? 'กำลังลบ' : 'ลบประกาศ',
+            icon: const Icon(LucideIcons.trash2, size: 18),
+            isFullWidth: true,
+            isLoading: deleting,
+            onPressed: onDelete,
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _CategoryPicker extends StatelessWidget {
+  const _CategoryPicker({
+    required this.value,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final String value;
+  final bool enabled;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'หมวดงาน',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+            color: NeoColors.inkSolid,
+          ),
+        ),
+        const Gap(8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final category in jobCategories)
+              GestureDetector(
+                onTap: enabled ? () => onChanged(category) : null,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: category == value
+                        ? NeoColors.butterYellow
+                        : NeoColors.paperCanvas,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: NeoColors.inkSolid, width: 1.8),
+                    boxShadow: category == value ? NeoShadows.elevation1 : null,
+                  ),
+                  child: Text(
+                    category,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: NeoColors.inkSolid,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _WorkModePicker extends StatelessWidget {
+  const _WorkModePicker({
+    required this.value,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final WorkMode value;
+  final bool enabled;
+  final ValueChanged<WorkMode> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'รูปแบบงาน',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+            color: NeoColors.inkSolid,
+          ),
+        ),
+        const Gap(8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final mode in WorkMode.values)
+              GestureDetector(
+                onTap: enabled ? () => onChanged(mode) : null,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: mode == value
+                        ? NeoColors.butterYellow
+                        : NeoColors.paperCanvas,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: NeoColors.inkSolid, width: 1.8),
+                    boxShadow: mode == value ? NeoShadows.elevation1 : null,
+                  ),
+                  child: Text(
+                    workModeLabel(mode),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: NeoColors.inkSolid,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _AllowanceToggle extends StatelessWidget {
+  const _AllowanceToggle({
+    required this.value,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final bool value;
+  final bool enabled;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: enabled ? () => onChanged(!value) : null,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        decoration: BoxDecoration(
+          color: value ? NeoColors.butterYellow : NeoColors.paperCanvas,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: NeoColors.inkSolid, width: 2),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              value ? LucideIcons.circleCheck : LucideIcons.circle,
+              size: 18,
+              color: NeoColors.inkSolid,
+            ),
+            const Gap(8),
+            const Expanded(
+              child: Text(
+                'มีเบี้ยเลี้ยง',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: NeoColors.inkSolid,
+                ),
+              ),
+            ),
+            Text(
+              value ? 'มี' : 'ไม่มี',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: NeoColors.inkSolid,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SkillsEditor extends StatelessWidget {
+  const _SkillsEditor({
+    required this.skills,
+    required this.enabled,
+    required this.onPick,
+    required this.onRemove,
+  });
+
+  final List<String> skills;
+  final bool enabled;
+  final VoidCallback onPick;
+  final ValueChanged<String> onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return _FormCard(
+      icon: LucideIcons.sparkles,
+      iconBg: NeoColors.softLilac,
+      title: 'ทักษะที่ต้องการ',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          NeoButton(
+            onPressed: enabled ? onPick : null,
+            text: skills.isEmpty ? 'เลือกทักษะ' : 'แก้ไข (${skills.length})',
+            variant: NeoButtonVariant.outline,
+            height: 40,
+            icon: const Icon(LucideIcons.plus, size: 16),
+          ),
+          if (skills.isEmpty) ...[
+            const Gap(8),
+            const Text(
+              'ยังไม่ได้ระบุทักษะ',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: NeoColors.subtleInk,
+              ),
+            ),
+          ] else ...[
+            const Gap(10),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final skill in skills)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: NeoColors.skyBlue,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          skill,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: NeoColors.inkSolid,
+                          ),
+                        ),
+                        const Gap(6),
+                        GestureDetector(
+                          onTap: enabled ? () => onRemove(skill) : null,
+                          child: const Icon(
+                            LucideIcons.x,
+                            size: 14,
+                            color: NeoColors.inkSolid,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }

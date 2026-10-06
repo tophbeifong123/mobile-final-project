@@ -39,6 +39,9 @@ export class Job {
   @Column({ name: 'has_allowance', type: 'boolean' })
   hasAllowance: boolean;
 
+  @Column({ name: 'allowance_amount', type: 'int', nullable: true })
+  allowanceAmount: number | null;
+
   @Column({ type: 'text' })
   requirements: string;
 

@@ -146,8 +146,9 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | description | text | |
 | province | varchar | ชื่อจังหวัดมาตรฐานตรงกับ `provinces.name_th`; ใช้กรองจังหวัด งานเดิมที่เป็นชื่อเรียกถูกปรับใน migration |
 | work_mode | work_mode | |
-| category | varchar | หมวดงาน |
+| category | varchar | หมวดงานจากรายการเดียวกันทั้งบริษัทและนักศึกษา: IT & Software, Design & UX/UI, Marketing, Data |
 | has_allowance | boolean | มีเบี้ยเลี้ยงหรือไม่ |
+| allowance_amount | integer | null ได้เมื่อไม่มีเบี้ยเลี้ยง; เมื่อมีต้องเป็นจำนวนบาท 1 ถึง 1,000,000 |
 | requirements | text | คุณสมบัติ |
 | skills | text[] | ทักษะที่เปิดรับ |
 | status | job_status | ค่าเริ่มต้น `open` |

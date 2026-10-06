@@ -5,6 +5,7 @@ import '../../../../core/provinces/thai_province_picker.dart';
 import '../../../../core/widgets/app_primary_button.dart';
 import '../../../../core/widgets/skill_picker_sheet.dart';
 import '../../domain/entities/job.dart';
+import '../job_categories.dart';
 import '../job_labels.dart';
 
 class JobFilterSheet extends StatefulWidget {
@@ -25,9 +26,7 @@ class _JobFilterSheetState extends State<JobFilterSheet> {
   late final TextEditingController _province = TextEditingController(
     text: widget.initial.province ?? '',
   );
-  late final TextEditingController _category = TextEditingController(
-    text: widget.initial.category ?? '',
-  );
+  String? _category;
   WorkMode? _workMode;
   bool? _hasAllowance;
   late List<String> _skills;
@@ -37,6 +36,9 @@ class _JobFilterSheetState extends State<JobFilterSheet> {
   void initState() {
     super.initState();
     _workMode = widget.initial.workMode;
+    _category = isJobCategory(widget.initial.category ?? '')
+        ? widget.initial.category
+        : null;
     _hasAllowance = widget.initial.hasAllowance;
     _skills = List<String>.from(widget.initial.skills);
   }
@@ -44,7 +46,6 @@ class _JobFilterSheetState extends State<JobFilterSheet> {
   @override
   void dispose() {
     _province.dispose();
-    _category.dispose();
     super.dispose();
   }
 
@@ -103,47 +104,19 @@ class _JobFilterSheetState extends State<JobFilterSheet> {
                 onChanged: (value) => setState(() => _workMode = value),
               ),
               const SizedBox(height: 12),
-              TextField(
-                controller: _category,
-                textInputAction: TextInputAction.done,
-                decoration: InputDecoration(
-                  labelText: 'หมวดงาน',
-                  prefixIcon: const Icon(Icons.category_outlined),
-                  suffixIcon: _category.text.isNotEmpty
-                      ? IconButton(
-                          tooltip: 'ล้างหมวดงาน',
-                          onPressed: () => setState(() => _category.clear()),
-                          icon: const Icon(Icons.clear, size: 20),
-                        )
-                      : null,
-                ),
-                onChanged: (_) => setState(() {}),
-              ),
+              Text('หมวดงาน', style: textTheme.titleMedium),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
-                runSpacing: 4,
+                runSpacing: 8,
                 children: [
-                  for (final cat in [
-                    'IT & Software',
-                    'Design & UX/UI',
-                    'Marketing',
-                    'Data',
-                  ])
-                    ActionChip(
-                      label: Text(cat),
-                      avatar: _category.text.trim() == cat
-                          ? const Icon(Icons.check, size: 16)
-                          : null,
-                      onPressed: () {
-                        setState(() {
-                          if (_category.text.trim() == cat) {
-                            _category.clear();
-                          } else {
-                            _category.text = cat;
-                          }
-                        });
-                      },
+                  for (final category in jobCategories)
+                    _AllowanceChoice(
+                      label: category,
+                      selected: _category == category,
+                      onSelected: () => setState(() {
+                        _category = _category == category ? null : category;
+                      }),
                     ),
                 ],
               ),
@@ -276,7 +249,7 @@ class _JobFilterSheetState extends State<JobFilterSheet> {
       search: widget.initial.search,
       province: _emptyToNull(_province.text),
       workMode: _workMode,
-      category: _emptyToNull(_category.text),
+      category: _category,
       hasAllowance: _hasAllowance,
       skills: _skills,
     );

@@ -4,11 +4,16 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsIn,
+  IsInt,
   IsOptional,
   IsString,
+  Max,
   MaxLength,
+  Min,
   MinLength,
 } from 'class-validator';
+import { JOB_CATEGORIES } from '../job-categories.js';
 import { WorkMode } from '../job-enums.js';
 
 function trimString({ value }: { value: unknown }): unknown {
@@ -45,16 +50,26 @@ export class CreateJobDto {
   @IsEnum(WorkMode)
   workMode: WorkMode;
 
-  @ApiProperty({ example: 'IT & Software', maxLength: 255 })
+  @ApiProperty({ example: 'IT & Software', enum: JOB_CATEGORIES })
   @Transform(trimString)
   @IsString()
-  @MinLength(1)
-  @MaxLength(255)
+  @IsIn(JOB_CATEGORIES)
   category: string;
 
   @ApiProperty({ example: true })
   @IsBoolean()
   hasAllowance: boolean;
+
+  @ApiPropertyOptional({
+    example: 8000,
+    nullable: true,
+    description: 'จำนวนเงินบาท บังคับเมื่อมีเบี้ยเลี้ยง และต้องว่างเมื่อไม่มี',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(1_000_000)
+  allowanceAmount?: number | null;
 
   @ApiProperty({ example: 'กำลังศึกษาอยู่และใช้ Flutter ได้' })
   @Transform(trimString)

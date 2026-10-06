@@ -11,6 +11,7 @@ class SavedJobModel {
     required this.category,
     required this.hasAllowance,
     required this.status,
+    this.allowanceAmount,
     this.skills = const [],
   });
 
@@ -23,6 +24,7 @@ class SavedJobModel {
       workMode: workModeFromApi(json['workMode'] as String),
       category: json['category'] as String,
       hasAllowance: json['hasAllowance'] as bool,
+      allowanceAmount: json['allowanceAmount'] as int?,
       status: JobStatus.values.byName(json['status'] as String),
       skills:
           (json['skills'] as List<dynamic>?)
@@ -39,6 +41,7 @@ class SavedJobModel {
   final WorkMode workMode;
   final String category;
   final bool hasAllowance;
+  final int? allowanceAmount;
   final JobStatus status;
   final List<String> skills;
 
@@ -51,6 +54,7 @@ class SavedJobModel {
       workMode: workMode,
       category: category,
       hasAllowance: hasAllowance,
+      allowanceAmount: allowanceAmount,
       status: status,
       skills: skills,
     );

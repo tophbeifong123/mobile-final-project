@@ -10,6 +10,7 @@ class JobModel {
     required this.category,
     required this.hasAllowance,
     required this.status,
+    this.allowanceAmount,
     this.skills = const [],
   });
 
@@ -22,6 +23,7 @@ class JobModel {
       workMode: workModeFromApi(json['workMode'] as String),
       category: json['category'] as String,
       hasAllowance: json['hasAllowance'] as bool,
+      allowanceAmount: json['allowanceAmount'] as int?,
       status: JobStatus.values.byName(json['status'] as String),
       skills:
           (json['skills'] as List<dynamic>?)
@@ -38,6 +40,7 @@ class JobModel {
   final WorkMode workMode;
   final String category;
   final bool hasAllowance;
+  final int? allowanceAmount;
   final JobStatus status;
   final List<String> skills;
 
@@ -50,6 +53,7 @@ class JobModel {
       workMode: workMode,
       category: category,
       hasAllowance: hasAllowance,
+      allowanceAmount: allowanceAmount,
       status: status,
       skills: skills,
     );
@@ -65,6 +69,7 @@ class JobDetailModel {
     required this.workMode,
     required this.category,
     required this.hasAllowance,
+    this.allowanceAmount,
     required this.requirements,
     required this.status,
     required this.companyName,
@@ -88,6 +93,7 @@ class JobDetailModel {
       workMode: workModeFromApi(json['workMode'] as String),
       category: json['category'] as String,
       hasAllowance: json['hasAllowance'] as bool,
+      allowanceAmount: json['allowanceAmount'] as int?,
       requirements: json['requirements'] as String,
       status: JobStatus.values.byName(json['status'] as String),
       companyName: json['companyName'] as String,
@@ -118,6 +124,7 @@ class JobDetailModel {
   final WorkMode workMode;
   final String category;
   final bool hasAllowance;
+  final int? allowanceAmount;
   final String requirements;
   final JobStatus status;
   final String companyName;
@@ -140,6 +147,7 @@ class JobDetailModel {
       workMode: workMode,
       category: category,
       hasAllowance: hasAllowance,
+      allowanceAmount: allowanceAmount,
       requirements: requirements,
       status: status,
       companyName: companyName,

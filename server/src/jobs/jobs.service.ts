@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -11,6 +12,7 @@ import { StorageService } from '../storage/storage.service.js';
 import { CompanyJobItemDto } from './dto/company-job-item.dto.js';
 import { CreateJobDto } from './dto/create-job.dto.js';
 import { JobDetailDto } from './dto/job-detail.dto.js';
+import { CompanyOwnedJobDto } from './dto/company-owned-job.dto.js';
 import { JobDto } from './dto/job.dto.js';
 import { JobFeedItemDto } from './dto/job-feed-item.dto.js';
 import { JobFeedQueryDto } from './dto/job-feed-query.dto.js';
@@ -20,8 +22,39 @@ import { PaginationQueryDto } from '../common/dto/pagination-query.dto.js';
 import { toPaginatedResult } from '../common/dto/paginated-result.js';
 import { UpdateJobDto } from './dto/update-job.dto.js';
 import { UpdateJobStatusDto } from './dto/update-job-status.dto.js';
+import { isJobCategory } from './job-categories.js';
 import { JobStatus, WorkMode } from './job-enums.js';
 import { JobsRepository, JobVersionConflictError } from './jobs.repository.js';
+
+function categoryOf(value: string): string {
+  const category = value.trim();
+  if (!isJobCategory(category)) {
+    throw new BadRequestException('เลือกหมวดงานจากรายการ');
+  }
+  return category;
+}
+
+function allowanceAmountOf(dto: {
+  hasAllowance: boolean;
+  allowanceAmount?: number | null;
+}): number | null {
+  if (!dto.hasAllowance) {
+    if (dto.allowanceAmount != null) {
+      throw new BadRequestException('ไม่มีเบี้ยเลี้ยงจึงไม่ต้องใส่จำนวนเงิน');
+    }
+    return null;
+  }
+  const amount = dto.allowanceAmount;
+  if (
+    amount == null ||
+    !Number.isInteger(amount) ||
+    amount < 1 ||
+    amount > 1_000_000
+  ) {
+    throw new BadRequestException('ระบุจำนวนเบี้ยเลี้ยงเป็นบาท');
+  }
+  return amount;
+}
 
 const COMPANY_ONLY = 'เฉพาะบริษัทเท่านั้น';
 const COMPANY_NOT_FOUND = 'ไม่พบโปรไฟล์บริษัท';
@@ -56,8 +89,9 @@ export class JobsService {
       description: dto.description.trim(),
       province,
       workMode: dto.workMode,
-      category: dto.category.trim(),
+      category: categoryOf(dto.category),
       hasAllowance: dto.hasAllowance,
+      allowanceAmount: allowanceAmountOf(dto),
       requirements: dto.requirements.trim(),
       skills: dto.skills ?? [],
     });
@@ -194,10 +228,11 @@ export class JobsService {
     );
   }
 
-  async getMine(user: AuthUser, jobId: string): Promise<JobDto> {
+  async getMine(user: AuthUser, jobId: string): Promise<CompanyOwnedJobDto> {
     const companyId = await this.requireCompanyId(user);
     const job = await this.requireOwnedJob(companyId, jobId);
-    return toDto(job);
+    const counts = await this.jobsRepository.countApplicants(jobId);
+    return toOwnedDto(job, counts);
   }
 
   async update(
@@ -217,8 +252,9 @@ export class JobsService {
         description: dto.description.trim(),
         province,
         workMode: dto.workMode,
-        category: dto.category.trim(),
+        category: categoryOf(dto.category),
         hasAllowance: dto.hasAllowance,
+        allowanceAmount: allowanceAmountOf(dto),
         requirements: dto.requirements.trim(),
         skills: dto.skills ?? [],
       });
@@ -303,6 +339,7 @@ function toDto(job: {
   workMode: JobDto['workMode'];
   category: string;
   hasAllowance: boolean;
+  allowanceAmount?: number | null;
   requirements: string;
   skills?: string[];
   status: JobStatus;
@@ -316,6 +353,7 @@ function toDto(job: {
   dto.workMode = job.workMode;
   dto.category = job.category;
   dto.hasAllowance = job.hasAllowance;
+  dto.allowanceAmount = job.allowanceAmount ?? null;
   dto.requirements = job.requirements;
   dto.skills = job.skills ?? [];
   dto.status = job.status;
@@ -332,6 +370,7 @@ function toDetail(
     workMode: JobDetailDto['workMode'];
     category: string;
     hasAllowance: boolean;
+    allowanceAmount?: number | null;
     requirements: string;
     skills?: string[];
     status: JobStatus;
@@ -354,6 +393,7 @@ function toDetail(
   dto.workMode = job.workMode;
   dto.category = job.category;
   dto.hasAllowance = job.hasAllowance;
+  dto.allowanceAmount = job.allowanceAmount ?? null;
   dto.requirements = job.requirements;
   dto.skills = job.skills ?? [];
   dto.status = job.status;
@@ -366,6 +406,43 @@ function toDetail(
   dto.companyLocation = job.companyLocation ?? '';
   dto.companyLogoAvailable = Boolean(job.companyLogoObjectKey);
   dto.saved = saved;
+  return dto;
+}
+
+function toOwnedDto(
+  job: {
+    id: string;
+    title: string;
+    description: string;
+    province: string;
+    workMode: CompanyOwnedJobDto['workMode'];
+    category: string;
+    hasAllowance: boolean;
+    allowanceAmount?: number | null;
+    requirements: string;
+    skills?: string[];
+    status: JobStatus;
+    version: number;
+    deadline: Date | null;
+  },
+  counts: { applicantCount: number; pendingApplicantCount: number },
+): CompanyOwnedJobDto {
+  const dto = new CompanyOwnedJobDto();
+  dto.id = job.id;
+  dto.title = job.title;
+  dto.description = job.description;
+  dto.province = job.province;
+  dto.workMode = job.workMode;
+  dto.category = job.category;
+  dto.hasAllowance = job.hasAllowance;
+  dto.allowanceAmount = job.allowanceAmount ?? null;
+  dto.requirements = job.requirements;
+  dto.skills = job.skills ?? [];
+  dto.status = job.status;
+  dto.version = job.version;
+  dto.applicantCount = counts.applicantCount;
+  dto.pendingApplicantCount = counts.pendingApplicantCount;
+  dto.deadline = job.deadline;
   return dto;
 }
 
@@ -397,6 +474,7 @@ function toFeedItem(job: {
   workMode: JobFeedItemDto['workMode'];
   category: string;
   hasAllowance: boolean;
+  allowanceAmount?: number | null;
   skills?: string[];
   status: JobStatus;
 }): JobFeedItemDto {
@@ -408,6 +486,7 @@ function toFeedItem(job: {
   dto.workMode = job.workMode;
   dto.category = job.category;
   dto.hasAllowance = job.hasAllowance;
+  dto.allowanceAmount = job.allowanceAmount ?? null;
   dto.skills = job.skills ?? [];
   dto.status = job.status;
   return dto;

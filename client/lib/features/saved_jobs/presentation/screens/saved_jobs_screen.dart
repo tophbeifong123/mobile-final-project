@@ -197,7 +197,7 @@ class _SavedJobsScreenState extends ConsumerState<SavedJobsScreen> {
                         details: [
                           workModeLabel(job.workMode),
                           job.category,
-                          allowanceLabel(job.hasAllowance),
+                          allowanceLabel(job.hasAllowance, job.allowanceAmount),
                         ],
                         skills: job.skills,
                         hasAllowance: job.hasAllowance,

@@ -32,6 +32,7 @@ describe('JobsService', () => {
     updateOwnedStatus: vi.fn(),
     deleteOwned: vi.fn(),
     listByCompany: vi.fn(),
+    countApplicants: vi.fn(),
   };
   const provincesService = { resolveName: vi.fn() };
 
@@ -65,7 +66,7 @@ describe('JobsService', () => {
       description: 'ช่วยพัฒนาแอป',
       province: 'สงขลา',
       workMode: WorkMode.Hybrid,
-      category: 'IT',
+      category: 'IT & Software',
       hasAllowance: true,
       requirements: 'ใช้ Flutter ได้',
       status: JobStatus.Open,
@@ -76,8 +77,9 @@ describe('JobsService', () => {
     dto.description = ' ช่วยพัฒนาแอป ';
     dto.province = ' สงขลา ';
     dto.workMode = WorkMode.Hybrid;
-    dto.category = ' IT ';
+    dto.category = ' IT & Software ';
     dto.hasAllowance = true;
+    dto.allowanceAmount = 8000;
     dto.requirements = ' ใช้ Flutter ได้ ';
 
     const result = await service.create(company, dto);
@@ -88,8 +90,9 @@ describe('JobsService', () => {
       description: 'ช่วยพัฒนาแอป',
       province: 'สงขลา',
       workMode: WorkMode.Hybrid,
-      category: 'IT',
+      category: 'IT & Software',
       hasAllowance: true,
+      allowanceAmount: 8000,
       requirements: 'ใช้ Flutter ได้',
       skills: [],
     });
@@ -103,7 +106,7 @@ describe('JobsService', () => {
     dto.description = 'รายละเอียด';
     dto.province = 'สงขลา';
     dto.workMode = WorkMode.Remote;
-    dto.category = 'IT';
+    dto.category = 'IT & Software';
     dto.hasAllowance = false;
     dto.requirements = 'คุณสมบัติ';
 
@@ -127,7 +130,7 @@ describe('JobsService', () => {
     dto.description = 'รายละเอียด';
     dto.province = 'กทม.';
     dto.workMode = WorkMode.OnSite;
-    dto.category = 'IT';
+    dto.category = 'IT & Software';
     dto.hasAllowance = false;
     dto.requirements = 'คุณสมบัติ';
 
@@ -160,7 +163,7 @@ describe('JobsService', () => {
     dto.description = 'รายละเอียด';
     dto.province = 'สงขลา';
     dto.workMode = WorkMode.OnSite;
-    dto.category = 'IT';
+    dto.category = 'IT & Software';
     dto.hasAllowance = false;
     dto.requirements = 'คุณสมบัติ';
 
@@ -179,7 +182,7 @@ describe('JobsService', () => {
           companyName: 'InternFinder',
           province: 'สงขลา',
           workMode: WorkMode.Hybrid,
-          category: 'IT',
+          category: 'IT & Software',
           hasAllowance: true,
           status: JobStatus.Open,
         },
@@ -190,7 +193,7 @@ describe('JobsService', () => {
     query.search = 'flutter';
     query.province = 'สงขลา';
     query.workMode = WorkMode.Hybrid;
-    query.category = 'IT';
+    query.category = 'IT & Software';
     query.hasAllowance = true;
 
     const result = await service.listOpen(student, query);
@@ -199,7 +202,7 @@ describe('JobsService', () => {
       search: 'flutter',
       province: 'สงขลา',
       workMode: WorkMode.Hybrid,
-      category: 'IT',
+      category: 'IT & Software',
       hasAllowance: true,
       page: 1,
       limit: 20,
@@ -222,7 +225,7 @@ describe('JobsService', () => {
           companyName: 'InternFinder',
           province: 'สงขลา',
           workMode: WorkMode.Hybrid,
-          category: 'IT',
+          category: 'IT & Software',
           hasAllowance: true,
           skills: ['Flutter', 'Dart'],
           status: JobStatus.Open,
@@ -276,7 +279,7 @@ describe('JobsService', () => {
       description: 'ช่วยพัฒนาแอป',
       province: 'สงขลา',
       workMode: WorkMode.Hybrid,
-      category: 'IT',
+      category: 'IT & Software',
       hasAllowance: true,
       requirements: 'ใช้ Flutter ได้',
       status: JobStatus.Open,
@@ -430,7 +433,7 @@ describe('JobsService', () => {
           companyName: 'InternFinder',
           province: 'สงขลา',
           workMode: WorkMode.Hybrid,
-          category: 'IT',
+          category: 'IT & Software',
           hasAllowance: true,
           status: JobStatus.Open,
         },
@@ -483,6 +486,59 @@ describe('JobsService', () => {
     expect(result.items[0]?.applicantCount).toBe(0);
   });
 
+  it('returns an owned posting with applicant counts and deadline', async () => {
+    const deadline = new Date('2026-12-31T00:00:00.000Z');
+    repository.findCompanyId.mockResolvedValue('company-1');
+    repository.findById.mockResolvedValue({
+      id: 'job-1',
+      companyId: 'company-1',
+      title: 'Flutter Intern',
+      description: 'ช่วยพัฒนาแอป',
+      province: 'สงขลา',
+      workMode: WorkMode.Hybrid,
+      category: 'IT & Software',
+      hasAllowance: true,
+      requirements: 'ใช้ Flutter ได้',
+      skills: ['Flutter'],
+      status: JobStatus.Closed,
+      version: 3,
+      deadline,
+    });
+    repository.countApplicants.mockResolvedValue({
+      applicantCount: 4,
+      pendingApplicantCount: 2,
+    });
+
+    const result = await service.getMine(company, 'job-1');
+
+    expect(repository.countApplicants).toHaveBeenCalledWith('job-1');
+    expect(result.applicantCount).toBe(4);
+    expect(result.pendingApplicantCount).toBe(2);
+    expect(result.deadline).toEqual(deadline);
+    expect(result.status).toBe(JobStatus.Closed);
+    expect(result.skills).toEqual(['Flutter']);
+  });
+
+  it('does not count applicants for a posting the company does not own', async () => {
+    repository.findCompanyId.mockResolvedValue('company-1');
+    repository.findById.mockResolvedValue({
+      id: 'job-1',
+      companyId: 'company-2',
+    });
+
+    await expect(service.getMine(company, 'job-1')).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+    expect(repository.countApplicants).not.toHaveBeenCalled();
+  });
+
+  it('rejects a student reading one company posting', async () => {
+    await expect(service.getMine(student, 'job-1')).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+    expect(repository.countApplicants).not.toHaveBeenCalled();
+  });
+
   it('rejects a student reading the company job list', async () => {
     await expect(service.listMine(student)).rejects.toBeInstanceOf(
       ForbiddenException,
@@ -502,7 +558,7 @@ describe('JobsService', () => {
       description: 'ช่วยพัฒนาแอป',
       province: 'สงขลา',
       workMode: WorkMode.Remote,
-      category: 'IT',
+      category: 'IT & Software',
       hasAllowance: false,
       requirements: 'ใช้ Flutter ได้',
       status: JobStatus.Open,
@@ -513,7 +569,7 @@ describe('JobsService', () => {
     dto.description = ' ช่วยพัฒนาแอป ';
     dto.province = ' สงขลา ';
     dto.workMode = WorkMode.Remote;
-    dto.category = ' IT ';
+    dto.category = ' IT & Software ';
     dto.hasAllowance = false;
     dto.requirements = ' ใช้ Flutter ได้ ';
     dto.version = 1;
@@ -528,8 +584,9 @@ describe('JobsService', () => {
       description: 'ช่วยพัฒนาแอป',
       province: 'สงขลา',
       workMode: WorkMode.Remote,
-      category: 'IT',
+      category: 'IT & Software',
       hasAllowance: false,
+      allowanceAmount: null,
       requirements: 'ใช้ Flutter ได้',
       skills: [],
     });
@@ -548,7 +605,7 @@ describe('JobsService', () => {
     dto.description = 'รายละเอียด';
     dto.province = 'สงขลา';
     dto.workMode = WorkMode.Hybrid;
-    dto.category = 'IT';
+    dto.category = 'IT & Software';
     dto.hasAllowance = false;
     dto.requirements = 'คุณสมบัติ';
     dto.version = 1;
@@ -569,7 +626,7 @@ describe('JobsService', () => {
     dto.description = 'รายละเอียด';
     dto.province = 'สงขลา';
     dto.workMode = WorkMode.Hybrid;
-    dto.category = 'IT';
+    dto.category = 'IT & Software';
     dto.hasAllowance = false;
     dto.requirements = 'คุณสมบัติ';
     dto.version = 1;
@@ -616,7 +673,7 @@ describe('JobsService', () => {
         description: 'คำอธิบาย',
         province: 'สงขลา',
         workMode: WorkMode.Hybrid,
-        category: 'IT',
+        category: 'IT & Software',
         hasAllowance: true,
         requirements: 'คุณสมบัติ',
         status: JobStatus.Closed,
@@ -649,7 +706,7 @@ describe('JobsService', () => {
         description: 'คำอธิบาย',
         province: 'สงขลา',
         workMode: WorkMode.Hybrid,
-        category: 'IT',
+        category: 'IT & Software',
         hasAllowance: true,
         requirements: 'คุณสมบัติ',
         status: JobStatus.Open,

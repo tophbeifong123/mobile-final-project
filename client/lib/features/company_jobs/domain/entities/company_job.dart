@@ -28,6 +28,7 @@ class JobPosting {
     required this.workMode,
     required this.category,
     required this.hasAllowance,
+    this.allowanceAmount,
     required this.requirements,
     this.skills = const [],
   });
@@ -38,8 +39,45 @@ class JobPosting {
   final String workMode;
   final String category;
   final bool hasAllowance;
+  final int? allowanceAmount;
   final String requirements;
   final List<String> skills;
+}
+
+class CompanyOwnedJob {
+  const CompanyOwnedJob({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.province,
+    required this.workMode,
+    required this.category,
+    required this.hasAllowance,
+    this.allowanceAmount,
+    required this.requirements,
+    required this.status,
+    required this.version,
+    required this.applicantCount,
+    required this.pendingApplicantCount,
+    this.skills = const [],
+    this.deadline,
+  });
+
+  final String id;
+  final String title;
+  final String description;
+  final String province;
+  final String workMode;
+  final String category;
+  final bool hasAllowance;
+  final int? allowanceAmount;
+  final String requirements;
+  final String status;
+  final int version;
+  final int applicantCount;
+  final int pendingApplicantCount;
+  final List<String> skills;
+  final DateTime? deadline;
 }
 
 class CreatedJob {
@@ -58,6 +96,7 @@ class EditableJob {
     required this.workMode,
     required this.category,
     required this.hasAllowance,
+    this.allowanceAmount,
     required this.requirements,
     required this.status,
     required this.version,
@@ -71,6 +110,7 @@ class EditableJob {
   final String workMode;
   final String category;
   final bool hasAllowance;
+  final int? allowanceAmount;
   final String requirements;
   final String status;
   final int version;

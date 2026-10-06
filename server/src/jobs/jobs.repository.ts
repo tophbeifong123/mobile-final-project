@@ -29,6 +29,7 @@ export interface OpenJobRecord {
   workMode: WorkMode;
   category: string;
   hasAllowance: boolean;
+  allowanceAmount: number | null;
   skills: string[];
   status: JobStatus;
 }
@@ -63,6 +64,7 @@ export interface NewJob {
   workMode: WorkMode;
   category: string;
   hasAllowance: boolean;
+  allowanceAmount: number | null;
   requirements: string;
   skills?: string[];
 }
@@ -77,6 +79,7 @@ export interface OwnedJobUpdate {
   workMode: WorkMode;
   category: string;
   hasAllowance: boolean;
+  allowanceAmount: number | null;
   requirements: string;
   skills?: string[];
 }
@@ -151,6 +154,7 @@ export class JobsRepository {
       .addSelect('job.workMode', 'workMode')
       .addSelect('job.category', 'category')
       .addSelect('job.hasAllowance', 'hasAllowance')
+      .addSelect('job.allowanceAmount', 'allowanceAmount')
       .addSelect('job.skills', 'skills')
       .addSelect('job.status', 'status')
       .orderBy('saved.createdAt', 'DESC')
@@ -212,6 +216,7 @@ export class JobsRepository {
         workMode: input.workMode,
         category: input.category,
         hasAllowance: input.hasAllowance,
+        allowanceAmount: input.allowanceAmount,
         requirements: input.requirements,
         skills: input.skills ?? [],
         status: JobStatus.Open,
@@ -237,6 +242,7 @@ export class JobsRepository {
     job.workMode = input.workMode;
     job.category = input.category;
     job.hasAllowance = input.hasAllowance;
+    job.allowanceAmount = input.allowanceAmount;
     job.requirements = input.requirements;
     if (input.skills !== undefined) {
       job.skills = input.skills;
@@ -330,6 +336,7 @@ export class JobsRepository {
       .addSelect('job.workMode', 'workMode')
       .addSelect('job.category', 'category')
       .addSelect('job.hasAllowance', 'hasAllowance')
+      .addSelect('job.allowanceAmount', 'allowanceAmount')
       .addSelect('job.skills', 'skills')
       .addSelect('job.status', 'status')
       .orderBy('job.createdAt', 'DESC')
@@ -357,6 +364,7 @@ export class JobsRepository {
       .addSelect('job.workMode', 'workMode')
       .addSelect('job.category', 'category')
       .addSelect('job.hasAllowance', 'hasAllowance')
+      .addSelect('job.allowanceAmount', 'allowanceAmount')
       .addSelect('job.requirements', 'requirements')
       .addSelect('job.skills', 'skills')
       .addSelect('job.status', 'status')
@@ -416,6 +424,7 @@ function toOpenJob(row: Record<string, unknown>): OpenJobRecord {
     workMode: readField(row, 'workMode') as WorkMode,
     category: String(readField(row, 'category') ?? ''),
     hasAllowance: readBoolean(row, 'hasAllowance'),
+    allowanceAmount: readAmount(row, 'allowanceAmount'),
     skills: readArray(row, 'skills'),
     status: readField(row, 'status') as JobStatus,
   };
@@ -455,6 +464,15 @@ function toCompanyJobRecord(row: Record<string, unknown>): CompanyJobRecord {
           ? new Date(String(deadline))
           : null,
   };
+}
+
+function readAmount(row: Record<string, unknown>, key: string): number | null {
+  const value = readField(row, key);
+  if (value == null || value === '') {
+    return null;
+  }
+  const amount = Number(value);
+  return Number.isInteger(amount) ? amount : null;
 }
 
 function readBoolean(row: Record<string, unknown>, key: string): boolean {

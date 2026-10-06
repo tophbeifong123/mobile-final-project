@@ -120,6 +120,7 @@ class Job {
     required this.category,
     required this.hasAllowance,
     required this.status,
+    this.allowanceAmount,
     this.skills = const [],
   });
 
@@ -130,6 +131,7 @@ class Job {
   final WorkMode workMode;
   final String category;
   final bool hasAllowance;
+  final int? allowanceAmount;
   final JobStatus status;
   final List<String> skills;
 }
@@ -143,6 +145,7 @@ class JobDetail {
     required this.workMode,
     required this.category,
     required this.hasAllowance,
+    this.allowanceAmount,
     required this.requirements,
     required this.status,
     required this.companyName,
@@ -164,6 +167,7 @@ class JobDetail {
   final WorkMode workMode;
   final String category;
   final bool hasAllowance;
+  final int? allowanceAmount;
   final String requirements;
   final JobStatus status;
   final String companyName;

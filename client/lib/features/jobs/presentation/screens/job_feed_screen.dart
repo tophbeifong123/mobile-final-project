@@ -360,10 +360,14 @@ class _FeedList extends ConsumerWidget {
                     details: [
                       workModeLabel(job.workMode),
                       job.category,
-                      allowanceLabel(job.hasAllowance),
+                      allowanceLabel(job.hasAllowance, job.allowanceAmount),
                     ],
                     skills: job.skills,
                     hasAllowance: job.hasAllowance,
+                    allowanceText: allowanceLabel(
+                      job.hasAllowance,
+                      job.allowanceAmount,
+                    ),
                     isSaved: isSaved,
                     isNew: i == 0,
                     onBookmarkTap: () async {
