@@ -255,9 +255,19 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
                               mainAxisSize: MainAxisSize.min,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.rate_review_outlined, size: 20),
+                                Icon(
+                                  Icons.rate_review_outlined,
+                                  size: 20,
+                                  color: Colors.white,
+                                ),
                                 SizedBox(width: 8),
-                                Text('เปลี่ยนสถานะเป็น Reviewing'),
+                                Text(
+                                  'เปลี่ยนสถานะเป็น Reviewing',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
                               ],
                             ),
                           ),

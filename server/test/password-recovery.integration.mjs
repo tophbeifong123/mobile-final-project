@@ -109,11 +109,11 @@ test('password recovery across API, SMTP and PostgreSQL', { timeout: 60_000 }, a
     return message;
   };
   try {
-    assertStatus(await post('register', { email: externalEmail, password: 'external-password-123', role: 'student' }), 201);
+    assertStatus(await post('register', { email: externalEmail, password: 'External-password-123', role: 'student' }), 201);
     assertStatus(await post('forgot-password', { email: 'student@@example.com' }), 400);
     const unknownOutlook = await post('forgot-password', { email: `unknown-${id}@outlook.com` });
     assertStatus(unknownOutlook, 200);
-    const session = await post('register', { email, password: 'original-password-123', role: 'student' });
+    const session = await post('register', { email, password: 'Original-password-123', role: 'student' });
     assertStatus(session, 201);
     const unknown = await post('forgot-password', { email: `unknown-${id}@email.psu.ac.th` });
     assertStatus(unknown, 200);
@@ -144,7 +144,7 @@ test('password recovery across API, SMTP and PostgreSQL', { timeout: 60_000 }, a
     token = replacementToken;
     assertStatus(await post('reset-password', { token, password: 'short' }), 400);
     assertStatus(await post('reset-password', { token: '0'.repeat(64), password: 'new-password-123' }), 400);
-    const reused = await post('reset-password', { token, password: 'original-password-123' });
+    const reused = await post('reset-password', { token, password: 'Original-password-123' });
     assertStatus(reused, 409);
     assert.equal(reused.body.code, 'PASSWORD_REUSE');
     const afterReuse = await db.query('SELECT token_hash FROM password_reset_tokens p JOIN users u ON u.id = p.user_id WHERE u.email = $1', [email]);
@@ -156,7 +156,7 @@ test('password recovery across API, SMTP and PostgreSQL', { timeout: 60_000 }, a
     assert.deepEqual(resets.map((response) => response.status).sort(), [200, 400], 'concurrent reset is single-use');
     const password = resets[0].status === 200 ? 'new-password-123' : 'other-password-123';
     assertStatus(await post('reset-password', { token, password }), 400);
-    assertStatus(await post('login', { email, password: 'original-password-123' }), 401);
+    assertStatus(await post('login', { email, password: 'Original-password-123' }), 401);
     assertStatus(await post('login', { email, password }), 200);
     assertStatus(await post('refresh', { refreshToken: session.body.refreshToken }), 401);
     const oldAccess = await fetch(`${origin}/api/students/me`, { headers: { Authorization: `Bearer ${session.body.accessToken}` } });
@@ -169,7 +169,7 @@ test('password recovery across API, SMTP and PostgreSQL', { timeout: 60_000 }, a
     await db.query(`INSERT INTO password_reset_tokens (user_id, token_hash, expires_at, created_at) VALUES ($1, $2, now() - interval '1 minute', now() - interval '2 minutes')`, [user.id, expiredHash]);
     assertStatus(await post('reset-password', { token: 'f'.repeat(64), password: 'never-used-password' }), 400);
     // Company recovery follows exactly the same flow.
-    const companySession = await post('register', { email: companyEmail, password: 'company-password-123', role: 'company' });
+    const companySession = await post('register', { email: companyEmail, password: 'Company-password-123', role: 'company' });
     assertStatus(companySession, 201);
     assertStatus(await post('forgot-password', { email: companyEmail }), 200);
     const companyMail = await waitForMail(companyEmail);

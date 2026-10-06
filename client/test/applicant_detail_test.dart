@@ -66,6 +66,17 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('รายละเอียดผู้สมัคร'), findsOneWidget);
+      expect(
+        tester
+            .widget<Text>(find.text('เปลี่ยนสถานะเป็น Reviewing'))
+            .style
+            ?.color,
+        Colors.white,
+      );
+      expect(
+        tester.widget<Icon>(find.byIcon(Icons.rate_review_outlined)).color,
+        Colors.white,
+      );
       expect(find.text('สมชาย ใจดี'), findsOneWidget);
       expect(
         find.text('มหาวิทยาลัยเกษตรศาสตร์ • วิทยาการคอมพิวเตอร์'),
