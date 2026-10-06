@@ -48,6 +48,7 @@ test('password recovery across API, SMTP and PostgreSQL', { timeout: 60_000 }, a
   });
   const { NestFactory } = await import('@nestjs/core');
   const { ValidationPipe } = await import('@nestjs/common');
+  const { SwaggerModule, DocumentBuilder } = await import('@nestjs/swagger');
   // Compiled imports retain TypeScript constructor metadata used by Nest.
   const { AppModule } = await import('../dist/app.module.js');
   const { AuthRepository } = await import('../dist/auth/auth.repository.js');
@@ -58,13 +59,22 @@ test('password recovery across API, SMTP and PostgreSQL', { timeout: 60_000 }, a
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
   await app.listen(0, '127.0.0.1');
+  const swagger = SwaggerModule.createDocument(app, new DocumentBuilder().setTitle('InternFinder API').setVersion('1.0').build());
+  const forgotSchema = swagger.components.schemas.ForgotPasswordDto.properties.email;
+  assert.equal(forgotSchema.format, 'email');
+  assert.equal(forgotSchema.pattern, undefined, 'Swagger has no domain allowlist pattern');
+  assert.doesNotMatch(JSON.stringify([
+    swagger.paths['/api/auth/forgot-password'],
+    swagger.paths['/api/auth/reset-password'],
+    forgotSchema,
+  ]), /psu/i, 'Swagger does not describe a PSU-only recovery policy');
   const origin = await app.getUrl();
   const db = app.get(DataSource);
   const repository = app.get(AuthRepository);
   const id = randomUUID();
-  const email = `recovery-${id}@email.psu.ac.th`;
-  const companyEmail = `recovery-company-${id}@psu.ac.th`;
-  const externalEmail = `recovery-external-${id}@gmail.com`;
+  const email = `recovery-${id}@gmail.com`;
+  const companyEmail = `recovery-company-${id}@outlook.com`;
+  const externalEmail = `recovery-external-${id}@example.com`;
   const post = async (path, body) => {
     const response = await fetch(`${origin}/api/auth/${path}`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
@@ -93,20 +103,9 @@ test('password recovery across API, SMTP and PostgreSQL', { timeout: 60_000 }, a
   };
   try {
     assertStatus(await post('register', { email: externalEmail, password: 'external-password-123', role: 'student' }), 201);
-    for (const disallowed of [externalEmail, `recovery-${id}@outlook.com`, `recovery-${id}@email.psu.ac.th.example.com`]) {
-      assertStatus(await post('forgot-password', { email: disallowed }), 400);
-    }
-    assert.equal(messages.length, 0, 'non-PSU addresses never receive a reset email');
-    // Simulate a still-valid link created before the PSU-only policy was enabled.
-    const externalUser = await repository.findByEmail(externalEmail);
-    const legacyToken = 'd'.repeat(64);
-    const legacyHash = createHash('sha256').update(legacyToken).digest('hex');
-    await db.query(`INSERT INTO password_reset_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, now() + interval '10 minutes')`, [externalUser.id, legacyHash]);
-    assertStatus(await post('reset-password', { token: legacyToken, password: 'must-not-be-applied' }), 400);
-    assert.equal(await repository.consumePasswordResetToken(legacyHash, 'must-not-be-applied', async () => false), null, 'the transaction also blocks an old non-PSU reset token');
-    assert.equal(await repository.replacePasswordResetToken({ userId: externalUser.id, tokenHash: 'c'.repeat(64), expiresAt: new Date(Date.now() + 60_000) }), false);
-    assert.equal((await repository.findById(externalUser.id)).passwordHash, externalUser.passwordHash);
-    assertStatus(await post('login', { email: externalEmail, password: 'external-password-123' }), 200);
+    assertStatus(await post('forgot-password', { email: 'student@@example.com' }), 400);
+    const unknownOutlook = await post('forgot-password', { email: `unknown-${id}@outlook.com` });
+    assertStatus(unknownOutlook, 200);
     const session = await post('register', { email, password: 'original-password-123', role: 'student' });
     assertStatus(session, 201);
     const unknown = await post('forgot-password', { email: `unknown-${id}@email.psu.ac.th` });
@@ -116,6 +115,7 @@ test('password recovery across API, SMTP and PostgreSQL', { timeout: 60_000 }, a
     assertStatus(known, 200);
     assert.ok(known.headers.get('access-control-expose-headers')?.includes('Retry-After'), 'Flutter web can read rate-limit wait time');
     assert.deepEqual(known.body, unknown.body, 'no account enumeration or token disclosure');
+    assert.deepEqual(known.body, unknownOutlook.body, 'response is identical across email providers');
     const resetEmail = await waitForMail(email);
     let token = /token=([a-f0-9]{64})/.exec(resetEmail)?.[1];
     assert.ok(token, 'email contains a 256-bit URL token');
@@ -162,7 +162,8 @@ test('password recovery across API, SMTP and PostgreSQL', { timeout: 60_000 }, a
     await db.query(`INSERT INTO password_reset_tokens (user_id, token_hash, expires_at, created_at) VALUES ($1, $2, now() - interval '1 minute', now() - interval '2 minutes')`, [user.id, expiredHash]);
     assertStatus(await post('reset-password', { token: 'f'.repeat(64), password: 'never-used-password' }), 400);
     // Company recovery follows exactly the same flow.
-    assertStatus(await post('register', { email: companyEmail, password: 'company-password-123', role: 'company' }), 201);
+    const companySession = await post('register', { email: companyEmail, password: 'company-password-123', role: 'company' });
+    assertStatus(companySession, 201);
     assertStatus(await post('forgot-password', { email: companyEmail }), 200);
     const companyMail = await waitForMail(companyEmail);
     const companyToken = /token=([a-f0-9]{64})/.exec(companyMail)?.[1];
@@ -171,6 +172,18 @@ test('password recovery across API, SMTP and PostgreSQL', { timeout: 60_000 }, a
     const companyLogin = await post('login', { email: companyEmail, password: 'new-company-password' });
     assertStatus(companyLogin, 200);
     assert.equal(companyLogin.body.role, 'company');
+    assertStatus(await post('login', { email: companyEmail, password: 'company-password-123' }), 401);
+    assertStatus(await post('refresh', { refreshToken: companySession.body.refreshToken }), 401);
+    const oldCompanyAccess = await fetch(`${origin}/api/companies/me`, { headers: { Authorization: `Bearer ${companySession.body.accessToken}` } });
+    assert.equal(oldCompanyAccess.status, 401, 'company sessions are invalidated as well');
+    // Still-valid links for other domains are no longer blocked in the service or transaction.
+    const externalUser = await repository.findByEmail(externalEmail);
+    const legacyToken = 'd'.repeat(64);
+    const legacyHash = createHash('sha256').update(legacyToken).digest('hex');
+    assert.equal(await repository.replacePasswordResetToken({ userId: externalUser.id, tokenHash: legacyHash, expiresAt: new Date(Date.now() + 10 * 60_000) }), true);
+    assertStatus(await post('reset-password', { token: legacyToken, password: 'new-external-password' }), 200);
+    assertStatus(await post('login', { email: externalEmail, password: 'external-password-123' }), 401);
+    assertStatus(await post('login', { email: externalEmail, password: 'new-external-password' }), 200);
     let limited;
     for (let attempt = 0; attempt < 11; attempt++) {
       limited = await post('forgot-password', { email: `unknown-${id}@email.psu.ac.th` });

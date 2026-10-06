@@ -1,8 +1,9 @@
-export const PASSWORD_RECOVERY_EMAIL_PATTERN = /^[^\s@]+@(?:email\.)?psu\.ac\.th$/i;
+import { isEmail } from 'class-validator';
 
 export const PASSWORD_RECOVERY_EMAIL_MESSAGE =
-  'รองรับการรีเซ็ตรหัสผ่านเฉพาะอีเมล @email.psu.ac.th หรือ @psu.ac.th';
+  'กรอกอีเมลให้ถูกต้อง';
 
-export function isPasswordRecoveryEmailAllowed(email: string): boolean {
-  return PASSWORD_RECOVERY_EMAIL_PATTERN.test(email.trim());
+export function isPasswordRecoveryEmailValid(email: string): boolean {
+  const normalized = email.trim();
+  return normalized.length <= 255 && isEmail(normalized);
 }
