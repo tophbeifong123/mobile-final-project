@@ -187,7 +187,7 @@ class _FakeStudentProfileRepository implements StudentProfileRepository {
 
 class _EmptyJobRepository implements JobRepository {
   @override
-  Future<List<Job>> fetchFeed(JobFilter filter) async => const [];
+  Future<JobPage> fetchFeed(JobFilter filter) async => const JobPage();
 
   @override
   Future<JobDetail> fetchDetail(String jobId) => throw UnimplementedError();

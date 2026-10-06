@@ -58,6 +58,29 @@ describe('JobsService', () => {
     service = module.get(JobsService);
   });
 
+  it('preserves total/page metadata and maps the same card fields in feed and saved jobs', async () => {
+    const createdAt = new Date('2026-10-01T12:00:00Z');
+    const item = { id: 'job-21', title: 'Intern', companyName: 'Company', province: 'สงขลา',
+      workMode: WorkMode.Remote, category: 'IT', hasAllowance: false, status: JobStatus.Open,
+      createdAt, companyLogoObjectKey: 'company-logos/company/logo.png' };
+    repository.findOpen.mockResolvedValue({ items: [item], total: 21 });
+    repository.findStudentId.mockResolvedValue('student-1');
+    repository.listSaved.mockResolvedValue({ items: [item], total: 21 });
+    const query = Object.assign(new JobFeedQueryDto(), { page: 2, limit: 20 });
+    const feed = await service.listOpen(student, query);
+    const saved = await service.listSaved(student, { page: 2, limit: 20 });
+    expect(feed).toEqual(expect.objectContaining({ total: 21, totalPages: 2, page: 2, limit: 20 }));
+    expect(saved).toEqual(feed);
+    expect(feed.items[0]).toEqual(expect.objectContaining({ createdAt, companyLogoAvailable: true, hasAllowance: false }));
+    expect(feed.items[0]).not.toHaveProperty('companyLogoObjectKey');
+    expect(repository.findOpen).toHaveBeenCalledWith(expect.objectContaining({ page: 2, limit: 20 }));
+  });
+
+  it('returns zero pages for empty feed', async () => {
+    repository.findOpen.mockResolvedValue({ items: [], total: 0 });
+    expect(await service.listOpen(student, new JobFeedQueryDto())).toEqual({ items: [], total: 0, totalPages: 0, page: 1, limit: 20 });
+  });
+
   it('creates an open job for the signed-in company', async () => {
     repository.findCompanyId.mockResolvedValue('company-1');
     repository.create.mockResolvedValue({

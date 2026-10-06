@@ -1,3 +1,4 @@
+import 'package:client/features/jobs/domain/entities/job.dart';
 import 'dart:async';
 
 import 'package:client/core/network/dio_client.dart';
@@ -30,7 +31,9 @@ ProviderContainer _containerFor(_ProfileRepository repository) =>
       overrides: [
         tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
         studentProfileRepositoryProvider.overrideWithValue(repository),
-        jobFeedProvider.overrideWith((ref) async => []),
+        jobFeedProvider.overrideWith(
+          (ref) async => const JobPage(items: [], total: 0, totalPages: 0),
+        ),
         savedJobsProvider.overrideWith((ref) async => []),
       ],
     );

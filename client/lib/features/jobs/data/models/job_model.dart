@@ -13,6 +13,8 @@ class JobModel {
     this.allowanceAmount,
     required this.status,
     this.skills = const [],
+    this.createdAt,
+    this.companyLogoAvailable = false,
   });
 
   factory JobModel.fromJson(Map<String, dynamic> json) {
@@ -27,6 +29,8 @@ class JobModel {
       openings: json['openings'] as int?,
       allowanceAmount: json['allowanceAmount'] as int?,
       status: JobStatus.values.byName(json['status'] as String),
+      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? ''),
+      companyLogoAvailable: json['companyLogoAvailable'] as bool? ?? false,
       skills:
           (json['skills'] as List<dynamic>?)
               ?.map((e) => e.toString())
@@ -46,6 +50,8 @@ class JobModel {
   final int? allowanceAmount;
   final JobStatus status;
   final List<String> skills;
+  final DateTime? createdAt;
+  final bool companyLogoAvailable;
 
   Job toEntity() {
     return Job(
@@ -60,6 +66,8 @@ class JobModel {
       allowanceAmount: allowanceAmount,
       status: status,
       skills: skills,
+      createdAt: createdAt,
+      companyLogoAvailable: companyLogoAvailable,
     );
   }
 }

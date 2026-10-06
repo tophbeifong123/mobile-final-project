@@ -15,6 +15,7 @@ import 'package:client/features/company_jobs/presentation/providers/company_jobs
 import 'package:client/features/company_profile/domain/entities/company_profile.dart';
 import 'package:client/features/company_profile/presentation/providers/company_profile_controller.dart';
 import 'package:client/features/jobs/presentation/providers/jobs_controller.dart';
+import 'package:client/features/jobs/domain/entities/job.dart';
 import 'package:client/features/jobs/presentation/widgets/feed_top_bar.dart';
 import 'package:client/features/notifications/domain/entities/app_notification.dart';
 import 'package:client/features/notifications/presentation/providers/notifications_controller.dart';
@@ -304,7 +305,7 @@ Future<GoRouter> _mountApp(
       companyProfileControllerProvider.overrideWith(
         () => _ProfileController(loadState),
       ),
-      jobFeedProvider.overrideWith((ref) async => const []),
+      jobFeedProvider.overrideWith((ref) async => const JobPage()),
       savedJobsProvider.overrideWith((ref) async => const []),
       studentProfileControllerProvider.overrideWith(_StudentController.new),
       notificationsProvider.overrideWith(_EmptyNotifications.new),

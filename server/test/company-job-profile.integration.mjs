@@ -55,7 +55,7 @@ test('persisted company profile reaches job detail, logo and Swagger', async () 
     await dataSource.query('INSERT INTO student_profiles (id, user_id, full_name, university, major) VALUES ($1, $2, $3, $4, $5)',
       [studentId, studentUser, 'Student', 'PSU', 'IT']);
     await dataSource.query('INSERT INTO jobs (id, company_id, title, description, province, work_mode, category, has_allowance, requirements, status) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)',
-      [jobId, companyId, 'Flutter Intern', 'Job description', 'สงขลา', 'on_site', 'IT', true, 'Flutter', 'open']);
+      [jobId, companyId, 'Flutter Intern', 'Job description', 'สงขลา', 'on_site', 'IT & Software', true, 'Flutter', 'open']);
     const logo = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10" fill="red"/></svg>');
     const module = await Test.createTestingModule({
       controllers: [CompaniesController, JobsController, CompanyJobsController],
@@ -112,29 +112,58 @@ test('persisted company profile reaches job detail, logo and Swagger', async () 
     assert.equal(latest.body.companyWebsiteUrl, '');
     assert.deepEqual(latest.body.companyPerks, []);
     assert.equal(latest.body.companyLocation, 'อาคาร B');
+    // Real feed pagination: 21 open jobs, not the count of the current page.
+    for (let index = 0; index < 20; index++) {
+      await dataSource.query('INSERT INTO jobs (id, company_id, title, description, province, work_mode, category, has_allowance, requirements, status) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)',
+        [randomUUID(), companyId, 'Extra Intern ' + index, 'Description', 'สงขลา', 'remote', 'IT & Software', false, 'None', 'open']);
+    }
+    const firstPage = (await http.get('/api/jobs').set('x-test-role', 'student').expect(200)).body;
+    const secondPage = (await http.get('/api/jobs?page=2').set('x-test-role', 'student').expect(200)).body;
+    assert.equal(firstPage.items.length, 20);
+    assert.equal(secondPage.items.length, 1);
+    assert.equal(firstPage.total, 21);
+    assert.equal(secondPage.total, 21);
+    assert.equal(secondPage.totalPages, 2);
+    assert.equal(secondPage.page, 2);
+    assert.ok(!firstPage.items.some(item => item.id === secondPage.items[0].id));
+    for (const item of [...firstPage.items, ...secondPage.items]) {
+      assert.equal(item.companyLogoAvailable, true);
+      assert.ok(Number.isFinite(Date.parse(item.createdAt)));
+      assert.ok(!Object.hasOwn(item, 'companyLogoObjectKey'));
+    }
+    const noMatches = (await http.get('/api/jobs?search=no-matching-title').set('x-test-role', 'student').expect(200)).body;
+    assert.equal(noMatches.total, 0);
+    assert.equal(noMatches.totalPages, 0);
+    await dataSource.query('INSERT INTO saved_jobs (student_id, job_id) SELECT $1, id FROM jobs', [studentId]);
+    const savedPage = (await http.get('/api/jobs/saved?page=2').set('x-test-role', 'student').expect(200)).body;
+    assert.equal(savedPage.total, 21);
+    assert.equal(savedPage.totalPages, 2);
+    assert.equal(savedPage.items.length, 1);
+    const savedItem = savedPage.items[0];
+    assert.deepEqual(savedItem, [...firstPage.items, ...secondPage.items].find(item => item.id === savedItem.id));
     // IFND-150: legacy rows stay nullable; create/edit and all student views agree.
     const legacy = (await http.get('/api/jobs/' + jobId).set('x-test-role', 'student').expect(200)).body;
     assert.equal(legacy.openings, null);
     assert.equal(legacy.allowanceAmount, null);
     const posting = { title: 'Paid Intern', description: 'Description', province: 'สงขลา',
-      workMode: 'remote', category: 'IT', hasAllowance: true, requirements: 'None', openings: 3, allowanceAmount: 8000.25 };
+      workMode: 'remote', category: 'IT & Software', hasAllowance: true, requirements: 'None', openings: 3, allowanceAmount: 8000 };
     const createdJob = (await http.post('/api/company/jobs').set('x-test-role', 'company').send(posting).expect(201)).body;
     assert.equal(createdJob.openings, 3);
-    assert.equal(createdJob.allowanceAmount, 8000.25);
+    assert.equal(createdJob.allowanceAmount, 8000);
     await dataSource.query('INSERT INTO saved_jobs (student_id, job_id) VALUES ($1,$2)', [studentId, createdJob.id]);
     for (const path of ['/api/company/jobs/' + createdJob.id, '/api/jobs/' + createdJob.id]) {
       const body = (await http.get(path).set('x-test-role', path.includes('/company/') ? 'company' : 'student').expect(200)).body;
       assert.equal(body.openings, 3);
-      assert.equal(body.allowanceAmount, 8000.25);
+      assert.equal(body.allowanceAmount, 8000);
     }
-    for (const path of ['/api/jobs', '/api/jobs/saved']) {
+    for (const path of ['/api/jobs?limit=100', '/api/jobs/saved?limit=100']) {
       const body = (await http.get(path).set('x-test-role', 'student').expect(200)).body;
       const item = body.items.find(item => item.id === createdJob.id);
       assert.equal(item.openings, 3);
-      assert.equal(item.allowanceAmount, 8000.25);
+      assert.equal(item.allowanceAmount, 8000);
     }
     const updated = (await http.patch('/api/company/jobs/' + createdJob.id).set('x-test-role', 'company')
-      .send({ ...posting, openings: null, hasAllowance: false, version: createdJob.version }).expect(200)).body;
+      .send({ ...posting, openings: null, hasAllowance: false, allowanceAmount: null, version: createdJob.version }).expect(200)).body;
     assert.equal(updated.openings, null);
     assert.equal(updated.allowanceAmount, null);
     const rows = await dataSource.query('SELECT openings, allowance_amount FROM jobs WHERE id=$1', [createdJob.id]);
@@ -159,6 +188,9 @@ test('persisted company profile reaches job detail, logo and Swagger', async () 
       assert.ok(doc.components.schemas.JobDetailDto.properties[field]);
     assert.equal(doc.components.schemas.JobDetailDto.properties.companyPerks.type, 'array');
     assert.equal(doc.components.schemas.JobDetailDto.properties.companyLogoAvailable.type, 'boolean');
+    assert.equal(doc.components.schemas.JobFeedItemDto.properties.createdAt.format, 'date-time');
+    assert.equal(doc.components.schemas.JobFeedItemDto.properties.companyLogoAvailable.type, 'boolean');
+    assert.ok(doc.components.schemas.PaginatedJobsDto.properties.totalPages);
     for (const schema of ['CreateJobDto', 'UpdateJobDto', 'JobDto', 'JobFeedItemDto', 'JobDetailDto']) {
       for (const field of ['openings', 'allowanceAmount']) {
         assert.equal(doc.components.schemas[schema].properties[field].nullable, true);
