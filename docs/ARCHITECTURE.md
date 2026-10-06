@@ -141,6 +141,8 @@ Register รับ email/password หรือ Google ID token และ role st
 
 Google sign-in ใช้ POST /api/auth/google รับ { idToken, role? }. Backend ตรวจลายเซ็น, issuer, expiry, audience allowlist, sub, email และ email_verified ด้วย Google Auth Library. จำกัด endpoint นี้ 10 ครั้งต่อนาทีต่อ client IP ด้วย NestJS throttler. Google identity ผูกด้วย (provider, provider_subject) ไม่ใช่ email. บัญชีเดิมที่ผูก sub แล้วได้ session เดิม; ถ้า email ตรงบัญชี password ให้ตอบ 409 และไม่ผูกให้อัตโนมัติ. บัญชีใหม่ที่ไม่ส่ง role ตอบ 200 { code: role_required } โดยไม่สร้างข้อมูล; ส่ง role student/company แล้วสร้าง user, provider identity และ profile ใน transaction เดียว ก่อนออก session ปกติ. ถ้าชน unique ระหว่างสร้าง ให้ค้น identity/email ใหม่และตอบผลเดิมอย่างปลอดภัย.
 
+AuthService ตรวจรหัสผ่านตอนสมัคร: อย่างน้อย 8 Unicode code points ไม่เกิน 72 ไบต์ UTF-8 และมีตัวอักษรอังกฤษ A-Z, a-z, ตัวเลข 0-9 และอักขระพิเศษ ASCII อย่างน้อยประเภทละ 1 ตัว (ช่องว่างและ emoji ไม่นับเป็นอักขระพิเศษ) Flutter แสดงเช็กลิสต์ขณะพิมพ์และตรวจยืนยันรหัสผ่านตรงกัน กติกานี้ไม่เปลี่ยนการ login ของบัญชีเดิมหรือ reset password
+
 Access token อายุสั้น Refresh token หมุนทุกครั้งที่ใช้ และเก็บเป็นค่า hash Logout คือเพิกถอน refresh token
 
 Password recovery รองรับอีเมลที่ใช้สมัครของ Student และ Company ทุกโดเมน DTO และ PasswordRecoveryService ตรวจรูปแบบอีเมล ไม่ตรวจโดเมนตอนขอลิงก์หรือตอนใช้ token อีเมลรูปแบบถูกต้องได้คำตอบเดียวกันไม่ว่าบัญชีมีอยู่หรือไม่ ระบบส่งลิงก์ไปยังอีเมลที่บันทึกไว้ด้วย SMTP เก็บเฉพาะ SHA-256 ของ token ใน PostgreSQL ใช้ได้ครั้งเดียวภายใน 15 นาที รีเซ็ตรหัสผ่านและเพิกถอน refresh token ใน transaction เดียวใต้ user/token lock พร้อมเพิ่ม `users.token_version` เพื่อยกเลิก access token เดิมทันที ไม่ขึ้นกับ Google Login รายละเอียด SMTP อยู่ใน [PASSWORD_RECOVERY.md](PASSWORD_RECOVERY.md)

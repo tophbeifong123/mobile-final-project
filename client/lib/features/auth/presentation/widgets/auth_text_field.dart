@@ -20,6 +20,7 @@ class AuthTextField extends StatelessWidget {
     this.suffixIcon,
     this.onChanged,
     this.validator,
+    this.autovalidateMode,
     this.enabled = true,
   });
 
@@ -36,6 +37,7 @@ class AuthTextField extends StatelessWidget {
   final Widget? suffixIcon;
   final ValueChanged<String>? onChanged;
   final FormFieldValidator<String>? validator;
+  final AutovalidateMode? autovalidateMode;
   final bool enabled;
 
   @override
@@ -112,6 +114,7 @@ class AuthTextField extends StatelessWidget {
             keyboardType: keyboardType,
             onChanged: onChanged,
             validator: validator,
+            autovalidateMode: autovalidateMode,
             style: const TextStyle(
               fontSize: 13.5,
               fontWeight: FontWeight.w600,

@@ -6,6 +6,7 @@ import 'package:client/features/auth/domain/entities/auth_session.dart';
 import 'package:client/features/auth/domain/repositories/auth_repository.dart';
 import 'package:client/features/auth/presentation/providers/auth_controller.dart';
 import 'package:client/features/auth/presentation/screens/register_screen.dart';
+import 'package:client/features/auth/presentation/widgets/rocket_badge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -53,14 +54,20 @@ void main() {
       // Field headers
       expect(find.text('ชื่อ - นามสกุล'), findsOneWidget);
       expect(find.text('ตรงตามบัตร/รหัสนักศึกษา'), findsOneWidget);
-      expect(find.text('อีเมลมหาวิทยาลัย'), findsOneWidget);
+      expect(find.text('อีเมล'), findsOneWidget);
+      expect(find.byIcon(Icons.rocket_launch_rounded), findsNothing);
+      expect(find.byType(RocketBadge), findsNothing);
+      expect(find.byIcon(Icons.spa_outlined), findsNothing);
       expect(find.text('ตั้งรหัสผ่าน'), findsOneWidget);
-      expect(find.text('ยังขาด: อย่างน้อย 8 ตัวอักษร'), findsOneWidget);
-      expect(find.text('ผ่านแล้ว: ไม่เกิน 72 ไบต์ (UTF-8)'), findsOneWidget);
-      expect(find.text('ยังขาด: ยืนยันรหัสผ่านตรงกัน'), findsOneWidget);
+      expect(
+        find.text('อย่างน้อย 8 ตัว มี A–Z, a–z, ตัวเลข และสัญลักษณ์'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('ไบต์ (UTF-8)'), findsNothing);
+      expect(find.textContaining('เพิ่มอีก:'), findsNothing);
       expect(find.text('ยืนยันรหัสผ่าน'), findsOneWidget);
 
-      expect(find.text('เงื่อนไขรหัสผ่าน'), findsOneWidget);
+      expect(find.text('เงื่อนไขรหัสผ่าน'), findsNothing);
       expect(find.textContaining('ระดับความปลอดภัย'), findsNothing);
 
       // Submit button
@@ -71,7 +78,7 @@ void main() {
 
       // Social buttons
       expect(find.text('Google'), findsOneWidget);
-      expect(find.text('SSO มหาวิทยาลัย'), findsOneWidget);
+      expect(find.text('SSO มหาวิทยาลัย'), findsNothing);
 
       // Footer
       expect(find.text('เข้าสู่ระบบ'), findsOneWidget);
@@ -102,14 +109,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('อีเมลมหาวิทยาลัย'), findsOneWidget);
+    expect(find.text('อีเมล'), findsOneWidget);
     expect(find.text('ตรงตามบัตร/รหัสนักศึกษา'), findsOneWidget);
 
     // Tap Company Role
     await tester.tap(find.text('บริษัท / องค์กร'));
     await tester.pumpAndSettle();
 
-    expect(find.text('อีเมลบริษัท'), findsOneWidget);
+    expect(find.text('อีเมล'), findsOneWidget);
     expect(find.text('ชื่อผู้ติดต่อ / บริษัท'), findsOneWidget);
   });
 
