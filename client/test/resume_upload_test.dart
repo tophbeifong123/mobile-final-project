@@ -45,7 +45,7 @@ void main() {
 
     expect(find.text('Resume'), findsOneWidget);
     expect(find.text('my_resume.pdf'), findsOneWidget);
-    expect(find.text('เปลี่ยน'), findsOneWidget);
+    expect(find.text('แก้ไข'), findsOneWidget);
   });
 
   testWidgets(
@@ -79,7 +79,7 @@ void main() {
 
       expect(find.text('Resume'), findsOneWidget);
       expect(find.text('ยังไม่มี Resume ในระบบ'), findsOneWidget);
-      expect(find.text('อัปโหลด'), findsOneWidget);
+      expect(find.text('แก้ไข'), findsOneWidget);
     },
   );
 
@@ -120,7 +120,7 @@ void main() {
       expect(find.text('Resume ในระบบ'), findsOneWidget);
       expect(find.text('current_resume.pdf'), findsOneWidget);
       expect(find.text('เลือกไฟล์ PDF จากเครื่อง'), findsOneWidget);
-      expect(find.text('เลือกหรือแทนที่ CV'), findsOneWidget);
+      expect(find.text('แก้ไข CV'), findsOneWidget);
     },
   );
 }
