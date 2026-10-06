@@ -22,9 +22,12 @@ class ApiConstants {
   // Endpoints
   static const String healthCheck = '/';
   static const String login = '/auth/login';
+  static const String googleLogin = '/auth/google';
   static const String register = '/auth/register';
   static const String refresh = '/auth/refresh';
   static const String logout = '/auth/logout';
+  static const String forgotPassword = '/auth/forgot-password';
+  static const String resetPassword = '/auth/reset-password';
   static const String jobs = '/jobs';
   static const String savedJobs = '/jobs/saved';
   static const String studentProfile = '/students/me';
@@ -50,6 +53,7 @@ class ApiConstants {
   static const String notifications = '/notifications';
   static const String companyProfile = '/companies/me';
   static const String companyLogo = '/companies/me/logo';
+  static const String companyCover = '/companies/me/cover';
   static const String companyDashboard = '/companies/me/dashboard';
   static const String companyJobs = '/company/jobs';
 }

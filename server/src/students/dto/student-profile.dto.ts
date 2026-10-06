@@ -3,10 +3,16 @@ import { ContactLinkDto } from './contact-link.dto.js';
 import { PortfolioLinkDto } from './portfolio-link.dto.js';
 
 export class StudentProfileDto {
-  @ApiProperty({ example: 'มีนา เพ็งชัย' })
+  @ApiProperty({
+    example: 'มีนา เพ็งชัย',
+    description: 'ชื่อจากโปรไฟล์ของนักศึกษาที่เข้าสู่ระบบ ตัดช่องว่างหัวท้าย; ยังไม่กรอกคืนค่าว่าง ไม่มีชื่อสมมติ',
+  })
   fullName: string;
 
-  @ApiProperty({ example: 'มหาวิทยาลัยสงขลานครินทร์' })
+  @ApiProperty({
+    example: 'มหาวิทยาลัยสงขลานครินทร์',
+    description: 'มหาวิทยาลัยที่นักศึกษาบันทึก ตัดช่องว่างหัวท้าย; ยังไม่กรอกคืนค่าว่าง ไม่มีมหาวิทยาลัยสมมติ',
+  })
   university: string;
 
   @ApiProperty({ example: 'วิทยาการคอมพิวเตอร์' })

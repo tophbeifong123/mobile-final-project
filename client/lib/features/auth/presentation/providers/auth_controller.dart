@@ -40,8 +40,43 @@ class AuthController extends AsyncNotifier<AuthSession?> {
     );
   }
 
+  Future<GoogleAuthResult> authenticateWithGoogle({
+    required String idToken,
+    UserRole? role,
+  }) async {
+    try {
+      final roleRequired = await ref
+          .read(authRepositoryProvider)
+          .authenticateWithGoogle(idToken: idToken, role: role);
+      if (!roleRequired) {
+        state = await AsyncValue.guard(
+          () => ref.read(authRepositoryProvider).restore(),
+        );
+      }
+      return GoogleAuthResult(roleRequired: roleRequired);
+    } on AppException catch (error) {
+      return GoogleAuthResult(error: error.message);
+    } catch (_) {
+      return const GoogleAuthResult(error: 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
+    }
+  }
+
   Future<void> logout() async {
     await ref.read(authRepositoryProvider).logout();
+    state = const AsyncData(null);
+  }
+
+  /// Password recovery revokes server sessions. Finish any pending restore
+  /// before clearing local state so it cannot restore the old session later.
+  Future<void> clearLocalSession() async {
+    if (state.isLoading) {
+      try {
+        await future;
+      } catch (_) {
+        // A failed restore also needs to become a signed-out session.
+      }
+    }
+    await ref.read(tokenStorageProvider).clear();
     state = const AsyncData(null);
   }
 

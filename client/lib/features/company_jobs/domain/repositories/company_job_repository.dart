@@ -5,6 +5,8 @@ abstract class CompanyJobRepository {
 
   Future<EditableJob> fetchOne(String jobId);
 
+  Future<CompanyOwnedJob> fetchOwned(String jobId);
+
   Future<CreatedJob> create(JobPosting posting);
 
   Future<EditableJob> update({

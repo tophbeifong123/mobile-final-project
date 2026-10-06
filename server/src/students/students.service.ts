@@ -379,8 +379,9 @@ function toDto(profile: {
   avatarObjectKey?: string | null;
 }): StudentProfileDto {
   const dto = new StudentProfileDto();
-  dto.fullName = profile.fullName;
-  dto.university = profile.university;
+  // Return only the student's own saved identity; blank values stay blank.
+  dto.fullName = profile.fullName.trim();
+  dto.university = profile.university.trim();
   dto.major = profile.major;
   dto.skills = profile.skills;
   dto.bio = profile.bio ?? '';

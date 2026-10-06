@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { JobStatus, WorkMode } from '../job-enums.js';
 
 export class JobDetailDto {
@@ -23,6 +23,19 @@ export class JobDetailDto {
   @ApiProperty()
   hasAllowance: boolean;
 
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    minimum: 1,
+    maximum: 2147483647,
+    example: 3,
+    description: 'จำนวนรับ; null เมื่อไม่ได้ระบุ',
+  })
+  openings: number | null;
+
+  @ApiPropertyOptional({ example: 8000, nullable: true })
+  allowanceAmount: number | null;
+
   @ApiProperty()
   requirements: string;
 
@@ -40,6 +53,29 @@ export class JobDetailDto {
 
   @ApiProperty()
   companyDescription: string;
+
+  @ApiProperty({
+    example: 'https://example.com',
+    description: 'เว็บไซต์ที่บันทึกในโปรไฟล์บริษัท; ค่าว่างเมื่อไม่ได้ระบุ',
+  })
+  companyWebsiteUrl: string;
+
+  @ApiProperty({ example: '51-200', description: 'ขนาดองค์กรจากโปรไฟล์บริษัท' })
+  companySize: string;
+
+  @ApiProperty({ type: [String], example: ['MacBook', 'Free Lunch'] })
+  companyPerks: string[];
+
+  @ApiProperty({
+    example: 'อาคาร A ถนนนิพัทธ์อุทิศ',
+    description: 'ที่อยู่สำนักงานจาก location ในโปรไฟล์ ไม่ใช่จังหวัดของประกาศ',
+  })
+  companyLocation: string;
+
+  @ApiProperty({
+    description: 'มีโลโก้บริษัท; ดาวน์โหลดผ่าน GET /api/jobs/:id/company-logo',
+  })
+  companyLogoAvailable: boolean;
 
   @ApiProperty({ description: 'นักศึกษานี้บันทึกประกาศนี้ไว้แล้วหรือยัง' })
   saved: boolean;

@@ -49,13 +49,18 @@ class NeoSubmitButton extends StatelessWidget {
                 ),
               )
             else ...[
-              Text(
-                text,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                  color: NeoColors.inkSolid,
-                  letterSpacing: -0.3,
+              Flexible(
+                child: Text(
+                  text,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    height: 1.15,
+                    fontWeight: FontWeight.w900,
+                    color: NeoColors.inkSolid,
+                    letterSpacing: -0.3,
+                  ),
                 ),
               ),
               if (trailingIcon != null) ...[const Gap(8), trailingIcon!],

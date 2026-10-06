@@ -106,6 +106,14 @@ client/coverage/
 postgres_data/
 mongo_data/
 
+# Local AI session context
+AI_INDEX.md
+aiTask/(task)googleLogin.md
+
 
 *.tsbuildinfo
+
+
+# Local Security Tools
+tools/
 

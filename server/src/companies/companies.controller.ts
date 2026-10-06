@@ -1,13 +1,16 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Patch,
   Post,
+  Res,
   UploadedFile,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { type Response } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
@@ -104,5 +107,101 @@ export class CompaniesController {
     @UploadedFile() file: UploadedFilePayload | undefined,
   ): Promise<CompanyProfileDto> {
     return this.companiesService.uploadLogo(user, file);
+  }
+
+  @Get('me/logo')
+  @ApiOperation({ summary: 'ดาวน์โหลดหรือดูโลโก้บริษัท' })
+  @ApiResponse({ status: 200, description: 'ไฟล์รูปภาพโลโก้' })
+  @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
+  @ApiResponse({ status: 403, description: 'เฉพาะบริษัท' })
+  @ApiResponse({ status: 404, description: 'ไม่พบโลโก้บริษัท' })
+  async getLogo(
+    @CurrentUser() user: AuthUser,
+    @Res() res: Response,
+  ): Promise<void> {
+    const { buffer, mimeType } = await this.companiesService.getLogoFile(user);
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Cache-Control', 'private, max-age=3600');
+    res.send(buffer);
+  }
+
+  @Delete('me/logo')
+  @ApiOperation({ summary: 'ลบโลโก้บริษัท' })
+  @ApiResponse({
+    status: 200,
+    type: CompanyProfileDto,
+    description: 'ลบโลโก้สำเร็จ',
+  })
+  @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
+  @ApiResponse({ status: 403, description: 'เฉพาะบริษัท' })
+  @ApiResponse({ status: 404, description: 'ไม่พบโปรไฟล์บริษัท' })
+  deleteLogo(@CurrentUser() user: AuthUser): Promise<CompanyProfileDto> {
+    return this.companiesService.deleteLogo(user);
+  }
+
+  @Post('me/cover')
+  @ApiOperation({ summary: 'อัปโหลดรูปหน้าปกของบริษัท' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'ไฟล์รูปภาพหน้าปก (PNG, JPG, WEBP, SVG)',
+        },
+      },
+      required: ['file'],
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    type: CompanyProfileDto,
+    description: 'อัปโหลดสำเร็จ',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'ไฟล์ไม่ใช่รูปภาพ หรือไม่ได้เลือกไฟล์',
+  })
+  @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
+  @ApiResponse({ status: 403, description: 'เฉพาะบริษัท' })
+  @ApiResponse({ status: 404, description: 'ไม่พบโปรไฟล์บริษัท' })
+  @UseInterceptors(FileInterceptor('file'))
+  uploadCover(
+    @CurrentUser() user: AuthUser,
+    @UploadedFile() file: UploadedFilePayload | undefined,
+  ): Promise<CompanyProfileDto> {
+    return this.companiesService.uploadCover(user, file);
+  }
+
+  @Get('me/cover')
+  @ApiOperation({ summary: 'ดาวน์โหลดหรือดูรูปหน้าปกบริษัท' })
+  @ApiResponse({ status: 200, description: 'ไฟล์รูปภาพหน้าปก' })
+  @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
+  @ApiResponse({ status: 403, description: 'เฉพาะบริษัท' })
+  @ApiResponse({ status: 404, description: 'ไม่พบรูปหน้าปกบริษัท' })
+  async getCover(
+    @CurrentUser() user: AuthUser,
+    @Res() res: Response,
+  ): Promise<void> {
+    const { buffer, mimeType } = await this.companiesService.getCoverFile(user);
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Cache-Control', 'private, max-age=3600');
+    res.send(buffer);
+  }
+
+  @Delete('me/cover')
+  @ApiOperation({ summary: 'ลบรูปหน้าปกบริษัท' })
+  @ApiResponse({
+    status: 200,
+    type: CompanyProfileDto,
+    description: 'ลบรูปหน้าปกสำเร็จ',
+  })
+  @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
+  @ApiResponse({ status: 403, description: 'เฉพาะบริษัท' })
+  @ApiResponse({ status: 404, description: 'ไม่พบโปรไฟล์บริษัท' })
+  deleteCover(@CurrentUser() user: AuthUser): Promise<CompanyProfileDto> {
+    return this.companiesService.deleteCover(user);
   }
 }

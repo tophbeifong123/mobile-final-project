@@ -89,6 +89,11 @@ void main() {
         findsOneWidget,
       );
 
+      await tester.scrollUntilVisible(
+        find.text('Cover Letter'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       expect(find.text('Cover Letter'), findsOneWidget);
       expect(
         find.text('มีความสนใจและพร้อมจะเรียนรู้งานอย่างเต็มที่ครับ'),
@@ -672,6 +677,10 @@ class _FakeCompanyJobRepository implements CompanyJobRepository {
 
   @override
   Future<EditableJob> fetchOne(String jobId) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<CompanyOwnedJob> fetchOwned(String jobId) async =>
       throw UnimplementedError();
 
   @override

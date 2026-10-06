@@ -12,5 +12,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install --omit=dev --legacy-peer-deps
 COPY --from=builder /app/dist ./dist
+COPY docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x docker-entrypoint.sh
 EXPOSE 3000
-CMD ["node", "dist/main"]
+ENTRYPOINT ["./docker-entrypoint.sh"]

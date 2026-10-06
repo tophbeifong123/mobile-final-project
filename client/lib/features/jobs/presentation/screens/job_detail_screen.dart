@@ -1,5 +1,8 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -117,7 +120,7 @@ class _JobBody extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  _CompanyMark(name: job.companyName),
+                  _CompanyMark(job: job),
                   const Gap(12),
                   Expanded(
                     child: Column(
@@ -137,6 +140,28 @@ class _JobBody extends StatelessWidget {
                 Text(
                   job.companyDescription.trim(),
                   style: textTheme.bodyMedium,
+                ),
+              ],
+              if (job.companyWebsiteUrl.trim().isNotEmpty)
+                _DetailRow(label: 'เว็บไซต์', value: job.companyWebsiteUrl),
+              if (job.companySize.trim().isNotEmpty)
+                _DetailRow(label: 'ขนาดองค์กร', value: job.companySize),
+              if (job.companyLocation.trim().isNotEmpty)
+                _DetailRow(
+                  label: 'ที่อยู่สำนักงาน',
+                  value: job.companyLocation,
+                ),
+              if (job.companyPerks.isNotEmpty) ...[
+                const Gap(8),
+                Text('สวัสดิการบริษัท', style: textTheme.titleSmall),
+                const Gap(8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final perk in job.companyPerks)
+                      Chip(label: Text(perk)),
+                  ],
                 ),
               ],
             ],
@@ -206,8 +231,10 @@ class _JobBody extends StatelessWidget {
               _DetailRow(label: 'หมวดงาน', value: job.category),
               _DetailRow(
                 label: 'เบี้ยเลี้ยง',
-                value: allowanceLabel(job.hasAllowance),
+                value: allowanceLabel(job.hasAllowance, job.allowanceAmount),
               ),
+              if (job.openings != null)
+                _DetailRow(label: 'จำนวนรับ', value: 'รับ ${job.openings} คน'),
               _DetailRow(label: 'สถานะ', value: jobStatusLabel(job.status)),
             ],
           ),
@@ -259,16 +286,40 @@ class _Actions extends StatelessWidget {
   }
 }
 
-class _CompanyMark extends StatelessWidget {
-  const _CompanyMark({required this.name});
+class _CompanyMark extends ConsumerWidget {
+  const _CompanyMark({required this.job});
 
-  final String name;
+  final JobDetail job;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.colors;
-    final trimmed = name.trim();
+    final trimmed = job.companyName.trim();
     final letter = trimmed.isEmpty ? '?' : trimmed.characters.first;
+    final fallback = Center(
+      child: Text(letter, style: Theme.of(context).textTheme.titleMedium),
+    );
+    final logo = job.companyLogoAvailable
+        ? ref.watch(jobCompanyLogoProvider(job.id)).value
+        : null;
+    final Widget image;
+    if (logo == null) {
+      image = fallback;
+    } else if (logo.mimeType.startsWith('image/svg+xml')) {
+      image = SvgPicture.memory(
+        Uint8List.fromList(logo.bytes),
+        fit: BoxFit.contain,
+        semanticsLabel: 'โลโก้บริษัท ${job.companyName}',
+        errorBuilder: (context, error, stackTrace) => fallback,
+      );
+    } else {
+      image = Image.memory(
+        Uint8List.fromList(logo.bytes),
+        fit: BoxFit.contain,
+        semanticLabel: 'โลโก้บริษัท ${job.companyName}',
+        errorBuilder: (context, error, stackTrace) => fallback,
+      );
+    }
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.background,
@@ -278,9 +329,7 @@ class _CompanyMark extends StatelessWidget {
       child: SizedBox(
         width: 48,
         height: 48,
-        child: Center(
-          child: Text(letter, style: Theme.of(context).textTheme.titleMedium),
-        ),
+        child: ClipRRect(borderRadius: BorderRadius.circular(12), child: image),
       ),
     );
   }

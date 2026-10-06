@@ -11,6 +11,7 @@ import '../../../../core/theme/app_colors_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_primary_button.dart';
+import '../../../../core/widgets/company_top_bar.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/loading_view.dart';
 import '../../../../core/widgets/status_chip.dart';
@@ -182,7 +183,11 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
     );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('รายละเอียดผู้สมัคร')),
+      appBar: CompanyTopBar(
+        title: 'รายละเอียดผู้สมัคร',
+        showBack: true,
+        backLocation: '/company/jobs/${widget.jobId}/applicants',
+      ),
       body: applicantAsync.when(
         loading: () => const LoadingView(label: 'กำลังโหลดข้อมูลผู้สมัคร'),
         error: (error, _) => EmptyState(

@@ -7,6 +7,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import '../../../../core/error/app_exception.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/app_card.dart';
+import '../../../jobs/presentation/widgets/feed_top_bar.dart';
 import '../../domain/entities/job_application.dart';
 import '../providers/applications_controller.dart';
 
@@ -30,7 +31,7 @@ class _MyApplicationsScreenState extends ConsumerState<MyApplicationsScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            const _ApplicationsTopBar(),
+            const FeedTopBar(),
             Expanded(
               child: applicationsAsync.when(
                 skipLoadingOnReload: true,
@@ -115,113 +116,6 @@ class _MyApplicationsScreenState extends ConsumerState<MyApplicationsScreen> {
   }
 }
 
-class _ApplicationsTopBar extends StatelessWidget {
-  const _ApplicationsTopBar();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 6, 16, 8),
-      decoration: const BoxDecoration(color: NeoColors.paperCanvas),
-      child: Row(
-        children: [
-          Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: NeoColors.butterYellow,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: NeoColors.inkSolid, width: 2),
-              boxShadow: NeoShadows.elevation1,
-            ),
-            child: const Icon(
-              Icons.rocket_launch_rounded,
-              size: 18,
-              color: NeoColors.inkSolid,
-            ),
-          ),
-          const Gap(8),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'InternMatch',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: NeoColors.inkSolid,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                Text(
-                  'การสมัครของฉัน',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    color: NeoColors.subtleInk,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Gap(8),
-          _TopBarAction(
-            icon: Icons.notifications_none_rounded,
-            label: 'การแจ้งเตือน',
-            onTap: () => context.push('/student/notifications'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TopBarAction extends StatelessWidget {
-  const _TopBarAction({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: label,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          width: 42,
-          height: 42,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: NeoColors.surfaceCream,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: NeoColors.inkSolid, width: 1.5),
-            boxShadow: NeoShadows.elevation1,
-          ),
-          child: Icon(
-            icon,
-            size: 22,
-            color: NeoColors.inkSolid,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _SummaryCard extends StatelessWidget {
   const _SummaryCard({required this.items});
 
@@ -241,117 +135,94 @@ class _SummaryCard extends StatelessWidget {
       borderWidth: 2.5,
       borderRadius: BorderRadius.circular(16),
       shadows: NeoShadows.elevation2,
-      child: Stack(
-        clipBehavior: Clip.hardEdge,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Positioned(
-            right: -34,
-            bottom: -43,
-            child: IgnorePointer(
-              child: Container(
-                width: 112,
-                height: 112,
-                decoration: BoxDecoration(
-                  color: NeoColors.butterYellow.withValues(alpha: 0.5),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: NeoColors.inkSolid.withValues(alpha: 0.3),
-                    width: 1.5,
+          // Row(
+          //   children: [
+          //     Container(
+          //       width: 28,
+          //       height: 28,
+          //       alignment: Alignment.center,
+          //       decoration: BoxDecoration(
+          //         color: NeoColors.electricIndigo,
+          //         borderRadius: BorderRadius.circular(8),
+          //         border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+          //       ),
+          //       // child: const Icon(
+          //       //   Icons.rocket_launch_rounded,
+          //       //   size: 17,
+          //       //   color: NeoColors.pureWhite,
+          //       // ),
+          //     ),
+          //     // const Gap(6),
+          //     // _SmallBadge(label: 'ติดตามสถานะ', color: NeoColors.freshMint),
+          //   ],
+          // ),
+          const Gap(12),
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'การสมัครของฉัน',
+                  maxLines: 2,
+                  style: TextStyle(
+                    fontSize: 25,
+                    height: 1.15,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.6,
+                    color: NeoColors.inkSolid,
                   ),
                 ),
               ),
+              const Gap(8),
+              _SmallBadge(
+                label: '${items.length} รายการ',
+                color: NeoColors.butterYellow,
+                large: true,
+              ),
+            ],
+          ),
+          const Gap(7),
+          const Text(
+            'ดูความคืบหน้าและผลการพิจารณาจากบริษัทได้ที่นี่',
+            style: TextStyle(
+              fontSize: 12,
+              height: 1.45,
+              fontWeight: FontWeight.w500,
+              color: NeoColors.subtleInk,
             ),
           ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          const Gap(14),
+          Container(
+            height: 1.5,
+            color: NeoColors.inkSolid.withValues(alpha: 0.25),
+          ),
+          const Gap(12),
+          Row(
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 28,
-                    height: 28,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: NeoColors.electricIndigo,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: NeoColors.inkSolid, width: 1.5),
-                    ),
-                    child: const Icon(
-                      Icons.rocket_launch_rounded,
-                      size: 17,
-                      color: NeoColors.pureWhite,
-                    ),
-                  ),
-                  const Gap(6),
-                  _SmallBadge(label: 'ติดตามสถานะ', color: NeoColors.freshMint),
-                ],
-              ),
-              const Gap(12),
-              Row(
-                children: [
-                  const Expanded(
-                    child: Text(
-                      'การสมัครของฉัน',
-                      maxLines: 2,
-                      style: TextStyle(
-                        fontSize: 25,
-                        height: 1.15,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.6,
-                        color: NeoColors.inkSolid,
-                      ),
-                    ),
-                  ),
-                  const Gap(8),
-                  _SmallBadge(
-                    label: '${items.length} รายการ',
-                    color: NeoColors.butterYellow,
-                    large: true,
-                  ),
-                ],
-              ),
-              const Gap(7),
-              const Text(
-                'ดูความคืบหน้าและผลการพิจารณาจากบริษัทได้ที่นี่',
-                style: TextStyle(
-                  fontSize: 12,
-                  height: 1.45,
-                  fontWeight: FontWeight.w500,
-                  color: NeoColors.subtleInk,
+              Expanded(
+                child: _SummaryStat(
+                  count: submitted,
+                  label: 'ส่งแล้ว',
+                  color: NeoColors.skyBlue,
                 ),
               ),
-              const Gap(14),
-              Container(
-                height: 1.5,
-                color: NeoColors.inkSolid.withValues(alpha: 0.25),
+              const Gap(8),
+              Expanded(
+                child: _SummaryStat(
+                  count: reviewing,
+                  label: 'กำลังพิจารณา',
+                  color: NeoColors.pastelCoral,
+                ),
               ),
-              const Gap(12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _SummaryStat(
-                      count: submitted,
-                      label: 'ส่งแล้ว',
-                      color: NeoColors.skyBlue,
-                    ),
-                  ),
-                  const Gap(8),
-                  Expanded(
-                    child: _SummaryStat(
-                      count: reviewing,
-                      label: 'กำลังพิจารณา',
-                      color: NeoColors.pastelCoral,
-                    ),
-                  ),
-                  const Gap(8),
-                  Expanded(
-                    child: _SummaryStat(
-                      count: decided,
-                      label: 'ทราบผลแล้ว',
-                      color: NeoColors.softLilac,
-                    ),
-                  ),
-                ],
+              const Gap(8),
+              Expanded(
+                child: _SummaryStat(
+                  count: decided,
+                  label: 'ทราบผลแล้ว',
+                  color: NeoColors.softLilac,
+                ),
               ),
             ],
           ),

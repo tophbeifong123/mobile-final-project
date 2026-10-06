@@ -39,10 +39,16 @@ export class Job {
   @Column({ name: 'has_allowance', type: 'boolean' })
   hasAllowance: boolean;
 
+  @Column({ type: 'integer', nullable: true })
+  openings: number | null;
+
+  @Column({ name: 'allowance_amount', type: 'int', nullable: true })
+  allowanceAmount: number | null;
+
   @Column({ type: 'text' })
   requirements: string;
 
-  @Column('text', { array: true, default: () => "ARRAY[]::text[]" })
+  @Column('text', { array: true, default: () => 'ARRAY[]::text[]' })
   skills: string[];
 
   @Column({
@@ -52,6 +58,9 @@ export class Job {
     default: JobStatus.Open,
   })
   status: JobStatus;
+
+  @Column({ type: 'timestamptz', nullable: true, default: null })
+  deadline: Date | null;
 
   @VersionColumn()
   version: number;

@@ -10,6 +10,7 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_toast.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/job_card.dart';
+import '../../../jobs/presentation/widgets/student_job_card.dart';
 import '../../../jobs/domain/entities/job.dart';
 import '../../../jobs/presentation/job_labels.dart';
 import '../../../jobs/presentation/providers/jobs_controller.dart';
@@ -43,7 +44,7 @@ class _SavedJobsScreenState extends ConsumerState<SavedJobsScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Top App Bar with Subtitle
-            const FeedTopBar(subtitle: 'งานที่บันทึกไว้ (Saved Jobs)'),
+            const FeedTopBar(),
 
             // Content Area
             Expanded(
@@ -137,17 +138,17 @@ class _SavedJobsScreenState extends ConsumerState<SavedJobsScreen> {
       WorkModeFilterItem(mode: null, label: 'ทั้งหมด', count: allJobs.length),
       WorkModeFilterItem(
         mode: WorkMode.remote,
-        label: 'Online',
+        label: workModeLabel(WorkMode.remote),
         count: onlineCount,
       ),
       WorkModeFilterItem(
         mode: WorkMode.onSite,
-        label: 'Onsite',
+        label: workModeLabel(WorkMode.onSite),
         count: onSiteCount,
       ),
       WorkModeFilterItem(
         mode: WorkMode.hybrid,
-        label: 'Hybrid',
+        label: workModeLabel(WorkMode.hybrid),
         count: hybridCount,
       ),
     ];
@@ -190,17 +191,9 @@ class _SavedJobsScreenState extends ConsumerState<SavedJobsScreen> {
                   Builder(
                     builder: (cardContext) {
                       final job = filteredJobs[i];
-                      return JobCard(
-                        title: job.title,
-                        companyName: job.companyName,
-                        province: job.province,
-                        details: [
-                          workModeLabel(job.workMode),
-                          job.category,
-                          allowanceLabel(job.hasAllowance),
-                        ],
-                        skills: job.skills,
-                        hasAllowance: job.hasAllowance,
+                      return StudentJobCard(
+                        key: ValueKey(job.id),
+                        job: job,
                         isSaved: true,
                         onBookmarkTap: () => _handleRemoveJob(job),
                         onTap: () => context.push('/student/jobs/${job.id}'),

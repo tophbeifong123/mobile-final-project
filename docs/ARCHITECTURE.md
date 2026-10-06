@@ -47,7 +47,7 @@ Read ของ job feed ชี้ replica Write ทุกชนิดชี้ p
 
 คง OpenAPI ที่ `GET /api/docs` เอกสารต้องตรงกับ route จริง ชื่อเอกสารคือ InternFinder API และมี Bearer auth
 
-- แยก tag ตามโมดูล: Auth, Students, Companies, Jobs, Applications, Notifications, Health
+- แยก tag ตามโมดูล: Auth, Students, Companies, Provinces, Jobs, Applications, Notifications, Health
 - DTO ทุกตัวมี `@ApiProperty` รวม enum และฟิลด์ที่ required
 - endpoint ทุกตัวมี `@ApiOperation` และ `@ApiResponse` ของสถานะที่ใช้จริง เช่น 200, 201, 400, 401, 403, 409
 - endpoint ที่ต้อง login มี `@ApiBearerAuth`
@@ -62,9 +62,10 @@ Prefix ของ API คือ `/api` ตาม `app.setGlobalPrefix('api')` ใ
 
 | โมดูล | หน้าที่ |
 |---|---|
-| AuthModule | สมัคร, login, refresh, logout |
+| AuthModule | สมัคร, login, refresh, logout, forgot/reset password |
 | StudentsModule | โปรไฟล์นักศึกษาและ Resume |
-| CompaniesModule | โปรไฟล์บริษัท, logo, ตัวเลขแดชบอร์ด |
+| CompaniesModule | โปรไฟล์บริษัท, logo, จังหวัดและที่อยู่สั้น, ตัวเลขแดชบอร์ด |
+| ProvincesModule | มาสเตอร์จังหวัด 77 จังหวัดและชื่อเรียก |
 | JobsModule | ประกาศ, feed, บันทึกงาน, เปิดหรือปิดรับสมัคร |
 | ApplicationsModule | สมัครงาน, timeline, เปลี่ยนสถานะ |
 | NotificationsModule | แจ้งเตือนในแอปและ BullMQ worker |
@@ -100,6 +101,7 @@ server/src/
 ├── auth/
 ├── students/
 ├── companies/
+├── provinces/
 ├── jobs/
 ├── applications/
 ├── notifications/
@@ -113,18 +115,35 @@ server/src/
 
 Filter ของหน้า Home เป็น query ของ `GET /jobs` ไม่มี resource แยก
 
+จังหวัดที่ใช้ในโปรไฟล์บริษัท ฟอร์มประกาศ และตัวกรองงานอ้างอิงมาสเตอร์ 77 จังหวัดเดียวกัน ชื่อจังหวัดในประกาศยังเป็นอิสระจากโปรไฟล์บริษัท
+
+### จังหวัด
+
+| Method | Path | ใช้กับหน้า |
+|---|---|---|
+| GET | /api/provinces | Company Profile, Create / Edit Job, Filter |
+
+ผลลัพธ์มีรหัสจังหวัด ชื่อมาตรฐาน และชื่อเรียกที่ค้นหาได้ ไม่เรียกบริการค้นหาที่อยู่ภายนอก
+
 ### Auth
 
 | Method | Path | ใครเรียก |
 |---|---|---|
 | POST | /api/auth/register | ยังไม่ login |
 | POST | /api/auth/login | ยังไม่ login |
+| POST | /api/auth/google | ยังไม่ login; ยืนยัน Google ID token และสมัคร/เข้าสู่ระบบ |
 | POST | /api/auth/refresh | มี refresh token |
 | POST | /api/auth/logout | login แล้ว |
+| POST | /api/auth/forgot-password | ยังไม่ login, ส่ง email เพื่อขอลิงก์ |
+| POST | /api/auth/reset-password | มีลิงก์ token ที่ยังไม่หมดอายุ |
 
-Register รับ email, password และ role `student` หรือ `company` role เปลี่ยนทีหลังไม่ได้
+Register รับ email/password หรือ Google ID token และ role student/company. role เปลี่ยนทีหลังไม่ได้.
+
+Google sign-in ใช้ POST /api/auth/google รับ { idToken, role? }. Backend ตรวจลายเซ็น, issuer, expiry, audience allowlist, sub, email และ email_verified ด้วย Google Auth Library. จำกัด endpoint นี้ 10 ครั้งต่อนาทีต่อ client IP ด้วย NestJS throttler. Google identity ผูกด้วย (provider, provider_subject) ไม่ใช่ email. บัญชีเดิมที่ผูก sub แล้วได้ session เดิม; ถ้า email ตรงบัญชี password ให้ตอบ 409 และไม่ผูกให้อัตโนมัติ. บัญชีใหม่ที่ไม่ส่ง role ตอบ 200 { code: role_required } โดยไม่สร้างข้อมูล; ส่ง role student/company แล้วสร้าง user, provider identity และ profile ใน transaction เดียว ก่อนออก session ปกติ. ถ้าชน unique ระหว่างสร้าง ให้ค้น identity/email ใหม่และตอบผลเดิมอย่างปลอดภัย.
 
 Access token อายุสั้น Refresh token หมุนทุกครั้งที่ใช้ และเก็บเป็นค่า hash Logout คือเพิกถอน refresh token
+
+Password recovery รองรับอีเมลที่ใช้สมัครของ Student และ Company ทุกโดเมน DTO และ PasswordRecoveryService ตรวจรูปแบบอีเมล ไม่ตรวจโดเมนตอนขอลิงก์หรือตอนใช้ token อีเมลรูปแบบถูกต้องได้คำตอบเดียวกันไม่ว่าบัญชีมีอยู่หรือไม่ ระบบส่งลิงก์ไปยังอีเมลที่บันทึกไว้ด้วย SMTP เก็บเฉพาะ SHA-256 ของ token ใน PostgreSQL ใช้ได้ครั้งเดียวภายใน 15 นาที รีเซ็ตรหัสผ่านและเพิกถอน refresh token ใน transaction เดียวใต้ user/token lock พร้อมเพิ่ม `users.token_version` เพื่อยกเลิก access token เดิมทันที ไม่ขึ้นกับ Google Login รายละเอียด SMTP อยู่ใน [PASSWORD_RECOVERY.md](PASSWORD_RECOVERY.md)
 
 ### นักศึกษา
 
@@ -141,6 +160,7 @@ Access token อายุสั้น Refresh token หมุนทุกคร�
 | GET | /api/students/me/documents/:id/file | เปิดเอกสารของตัวเอง |
 | GET | /api/jobs | Home / Job Feed |
 | GET | /api/jobs/:id | Job Detail |
+| GET | /api/jobs/:id/company-logo | โลโก้บริษัทบนฟีด รายละเอียดงาน และ Saved Jobs เฉพาะประกาศที่เปิดรับและนักศึกษาที่ login แล้ว |
 | POST, DELETE | /api/jobs/:id/save | Save จาก Job Detail |
 | GET | /api/jobs/saved | Saved Jobs |
 | POST | /api/jobs/:id/applications | Apply Job |
@@ -149,9 +169,15 @@ Access token อายุสั้น Refresh token หมุนทุกคร�
 | GET | /api/notifications | Notifications |
 | GET | /api/notifications/stream | ช่อง SSE ของแจ้งเตือน |
 
-`GET /api/jobs` รับ `search`, `province`, `workMode`, `category`, `hasAllowance`, `skills` (กรองด้วย PostgreSQL array overlap operator) และคืนเฉพาะงานสถานะ `open`
+`GET /api/jobs` รับ `search`, `province`, `workMode`, `category` จากรายการเดียวกันกับตอนสร้างประกาศ, `hasAllowance`, `skills` (กรองด้วย PostgreSQL array overlap operator) และคืนเฉพาะงานสถานะ `open` ถ้าประกาศมีเบี้ยเลี้ยงต้องมี `allowanceAmount` เป็นบาท
+
+ค่า `province` และชื่อจังหวัดที่บันทึกในประกาศถูกแปลงเป็นชื่อมาตรฐานเดียวกันก่อนกรอง เพื่อรองรับชื่อเรียกอย่าง `กทม.` และข้อมูลเก่าอย่าง `กรุงเทพฯ`
 
 Route `GET /api/jobs/saved` ต้องประกาศก่อน `GET /api/jobs/:id` เพื่อไม่ให้คำว่า `saved` ถูกจับเป็น id
+
+`GET /api/jobs/:id` join โปรไฟล์บริษัทล่าสุดและคืน `companyWebsiteUrl`, `companySize`, `companyPerks`, `companyLocation`, `companyLogoAvailable` ร่วมกับชื่อ ประเภทกิจการ และคำอธิบาย ไม่เปิดเผย object key ของโลโก้ให้นักศึกษา โหลดโลโก้ผ่านเส้นทางประกาศที่ตรวจ role และสถานะงานก่อนอ่าน storage รองรับ PNG/JPEG/WEBP/GIF/SVG และคืน 404 เมื่อไม่มีไฟล์ งานปิดแล้วไม่สามารถใช้เส้นทางนี้ได้
+
+Flutter โหลดรายละเอียดใหม่เมื่อกลับมาเปิดหน้าและโหลดโลโก้ด้วย Dio ที่มี token ไม่ใช้ URL รูปแบบสาธารณะหรือเพิ่มหน้าโปรไฟล์บริษัท แสดงตัวอักษรชื่อบริษัทแทนเมื่อไม่มีโลโก้หรือโหลดล้มเหลว; SVG แสดงด้วย `flutter_svg`
 
 ### บริษัท
 
@@ -161,7 +187,7 @@ Route `GET /api/jobs/saved` ต้องประกาศก่อน `GET /api
 | GET, PATCH | /api/companies/me | Company Profile |
 | POST | /api/companies/me/logo | อัปโหลด logo |
 | GET, POST | /api/company/jobs | Manage Jobs, Create Job |
-| GET, PATCH, DELETE | /api/company/jobs/:id | อ่าน แก้ หรือลบประกาศของบริษัทนี้ |
+| GET, PATCH, DELETE | /api/company/jobs/:id | อ่านรายละเอียดประกาศของบริษัทนี้พร้อมจำนวนผู้สมัคร ใบรอตรวจ และวันปิดรับ, แก้ หรือลบ |
 | PATCH | /api/company/jobs/:id/status | เปิดหรือปิดรับสมัคร |
 | GET | /api/company/jobs/:id/applications | Applicants List |
 | GET | /api/company/jobs/:id/applications/:applicationId | Applicant Detail |
@@ -169,6 +195,12 @@ Route `GET /api/jobs/saved` ต้องประกาศก่อน `GET /api
 | PATCH | /api/company/jobs/:id/applications/:applicationId/status | เปลี่ยนสถานะผู้สมัคร |
 
 บริษัทเรียกได้เฉพาะประกาศและผู้สมัครของบริษัทตัวเอง ไม่เช่นนั้นตอบ 403
+
+`GET /api/companies/me/dashboard` คืน `totalJobs`, `openJobs`, `totalApplicants` และ `pendingApplicants`. CompaniesService กำหนดสถานะรอตรวจเป็น `submitted` และ `reviewing`; repository นับใบสมัครผ่านประกาศของบริษัทนี้เท่านั้น รวมประกาศที่ปิดแล้วและไม่นับ timeline ซ้ำ. รายการประกาศของบริษัทใช้คำว่า `pendingApplicantCount` ในความหมายเดียวกัน. ไม่มีข้อมูลเป็น 0; query ล้มเหลวไม่แทนด้วย 0. Flutter แสดงตัวเลขเป็นสรุป แล้วแสดงประกาศที่รอตรวจกับฉบับร่างหรือประกาศที่ครบกำหนดภายใน 7 วันหรือเลยกำหนด เปิดหน้าใหม่โหลดใหม่ ดึงลงเพื่อ refresh และลองใหม่ได้เมื่อเกิดข้อผิดพลาด.
+
+`PATCH /api/companies/me` รับ `provinceId` และ `location` (ที่อยู่สั้น) ไม่รับพิกัดสำนักงาน
+
+`PATCH /api/companies/me` บันทึกเว็บไซต์ ขนาดองค์กร สวัสดิการ และที่อยู่ด้วยคอลัมน์เดิม เว็บไซต์ตรวจใน CompaniesService: ว่างได้ หรือ URL HTTP/HTTPS แบบเต็มที่ไม่มี credentials ค่าไม่ถูกต้องคืน 400 พร้อมเหตุผลโดยไม่บันทึกข้อมูลส่วนอื่น Swagger ระบุฟิลด์และกติกานี้ที่ `/api/docs`
 
 ### Health
 
@@ -192,6 +224,8 @@ Route `GET /api/jobs/saved` ต้องประกาศก่อน `GET /api
 เมื่อสร้าง แก้ หรือปิดงาน ให้ `INCR jobs:feed:version` คีย์เก่าหลุดเองตาม TTL ไม่ลบคีย์ feed ทั้งก้อน
 
 ### แดชบอร์ดเป็น write-through
+
+API แดชบอร์ดปัจจุบันอ่านจำนวนจาก PostgreSQL โดยตรงทุก request ไม่ใช้ Redis counter; แผน write-through ด้านล่างเป็นแนวทางในอนาคตและต้องไม่ทำให้ยอดรอตรวจค้างหลังเปลี่ยนสถานะ.
 
 ตอนสร้างประกาศหรือมีใบสมัครใหม่ ให้ `INCR` ตัวเลขของบริษัทนั้นใน Redis คู่กับการเขียน PostgreSQL ถ้า Redis หาย ให้สร้างตัวเลขใหม่จากฐานข้อมูล แหล่งความจริงคือ PostgreSQL
 
@@ -237,6 +271,7 @@ submitted → reviewing → accepted
 - `go_router` นำทางและตัดสินเส้นทางจาก token
 - `dio` เรียก API
 - `flutter_secure_storage` เก็บ access token และ refresh token
+- google_sign_in ขอ Google ID token บน Android; Web ใช้ GIS-rendered button และ client ID ใน web/index.html
 - `file_picker` เลือก Resume PDF และ logo
 
 ไม่ใช้ GetX, Bloc หรือ `build_runner` กติกาธุรกิจอยู่ที่ API แอปไม่มีคลาส use case แยก
@@ -256,7 +291,9 @@ client/lib/
 │   ├── router/company_shell.dart
 │   ├── storage/token_storage.dart
 │   ├── error/app_exception.dart
+│   ├── provinces/                # มาสเตอร์จังหวัดและ Bottom Sheet ที่ใช้ร่วมกัน
 │   └── widgets/
+│       ├── company_top_bar.dart   # แถบบนร่วมของหน้าบริษัททั้ง 6 หน้า
 │       ├── job_card.dart
 │       ├── status_chip.dart
 │       ├── empty_state.dart
@@ -286,13 +323,15 @@ Route ที่ถูก push ทับเชลล์: Job Detail, Apply Job, R
 
 Route ที่ถูก push: Create / Edit Job, Applicants List, Applicant Detail
 
+ทุกหน้าของบริษัทใช้ `CompanyTopBar` เป็น `Scaffold.appBar` รวมถึงสถานะ loading/error เพื่อให้แถบบนอยู่คงที่ แสดงชื่อหน้าและป้ายบริษัท ไม่มี action แจ้งเตือน และไม่มี route `/company/notifications` หน้ารองเปิดปุ่มกลับซึ่ง pop เมื่อมีประวัติ หรือกลับไปหน้ารายการที่เกี่ยวข้องเมื่อเปิดจากลิงก์ตรง แถบบนของนักศึกษายังใช้ route `/student/notifications` ตามเดิม
+
 Dio ใน `auth_interceptor.dart` ใส่ access token และเมื่อได้ 401 จะเรียก refresh หนึ่งครั้งก่อนล้าง session รอบโครงไฟล์นี้หน้าจอยังไม่ยิง API จริง data source โยน `AppException` จนกว่าจะต่อ endpoint
 
 ก่อนอัปโหลด แอปต้องตรวจว่าเป็น PDF และไม่เกินขนาดที่ API กำหนด จุดเลือกไฟล์ใช้ `file_picker`
 
 ## 9. การสังเกตระบบและอิมเมจ
 
-`server/Dockerfile` คงสองสเตจจาก `node:22-alpine` แล้วรันด้วย user ที่ไม่ใช่ root
+`server/Dockerfile` คงสองสเตจจาก `node:22-alpine` แล้วรันด้วย user ที่ไม่ใช่ root คอนเทนเนอร์เริ่มที่ `docker-entrypoint.sh` ซึ่งรัน migration ที่ค้างก่อน แล้วจึง `exec` โปรเซส API ถ้า migration ล้มเหลวคอนเทนเนอร์จบและไม่เปิดรับคำขอ
 
 Log ใน request path เป็น JSON และมี request id ไม่ใช้ `console.log` เป็น log ของธุรกิจ
 
@@ -300,4 +339,5 @@ CORS เปิดให้แอปมือถือเรียกได้ต
 
 ## 10. นอกแบบนี้
 
-ไม่ทำแชท, นัดสัมภาษณ์, ลืมรหัสผ่าน, ยืนยัน email, login ด้วยโซเชียล, ถอนใบสมัคร, หน้าโปรไฟล์บริษัทแยก, Admin, push notification นอกแอป หรือการเปลี่ยน role หลังสมัคร
+ไม่ทำแชท, นัดสัมภาษณ์, ยืนยัน email, login ด้วย social provider อื่นนอกจาก Google, ถอนใบสมัคร, หน้าโปรไฟล์บริษัทแยก, Admin, push notification นอกแอป หรือการเปลี่ยน role หลังสมัคร. Google Login รองรับ Android และ Web สำหรับทดสอบ; iOS ยังไม่อยู่ในขอบเขตนี้.
+
