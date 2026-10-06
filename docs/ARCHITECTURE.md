@@ -138,6 +138,8 @@ Filter ของหน้า Home เป็น query ของ `GET /jobs` ไ�
 
 Register รับ email, password และ role `student` หรือ `company` role เปลี่ยนทีหลังไม่ได้
 
+AuthService ตรวจรหัสผ่านตอนสมัคร: อย่างน้อย 8 Unicode code points ไม่เกิน 72 ไบต์ UTF-8 และมีตัวอักษรอังกฤษ A-Z, a-z, ตัวเลข 0-9 และอักขระพิเศษ ASCII อย่างน้อยประเภทละ 1 ตัว (ช่องว่างและ emoji ไม่นับเป็นอักขระพิเศษ) Flutter แสดงเช็กลิสต์ขณะพิมพ์และตรวจยืนยันรหัสผ่านตรงกัน กติกานี้ไม่เปลี่ยนการ login ของบัญชีเดิมหรือ reset password
+
 Access token อายุสั้น Refresh token หมุนทุกครั้งที่ใช้ และเก็บเป็นค่า hash Logout คือเพิกถอน refresh token
 
 Password recovery รองรับอีเมลที่ใช้สมัครของ Student และ Company ทุกโดเมน DTO และ PasswordRecoveryService ตรวจรูปแบบอีเมล ไม่ตรวจโดเมนตอนขอลิงก์หรือตอนใช้ token อีเมลรูปแบบถูกต้องได้คำตอบเดียวกันไม่ว่าบัญชีมีอยู่หรือไม่ ระบบส่งลิงก์ไปยังอีเมลที่บันทึกไว้ด้วย SMTP เก็บเฉพาะ SHA-256 ของ token ใน PostgreSQL ใช้ได้ครั้งเดียวภายใน 15 นาที รีเซ็ตรหัสผ่านและเพิกถอน refresh token ใน transaction เดียวใต้ user/token lock พร้อมเพิ่ม `users.token_version` เพื่อยกเลิก access token เดิมทันที ไม่ขึ้นกับ Google Login รายละเอียด SMTP อยู่ใน [PASSWORD_RECOVERY.md](PASSWORD_RECOVERY.md)

@@ -166,8 +166,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                           ],
                                         ),
                                       ),
-                                      const Gap(12),
-                                      const RocketBadge(),
                                     ],
                                   ),
                                   const Gap(18),
@@ -207,14 +205,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                   // Field 2: University / Company Email
                                   AuthTextField(
                                     controller: _emailController,
-                                    label: _role == UserRole.student
-                                        ? 'อีเมลมหาวิทยาลัย'
-                                        : 'อีเมลบริษัท',
+                                    label: 'อีเมล',
                                     isRequired: true,
                                     keyboardType: TextInputType.emailAddress,
-                                    hintText: _role == UserRole.student
-                                        ? 'student@university.ac.th'
-                                        : 'contact@company.com',
+                                    hintText: 'name@example.com',
                                     badgeColor: NeoColors.butterYellow,
                                     badgeIcon: _role == UserRole.student
                                         ? Icons.school_outlined
@@ -262,6 +256,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                     validator: (_) =>
                                         _passwordPolicy.passwordError,
                                   ),
+                                  const Gap(8),
+                                  RegistrationPasswordChecklist(
+                                    policy: _passwordPolicy,
+                                  ),
                                   const Gap(14),
 
                                   // Field 4: Confirm Password
@@ -290,12 +288,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                         color: NeoColors.inkSolid,
                                       ),
                                     ),
+                                    autovalidateMode: AutovalidateMode.always,
                                     validator: (_) =>
-                                        _passwordPolicy.confirmationError,
-                                  ),
-                                  const Gap(12),
-                                  RegistrationPasswordChecklist(
-                                    policy: _passwordPolicy,
+                                        _confirmPasswordController
+                                                .text
+                                                .isEmpty &&
+                                            !_attemptedSubmit
+                                        ? null
+                                        : _passwordPolicy.confirmationError,
                                   ),
                                   const Gap(16),
 
@@ -429,11 +429,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                     text: 'สร้างบัญชีผู้ใช้',
                                     backgroundColor: NeoColors.freshMint,
                                     isLoading: _submitting,
-                                    trailingIcon: const Icon(
-                                      Icons.spa_outlined,
-                                      size: 20,
-                                      color: NeoColors.inkSolid,
-                                    ),
                                     onTap: _submit,
                                   ),
                                   const Gap(20),
@@ -451,16 +446,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                           icon: const GoogleGIcon(),
                                           onTap: () => _showNotice(
                                             'การลงทะเบียนด้วย Google ยังไม่เปิดให้บริการ',
-                                          ),
-                                        ),
-                                      ),
-                                      const Gap(12),
-                                      Expanded(
-                                        child: AuthSocialButton(
-                                          label: 'SSO มหาวิทยาลัย',
-                                          icon: const SsoGridIcon(),
-                                          onTap: () => _showNotice(
-                                            'การลงทะเบียนด้วย SSO ยังไม่เปิดให้บริการ',
                                           ),
                                         ),
                                       ),

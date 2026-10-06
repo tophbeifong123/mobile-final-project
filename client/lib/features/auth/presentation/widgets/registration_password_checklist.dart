@@ -10,41 +10,28 @@ class RegistrationPasswordChecklist extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final missing = <String>[
+      if (!policy.hasMinimumCharacters) 'ให้ครบ 8 ตัว',
+      if (!policy.hasUppercase) 'ตัวพิมพ์ใหญ่ A–Z',
+      if (!policy.hasLowercase) 'ตัวพิมพ์เล็ก a–z',
+      if (!policy.hasDigit) 'ตัวเลข',
+      if (!policy.hasSpecialCharacter) 'สัญลักษณ์ เช่น ! @ #',
+    ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const Text(
-          'เงื่อนไขรหัสผ่าน',
-          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+          'อย่างน้อย 8 ตัว มี A–Z, a–z, ตัวเลข และสัญลักษณ์',
+          style: TextStyle(fontSize: 12, color: NeoColors.subtleInk),
         ),
-        const SizedBox(height: 6),
-        _condition('อย่างน้อย 8 ตัวอักษร', policy.hasMinimumCharacters),
-        _condition('ไม่เกิน 72 ไบต์ (UTF-8)', policy.withinByteLimit),
-        _condition('ยืนยันรหัสผ่านตรงกัน', policy.confirmationMatches),
-      ],
-    );
-  }
-
-  Widget _condition(String label, bool passed) {
-    final text = '${passed ? 'ผ่านแล้ว' : 'ยังขาด'}: $label';
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
-      child: Row(
-        children: [
-          Icon(
-            passed ? Icons.check_circle_outline : Icons.radio_button_unchecked,
-            size: 18,
-            color: passed ? const Color(0xFF047857) : NeoColors.subtleInk,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(fontSize: 12, color: NeoColors.inkSolid),
-            ),
+        if (policy.password.isNotEmpty && missing.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Text(
+            'เพิ่มอีก: ${missing.join(', ')}',
+            style: const TextStyle(fontSize: 12, color: NeoColors.subtleInk),
           ),
         ],
-      ),
+      ],
     );
   }
 }
