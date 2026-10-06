@@ -17,7 +17,10 @@ export class CompanyJobItemDto {
   @ApiProperty({ example: 0 })
   applicantCount: number;
 
-  @ApiProperty({ example: 0 })
+  @ApiProperty({
+    example: 0,
+    description: 'ใบสมัครที่รอตรวจ สถานะ submitted หรือ reviewing',
+  })
   pendingApplicantCount: number;
 
   @ApiPropertyOptional({ type: String, format: 'date-time', nullable: true })

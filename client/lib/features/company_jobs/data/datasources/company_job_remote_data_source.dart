@@ -12,7 +12,10 @@ class CompanyJobRemoteDataSource {
 
   Future<List<CompanyJobModel>> fetchMine() async {
     try {
-      final response = await _dio.get<dynamic>(ApiConstants.companyJobs);
+      final response = await _dio.get<dynamic>(
+        ApiConstants.companyJobs,
+        queryParameters: const {'limit': 100},
+      );
       final data = response.data;
       if (data == null) {
         throw const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
