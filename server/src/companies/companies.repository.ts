@@ -63,6 +63,7 @@ export class CompaniesRepository {
         | 'businessType'
         | 'description'
         | 'websiteUrl'
+        | 'contactLinks'
         | 'companySize'
         | 'perks'
         | 'provinceId'

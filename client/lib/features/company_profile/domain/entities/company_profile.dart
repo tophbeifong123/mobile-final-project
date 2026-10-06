@@ -1,3 +1,5 @@
+import '../../../student_profile/domain/entities/student_profile.dart';
+
 class CompanyProfile {
   const CompanyProfile({
     required this.name,
@@ -8,6 +10,7 @@ class CompanyProfile {
     this.provinceName,
     this.location = '',
     this.websiteUrl = '',
+    this.contactLinks = const [],
     this.companySize = '',
     this.perks = const [],
     this.coverObjectKey,
@@ -21,6 +24,7 @@ class CompanyProfile {
   final String? provinceName;
   final String location;
   final String websiteUrl;
+  final List<ContactLink> contactLinks;
   final String companySize;
   final List<String> perks;
   final String? coverObjectKey;
@@ -31,6 +35,7 @@ class CompanyProfile {
     String? description,
     String? Function()? logoObjectKey,
     String? websiteUrl,
+    List<ContactLink>? contactLinks,
     String? location,
     int? Function()? provinceId,
     String? Function()? provinceName,
@@ -46,6 +51,7 @@ class CompanyProfile {
           ? logoObjectKey()
           : this.logoObjectKey,
       websiteUrl: websiteUrl ?? this.websiteUrl,
+      contactLinks: contactLinks ?? this.contactLinks,
       location: location ?? this.location,
       provinceId: provinceId != null ? provinceId() : this.provinceId,
       provinceName: provinceName != null ? provinceName() : this.provinceName,

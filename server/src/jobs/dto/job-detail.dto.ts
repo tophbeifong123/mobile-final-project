@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ContactLinkDto } from '../../students/dto/contact-link.dto.js';
 import { JobStatus, WorkMode } from '../job-enums.js';
 
 export class JobDetailDto {
@@ -74,6 +75,13 @@ export class JobDetailDto {
     description: 'เว็บไซต์ที่บันทึกในโปรไฟล์บริษัท; ค่าว่างเมื่อไม่ได้ระบุ',
   })
   companyWebsiteUrl: string;
+
+  @ApiProperty({
+    type: () => [ContactLinkDto],
+    description:
+      'ช่องทางติดต่อจากโปรไฟล์บริษัทล่าสุด; รายการว่างเมื่อไม่ได้ระบุ',
+  })
+  companyContactLinks: ContactLinkDto[];
 
   @ApiProperty({ example: '51-200', description: 'ขนาดองค์กรจากโปรไฟล์บริษัท' })
   companySize: string;

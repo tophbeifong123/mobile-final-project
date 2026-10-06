@@ -14,7 +14,9 @@ import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/job_card.dart';
 import '../../../../core/widgets/loading_view.dart';
 import '../../../../core/widgets/neo_button.dart';
+import '../../../company_profile/domain/entities/company_contact_policy.dart';
 import '../../../saved_jobs/presentation/providers/saved_jobs_controller.dart';
+import '../../../student_profile/domain/entities/student_profile.dart';
 import '../../domain/entities/company_logo.dart';
 import '../../domain/entities/job.dart';
 import '../job_labels.dart';
@@ -189,6 +191,7 @@ class _JobBody extends StatelessWidget {
 
 bool _hasCompanyStory(JobDetail job) {
   return job.companyDescription.trim().isNotEmpty ||
+      job.companyContactLinks.any((link) => link.value.trim().isNotEmpty) ||
       job.companyWebsiteUrl.trim().isNotEmpty ||
       job.companySize.trim().isNotEmpty ||
       job.companyLocation.trim().isNotEmpty ||
@@ -417,6 +420,9 @@ class _CompanyStory extends StatelessWidget {
         .where((perk) => perk.isNotEmpty)
         .toList();
     final description = job.companyDescription.trim();
+    final contacts = job.companyContactLinks
+        .where((link) => link.value.trim().isNotEmpty)
+        .toList();
 
     return _SurfaceCard(
       child: Column(
@@ -441,6 +447,23 @@ class _CompanyStory extends StatelessWidget {
                 color: NeoColors.inkSolid,
               ),
             ),
+          ],
+          if (contacts.isNotEmpty) ...[
+            const Gap(12),
+            const Text(
+              'ช่องทางติดต่อ',
+              key: Key('company-contacts'),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: NeoColors.subtleInk,
+              ),
+            ),
+            const Gap(8),
+            for (final contact in contacts) ...[
+              _ContactLine(contact: contact),
+              const Gap(8),
+            ],
           ],
           for (final row in rows) ...[
             const Gap(10),
@@ -506,6 +529,66 @@ class _CompanyStory extends StatelessWidget {
   }
 }
 
+class _ContactLine extends StatelessWidget {
+  const _ContactLine({required this.contact});
+
+  final ContactLink contact;
+
+  @override
+  Widget build(BuildContext context) {
+    final caption = (contact.label != null && contact.label!.trim().isNotEmpty)
+        ? contact.label!.trim()
+        : companyContactPlatformLabel(contact.platform);
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          _contactIcon(contact.platform),
+          size: 16,
+          color: NeoColors.inkSolid,
+        ),
+        const Gap(8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                caption,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: NeoColors.subtleInk,
+                ),
+              ),
+              SelectableText(
+                contact.value.trim(),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: NeoColors.inkSolid,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+IconData _contactIcon(String platform) {
+  return switch (platform.toLowerCase()) {
+    'phone' => Icons.phone_rounded,
+    'email' => Icons.email_rounded,
+    'line' => Icons.chat_bubble_rounded,
+    'linkedin' => Icons.work_rounded,
+    'facebook' => Icons.facebook_rounded,
+    'instagram' => Icons.camera_alt_rounded,
+    _ => Icons.link_rounded,
+  };
+}
+
 class _Actions extends StatelessWidget {
   const _Actions({
     required this.saving,
@@ -563,50 +646,59 @@ class _CompanyCover extends ConsumerStatefulWidget {
 
 class _CompanyCoverState extends ConsumerState<_CompanyCover> {
   CompanyLogo? _shown;
-  Widget? _picture;
+  Uint8List? _bytes;
 
   @override
   Widget build(BuildContext context) {
-    Widget child = _CoverFallback(color: companyMarkColor(widget.job.category));
+    final color = companyMarkColor(widget.job.category);
     if (widget.job.companyCoverAvailable) {
       final asyncCover = ref.watch(jobCompanyCoverProvider(widget.job.id));
       final incoming = asyncCover.asData?.value ?? _shown;
-      if (incoming != null) {
-        if (!_sameLogo(incoming, _shown)) {
-          _shown = incoming;
-          final bytes = Uint8List.fromList(incoming.bytes);
-          _picture = incoming.mimeType.startsWith('image/svg+xml')
-              ? SvgPicture.memory(
-                  bytes,
-                  fit: BoxFit.cover,
-                  semanticsLabel: 'รูปหน้าปกบริษัท ${widget.job.companyName}',
-                  errorBuilder: (_, _, _) => _CoverFallback(
-                    color: companyMarkColor(widget.job.category),
-                  ),
-                )
-              : Image.memory(
-                  bytes,
-                  key: const Key('company-cover-image'),
-                  fit: BoxFit.cover,
-                  gaplessPlayback: true,
-                  semanticLabel: 'รูปหน้าปกบริษัท ${widget.job.companyName}',
-                  errorBuilder: (_, _, _) => _CoverFallback(
-                    color: companyMarkColor(widget.job.category),
-                  ),
-                );
-        }
-        child = _picture ?? child;
+      if (incoming != null && !_sameLogo(incoming, _shown)) {
+        _shown = incoming;
+        _bytes = Uint8List.fromList(incoming.bytes);
       }
     }
+    final shown = _shown;
+    final bytes = _bytes;
+    final label = 'รูปหน้าปกบริษัท ${widget.job.companyName}';
     return Container(
       key: const Key('company-cover'),
+      width: double.infinity,
+      height: double.infinity,
       decoration: BoxDecoration(
+        color: color,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: NeoColors.inkSolid, width: 2.5),
         boxShadow: NeoShadows.elevation2,
       ),
       clipBehavior: Clip.antiAlias,
-      child: child,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          _CoverFallback(color: color),
+          if (shown != null && bytes != null)
+            Positioned.fill(
+              child: shown.mimeType.startsWith('image/svg+xml')
+                  ? SvgPicture.memory(
+                      bytes,
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: double.infinity,
+                      semanticsLabel: label,
+                    )
+                  : Image.memory(
+                      bytes,
+                      key: const Key('company-cover-image'),
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: double.infinity,
+                      gaplessPlayback: true,
+                      semanticLabel: label,
+                    ),
+            ),
+        ],
+      ),
     );
   }
 }

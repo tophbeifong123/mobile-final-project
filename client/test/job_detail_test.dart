@@ -7,6 +7,7 @@ import 'package:client/core/error/app_exception.dart';
 import 'package:client/core/storage/token_storage.dart';
 import 'package:client/core/theme/app_theme.dart';
 import 'package:client/features/jobs/domain/entities/job.dart';
+import 'package:client/features/student_profile/domain/entities/student_profile.dart';
 import 'package:client/features/jobs/domain/repositories/job_repository.dart';
 import 'package:client/features/jobs/presentation/providers/jobs_controller.dart';
 import 'package:client/features/jobs/presentation/screens/job_detail_screen.dart';
@@ -89,6 +90,14 @@ void main() {
         'status': 'open',
         'companyName': 'Company',
         'companyWebsiteUrl': 'https://example.com',
+        'companyContactLinks': [
+          {
+            'id': 'c1',
+            'platform': 'phone',
+            'label': 'ฝ่ายบุคคล',
+            'value': '0812345678',
+          },
+        ],
         'companySize': '51-200',
         'companyLocation': 'อาคาร A',
         'companyPerks': ['MacBook'],
@@ -99,6 +108,9 @@ void main() {
       };
       final detail = JobDetailModel.fromJson(json).toEntity();
       expect(detail.companyWebsiteUrl, 'https://example.com');
+      expect(detail.companyContactLinks, hasLength(1));
+      expect(detail.companyContactLinks.first.platform, 'phone');
+      expect(detail.companyContactLinks.first.value, '0812345678');
       expect(detail.companySize, '51-200');
       expect(detail.companyLocation, 'อาคาร A');
       expect(detail.companyPerks, ['MacBook']);
@@ -108,6 +120,7 @@ void main() {
       expect(detail.deadline, DateTime.parse('2026-12-31T00:00:00.000Z'));
       for (final key in [
         'companyWebsiteUrl',
+        'companyContactLinks',
         'companySize',
         'companyLocation',
         'companyPerks',
@@ -118,6 +131,7 @@ void main() {
       }
       final legacy = JobDetailModel.fromJson(json).toEntity();
       expect(legacy.companyPerks, isEmpty);
+      expect(legacy.companyContactLinks, isEmpty);
       expect(legacy.companyWebsiteUrl, isEmpty);
       expect(legacy.companyLogoAvailable, isFalse);
       expect(legacy.companyCoverAvailable, isFalse);
@@ -150,6 +164,10 @@ void main() {
       businessType: 'Software',
       companyDescription: 'Saved description',
       companyWebsiteUrl: 'https://example.com',
+      companyContactLinks: const [
+        ContactLink(platform: 'phone', label: 'ฝ่ายบุคคล', value: '0812345678'),
+        ContactLink(platform: 'email', value: 'hr@example.com'),
+      ],
       companySize: '51-200',
       companyLocation: 'อาคาร A ถนนนิพัทธ์อุทิศ',
       companyPerks: ['MacBook', 'Free Lunch'],
@@ -180,6 +198,11 @@ void main() {
     expect(find.byKey(const Key('company-cover')), findsOneWidget);
     expect(find.text('Software'), findsOneWidget);
     expect(find.text('Saved description'), findsOneWidget);
+    expect(find.text('ช่องทางติดต่อ'), findsOneWidget);
+    expect(find.text('ฝ่ายบุคคล'), findsOneWidget);
+    expect(find.text('0812345678'), findsOneWidget);
+    expect(find.text('อีเมล'), findsOneWidget);
+    expect(find.text('hr@example.com'), findsOneWidget);
     expect(find.text('https://example.com'), findsOneWidget);
     expect(find.text('51-200'), findsOneWidget);
     expect(find.text('อาคาร A ถนนนิพัทธ์อุทิศ'), findsOneWidget);
@@ -187,7 +210,11 @@ void main() {
     expect(find.text('Free Lunch'), findsOneWidget);
     expect(find.byType(SvgPicture), findsOneWidget);
     expect(tester.takeException(), isNull);
-    await tester.scrollUntilVisible(find.text('ใช้ Flutter ได้'), 200);
+    await tester.scrollUntilVisible(
+      find.text('ใช้ Flutter ได้'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('ใช้ Flutter ได้'), findsOneWidget);
     expect(find.text('สมัครงาน'), findsOneWidget);
   });
@@ -231,6 +258,56 @@ void main() {
     expect(find.text('บันทึก'), findsOneWidget);
     expect(find.text('ยังไม่มีข้อมูล'), findsNothing);
     expect(find.text('ยังไม่ได้ระบุ'), findsNothing);
+  });
+
+  testWidgets('saved company cover fills the job banner', (tester) async {
+    tester.view.physicalSize = const Size(390, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    const detail = JobDetail(
+      id: 'job-1',
+      title: 'Flutter Intern',
+      description: 'ช่วยพัฒนาแอป',
+      province: 'สงขลา',
+      workMode: WorkMode.onSite,
+      category: 'IT & Software',
+      hasAllowance: false,
+      requirements: 'ใช้ Flutter ได้',
+      status: JobStatus.open,
+      companyName: 'InternFinder',
+      businessType: 'ซอฟต์แวร์',
+      companyDescription: 'แพลตฟอร์มฝึกงาน',
+      companyCoverAvailable: true,
+      saved: false,
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          jobDetailProvider('job-1').overrideWith((ref) async => detail),
+          jobCompanyCoverProvider('job-1').overrideWith(
+            (ref) async => CompanyLogo(
+              bytes: base64Decode(
+                'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a9mQAAAAASUVORK5CYII=',
+              ),
+              mimeType: 'image/png',
+            ),
+          ),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: const JobDetailScreen(jobId: 'job-1'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final image = find.byKey(const Key('company-cover-image'));
+    expect(image, findsOneWidget);
+    final size = tester.getSize(image);
+    expect(size.width, greaterThan(300));
+    expect(size.height, greaterThan(120));
+    expect(tester.takeException(), isNull);
   });
 }
 

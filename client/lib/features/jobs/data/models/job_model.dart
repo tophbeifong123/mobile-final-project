@@ -1,3 +1,4 @@
+import '../../../student_profile/data/models/student_profile_model.dart';
 import '../../domain/entities/job.dart';
 
 class JobModel {
@@ -90,6 +91,7 @@ class JobDetailModel {
     required this.companyDescription,
     required this.saved,
     this.companyWebsiteUrl = '',
+    this.companyContactLinks = const [],
     this.companySize = '',
     this.companyLocation = '',
     this.companyPerks = const [],
@@ -117,6 +119,13 @@ class JobDetailModel {
       businessType: json['businessType'] as String? ?? '',
       companyDescription: json['companyDescription'] as String? ?? '',
       companyWebsiteUrl: json['companyWebsiteUrl'] as String? ?? '',
+      companyContactLinks:
+          (json['companyContactLinks'] as List<dynamic>? ?? const [])
+              .map(
+                (item) =>
+                    ContactLinkModel.fromJson(item as Map<String, dynamic>),
+              )
+              .toList(),
       companySize: json['companySize'] as String? ?? '',
       companyLocation: json['companyLocation'] as String? ?? '',
       companyPerks:
@@ -152,6 +161,7 @@ class JobDetailModel {
   final String businessType;
   final String companyDescription;
   final String companyWebsiteUrl;
+  final List<ContactLinkModel> companyContactLinks;
   final String companySize;
   final String companyLocation;
   final List<String> companyPerks;
@@ -179,6 +189,9 @@ class JobDetailModel {
       businessType: businessType,
       companyDescription: companyDescription,
       companyWebsiteUrl: companyWebsiteUrl,
+      companyContactLinks: companyContactLinks
+          .map((link) => link.toEntity())
+          .toList(),
       companySize: companySize,
       companyLocation: companyLocation,
       companyPerks: companyPerks,

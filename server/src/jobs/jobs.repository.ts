@@ -44,6 +44,7 @@ export interface OpenJobDetail extends OpenJobRecord {
   businessType: string;
   companyDescription: string;
   companyWebsiteUrl: string;
+  companyContactLinks: unknown[];
   companySize: string;
   companyPerks: string[];
   companyLocation: string;
@@ -411,6 +412,7 @@ export class JobsRepository {
       .addSelect('company.businessType', 'businessType')
       .addSelect('company.description', 'companyDescription')
       .addSelect('company.websiteUrl', 'companyWebsiteUrl')
+      .addSelect('company.contactLinks', 'companyContactLinks')
       .addSelect('company.companySize', 'companySize')
       .addSelect('company.perks', 'companyPerks')
       .addSelect('company.location', 'companyLocation')
@@ -435,6 +437,18 @@ function escapeLike(value: string): string {
 
 function readField(row: Record<string, unknown>, key: string): unknown {
   return row[key] ?? row[key.toLowerCase()];
+}
+
+function readJsonArray(row: Record<string, unknown>, key: string): unknown[] {
+  let value = readField(row, key);
+  if (typeof value === 'string' && value.length > 0) {
+    try {
+      value = JSON.parse(value) as unknown;
+    } catch {
+      return [];
+    }
+  }
+  return Array.isArray(value) ? value : [];
 }
 
 function readArray(row: Record<string, unknown>, key: string): string[] {
@@ -482,6 +496,7 @@ function toOpenJobDetail(row: Record<string, unknown>): OpenJobDetail {
     businessType: String(readField(row, 'businessType') ?? ''),
     companyDescription: String(readField(row, 'companyDescription') ?? ''),
     companyWebsiteUrl: String(readField(row, 'companyWebsiteUrl') ?? ''),
+    companyContactLinks: readJsonArray(row, 'companyContactLinks'),
     companySize: String(readField(row, 'companySize') ?? ''),
     companyPerks: readArray(row, 'companyPerks'),
     companyLocation: String(readField(row, 'companyLocation') ?? ''),

@@ -1,14 +1,17 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  IsArray,
   IsInt,
   IsOptional,
   IsString,
   MaxLength,
   Min,
-  IsArray,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
+import { ContactLinkDto } from '../../students/dto/contact-link.dto.js';
 
 function trimString({ value }: { value: unknown }): unknown {
   return typeof value === 'string' ? value.trim() : value;
@@ -72,6 +75,18 @@ export class UpdateCompanyProfileDto {
   @IsString()
   @MaxLength(1024)
   websiteUrl?: string;
+
+  @ApiPropertyOptional({
+    type: () => [ContactLinkDto],
+    description:
+      'ช่องทางติดต่อได้ไม่เกิน 8 รายการ ประเภทที่ใช้ได้คือ phone, email, line, linkedin, facebook, instagram, other; ส่งรายการว่างเพื่อล้าง',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(8)
+  @ValidateNested({ each: true })
+  @Type(() => ContactLinkDto)
+  contactLinks?: ContactLinkDto[];
 
   @ApiPropertyOptional({ example: '201-500 คน' })
   @IsOptional()

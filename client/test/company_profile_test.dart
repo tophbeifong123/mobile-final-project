@@ -51,6 +51,7 @@ void main() {
       'businessType': 'ซอฟต์แวร์',
       'description': '',
       'websiteUrl': '',
+      'contactLinks': <Map<String, dynamic>>[],
       'companySize': '',
       'perks': <String>[],
       'provinceId': 90,

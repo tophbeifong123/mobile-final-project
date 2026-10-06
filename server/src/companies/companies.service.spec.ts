@@ -157,6 +157,7 @@ describe('CompaniesService', () => {
         companySize: '51-200 คน',
         perks: ['Free Lunch'],
         coverObjectKey: 'company-covers/user-1/cover.jpg',
+        contactLinks: [],
       });
     });
 
@@ -291,7 +292,54 @@ describe('CompaniesService', () => {
         companySize: '201-500 คน',
         perks: ['MacBook'],
         coverObjectKey: null,
+        contactLinks: [],
       });
+    });
+
+    it('saves company contact links and rejects a bad phone without writing', async () => {
+      repository.findCompanyProfileByUserId.mockResolvedValue({
+        id: 'company-profile-1',
+      });
+      repository.updateProfile.mockResolvedValue({
+        name: 'Tech Corp',
+        businessType: 'IT',
+        description: '',
+        logoObjectKey: null,
+        contactLinks: [
+          { id: 'c1', platform: 'phone', label: 'ฝ่ายบุคคล', value: '0812345678' },
+          { id: 'c2', platform: 'email', value: 'hr@example.com' },
+        ],
+      });
+
+      const saved = await service.updateProfile(companyUser, {
+        contactLinks: [
+          { id: 'c1', platform: ' Phone ', label: ' ฝ่ายบุคคล ', value: ' 081-234-5678 ' },
+          { platform: 'email', value: 'hr@example.com' },
+        ],
+      });
+
+      expect(repository.updateProfile).toHaveBeenCalledWith(
+        'company-profile-1',
+        {
+          contactLinks: [
+            { id: 'c1', platform: 'phone', label: 'ฝ่ายบุคคล', value: '081-234-5678' },
+            expect.objectContaining({
+              platform: 'email',
+              value: 'hr@example.com',
+            }),
+          ],
+        },
+      );
+      expect(saved.contactLinks).toEqual([
+        { id: 'c1', platform: 'phone', label: 'ฝ่ายบุคคล', value: '0812345678' },
+        { id: 'c2', platform: 'email', label: undefined, value: 'hr@example.com' },
+      ]);
+
+      await expect(
+        service.updateProfile(companyUser, {
+          contactLinks: [{ platform: 'phone', value: '123' }],
+        }),
+      ).rejects.toThrow('เบอร์โทรศัพท์ไม่ถูกต้อง');
     });
 
     it('saves a selected province and short address', async () => {

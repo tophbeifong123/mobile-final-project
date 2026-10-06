@@ -1,3 +1,5 @@
+import '../../../student_profile/domain/entities/student_profile.dart';
+
 enum WorkMode { onSite, hybrid, remote }
 
 enum JobStatus { open, closed }
@@ -175,6 +177,7 @@ class JobDetail {
     required this.companyDescription,
     required this.saved,
     this.companyWebsiteUrl = '',
+    this.companyContactLinks = const [],
     this.companySize = '',
     this.companyLocation = '',
     this.companyPerks = const [],
@@ -200,6 +203,7 @@ class JobDetail {
   final String businessType;
   final String companyDescription;
   final String companyWebsiteUrl;
+  final List<ContactLink> companyContactLinks;
   final String companySize;
   final String companyLocation;
   final List<String> companyPerks;

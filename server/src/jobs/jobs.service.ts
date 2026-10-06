@@ -11,6 +11,7 @@ import { ProvincesService } from '../provinces/provinces.service.js';
 import { StorageService } from '../storage/storage.service.js';
 import { CompanyJobItemDto } from './dto/company-job-item.dto.js';
 import { CreateJobDto } from './dto/create-job.dto.js';
+import { ContactLinkDto } from '../students/dto/contact-link.dto.js';
 import { JobDetailDto } from './dto/job-detail.dto.js';
 import { CompanyOwnedJobDto } from './dto/company-owned-job.dto.js';
 import { JobDto } from './dto/job.dto.js';
@@ -370,6 +371,28 @@ function toDto(job: {
   return dto;
 }
 
+function publicContactLinks(links: unknown): ContactLinkDto[] {
+  if (!Array.isArray(links)) return [];
+  return links.flatMap((item) => {
+    if (!item || typeof item !== 'object') return [];
+    const record = item as Record<string, unknown>;
+    const platform =
+      typeof record.platform === 'string' ? record.platform.trim() : '';
+    const value = typeof record.value === 'string' ? record.value.trim() : '';
+    if (!platform || !value) return [];
+    const dto = new ContactLinkDto();
+    if (typeof record.id === 'string' && record.id.trim()) {
+      dto.id = record.id.trim();
+    }
+    dto.platform = platform;
+    if (typeof record.label === 'string' && record.label.trim()) {
+      dto.label = record.label.trim();
+    }
+    dto.value = value;
+    return [dto];
+  });
+}
+
 function toDetail(
   job: {
     id: string;
@@ -390,6 +413,7 @@ function toDetail(
     businessType: string;
     companyDescription: string;
     companyWebsiteUrl?: string;
+    companyContactLinks?: unknown;
     companySize?: string;
     companyPerks?: string[];
     companyLocation?: string;
@@ -417,6 +441,7 @@ function toDetail(
   dto.businessType = job.businessType;
   dto.companyDescription = job.companyDescription;
   dto.companyWebsiteUrl = job.companyWebsiteUrl ?? '';
+  dto.companyContactLinks = publicContactLinks(job.companyContactLinks);
   dto.companySize = job.companySize ?? '';
   dto.companyPerks = job.companyPerks ?? [];
   dto.companyLocation = job.companyLocation ?? '';

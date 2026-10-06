@@ -167,7 +167,7 @@ Password recovery รองรับอีเมลที่ใช้สมั�
 
 Route `GET /api/jobs/saved` ต้องประกาศก่อน `GET /api/jobs/:id` เพื่อไม่ให้คำว่า `saved` ถูกจับเป็น id
 
-`GET /api/jobs/:id` join โปรไฟล์บริษัทล่าสุดและคืน `companyWebsiteUrl`, `companySize`, `companyPerks`, `companyLocation`, `companyLogoAvailable`, `companyCoverAvailable` ร่วมกับชื่อ ประเภทกิจการ คำอธิบาย `createdAt` และ `deadline` ไม่เปิดเผย object key ของโลโก้หรือรูปหน้าปกให้นักศึกษา โหลดไฟล์ผ่านเส้นทางประกาศที่ตรวจ role และสถานะงานก่อนอ่าน storage รองรับ PNG/JPEG/WEBP/GIF/SVG และคืน 404 เมื่อไม่มีไฟล์ งานปิดแล้วไม่สามารถใช้เส้นทางนี้ได้
+`GET /api/jobs/:id` join โปรไฟล์บริษัทล่าสุดและคืน `companyWebsiteUrl`, `companyContactLinks`, `companySize`, `companyPerks`, `companyLocation`, `companyLogoAvailable`, `companyCoverAvailable` ร่วมกับชื่อ ประเภทกิจการ คำอธิบาย `createdAt` และ `deadline` ไม่เปิดเผย object key ของโลโก้หรือรูปหน้าปกให้นักศึกษา โหลดไฟล์ผ่านเส้นทางประกาศที่ตรวจ role และสถานะงานก่อนอ่าน storage รองรับ PNG/JPEG/WEBP/GIF/SVG และคืน 404 เมื่อไม่มีไฟล์ งานปิดแล้วไม่สามารถใช้เส้นทางนี้ได้
 
 Flutter โหลดรายละเอียดใหม่เมื่อกลับมาเปิดหน้าและโหลดโลโก้ด้วย Dio ที่มี token ไม่ใช้ URL รูปแบบสาธารณะหรือเพิ่มหน้าโปรไฟล์บริษัท แสดงตัวอักษรชื่อบริษัทแทนเมื่อไม่มีโลโก้หรือโหลดล้มเหลว; SVG แสดงด้วย `flutter_svg`
 
@@ -191,7 +191,7 @@ Flutter โหลดรายละเอียดใหม่เมื่อก
 
 `PATCH /api/companies/me` รับ `provinceId` และ `location` (ที่อยู่สั้น) ไม่รับพิกัดสำนักงาน
 
-`PATCH /api/companies/me` บันทึกเว็บไซต์ ขนาดองค์กร สวัสดิการ และที่อยู่ด้วยคอลัมน์เดิม เว็บไซต์ตรวจใน CompaniesService: ว่างได้ หรือ URL HTTP/HTTPS แบบเต็มที่ไม่มี credentials ค่าไม่ถูกต้องคืน 400 พร้อมเหตุผลโดยไม่บันทึกข้อมูลส่วนอื่น Swagger ระบุฟิลด์และกติกานี้ที่ `/api/docs`
+`PATCH /api/companies/me` บันทึกเว็บไซต์ ช่องทางติดต่อ ขนาดองค์กร สวัสดิการ และที่อยู่ด้วยคอลัมน์เดิม เว็บไซต์ตรวจใน CompaniesService: ว่างได้ หรือ URL HTTP/HTTPS แบบเต็มที่ไม่มี credentials ค่าไม่ถูกต้องคืน 400 พร้อมเหตุผลโดยไม่บันทึกข้อมูลส่วนอื่น ช่องทางติดต่อเป็น jsonb ไม่เกิน 8 รายการ ประเภท `phone` `email` `line` `linkedin` `facebook` `instagram` `other` รายการว่างล้างค่าได้ ค่าไม่ถูกต้องไม่บันทึก Swagger ระบุฟิลด์และกติกานี้ที่ `/api/docs`
 
 ### Health
 

@@ -14,9 +14,11 @@ import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/loading_view.dart';
 import '../../../../core/widgets/neo_button.dart';
 import '../../../auth/presentation/providers/auth_controller.dart';
+import '../../../student_profile/domain/entities/student_profile.dart';
 import '../../domain/entities/company_profile.dart';
 import '../../domain/entities/company_website_policy.dart';
 import '../providers/company_profile_controller.dart';
+import '../widgets/company_contact_links_editor.dart';
 
 class CompanyProfileScreen extends ConsumerWidget {
   const CompanyProfileScreen({super.key});
@@ -101,6 +103,7 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
 
   late String _selectedCompanySize;
   late List<String> _perks;
+  late List<ContactLink> _contactLinks;
   int? _provinceId;
   String? _provinceName;
 
@@ -149,6 +152,7 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
 
     _selectedCompanySize = p.companySize;
     _perks = List<String>.from(p.perks);
+    _contactLinks = List<ContactLink>.from(p.contactLinks);
     _provinceId = p.provinceId;
     _provinceName = p.provinceName;
   }
@@ -180,6 +184,8 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
                 _buildHeaderTitleSection(),
                 const Gap(16),
                 _buildGeneralInfoCard(),
+                const Gap(16),
+                _buildContactCard(),
                 const Gap(16),
                 _buildLocationCard(),
                 const Gap(16),
@@ -572,6 +578,18 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
             validator: validateCompanyWebsite,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildContactCard() {
+    return _buildCardShell(
+      iconBg: NeoColors.freshMint,
+      icon: Icons.alternate_email_rounded,
+      title: 'ช่องทางติดต่อ',
+      child: CompanyContactLinksEditor(
+        links: _contactLinks,
+        onChanged: (links) => setState(() => _contactLinks = links),
       ),
     );
   }
@@ -1119,6 +1137,7 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
     _businessTypeController.text = profile.businessType;
     _descriptionController.text = profile.description;
     _websiteUrlController.text = profile.websiteUrl;
+    _contactLinks = List<ContactLink>.from(profile.contactLinks);
     _selectedCompanySize = profile.companySize;
     _perks = List<String>.from(profile.perks);
     _locationController.text = profile.location;
@@ -1257,6 +1276,7 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
       provinceId: () => _provinceId,
       provinceName: () => _provinceName,
       websiteUrl: _websiteUrlController.text.trim(),
+      contactLinks: _contactLinks,
       location: _locationController.text.trim(),
       companySize: _selectedCompanySize,
       perks: _perks,

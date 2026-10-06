@@ -313,6 +313,9 @@ describe('JobsService', () => {
       businessType: 'ซอฟต์แวร์',
       companyDescription: 'แพลตฟอร์มฝึกงาน',
       companyWebsiteUrl: 'https://example.com',
+      companyContactLinks: [
+        { id: 'c1', platform: 'phone', label: 'ฝ่ายบุคคล', value: '0812345678' },
+      ],
       companySize: '51-200',
       companyPerks: ['MacBook', 'Free Lunch'],
       companyLocation: 'อาคาร A ถนนนิพัทธ์อุทิศ',
@@ -329,6 +332,9 @@ describe('JobsService', () => {
     expect(result.businessType).toBe('ซอฟต์แวร์');
     expect(result.companyDescription).toBe('แพลตฟอร์มฝึกงาน');
     expect(result.companyWebsiteUrl).toBe('https://example.com');
+    expect(result.companyContactLinks).toEqual([
+      { id: 'c1', platform: 'phone', label: 'ฝ่ายบุคคล', value: '0812345678' },
+    ]);
     expect(result.companySize).toBe('51-200');
     expect(result.companyPerks).toEqual(['MacBook', 'Free Lunch']);
     expect(result.companyLocation).toBe('อาคาร A ถนนนิพัทธ์อุทิศ');
@@ -427,6 +433,7 @@ describe('JobsService', () => {
     repository.findStudentId.mockResolvedValue(null);
     const result = await service.getOpen(student, 'job-1');
     expect(result.companyWebsiteUrl).toBe('');
+    expect(result.companyContactLinks).toEqual([]);
     expect(result.companySize).toBe('');
     expect(result.companyLocation).toBe('');
     expect(result.companyPerks).toEqual([]);
