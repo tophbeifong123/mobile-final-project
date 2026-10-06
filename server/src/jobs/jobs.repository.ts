@@ -180,7 +180,7 @@ export class JobsRepository {
                 j.work_mode      AS "workMode",
                 j.deadline,
                 COUNT(a.id)::int AS "applicantCount",
-                COUNT(a.id) FILTER (WHERE a.status = 'submitted')::int AS "pendingApplicantCount"
+                COUNT(a.id) FILTER (WHERE a.status IN ('submitted', 'reviewing'))::int AS "pendingApplicantCount"
          FROM jobs j
          LEFT JOIN applications a ON a.job_id = j.id
          WHERE j.company_id = $1

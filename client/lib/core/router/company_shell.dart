@@ -23,7 +23,9 @@ class CompanyShell extends StatelessWidget {
         selectedIndex: navigationShell.currentIndex,
         onTap: (index) => navigationShell.goBranch(
           index,
-          initialLocation: index == navigationShell.currentIndex,
+          // Dashboard must open its own root. Restoring that branch can
+          // otherwise bring back a jobs page pushed on top of it.
+          initialLocation: index == 0 || index == navigationShell.currentIndex,
         ),
         items: _items,
       ),

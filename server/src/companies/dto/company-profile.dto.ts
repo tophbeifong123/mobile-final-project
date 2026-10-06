@@ -36,11 +36,6 @@ export class CompanyProfileDto {
   @ApiProperty({ example: 'ถนนกาญจนวนิช ต.คอหงส์ อ.หาดใหญ่', maxLength: 255 })
   location: string;
 
-  @ApiProperty({ type: Number, nullable: true, example: 7.0064 })
-  latitude: number | null;
-
-  @ApiProperty({ type: Number, nullable: true, example: 100.5008 })
-  longitude: number | null;
   @ApiProperty({ example: 'https://www.bitkub.com', default: '' })
   websiteUrl: string;
 

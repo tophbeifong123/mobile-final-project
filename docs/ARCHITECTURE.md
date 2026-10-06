@@ -64,8 +64,8 @@ Prefix ของ API คือ `/api` ตาม `app.setGlobalPrefix('api')` ใ
 |---|---|
 | AuthModule | สมัคร, login, refresh, logout, forgot/reset password |
 | StudentsModule | โปรไฟล์นักศึกษาและ Resume |
-| CompaniesModule | โปรไฟล์บริษัท, logo, จังหวัดและหมุดสำนักงาน, ตัวเลขแดชบอร์ด |
-| ProvincesModule | มาสเตอร์จังหวัด 77 จังหวัด ชื่อเรียก และจุดกึ่งกลางสำหรับเปิดแผนที่ |
+| CompaniesModule | โปรไฟล์บริษัท, logo, จังหวัดและที่อยู่สั้น, ตัวเลขแดชบอร์ด |
+| ProvincesModule | มาสเตอร์จังหวัด 77 จังหวัดและชื่อเรียก |
 | JobsModule | ประกาศ, feed, บันทึกงาน, เปิดหรือปิดรับสมัคร |
 | ApplicationsModule | สมัครงาน, timeline, เปลี่ยนสถานะ |
 | NotificationsModule | แจ้งเตือนในแอปและ BullMQ worker |
@@ -123,7 +123,7 @@ Filter ของหน้า Home เป็น query ของ `GET /jobs` ไ�
 |---|---|---|
 | GET | /api/provinces | Company Profile, Create / Edit Job, Filter |
 
-ผลลัพธ์มีรหัสจังหวัด ชื่อมาตรฐาน ชื่อเรียกที่ค้นหาได้ และจุดกึ่งกลางสำหรับเปิดแผนที่ ไม่เรียกบริการค้นหาที่อยู่ภายนอก
+ผลลัพธ์มีรหัสจังหวัด ชื่อมาตรฐาน และชื่อเรียกที่ค้นหาได้ ไม่เรียกบริการค้นหาที่อยู่ภายนอก
 
 ### Auth
 
@@ -186,9 +186,9 @@ Flutter โหลดรายละเอียดใหม่เมื่อก
 
 บริษัทเรียกได้เฉพาะประกาศและผู้สมัครของบริษัทตัวเอง ไม่เช่นนั้นตอบ 403
 
-`GET /api/companies/me/dashboard` คืน `totalJobs`, `openJobs`, `totalApplicants` และ `pendingApplicants`. CompaniesService กำหนดสถานะรอตรวจเป็น `submitted` และ `reviewing`; repository นับใบสมัครผ่านประกาศของบริษัทนี้เท่านั้น รวมประกาศที่ปิดแล้วและไม่นับ timeline ซ้ำ. ไม่มีข้อมูลเป็น 0; query ล้มเหลวไม่แทนด้วย 0. Flutter ใช้ CompanyTopBar และการ์ด/ปุ่มแบบ Neo ของฝั่งบริษัท เปิดหน้าใหม่โหลดสรุปใหม่ ดึงลงเพื่อ refresh และลองใหม่ได้เมื่อเกิดข้อผิดพลาด.
+`GET /api/companies/me/dashboard` คืน `totalJobs`, `openJobs`, `totalApplicants` และ `pendingApplicants`. CompaniesService กำหนดสถานะรอตรวจเป็น `submitted` และ `reviewing`; repository นับใบสมัครผ่านประกาศของบริษัทนี้เท่านั้น รวมประกาศที่ปิดแล้วและไม่นับ timeline ซ้ำ. รายการประกาศของบริษัทใช้คำว่า `pendingApplicantCount` ในความหมายเดียวกัน. ไม่มีข้อมูลเป็น 0; query ล้มเหลวไม่แทนด้วย 0. Flutter แสดงตัวเลขเป็นสรุป แล้วแสดงประกาศที่รอตรวจกับฉบับร่างหรือประกาศที่ครบกำหนดภายใน 7 วันหรือเลยกำหนด เปิดหน้าใหม่โหลดใหม่ ดึงลงเพื่อ refresh และลองใหม่ได้เมื่อเกิดข้อผิดพลาด.
 
-`PATCH /api/companies/me` รับ `provinceId`, `location` (ที่อยู่สั้น), และ `latitude`/`longitude` เป็นคู่ พิกัดต้องมีจังหวัดก่อน และการเปลี่ยนจังหวัดโดยไม่ส่งพิกัดใหม่จะล้างหมุดเก่า แผนที่บนแอปใช้แผนที่เปิด ไม่ใช้ Google Maps key
+`PATCH /api/companies/me` รับ `provinceId` และ `location` (ที่อยู่สั้น) ไม่รับพิกัดสำนักงาน
 
 `PATCH /api/companies/me` บันทึกเว็บไซต์ ขนาดองค์กร สวัสดิการ และที่อยู่ด้วยคอลัมน์เดิม เว็บไซต์ตรวจใน CompaniesService: ว่างได้ หรือ URL HTTP/HTTPS แบบเต็มที่ไม่มี credentials ค่าไม่ถูกต้องคืน 400 พร้อมเหตุผลโดยไม่บันทึกข้อมูลส่วนอื่น Swagger ระบุฟิลด์และกติกานี้ที่ `/api/docs`
 
@@ -262,7 +262,6 @@ submitted → reviewing → accepted
 - `dio` เรียก API
 - `flutter_secure_storage` เก็บ access token และ refresh token
 - `file_picker` เลือก Resume PDF และ logo
-- `flutter_map` และปลั๊กอินหมุดลากได้แสดงที่ตั้งสำนักงานบนแผนที่เปิด พร้อมเครดิต OpenStreetMap
 
 ไม่ใช้ GetX, Bloc หรือ `build_runner` กติกาธุรกิจอยู่ที่ API แอปไม่มีคลาส use case แยก
 

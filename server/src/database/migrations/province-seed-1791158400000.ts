@@ -8,8 +8,10 @@ export interface ProvinceSeed {
 }
 
 // DOPA province codes/names: https://std.moc.go.th/std/group/28
-// Approximate WGS84 map-opening positions adapted from Open Admin Data,
-// CC BY 4.0: https://github.com/open-admin-data/thailand-administrative-divisions
+// Coordinates stay in this frozen seed so the original migration and the
+// drop-office-pin down migration can rebuild columns. The app does not read them.
+// Approximate WGS84 positions adapted from Open Admin Data, CC BY 4.0:
+// https://github.com/open-admin-data/thailand-administrative-divisions
 export const PROVINCE_SEEDS: readonly ProvinceSeed[] = [
   {
     id: 10,
