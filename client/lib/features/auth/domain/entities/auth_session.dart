@@ -18,3 +18,10 @@ class AuthSession {
   final String refreshToken;
   final UserRole role;
 }
+
+class GoogleAuthResult {
+  const GoogleAuthResult({this.roleRequired = false, this.error});
+
+  final bool roleRequired;
+  final String? error;
+}

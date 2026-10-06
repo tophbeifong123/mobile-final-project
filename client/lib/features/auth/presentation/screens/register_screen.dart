@@ -87,6 +87,24 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     AppToast.info(context, message);
   }
 
+  Future<void> _onGoogleIdToken(String idToken) async {
+    if (_submitting) return;
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
+    final result = await ref
+        .read(authControllerProvider.notifier)
+        .authenticateWithGoogle(idToken: idToken, role: _role);
+    if (!mounted) return;
+    setState(() {
+      _submitting = false;
+      _error =
+          result.error ??
+          (result.roleRequired ? 'กรุณาเลือกประเภทบัญชีก่อนดำเนินการ' : null);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -441,12 +459,17 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                   Row(
                                     children: [
                                       Expanded(
-                                        child: AuthSocialButton(
+                                        child: GoogleSignInButton(
                                           label: 'Google',
-                                          icon: const GoogleGIcon(),
-                                          onTap: () => _showNotice(
-                                            'การลงทะเบียนด้วย Google ยังไม่เปิดให้บริการ',
-                                          ),
+                                          onIdToken: _onGoogleIdToken,
+                                          onError: (message) {
+                                            if (mounted) {
+                                              setState(() {
+                                                _submitting = false;
+                                                _error = message;
+                                              });
+                                            }
+                                          },
                                         ),
                                       ),
                                     ],

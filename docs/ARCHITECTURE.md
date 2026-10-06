@@ -131,12 +131,15 @@ Filter ของหน้า Home เป็น query ของ `GET /jobs` ไ�
 |---|---|---|
 | POST | /api/auth/register | ยังไม่ login |
 | POST | /api/auth/login | ยังไม่ login |
+| POST | /api/auth/google | ยังไม่ login; ยืนยัน Google ID token และสมัคร/เข้าสู่ระบบ |
 | POST | /api/auth/refresh | มี refresh token |
 | POST | /api/auth/logout | login แล้ว |
 | POST | /api/auth/forgot-password | ยังไม่ login, ส่ง email เพื่อขอลิงก์ |
 | POST | /api/auth/reset-password | มีลิงก์ token ที่ยังไม่หมดอายุ |
 
-Register รับ email, password และ role `student` หรือ `company` role เปลี่ยนทีหลังไม่ได้
+Register รับ email/password หรือ Google ID token และ role student/company. role เปลี่ยนทีหลังไม่ได้.
+
+Google sign-in ใช้ POST /api/auth/google รับ { idToken, role? }. Backend ตรวจลายเซ็น, issuer, expiry, audience allowlist, sub, email และ email_verified ด้วย Google Auth Library. จำกัด endpoint นี้ 10 ครั้งต่อนาทีต่อ client IP ด้วย NestJS throttler. Google identity ผูกด้วย (provider, provider_subject) ไม่ใช่ email. บัญชีเดิมที่ผูก sub แล้วได้ session เดิม; ถ้า email ตรงบัญชี password ให้ตอบ 409 และไม่ผูกให้อัตโนมัติ. บัญชีใหม่ที่ไม่ส่ง role ตอบ 200 { code: role_required } โดยไม่สร้างข้อมูล; ส่ง role student/company แล้วสร้าง user, provider identity และ profile ใน transaction เดียว ก่อนออก session ปกติ. ถ้าชน unique ระหว่างสร้าง ให้ค้น identity/email ใหม่และตอบผลเดิมอย่างปลอดภัย.
 
 AuthService ตรวจรหัสผ่านตอนสมัคร: อย่างน้อย 8 Unicode code points ไม่เกิน 72 ไบต์ UTF-8 และมีตัวอักษรอังกฤษ A-Z, a-z, ตัวเลข 0-9 และอักขระพิเศษ ASCII อย่างน้อยประเภทละ 1 ตัว (ช่องว่างและ emoji ไม่นับเป็นอักขระพิเศษ) Flutter แสดงเช็กลิสต์ขณะพิมพ์และตรวจยืนยันรหัสผ่านตรงกัน กติกานี้ไม่เปลี่ยนการ login ของบัญชีเดิมหรือ reset password
 
@@ -266,6 +269,7 @@ submitted → reviewing → accepted
 - `go_router` นำทางและตัดสินเส้นทางจาก token
 - `dio` เรียก API
 - `flutter_secure_storage` เก็บ access token และ refresh token
+- google_sign_in ขอ Google ID token บน Android; Web ใช้ GIS-rendered button และ client ID ใน web/index.html
 - `file_picker` เลือก Resume PDF และ logo
 
 ไม่ใช้ GetX, Bloc หรือ `build_runner` กติกาธุรกิจอยู่ที่ API แอปไม่มีคลาส use case แยก
@@ -333,4 +337,5 @@ CORS เปิดให้แอปมือถือเรียกได้ต
 
 ## 10. นอกแบบนี้
 
-ไม่ทำแชท, นัดสัมภาษณ์, ยืนยัน email, login ด้วยโซเชียล, ถอนใบสมัคร, หน้าโปรไฟล์บริษัทแยก, Admin, push notification นอกแอป หรือการเปลี่ยน role หลังสมัคร
+ไม่ทำแชท, นัดสัมภาษณ์, ยืนยัน email, login ด้วย social provider อื่นนอกจาก Google, ถอนใบสมัคร, หน้าโปรไฟล์บริษัทแยก, Admin, push notification นอกแอป หรือการเปลี่ยน role หลังสมัคร. Google Login รองรับ Android และ Web สำหรับทดสอบ; iOS ยังไม่อยู่ในขอบเขตนี้.
+
