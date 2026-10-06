@@ -119,6 +119,8 @@ class Job {
     required this.workMode,
     required this.category,
     required this.hasAllowance,
+    this.openings,
+    this.allowanceAmount,
     required this.status,
     this.skills = const [],
     this.createdAt,
@@ -132,6 +134,8 @@ class Job {
   final WorkMode workMode;
   final String category;
   final bool hasAllowance;
+  final int? openings;
+  final double? allowanceAmount;
   final JobStatus status;
   final List<String> skills;
   final DateTime? createdAt;
@@ -162,6 +166,8 @@ class JobDetail {
     required this.workMode,
     required this.category,
     required this.hasAllowance,
+    this.openings,
+    this.allowanceAmount,
     required this.requirements,
     required this.status,
     required this.companyName,
@@ -183,6 +189,8 @@ class JobDetail {
   final WorkMode workMode;
   final String category;
   final bool hasAllowance;
+  final int? openings;
+  final double? allowanceAmount;
   final String requirements;
   final JobStatus status;
   final String companyName;

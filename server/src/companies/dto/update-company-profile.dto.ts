@@ -2,10 +2,8 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import {
   IsInt,
-  IsNumber,
   IsOptional,
   IsString,
-  Max,
   MaxLength,
   Min,
   IsArray,
@@ -44,7 +42,7 @@ export class UpdateCompanyProfileDto {
     nullable: true,
     example: 90,
     description:
-      'รหัสจังหวัดจาก GET /api/provinces; null เพื่อล้างจังหวัดและหมุด',
+      'รหัสจังหวัดจาก GET /api/provinces; null เพื่อล้างจังหวัด',
   })
   @IsOptional()
   @IsInt()
@@ -62,29 +60,6 @@ export class UpdateCompanyProfileDto {
   @MaxLength(255)
   location?: string;
 
-  @ApiPropertyOptional({
-    type: Number,
-    nullable: true,
-    example: 7.0064,
-    description: 'ส่งพร้อม longitude; ส่ง null ทั้งคู่เพื่อล้างหมุด',
-  })
-  @IsOptional()
-  @IsNumber({ allowNaN: false, allowInfinity: false })
-  @Min(-90)
-  @Max(90)
-  latitude?: number | null;
-
-  @ApiPropertyOptional({
-    type: Number,
-    nullable: true,
-    example: 100.5008,
-    description: 'ส่งพร้อม latitude',
-  })
-  @IsOptional()
-  @IsNumber({ allowNaN: false, allowInfinity: false })
-  @Min(-180)
-  @Max(180)
-  longitude?: number | null;
   @ApiPropertyOptional({
     example: 'https://www.bitkub.com',
     required: false,

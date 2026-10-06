@@ -106,6 +106,7 @@ describe('JobsService', () => {
     const result = await service.create(company, dto);
 
     expect(repository.create).toHaveBeenCalledWith({
+      openings: null, allowanceAmount: null,
       companyId: 'company-1',
       title: 'Flutter Intern',
       description: 'ช่วยพัฒนาแอป',
@@ -544,6 +545,7 @@ describe('JobsService', () => {
     const result = await service.update(company, 'job-1', dto);
 
     expect(repository.updateOwned).toHaveBeenCalledWith({
+      openings: null, allowanceAmount: null,
       id: 'job-1',
       companyId: 'company-1',
       version: 1,

@@ -231,8 +231,10 @@ class _JobBody extends StatelessWidget {
               _DetailRow(label: 'หมวดงาน', value: job.category),
               _DetailRow(
                 label: 'เบี้ยเลี้ยง',
-                value: allowanceLabel(job.hasAllowance),
+                value: allowanceLabel(job.hasAllowance, job.allowanceAmount),
               ),
+              if (job.openings != null)
+                _DetailRow(label: 'จำนวนรับ', value: 'รับ ${job.openings} คน'),
               _DetailRow(label: 'สถานะ', value: jobStatusLabel(job.status)),
             ],
           ),

@@ -18,12 +18,6 @@ describe('province master', () => {
         aliases: expect.arrayContaining(['กทม.', 'กรุงเทพฯ']),
       },
     );
-    for (const province of PROVINCE_SEEDS) {
-      expect(province.centerLatitude).toBeGreaterThanOrEqual(-90);
-      expect(province.centerLatitude).toBeLessThanOrEqual(90);
-      expect(province.centerLongitude).toBeGreaterThanOrEqual(-180);
-      expect(province.centerLongitude).toBeLessThanOrEqual(180);
-    }
   });
 });
 
@@ -39,14 +33,12 @@ describe('ProvincesService', () => {
 
   beforeEach(() => vi.clearAllMocks());
 
-  it('returns the map-opening center and aliases', async () => {
+  it('returns official names and aliases', async () => {
     repository.list.mockResolvedValue([
       {
         id: 10,
         nameTh: 'กรุงเทพมหานคร',
         aliases: ['กทม.'],
-        centerLatitude: 13.753,
-        centerLongitude: 100.5,
       },
     ]);
 
@@ -55,8 +47,6 @@ describe('ProvincesService', () => {
         id: 10,
         nameTh: 'กรุงเทพมหานคร',
         aliases: ['กทม.'],
-        centerLatitude: 13.753,
-        centerLongitude: 100.5,
       },
     ]);
   });

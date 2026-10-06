@@ -12,7 +12,10 @@ class CompanyJobRemoteDataSource {
 
   Future<List<CompanyJobModel>> fetchMine() async {
     try {
-      final response = await _dio.get<dynamic>(ApiConstants.companyJobs);
+      final response = await _dio.get<dynamic>(
+        ApiConstants.companyJobs,
+        queryParameters: const {'limit': 100},
+      );
       final data = response.data;
       if (data == null) {
         throw const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
@@ -59,6 +62,10 @@ class CompanyJobRemoteDataSource {
           'workMode': posting.workMode,
           'category': posting.category,
           'hasAllowance': posting.hasAllowance,
+          'openings': posting.openings,
+          'allowanceAmount': posting.hasAllowance
+              ? posting.allowanceAmount
+              : null,
           'requirements': posting.requirements,
           'skills': posting.skills,
         },
@@ -88,6 +95,10 @@ class CompanyJobRemoteDataSource {
           'workMode': posting.workMode,
           'category': posting.category,
           'hasAllowance': posting.hasAllowance,
+          'openings': posting.openings,
+          'allowanceAmount': posting.hasAllowance
+              ? posting.allowanceAmount
+              : null,
           'requirements': posting.requirements,
           'skills': posting.skills,
           'version': version,

@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -51,6 +52,7 @@ export class JobsService {
 
     const province = await this.provincesService.resolveName(dto.province);
     const job = await this.jobsRepository.create({
+      ...normalizeJobNumbers(dto),
       companyId,
       title: dto.title.trim(),
       description: dto.description.trim(),
@@ -210,6 +212,7 @@ export class JobsService {
     const province = await this.provincesService.resolveName(dto.province);
     try {
       const updated = await this.jobsRepository.updateOwned({
+        ...normalizeJobNumbers(dto),
         id: jobId,
         companyId,
         version: dto.version,
@@ -303,6 +306,8 @@ function toDto(job: {
   workMode: JobDto['workMode'];
   category: string;
   hasAllowance: boolean;
+  openings?: number | null;
+  allowanceAmount?: number | null;
   requirements: string;
   skills?: string[];
   status: JobStatus;
@@ -316,6 +321,8 @@ function toDto(job: {
   dto.workMode = job.workMode;
   dto.category = job.category;
   dto.hasAllowance = job.hasAllowance;
+  dto.openings = job.openings ?? null;
+  dto.allowanceAmount = job.hasAllowance ? (job.allowanceAmount ?? null) : null;
   dto.requirements = job.requirements;
   dto.skills = job.skills ?? [];
   dto.status = job.status;
@@ -332,6 +339,8 @@ function toDetail(
     workMode: JobDetailDto['workMode'];
     category: string;
     hasAllowance: boolean;
+    openings?: number | null;
+    allowanceAmount?: number | null;
     requirements: string;
     skills?: string[];
     status: JobStatus;
@@ -354,6 +363,8 @@ function toDetail(
   dto.workMode = job.workMode;
   dto.category = job.category;
   dto.hasAllowance = job.hasAllowance;
+  dto.openings = job.openings ?? null;
+  dto.allowanceAmount = job.hasAllowance ? (job.allowanceAmount ?? null) : null;
   dto.requirements = job.requirements;
   dto.skills = job.skills ?? [];
   dto.status = job.status;
@@ -389,6 +400,37 @@ function toCompanyItem(job: {
   return dto;
 }
 
+function normalizeJobNumbers(dto: CreateJobDto): {
+  openings: number | null;
+  allowanceAmount: number | null;
+} {
+  const openings = dto.openings ?? null;
+  if (
+    openings !== null &&
+    (!Number.isInteger(openings) || openings < 1 || openings > 2147483647)
+  ) {
+    throw new BadRequestException(
+      'จำนวนรับต้องเป็นจำนวนเต็มบวก ไม่เกิน 2147483647',
+    );
+  }
+  const allowanceAmount = dto.hasAllowance
+    ? (dto.allowanceAmount ?? null)
+    : null;
+  if (
+    allowanceAmount !== null &&
+    (typeof allowanceAmount !== 'number' ||
+      !Number.isFinite(allowanceAmount) ||
+      allowanceAmount < 0 ||
+      allowanceAmount > 99999999.99 ||
+      Math.round(allowanceAmount * 100) / 100 !== allowanceAmount)
+  ) {
+    throw new BadRequestException(
+      'เบี้ยเลี้ยงต้องเป็นจำนวนเงินบาทตั้งแต่ 0 ถึง 99999999.99 ทศนิยมไม่เกิน 2 ตำแหน่ง',
+    );
+  }
+  return { openings, allowanceAmount };
+}
+
 function toFeedItem(job: {
   id: string;
   title: string;
@@ -397,6 +439,8 @@ function toFeedItem(job: {
   workMode: JobFeedItemDto['workMode'];
   category: string;
   hasAllowance: boolean;
+  openings?: number | null;
+  allowanceAmount?: number | null;
   skills?: string[];
   status: JobStatus;
   createdAt: Date;
@@ -412,6 +456,8 @@ function toFeedItem(job: {
   dto.workMode = job.workMode;
   dto.category = job.category;
   dto.hasAllowance = job.hasAllowance;
+  dto.openings = job.openings ?? null;
+  dto.allowanceAmount = job.hasAllowance ? (job.allowanceAmount ?? null) : null;
   dto.skills = job.skills ?? [];
   dto.status = job.status;
   return dto;

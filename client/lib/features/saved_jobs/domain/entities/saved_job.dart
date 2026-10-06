@@ -10,6 +10,8 @@ class SavedJob extends Job {
     required super.category,
     required super.hasAllowance,
     required super.status,
+    super.openings,
+    super.allowanceAmount,
     super.skills,
     super.createdAt,
     super.companyLogoAvailable,

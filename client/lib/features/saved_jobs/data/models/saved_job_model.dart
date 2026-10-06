@@ -10,6 +10,8 @@ class SavedJobModel {
     required this.workMode,
     required this.category,
     required this.hasAllowance,
+    this.openings,
+    this.allowanceAmount,
     required this.status,
     this.skills = const [],
     this.createdAt,
@@ -25,6 +27,8 @@ class SavedJobModel {
       workMode: workModeFromApi(json['workMode'] as String),
       category: json['category'] as String,
       hasAllowance: json['hasAllowance'] as bool,
+      openings: json['openings'] as int?,
+      allowanceAmount: (json['allowanceAmount'] as num?)?.toDouble(),
       status: JobStatus.values.byName(json['status'] as String),
       createdAt: DateTime.tryParse(json['createdAt'] as String? ?? ''),
       companyLogoAvailable: json['companyLogoAvailable'] as bool? ?? false,
@@ -43,6 +47,8 @@ class SavedJobModel {
   final WorkMode workMode;
   final String category;
   final bool hasAllowance;
+  final int? openings;
+  final double? allowanceAmount;
   final JobStatus status;
   final List<String> skills;
   final DateTime? createdAt;
@@ -57,6 +63,8 @@ class SavedJobModel {
       workMode: workMode,
       category: category,
       hasAllowance: hasAllowance,
+      openings: openings,
+      allowanceAmount: allowanceAmount,
       status: status,
       skills: skills,
       createdAt: createdAt,

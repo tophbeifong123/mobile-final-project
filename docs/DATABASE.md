@@ -112,8 +112,6 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | description | text | |
 | province_id | smallint | null ได้, FK → provinces.id; รหัสจังหวัดตามกรมการปกครอง |
 | location | text | คอลัมน์เดิม; ที่อยู่สั้นแยกจากจังหวัด จำกัดข้อมูลใหม่ 255 ตัวอักษรใน service ไม่ตัดข้อมูลเก่า |
-| latitude | double precision | null ได้; พิกัดหมุดสำนักงาน WGS84 |
-| longitude | double precision | null ได้; ต้องมีหรือไม่มีพร้อม latitude |
 | website_url | varchar(1024) | เว็บไซต์ HTTP/HTTPS หรือค่าว่าง |
 | company_size | varchar(100) | ขนาดองค์กร หรือค่าว่าง |
 | perks | text[] | สวัสดิการที่บริษัทระบุ |
@@ -123,9 +121,7 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 
 ตัวเลขแดชบอร์ดไม่เก็บเป็นคอลัมน์ นับจาก `jobs` กับ `applications` แล้วเขียนทับค่าใน Redis ถ้า Redis หายให้นับจากตารางนี้ใหม่
 
-เว็บไซต์ ขนาดองค์กร สวัสดิการ ที่อยู่ และรูปหน้าปกมาจาก migration `1759300000000-add-details-and-cover-to-company-profiles` ที่มี up/down; IFND-141 อ่านข้อมูลล่าสุดผ่าน join ไม่เก็บสำเนาใน jobs. Migration IFND-138 เพิ่มเฉพาะมาสเตอร์จังหวัดและ `province_id`/`latitude`/`longitude` ไม่เพิ่มหรือลบคอลัมน์ `location` เดิมใน up/down.
-
-`latitude` และ `longitude` ต้องเป็นคู่ อยู่ในช่วงพิกัดที่ถูกต้อง และมี `province_id` ก่อนเสมอ เมื่อเปลี่ยนจังหวัดโดยไม่ส่งพิกัดใหม่ service ล้างหมุดเดิม ไม่เอาหมุดจากจังหวัดก่อนหน้ามาใช้ต่อ
+เว็บไซต์ ขนาดองค์กร สวัสดิการ ที่อยู่ และรูปหน้าปกมาจาก migration `1759300000000-add-details-and-cover-to-company-profiles` ที่มี up/down; IFND-141 อ่านข้อมูลล่าสุดผ่าน join ไม่เก็บสำเนาใน jobs. Migration `1791158400000-add-company-office-location` เพิ่มมาสเตอร์จังหวัดและ `province_id` โดยไม่เพิ่มหรือลบคอลัมน์ `location` เดิม. Migration `1791744000000-drop-office-pin` ลบ `latitude`/`longitude` ของโปรไฟล์และจุดกึ่งกลางจังหวัด เพราะไม่มีหน้าไหนแสดงแผนที่.
 
 ### provinces
 
@@ -136,10 +132,8 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | id | smallint | PK, รหัสจังหวัด |
 | name_th | varchar(100) | unique, ชื่อจังหวัดมาตรฐาน |
 | aliases | text[] | ชื่อเรียกสำหรับค้นหา |
-| center_latitude | double precision | จุดประมาณสำหรับเปิดแผนที่ในบริเวณจังหวัด ไม่ใช่พิกัดสำนักงาน |
-| center_longitude | double precision | WGS84, ใช้คู่กับ center_latitude |
 
-ข้อมูลรหัสและชื่ออิง [มาตรฐานจังหวัดกระทรวงพาณิชย์](https://std.moc.go.th/std/group/28) ส่วนจุดเปิดแผนที่เป็นพิกัดประมาณดัดแปลงจาก [Open Admin Data (CC BY 4.0)](https://github.com/open-admin-data/thailand-administrative-divisions) แอปใช้ข้อมูลนี้ในเครื่องหลังเรียก API ไม่เรียก geocoding ภายนอก
+ข้อมูลรหัสและชื่ออิง [มาตรฐานจังหวัดกระทรวงพาณิชย์](https://std.moc.go.th/std/group/28) แอปใช้ข้อมูลนี้ในเครื่องหลังเรียก API ไม่เรียก geocoding ภายนอก
 
 
 ### jobs
@@ -154,6 +148,8 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | work_mode | work_mode | |
 | category | varchar | หมวดงาน |
 | has_allowance | boolean | มีเบี้ยเลี้ยงหรือไม่ |
+| openings | integer | null ได้; เมื่อระบุต้องเป็นจำนวนเต็มบวก ไม่เกิน 2147483647 |
+| allowance_amount | numeric(10,2) | null ได้; จำนวนเงินบาทตั้งแต่ 0 ถึง 99999999.99; มีค่าได้เฉพาะ has_allowance = true |
 | requirements | text | คุณสมบัติ |
 | skills | text[] | ทักษะที่เปิดรับ |
 | status | job_status | ค่าเริ่มต้น `open` |
@@ -162,6 +158,8 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | updated_at | timestamptz | |
 
 นักศึกษาเห็นและสมัครได้เฉพาะ `status = open` งาน `closed` ยังอยู่ในการจัดการของบริษัท
+
+Migration `1791840000000-add-job-openings-allowance` มี up/down: เพิ่มคอลัมน์ nullable สองช่องและ CHECK constraints โดยไม่เติม 0 ให้ประกาศเดิม; down ลบ constraints และคอลัมน์ใหม่เท่านั้น ไม่ลบประกาศ กติกาอยู่ใน JobsService และ Swagger ใช้ `openings`/`allowanceAmount` เป็น number หรือ null สำหรับฟอร์ม รายการงาน งานที่บันทึก และรายละเอียด ปิดมีเบี้ยเลี้ยงแล้ว service ล้าง allowance_amount เป็น null ในการบันทึกเดียวกัน
 
 ### saved_jobs
 

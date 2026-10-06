@@ -10,10 +10,14 @@ The Swagger contract is available at `/api/docs`.
 - CompaniesService defines pending as `submitted` or `reviewing`. Closed jobs'
   applications remain included; `accepted` and `rejected` are not pending.
 - No jobs means four zero counts. Database errors must not become zero counts.
-- The Flutter page uses CompanyTopBar, Neo styling, retry/pull-to-refresh, and
-  refreshes when returning from job management or creation. Every statistic
-  opens job management; the create button opens the new-job form.
-- No new tables, shortlist, recent applicants, or company notifications.
+- `pendingApplicantCount` on each company job uses the same pending statuses.
+- The Flutter page uses CompanyTopBar, Neo styling, retry, and pull-to-refresh.
+  Counts are read-only. Up to five jobs with pending applications open that
+  job's applicant list. Up to five drafts, or open jobs due within 7 days or
+  already overdue, open the edit form. A company with no jobs gets one create
+  button. A company with jobs but nothing to do sees that there is nothing to
+  review. Returning to the page reloads the summary and the job list.
+- No new tables, applicant-name list, or company notifications.
 
 ## Verification
 

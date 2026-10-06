@@ -13,6 +13,7 @@ import { AppDataSource } from '../dist/database/data-source.js';
 import { CompaniesController } from '../dist/companies/companies.controller.js';
 import { CompaniesRepository } from '../dist/companies/companies.repository.js';
 import { CompaniesService } from '../dist/companies/companies.service.js';
+import { CompanyJobsController } from '../dist/jobs/company-jobs.controller.js';
 import { JobsController } from '../dist/jobs/jobs.controller.js';
 import { JobsRepository } from '../dist/jobs/jobs.repository.js';
 import { JobsService } from '../dist/jobs/jobs.service.js';
@@ -57,7 +58,7 @@ test('persisted company profile reaches job detail, logo and Swagger', async () 
       [jobId, companyId, 'Flutter Intern', 'Job description', 'สงขลา', 'on_site', 'IT', true, 'Flutter', 'open']);
     const logo = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10" fill="red"/></svg>');
     const module = await Test.createTestingModule({
-      controllers: [CompaniesController, JobsController],
+      controllers: [CompaniesController, JobsController, CompanyJobsController],
       providers: [
         CompaniesService, JobsService,
         { provide: ProvincesService, useValue: new ProvincesService(new ProvincesRepository(dataSource)) },
@@ -140,6 +141,35 @@ test('persisted company profile reaches job detail, logo and Swagger', async () 
     assert.equal(savedPage.items.length, 1);
     const savedItem = savedPage.items[0];
     assert.deepEqual(savedItem, [...firstPage.items, ...secondPage.items].find(item => item.id === savedItem.id));
+    // IFND-150: legacy rows stay nullable; create/edit and all student views agree.
+    const legacy = (await http.get('/api/jobs/' + jobId).set('x-test-role', 'student').expect(200)).body;
+    assert.equal(legacy.openings, null);
+    assert.equal(legacy.allowanceAmount, null);
+    const posting = { title: 'Paid Intern', description: 'Description', province: 'สงขลา',
+      workMode: 'remote', category: 'IT', hasAllowance: true, requirements: 'None', openings: 3, allowanceAmount: 8000.25 };
+    const createdJob = (await http.post('/api/company/jobs').set('x-test-role', 'company').send(posting).expect(201)).body;
+    assert.equal(createdJob.openings, 3);
+    assert.equal(createdJob.allowanceAmount, 8000.25);
+    await dataSource.query('INSERT INTO saved_jobs (student_id, job_id) VALUES ($1,$2)', [studentId, createdJob.id]);
+    for (const path of ['/api/company/jobs/' + createdJob.id, '/api/jobs/' + createdJob.id]) {
+      const body = (await http.get(path).set('x-test-role', path.includes('/company/') ? 'company' : 'student').expect(200)).body;
+      assert.equal(body.openings, 3);
+      assert.equal(body.allowanceAmount, 8000.25);
+    }
+    for (const path of ['/api/jobs?limit=100', '/api/jobs/saved?limit=100']) {
+      const body = (await http.get(path).set('x-test-role', 'student').expect(200)).body;
+      const item = body.items.find(item => item.id === createdJob.id);
+      assert.equal(item.openings, 3);
+      assert.equal(item.allowanceAmount, 8000.25);
+    }
+    const updated = (await http.patch('/api/company/jobs/' + createdJob.id).set('x-test-role', 'company')
+      .send({ ...posting, openings: null, hasAllowance: false, version: createdJob.version }).expect(200)).body;
+    assert.equal(updated.openings, null);
+    assert.equal(updated.allowanceAmount, null);
+    const rows = await dataSource.query('SELECT openings, allowance_amount FROM jobs WHERE id=$1', [createdJob.id]);
+    assert.deepEqual(rows[0], { openings: null, allowance_amount: null });
+    await http.post('/api/company/jobs').set('x-test-role', 'company').send({ ...posting, openings: 0 }).expect(400);
+    await http.post('/api/company/jobs').set('x-test-role', 'company').send({ ...posting, allowanceAmount: 1.234 }).expect(400);
     const response = await http.get('/api/jobs/' + jobId + '/company-logo').set('x-test-role', 'student').expect(200);
     assert.match(response.headers['content-type'], /image\/svg\+xml/);
     assert.equal(response.headers['x-content-type-options'], 'nosniff');
@@ -161,6 +191,18 @@ test('persisted company profile reaches job detail, logo and Swagger', async () 
     assert.equal(doc.components.schemas.JobFeedItemDto.properties.createdAt.format, 'date-time');
     assert.equal(doc.components.schemas.JobFeedItemDto.properties.companyLogoAvailable.type, 'boolean');
     assert.ok(doc.components.schemas.PaginatedJobsDto.properties.totalPages);
+    for (const schema of ['CreateJobDto', 'UpdateJobDto', 'JobDto', 'JobFeedItemDto', 'JobDetailDto']) {
+      for (const field of ['openings', 'allowanceAmount']) {
+        assert.equal(doc.components.schemas[schema].properties[field].nullable, true);
+      }
+    }
+    const beforeDown = await dataSource.query('SELECT count(*)::int AS total FROM jobs');
+    await dataSource.undoLastMigration();
+    const removed = await dataSource.query("SELECT column_name FROM information_schema.columns WHERE table_name='jobs' AND column_name IN ('openings', 'allowance_amount')");
+    assert.equal(removed.length, 0);
+    assert.deepEqual(await dataSource.query('SELECT count(*)::int AS total FROM jobs'), beforeDown);
+    await dataSource.runMigrations();
+    assert.equal((await dataSource.query('SELECT openings FROM jobs WHERE id=$1', [jobId]))[0].openings, null);
     assert.ok(!Object.keys(doc.paths).some(path => /companies\/[^/]+\/profile/.test(path)));
   } finally {
     if (app) await app.close();

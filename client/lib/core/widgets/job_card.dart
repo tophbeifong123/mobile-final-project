@@ -15,6 +15,7 @@ class JobCard extends StatelessWidget {
     this.isSaved = false,
     this.onBookmarkTap,
     this.hasAllowance = false,
+    this.allowanceText,
   });
 
   final String title;
@@ -27,6 +28,7 @@ class JobCard extends StatelessWidget {
   final bool isSaved;
   final VoidCallback? onBookmarkTap;
   final bool hasAllowance;
+  final String? allowanceText;
 
   @override
   Widget build(BuildContext context) {
@@ -162,7 +164,8 @@ class JobCard extends StatelessWidget {
               alignment: WrapAlignment.spaceBetween,
               children: [
                 Text(
-                  hasAllowance ? 'มีเบี้ยเลี้ยง' : 'ไม่มีเบี้ยเลี้ยง',
+                  allowanceText ??
+                      (hasAllowance ? 'มีเบี้ยเลี้ยง' : 'ไม่มีเบี้ยเลี้ยง'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
