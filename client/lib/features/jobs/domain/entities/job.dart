@@ -119,8 +119,12 @@ class Job {
     required this.workMode,
     required this.category,
     required this.hasAllowance,
+    this.openings,
+    this.allowanceAmount,
     required this.status,
     this.skills = const [],
+    this.createdAt,
+    this.companyLogoAvailable = false,
   });
 
   final String id;
@@ -130,8 +134,27 @@ class Job {
   final WorkMode workMode;
   final String category;
   final bool hasAllowance;
+  final int? openings;
+  final int? allowanceAmount;
   final JobStatus status;
   final List<String> skills;
+  final DateTime? createdAt;
+  final bool companyLogoAvailable;
+}
+
+class JobPage {
+  const JobPage({
+    this.items = const [],
+    this.total = 0,
+    this.page = 1,
+    this.limit = 20,
+    this.totalPages = 0,
+  });
+  final List<Job> items;
+  final int total;
+  final int page;
+  final int limit;
+  final int totalPages;
 }
 
 class JobDetail {
@@ -143,6 +166,8 @@ class JobDetail {
     required this.workMode,
     required this.category,
     required this.hasAllowance,
+    this.openings,
+    this.allowanceAmount,
     required this.requirements,
     required this.status,
     required this.companyName,
@@ -164,6 +189,8 @@ class JobDetail {
   final WorkMode workMode;
   final String category;
   final bool hasAllowance;
+  final int? openings;
+  final int? allowanceAmount;
   final String requirements;
   final JobStatus status;
   final String companyName;

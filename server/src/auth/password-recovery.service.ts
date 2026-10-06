@@ -6,7 +6,7 @@ import { PasswordRecoveryResponseDto } from './dto/password-recovery-response.dt
 import { ResetPasswordDto } from './dto/reset-password.dto.js';
 import { PASSWORD_HASHER, type PasswordHasher } from './password-hasher.js';
 import { PasswordResetMailer } from './password-reset-mailer.js';
-import { isPasswordRecoveryEmailAllowed, PASSWORD_RECOVERY_EMAIL_MESSAGE } from './password-recovery-email.js';
+import { isPasswordRecoveryEmailValid, PASSWORD_RECOVERY_EMAIL_MESSAGE } from './password-recovery-email.js';
 
 export const PASSWORD_RESET_REQUEST_MESSAGE = 'หากอีเมลนี้มีบัญชีอยู่ ระบบจะส่งลิงก์รีเซ็ตรหัสผ่านให้คุณ';
 const INVALID_RESET = 'ลิงก์รีเซ็ตรหัสผ่านไม่ถูกต้องหรือหมดอายุ กรุณาขอลิงก์ใหม่';
@@ -23,7 +23,7 @@ export class PasswordRecoveryService {
 
   async forgotPassword(dto: ForgotPasswordDto): Promise<PasswordRecoveryResponseDto> {
     const email = dto.email.trim().toLowerCase();
-    if (!isPasswordRecoveryEmailAllowed(email)) {
+    if (!isPasswordRecoveryEmailValid(email)) {
       throw new BadRequestException(PASSWORD_RECOVERY_EMAIL_MESSAGE);
     }
     // Configuration failures apply equally to existing and unknown accounts.
@@ -61,7 +61,7 @@ export class PasswordRecoveryService {
       throw new BadRequestException(INVALID_RESET);
     }
     const user = await this.repository.findById(token.userId);
-    if (!user || !isPasswordRecoveryEmailAllowed(user.email)) {
+    if (!user) {
       throw new BadRequestException(INVALID_RESET);
     }
     const passwordHash = await this.passwords.hash(dto.password);

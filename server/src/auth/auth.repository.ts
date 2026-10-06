@@ -1,16 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, type EntityManager, IsNull } from 'typeorm';
 import { CompanyProfile } from './entities/company-profile.entity.js';
+import { AuthIdentity } from './entities/auth-identity.entity.js';
 import { PasswordResetToken } from './entities/password-reset-token.entity.js';
 import { RefreshToken } from './entities/refresh-token.entity.js';
 import { StudentProfile } from './entities/student-profile.entity.js';
 import { User } from './entities/user.entity.js';
 import { UserRole } from './user-role.js';
-import { isPasswordRecoveryEmailAllowed } from './password-recovery-email.js';
 
 export interface NewUser {
   email: string;
-  passwordHash: string;
+  passwordHash: string | null;
+  role: UserRole;
+}
+
+export interface NewGoogleUser {
+  email: string;
+  providerSubject: string;
   role: UserRole;
 }
 
@@ -34,9 +40,7 @@ export interface ActiveSessionUser {
 }
 
 export type PasswordResetConsumption =
-  | { status: 'consumed'; email: string }
-  | { status: 'reused' }
-  | null;
+  { status: 'consumed'; email: string } | { status: 'reused' } | null;
 
 @Injectable()
 export class AuthRepository {
@@ -44,6 +48,40 @@ export class AuthRepository {
 
   findByEmail(email: string): Promise<User | null> {
     return this.dataSource.getRepository(User).findOne({ where: { email } });
+  }
+
+  findByGoogleSubject(providerSubject: string): Promise<User | null> {
+    return this.dataSource
+      .getRepository(User)
+      .createQueryBuilder('user')
+      .innerJoin(
+        AuthIdentity,
+        'identity',
+        'identity.user_id = user.id AND identity.provider = :provider AND identity.provider_subject = :providerSubject',
+        { provider: 'google', providerSubject },
+      )
+      .getOne();
+  }
+
+  async createGoogleUserWithProfile(input: NewGoogleUser): Promise<User> {
+    return this.dataSource.transaction(async (manager) => {
+      const user = await manager.save(
+        manager.create(User, {
+          email: input.email,
+          passwordHash: null,
+          role: input.role,
+        }),
+      );
+      await manager.save(
+        manager.create(AuthIdentity, {
+          userId: user.id,
+          provider: 'google',
+          providerSubject: input.providerSubject,
+        }),
+      );
+      await this.saveEmptyProfile(manager, user.id, input.role);
+      return user;
+    });
   }
 
   findById(id: string): Promise<User | null> {
@@ -73,11 +111,13 @@ export class AuthRepository {
       if (!user || user.tokenVersion !== input.tokenVersion) {
         return false;
       }
-      await manager.save(manager.create(RefreshToken, {
-        userId: input.userId,
-        tokenHash: input.tokenHash,
-        expiresAt: input.expiresAt,
-      }));
+      await manager.save(
+        manager.create(RefreshToken, {
+          userId: input.userId,
+          tokenHash: input.tokenHash,
+          expiresAt: input.expiresAt,
+        }),
+      );
       return true;
     });
   }
@@ -120,17 +160,23 @@ export class AuthRepository {
           expiresAt: input.expiresAt,
         }),
       );
-      return { userId: user.id, role: user.role, tokenVersion: user.tokenVersion };
+      return {
+        userId: user.id,
+        role: user.role,
+        tokenVersion: user.tokenVersion,
+      };
     });
   }
 
-  async replacePasswordResetToken(input: Omit<StoredRefreshToken, 'tokenVersion'>): Promise<boolean> {
+  async replacePasswordResetToken(
+    input: Omit<StoredRefreshToken, 'tokenVersion'>,
+  ): Promise<boolean> {
     return this.dataSource.transaction(async (manager) => {
       const user = await manager.findOne(User, {
         where: { id: input.userId },
         lock: { mode: 'pessimistic_write' },
       });
-      if (!user || !isPasswordRecoveryEmailAllowed(user.email)) {
+      if (!user) {
         return false;
       }
       const previous = await manager.findOne(PasswordResetToken, {
@@ -145,12 +191,18 @@ export class AuthRepository {
     });
   }
 
-  findPasswordResetToken(tokenHash: string): Promise<PasswordResetToken | null> {
-    return this.dataSource.getRepository(PasswordResetToken).findOne({ where: { tokenHash } });
+  findPasswordResetToken(
+    tokenHash: string,
+  ): Promise<PasswordResetToken | null> {
+    return this.dataSource
+      .getRepository(PasswordResetToken)
+      .findOne({ where: { tokenHash } });
   }
 
   async deletePasswordResetToken(tokenHash: string): Promise<void> {
-    await this.dataSource.getRepository(PasswordResetToken).delete({ tokenHash });
+    await this.dataSource
+      .getRepository(PasswordResetToken)
+      .delete({ tokenHash });
   }
 
   async consumePasswordResetToken(
@@ -159,7 +211,9 @@ export class AuthRepository {
     isReusedPassword: (currentHash: string) => Promise<boolean>,
   ): Promise<PasswordResetConsumption> {
     return this.dataSource.transaction(async (manager) => {
-      const candidate = await manager.findOne(PasswordResetToken, { where: { tokenHash } });
+      const candidate = await manager.findOne(PasswordResetToken, {
+        where: { tokenHash },
+      });
       if (!candidate) {
         return null;
       }
@@ -167,8 +221,8 @@ export class AuthRepository {
         where: { id: candidate.userId },
         lock: { mode: 'pessimistic_write' },
       });
-      // Recheck under the user lock so an old link cannot bypass the current policy.
-      if (!user || !isPasswordRecoveryEmailAllowed(user.email)) {
+      // Ensure the owner still exists while holding the user lock.
+      if (!user) {
         return null;
       }
       const token = await manager.findOne(PasswordResetToken, {
@@ -180,14 +234,22 @@ export class AuthRepository {
       }
       // Compare against the current hash while the user is locked. A rejected
       // password leaves both the one-use token and existing sessions intact.
-      if (await isReusedPassword(user.passwordHash)) {
+      if (user.passwordHash && (await isReusedPassword(user.passwordHash))) {
         return { status: 'reused' };
       }
-      await manager.update(User, { id: user.id }, {
-        passwordHash,
-        tokenVersion: () => '"token_version" + 1',
-      });
-      await manager.update(RefreshToken, { userId: user.id, revokedAt: IsNull() }, { revokedAt: new Date() });
+      await manager.update(
+        User,
+        { id: user.id },
+        {
+          passwordHash,
+          tokenVersion: () => '"token_version" + 1',
+        },
+      );
+      await manager.update(
+        RefreshToken,
+        { userId: user.id, revokedAt: IsNull() },
+        { revokedAt: new Date() },
+      );
       await manager.delete(PasswordResetToken, { userId: user.id });
       return { status: 'consumed', email: user.email };
     });
@@ -228,9 +290,8 @@ export class AuthRepository {
   }
 
   async revokeAllForUser(userId: string): Promise<void> {
-    await this.dataSource.getRepository(RefreshToken).update(
-      { userId, revokedAt: IsNull() },
-      { revokedAt: new Date() },
-    );
+    await this.dataSource
+      .getRepository(RefreshToken)
+      .update({ userId, revokedAt: IsNull() }, { revokedAt: new Date() });
   }
 }

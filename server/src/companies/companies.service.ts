@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { isURL } from 'class-validator';
+import { ApplicationStatus } from '../applications/application-status.js';
 import {
   BadRequestException,
   ForbiddenException,
@@ -42,12 +43,14 @@ export class CompaniesService {
 
     const summary = await this.companiesRepository.getDashboardSummary(
       profile.id,
+      [ApplicationStatus.Submitted, ApplicationStatus.Reviewing],
     );
 
     const dto = new CompanyDashboardSummaryDto();
     dto.totalJobs = summary.totalJobs;
     dto.openJobs = summary.openJobs;
     dto.totalApplicants = summary.totalApplicants;
+    dto.pendingApplicants = summary.pendingApplicants;
     return dto;
   }
 
@@ -100,8 +103,6 @@ export class CompaniesService {
       perks?: string[];
       provinceId?: number | null;
       location?: string;
-      latitude?: number | null;
-      longitude?: number | null;
     } = {};
     if (typeof dto.name === 'string') data.name = dto.name.trim();
     if (typeof dto.businessType === 'string')
@@ -120,48 +121,11 @@ export class CompaniesService {
     if (dto.companySize !== undefined) data.companySize = dto.companySize.trim();
     if (dto.perks !== undefined) data.perks = dto.perks;
 
-    const currentProvinceId = profile.provinceId ?? null;
-    const provinceId =
-      dto.provinceId !== undefined ? dto.provinceId : currentProvinceId;
     if (dto.provinceId !== undefined) {
       if (dto.provinceId !== null) {
         await this.provincesService.requireById(dto.provinceId);
       }
       data.provinceId = dto.provinceId;
-    }
-
-    const hasLatitude = dto.latitude !== undefined;
-    const hasLongitude = dto.longitude !== undefined;
-    if (hasLatitude !== hasLongitude) {
-      throw new BadRequestException('ต้องส่ง latitude และ longitude พร้อมกัน');
-    }
-    if (hasLatitude && hasLongitude) {
-      const bothNull = dto.latitude === null && dto.longitude === null;
-      const validPair =
-        typeof dto.latitude === 'number' &&
-        typeof dto.longitude === 'number' &&
-        Number.isFinite(dto.latitude) &&
-        Number.isFinite(dto.longitude) &&
-        dto.latitude >= -90 &&
-        dto.latitude <= 90 &&
-        dto.longitude >= -180 &&
-        dto.longitude <= 180;
-      if (!bothNull && !validPair) {
-        throw new BadRequestException('พิกัดไม่ถูกต้อง');
-      }
-      if (validPair && provinceId === null) {
-        throw new BadRequestException('ต้องเลือกจังหวัดก่อนบันทึกหมุดสำนักงาน');
-      }
-      data.latitude = dto.latitude;
-      data.longitude = dto.longitude;
-    } else if (
-      dto.provinceId !== undefined &&
-      dto.provinceId !== currentProvinceId
-    ) {
-      // A pin from the previously selected province must not silently survive
-      // a province change. The caller can send a fresh coordinate pair instead.
-      data.latitude = null;
-      data.longitude = null;
     }
 
     if (Object.keys(data).length === 0) {
@@ -459,8 +423,6 @@ function toProfileDto(profile: {
   provinceId?: number | null;
   province?: { nameTh: string } | null;
   location?: string;
-  latitude?: number | null;
-  longitude?: number | null;
   websiteUrl?: string;
   companySize?: string;
   perks?: string[];
@@ -474,8 +436,6 @@ function toProfileDto(profile: {
   dto.provinceId = profile.provinceId ?? null;
   dto.provinceName = profile.province?.nameTh ?? null;
   dto.location = profile.location ?? '';
-  dto.latitude = profile.latitude ?? null;
-  dto.longitude = profile.longitude ?? null;
   dto.websiteUrl = profile.websiteUrl ?? '';
   dto.companySize = profile.companySize ?? '';
   dto.perks = profile.perks ?? [];

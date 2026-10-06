@@ -31,6 +31,28 @@ class AuthRemoteDataSource {
     });
   }
 
+  Future<GoogleAuthResponse> authenticateWithGoogle({
+    required String idToken,
+    String? role,
+  }) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        ApiConstants.googleLogin,
+        data: _googleAuthBody(idToken, role),
+      );
+      final data = response.data;
+      if (data == null) {
+        throw const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
+      }
+      if (data['code'] == 'role_required') {
+        return const GoogleAuthResponse.roleRequired();
+      }
+      return GoogleAuthResponse.session(AuthSessionModel.fromJson(data));
+    } on DioException catch (error) {
+      throw mapAuthError(error);
+    }
+  }
+
   Future<void> logout() async {
     try {
       await _dio.post<void>(ApiConstants.logout);
@@ -56,10 +78,20 @@ class AuthRemoteDataSource {
   }
 }
 
+Map<String, String> _googleAuthBody(String idToken, String? role) {
+  final body = <String, String>{'idToken': idToken};
+  if (role != null) {
+    body['role'] = role;
+  }
+  return body;
+}
+
 AppException mapAuthError(DioException error) {
   switch (error.response?.statusCode) {
     case 409:
-      return const AppException('อีเมลนี้ถูกใช้แล้ว');
+      final data = error.response?.data;
+      final message = data is Map<String, dynamic> ? data['message'] : null;
+      return AppException(message is String ? message : 'อีเมลนี้ถูกใช้แล้ว');
     case 401:
       return const AppException('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
     case 400:
@@ -67,4 +99,16 @@ AppException mapAuthError(DioException error) {
     default:
       return const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
   }
+}
+
+class GoogleAuthResponse {
+  const GoogleAuthResponse._({this.session, this.roleRequired = false});
+
+  const GoogleAuthResponse.roleRequired() : this._(roleRequired: true);
+
+  const GoogleAuthResponse.session(AuthSessionModel value)
+    : this._(session: value);
+
+  final AuthSessionModel? session;
+  final bool roleRequired;
 }

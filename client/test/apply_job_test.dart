@@ -199,7 +199,7 @@ class _FakeJobRepository implements JobRepository {
   final JobDetail job;
 
   @override
-  Future<List<Job>> fetchFeed(JobFilter filter) async => const [];
+  Future<JobPage> fetchFeed(JobFilter filter) async => const JobPage();
 
   @override
   Future<JobDetail> fetchDetail(String jobId) async => job;

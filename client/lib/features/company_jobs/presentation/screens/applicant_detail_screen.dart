@@ -8,12 +8,12 @@ import 'package:gap/gap.dart';
 import '../../../../core/error/app_exception.dart';
 import '../../../../core/theme/app_colors_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
-import '../../../../core/widgets/app_card.dart';
-import '../../../../core/widgets/app_primary_button.dart';
+import '../widgets/company_applicant_widgets.dart';
+import '../../../../core/widgets/neo_button.dart';
+import '../../../student_profile/presentation/widgets/resume_preview_modal.dart';
 import '../../../../core/widgets/company_top_bar.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/loading_view.dart';
-import '../../../../core/widgets/status_chip.dart';
 import '../../domain/entities/company_job.dart';
 import 'package:client/features/student_profile/domain/entities/student_profile.dart';
 import '../providers/company_jobs_controller.dart';
@@ -91,10 +91,10 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
             onPressed: () => Navigator.of(ctx).pop(false),
             child: const Text('ยกเลิก'),
           ),
-          FilledButton(
-            style: isAccept
-                ? FilledButton.styleFrom(backgroundColor: AppColors.success)
-                : FilledButton.styleFrom(backgroundColor: Colors.red),
+          NeoButton(
+            variant: isAccept
+                ? NeoButtonVariant.secondary
+                : NeoButtonVariant.destructive,
             onPressed: () => Navigator.of(ctx).pop(true),
             child: Text(confirmText),
           ),
@@ -149,6 +149,7 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
     );
 
     return Scaffold(
+      backgroundColor: NeoColors.paperCanvas,
       appBar: CompanyTopBar(
         title: 'รายละเอียดผู้สมัคร',
         showBack: true,
@@ -160,7 +161,7 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
           icon: Icons.person_off_outlined,
           title: 'โหลดข้อมูลผู้สมัครไม่ได้',
           message: userVisibleError(error),
-          action: AppPrimaryButton(
+          action: NeoButton(
             onPressed: () => ref.invalidate(
               companyApplicantDetailProvider((
                 jobId: widget.jobId,
@@ -207,6 +208,8 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
                 ],
                 const SizedBox(height: 16),
                 _ResumeCard(
+                  jobId: widget.jobId,
+                  applicationId: widget.applicationId,
                   resumeFileName: applicant.resumeFileName,
                   resumeObjectKey: applicant.resumeObjectKey,
                 ),
@@ -225,12 +228,14 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
               child: Container(
                 padding: const EdgeInsets.all(kPagePadding),
                 decoration: const BoxDecoration(
-                  color: AppColors.surface,
-                  border: Border(top: BorderSide(color: AppColors.line)),
+                  color: NeoColors.paperCanvas,
+                  border: Border(
+                    top: BorderSide(color: NeoColors.inkSolid, width: 2),
+                  ),
                 ),
                 child: SizedBox(
                   width: double.infinity,
-                  child: AppPrimaryButton(
+                  child: NeoButton(
                     onPressed: _isUpdating
                         ? null
                         : () => _updateStatusToReviewing(applicant),
@@ -264,21 +269,16 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
               child: Container(
                 padding: const EdgeInsets.all(kPagePadding),
                 decoration: const BoxDecoration(
-                  color: AppColors.surface,
-                  border: Border(top: BorderSide(color: AppColors.line)),
+                  color: NeoColors.paperCanvas,
+                  border: Border(
+                    top: BorderSide(color: NeoColors.inkSolid, width: 2),
+                  ),
                 ),
                 child: Row(
                   children: [
                     Expanded(
-                      child: OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.red,
-                          side: const BorderSide(color: Colors.red),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
+                      child: NeoButton(
+                        variant: NeoButtonVariant.destructive,
                         onPressed: _isUpdating
                             ? null
                             : () => _confirmDecision(
@@ -286,7 +286,7 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
                                 applicantName: applicant.fullName,
                               ),
                         icon: const Icon(Icons.close_rounded, size: 18),
-                        label: const FittedBox(
+                        child: const FittedBox(
                           fit: BoxFit.scaleDown,
                           child: Text('ปฏิเสธ (Reject)'),
                         ),
@@ -294,14 +294,9 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: FilledButton.icon(
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.success,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                        ),
+                      child: NeoButton(
+                        variant: NeoButtonVariant.secondary,
+                        backgroundColor: NeoColors.freshMint,
                         onPressed: _isUpdating
                             ? null
                             : () => _confirmDecision(
@@ -309,7 +304,7 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
                                 applicantName: applicant.fullName,
                               ),
                         icon: const Icon(Icons.check_rounded, size: 18),
-                        label: const FittedBox(
+                        child: const FittedBox(
                           fit: BoxFit.scaleDown,
                           child: Text('ตอบรับ (Accept)'),
                         ),
@@ -339,21 +334,6 @@ class _ProfileHeaderCard extends ConsumerWidget {
   final String jobId;
   final String applicationId;
 
-  String _displayStatus(String status) {
-    switch (status.trim().toLowerCase()) {
-      case 'submitted':
-        return 'ยื่นใบสมัครแล้ว';
-      case 'reviewing':
-        return 'กำลังพิจารณา';
-      case 'accepted':
-        return 'ผ่านการคัดเลือก';
-      case 'rejected':
-        return 'ไม่ผ่านการคัดเลือก';
-      default:
-        return status;
-    }
-  }
-
   String _formatDate(DateTime? dateTime) {
     if (dateTime == null) return '';
     final local = dateTime.toLocal();
@@ -374,7 +354,7 @@ class _ProfileHeaderCard extends ConsumerWidget {
       )),
     );
 
-    return AppCard(
+    return CompanyApplicantCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -387,7 +367,7 @@ class _ProfileHeaderCard extends ConsumerWidget {
                   width: 52,
                   height: 52,
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
+                    color: NeoColors.skyBlue,
                     shape: BoxShape.circle,
                   ),
                   child: avatarBytesAsync.when(
@@ -437,6 +417,8 @@ class _ProfileHeaderCard extends ConsumerWidget {
                       applicant.fullName.isEmpty
                           ? 'ไม่ระบุชื่อ'
                           : applicant.fullName,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -472,14 +454,14 @@ class _ProfileHeaderCard extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 16),
-          const Divider(color: AppColors.line, height: 1),
+          const Divider(color: NeoColors.inkSolid, height: 1),
           const SizedBox(height: 14),
           Wrap(
             spacing: 12,
             runSpacing: 8,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              StatusChip(label: _displayStatus(applicant.status)),
+              CompanyApplicantStatusChip(status: applicant.status),
               if (applicant.createdAt != null)
                 Row(
                   mainAxisSize: MainAxisSize.min,
@@ -515,7 +497,7 @@ class _BioCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    return AppCard(
+    return CompanyApplicantCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -558,7 +540,7 @@ class _SkillsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    return AppCard(
+    return CompanyApplicantCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -592,11 +574,9 @@ class _SkillsCard extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.08),
+                    color: NeoColors.softLilac,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: AppColors.primary.withValues(alpha: 0.2),
-                    ),
+                    border: Border.all(color: NeoColors.inkSolid),
                   ),
                   child: Text(
                     skill,
@@ -623,7 +603,7 @@ class _ContactLinksCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    return AppCard(
+    return CompanyApplicantCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -654,9 +634,9 @@ class _ContactLinksCard extends StatelessWidget {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.04),
+                  color: NeoColors.surfaceCream,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.line),
+                  border: Border.all(color: NeoColors.inkSolid, width: 1.5),
                 ),
                 child: Row(
                   children: [
@@ -730,7 +710,7 @@ class _PortfolioProjectsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    return AppCard(
+    return CompanyApplicantCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -824,7 +804,7 @@ class _PortfolioCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    return AppCard(
+    return CompanyApplicantCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -853,18 +833,47 @@ class _PortfolioCard extends StatelessWidget {
   }
 }
 
-class _ResumeCard extends StatelessWidget {
-  const _ResumeCard({this.resumeFileName, this.resumeObjectKey});
+class _ResumeCard extends ConsumerWidget {
+  const _ResumeCard({
+    required this.jobId,
+    required this.applicationId,
+    this.resumeFileName,
+    this.resumeObjectKey,
+  });
+
+  final String jobId;
+  final String applicationId;
 
   final String? resumeFileName;
   final String? resumeObjectKey;
 
+  void _openPreview(BuildContext context) {
+    final provider = applicantResumeBytesProvider((
+      jobId: jobId,
+      applicationId: applicationId,
+    ));
+    showDialog<void>(
+      context: context,
+      builder: (_) => Consumer(
+        builder: (context, ref, _) => ResumePreviewModal(
+          fileName: resumeFileName ?? 'Resume ที่ใช้สมัคร.pdf',
+          readOnly: true,
+          pdfBytes: ref.watch(provider),
+          onRetry: () => ref.invalidate(provider),
+        ),
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
     final colors = context.colors;
 
-    return AppCard(
+    return CompanyApplicantCard(
+      onTap: resumeObjectKey != null && resumeObjectKey!.isNotEmpty
+          ? () => _openPreview(context)
+          : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -883,9 +892,9 @@ class _ResumeCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.background,
+              color: NeoColors.surfaceCream,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: colors.border),
+              border: Border.all(color: NeoColors.inkSolid, width: 1.5),
             ),
             child: Row(
               children: [
@@ -904,6 +913,7 @@ class _ResumeCard extends StatelessWidget {
                         style: textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const Gap(2),
@@ -921,6 +931,16 @@ class _ResumeCard extends StatelessWidget {
               ],
             ),
           ),
+          if (resumeObjectKey != null && resumeObjectKey!.isNotEmpty) ...[
+            const Gap(12),
+            NeoButton(
+              text: 'เปิด Resume (PDF)',
+              variant: NeoButtonVariant.secondary,
+              icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
+              isFullWidth: true,
+              onPressed: () => _openPreview(context),
+            ),
+          ],
         ],
       ),
     );
@@ -936,7 +956,7 @@ class _CoverLetterCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    return AppCard(
+    return CompanyApplicantCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

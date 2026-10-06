@@ -14,17 +14,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   const provinces = [
-    ThaiProvince(
-      id: 90,
-      nameTh: 'สงขลา',
-      centerLatitude: 7.19,
-      centerLongitude: 100.59,
-    ),
+    ThaiProvince(id: 90, nameTh: 'สงขลา'),
     ThaiProvince(
       id: 10,
       nameTh: 'กรุงเทพมหานคร',
-      centerLatitude: 13.75,
-      centerLongitude: 100.50,
       aliases: ['กรุงเทพฯ', 'กทม.'],
     ),
   ];
@@ -62,7 +55,11 @@ void main() {
     ),
   ];
 
-  Widget buildScreen(JobRepository repo) {
+  Widget buildScreen(WidgetTester tester, JobRepository repo) {
+    tester.view.physicalSize = const Size(390, 1100);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     return ProviderScope(
       overrides: [
         tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
@@ -77,22 +74,32 @@ void main() {
   }
 
   testWidgets('home lists open jobs and renders details', (tester) async {
-    await tester.pumpWidget(buildScreen(_FilteringJobRepository(sampleJobs)));
+    await tester.pumpWidget(
+      buildScreen(tester, _FilteringJobRepository(sampleJobs)),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Flutter Intern'), findsOneWidget);
     expect(find.text('UI/UX Designer Intern'), findsOneWidget);
     expect(find.text('Marketing Trainee'), findsOneWidget);
-    expect(find.text('On-site'), findsOneWidget);
+    expect(
+      find.descendant(of: find.byType(JobCard), matching: find.text('On-site')),
+      findsOneWidget,
+    );
     expect(
       find.descendant(of: find.byType(JobCard), matching: find.text('Hybrid')),
       findsOneWidget,
     );
-    expect(find.text('Remote'), findsOneWidget);
+    expect(
+      find.descendant(of: find.byType(JobCard), matching: find.text('Online')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('search input filters jobs by keyword', (tester) async {
-    await tester.pumpWidget(buildScreen(_FilteringJobRepository(sampleJobs)));
+    await tester.pumpWidget(
+      buildScreen(tester, _FilteringJobRepository(sampleJobs)),
+    );
     await tester.pumpAndSettle();
 
     final searchField = find.byType(TextField).first;
@@ -118,7 +125,9 @@ void main() {
   testWidgets(
     'tapping work mode chip filters jobs by work mode and unselecting clears it',
     (tester) async {
-      await tester.pumpWidget(buildScreen(_FilteringJobRepository(sampleJobs)));
+      await tester.pumpWidget(
+        buildScreen(tester, _FilteringJobRepository(sampleJobs)),
+      );
       await tester.pumpAndSettle();
 
       // Tap Online chip
@@ -144,7 +153,9 @@ void main() {
   testWidgets(
     'filter button opens bottom sheet, applying filters updates the feed and badge',
     (tester) async {
-      await tester.pumpWidget(buildScreen(_FilteringJobRepository(sampleJobs)));
+      await tester.pumpWidget(
+        buildScreen(tester, _FilteringJobRepository(sampleJobs)),
+      );
       await tester.pumpAndSettle();
 
       // Open filter bottom sheet
@@ -205,7 +216,9 @@ void main() {
   testWidgets('province alias search applies the canonical name', (
     tester,
   ) async {
-    await tester.pumpWidget(buildScreen(_FilteringJobRepository(sampleJobs)));
+    await tester.pumpWidget(
+      buildScreen(tester, _FilteringJobRepository(sampleJobs)),
+    );
     await tester.pumpAndSettle();
 
     await tester.tap(find.byTooltip('ตัวกรอง'));
@@ -237,8 +250,8 @@ class _FilteringJobRepository implements JobRepository {
   final List<Job> _allJobs;
 
   @override
-  Future<List<Job>> fetchFeed(JobFilter filter) async {
-    return _allJobs.where((job) {
+  Future<JobPage> fetchFeed(JobFilter filter) async {
+    final items = _allJobs.where((job) {
       if (filter.search.trim().isNotEmpty) {
         final query = filter.search.trim().toLowerCase();
         final matchesTitle = job.title.toLowerCase().contains(query);
@@ -269,6 +282,16 @@ class _FilteringJobRepository implements JobRepository {
       }
       return true;
     }).toList();
+    return JobPage(
+      items: items
+          .skip((filter.page - 1) * filter.limit)
+          .take(filter.limit)
+          .toList(),
+      total: items.length,
+      page: filter.page,
+      limit: filter.limit,
+      totalPages: (items.length / filter.limit).ceil(),
+    );
   }
 
   @override

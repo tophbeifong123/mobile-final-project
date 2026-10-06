@@ -3,7 +3,10 @@ import { ContactLinkDto } from './contact-link.dto.js';
 import { PortfolioLinkDto } from './portfolio-link.dto.js';
 
 export class StudentProfileDto {
-  @ApiProperty({ example: 'มีนา เพ็งชัย' })
+  @ApiProperty({
+    example: 'มีนา เพ็งชัย',
+    description: 'ชื่อจากโปรไฟล์ของนักศึกษาที่เข้าสู่ระบบ ตัดช่องว่างหัวท้าย; ยังไม่กรอกคืนค่าว่าง ไม่มีชื่อสมมติ',
+  })
   fullName: string;
 
   @ApiProperty({ nullable: true, required: false })
@@ -12,7 +15,10 @@ export class StudentProfileDto {
   @ApiProperty({ nullable: true, required: false })
   customUniversityName: string | null;
 
-  @ApiProperty({ example: 'มหาวิทยาลัยสงขลานครินทร์', description: 'ชื่อสำหรับแสดงผลจากมาสเตอร์หรือชื่อที่กรอกเอง' })
+  @ApiProperty({
+    example: 'มหาวิทยาลัยสงขลานครินทร์',
+    description: 'ชื่อมหาวิทยาลัยจากมาสเตอร์หรือชื่อที่กรอกเอง ตัดช่องว่างหัวท้าย; ยังไม่กรอกคืนค่าว่าง ไม่มีมหาวิทยาลัยสมมติ',
+  })
   university: string;
 
   @ApiProperty({ example: 'วิทยาการคอมพิวเตอร์' })

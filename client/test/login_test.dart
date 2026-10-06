@@ -6,6 +6,7 @@ import 'package:client/features/auth/domain/entities/auth_session.dart';
 import 'package:client/features/auth/domain/repositories/auth_repository.dart';
 import 'package:client/features/auth/presentation/providers/auth_controller.dart';
 import 'package:client/features/auth/presentation/screens/login_screen.dart';
+import 'package:client/features/auth/presentation/screens/forgot_password_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -37,13 +38,17 @@ void main() {
       await tester.pumpAndSettle();
 
       // Top Bar
-      expect(find.text('เข้าสู่ระบบนักศึกษา'), findsOneWidget);
+      expect(find.text('เข้าสู่ระบบ InternFinder'), findsOneWidget);
+      expect(find.text('เข้าสู่ระบบนักศึกษา'), findsNothing);
 
       // Form Labels & Helpers
-      expect(find.text('อีเมลนักศึกษา / มหาวิทยาลัย'), findsOneWidget);
-      expect(find.text('รหัสนักศึกษาหรืออีเมลมหาวิทยาลัย'), findsOneWidget);
+      expect(find.text('อีเมล'), findsOneWidget);
+      expect(find.text('อีเมลที่ใช้สมัครสมาชิก'), findsOneWidget);
+      expect(find.text('you@example.com'), findsOneWidget);
+      expect(find.text('อีเมลนักศึกษา / มหาวิทยาลัย'), findsNothing);
+      expect(find.text('รหัสนักศึกษาหรืออีเมลมหาวิทยาลัย'), findsNothing);
       expect(find.text('รหัสผ่าน'), findsOneWidget);
-      expect(find.text('ลืมรหัส PIN?'), findsOneWidget);
+      expect(find.textContaining('PIN'), findsNothing);
 
       // Checkbox & Forgot Password
       expect(find.text('จดจำฉันไว้ในระบบ'), findsOneWidget);
@@ -186,8 +191,13 @@ void main() {
     expect(find.byIcon(Icons.visibility_off_outlined), findsOneWidget);
   });
 
-  for (final link in ['ลืมรหัส PIN?', 'ลืมรหัสผ่าน?']) {
-    testWidgets('$link opens recovery with the entered email', (tester) async {
+  for (final email in [
+    'student+intern@email.psu.ac.th',
+    'company@example.com',
+  ]) {
+    testWidgets('forgot password opens the reset request form with $email', (
+      tester,
+    ) async {
       final fakeAuthRepo = _FakeAuthRepository();
       final router = GoRouter(
         initialLocation: '/login',
@@ -195,8 +205,9 @@ void main() {
           GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
           GoRoute(
             path: '/forgot-password',
-            builder: (_, state) =>
-                Scaffold(body: Text(state.uri.queryParameters['email'] ?? '')),
+            builder: (_, state) => ForgotPasswordScreen(
+              initialEmail: state.uri.queryParameters['email'] ?? '',
+            ),
           ),
         ],
       );
@@ -216,26 +227,70 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      await tester.enterText(
-        find.byType(TextFormField).first,
-        'student+intern@university.ac.th',
-      );
-      await tester.tap(find.text(link));
+      await tester.enterText(find.byType(TextFormField).first, email);
+      await tester.tap(find.text('ลืมรหัสผ่าน?'));
       await tester.pumpAndSettle();
       expect(
         router.routeInformationProvider.value.uri.path,
         '/forgot-password',
       );
-      expect(find.text('student+intern@university.ac.th'), findsOneWidget);
+      expect(find.byType(ForgotPasswordScreen), findsOneWidget);
+      expect(find.text('ส่งลิงก์รีเซ็ตรหัสผ่าน'), findsOneWidget);
+      expect(
+        tester
+            .widget<TextFormField>(find.byType(TextFormField))
+            .controller!
+            .text,
+        email,
+      );
     });
+  }
+
+  for (final role in UserRole.values) {
+    testWidgets(
+      'shared login opens a ${role.name} session with unchanged credentials',
+      (tester) async {
+        final repository = _FakeAuthRepository(role: role);
+        final container = ProviderContainer(
+          overrides: [
+            tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+            authRepositoryProvider.overrideWithValue(repository),
+          ],
+        );
+        addTearDown(container.dispose);
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp(
+              theme: AppTheme.lightTheme,
+              home: const LoginScreen(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final email = '${role.name}@example.com';
+        await tester.enterText(find.byType(TextFormField).first, ' $email ');
+        await tester.enterText(find.byType(TextFormField).last, 'secret1234');
+        await tester.tap(find.text('เข้าสู่ระบบ'));
+        await tester.pumpAndSettle();
+        expect(repository.loginCalls, 1);
+        expect(repository.lastEmail, email);
+        expect(repository.lastPassword, 'secret1234');
+        expect(container.read(authControllerProvider).value?.role, role);
+        expect(find.textContaining('PIN'), findsNothing);
+      },
+    );
   }
 }
 
 class _FakeAuthRepository implements AuthRepository {
-  _FakeAuthRepository({this.shouldFail = false});
+  _FakeAuthRepository({this.shouldFail = false, this.role = UserRole.student});
 
   final bool shouldFail;
+  final UserRole role;
   int loginCalls = 0;
+  String? lastEmail;
+  String? lastPassword;
 
   @override
   Future<AuthSession?> restore() async => null;
@@ -246,13 +301,15 @@ class _FakeAuthRepository implements AuthRepository {
     required String password,
   }) async {
     loginCalls++;
+    lastEmail = email;
+    lastPassword = password;
     if (shouldFail) {
       throw const AppException('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
     }
-    return const AuthSession(
+    return AuthSession(
       accessToken: 'test-token',
       refreshToken: 'test-refresh',
-      role: UserRole.student,
+      role: role,
     );
   }
 
@@ -267,6 +324,14 @@ class _FakeAuthRepository implements AuthRepository {
       refreshToken: 'test-refresh',
       role: UserRole.student,
     );
+  }
+
+  @override
+  Future<bool> authenticateWithGoogle({
+    required String idToken,
+    UserRole? role,
+  }) async {
+    throw const AppException('Not implemented in fake');
   }
 
   @override

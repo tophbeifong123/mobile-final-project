@@ -391,7 +391,7 @@ class _JobSummaryCard extends StatelessWidget {
                 if (application.workMode != null &&
                     application.workMode!.isNotEmpty)
                   _MetaTag(
-                    label: _workModeText(application.workMode!),
+                    label: workModeLabelFromApi(application.workMode!),
                     icon: Icons.devices_outlined,
                   ),
                 if (application.category != null &&
@@ -433,19 +433,6 @@ class _JobSummaryCard extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _workModeText(String mode) {
-    switch (mode) {
-      case 'on_site':
-        return 'On-site';
-      case 'hybrid':
-        return 'Hybrid';
-      case 'remote':
-        return 'Remote';
-      default:
-        return mode;
-    }
   }
 }
 

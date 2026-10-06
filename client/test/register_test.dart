@@ -55,12 +55,13 @@ void main() {
       expect(find.text('ตรงตามบัตร/รหัสนักศึกษา'), findsOneWidget);
       expect(find.text('อีเมลมหาวิทยาลัย'), findsOneWidget);
       expect(find.text('ตั้งรหัสผ่าน'), findsOneWidget);
-      expect(find.text('อย่างน้อย 8 ตัวอักษร'), findsOneWidget);
+      expect(find.text('ยังขาด: อย่างน้อย 8 ตัวอักษร'), findsOneWidget);
+      expect(find.text('ผ่านแล้ว: ไม่เกิน 72 ไบต์ (UTF-8)'), findsOneWidget);
+      expect(find.text('ยังขาด: ยืนยันรหัสผ่านตรงกัน'), findsOneWidget);
       expect(find.text('ยืนยันรหัสผ่าน'), findsOneWidget);
 
-      // Password strength
-      expect(find.text('ระดับความปลอดภัย: '), findsOneWidget);
-      expect(find.text('ยังไม่ปลอดภัย'), findsOneWidget);
+      expect(find.text('เงื่อนไขรหัสผ่าน'), findsOneWidget);
+      expect(find.textContaining('ระดับความปลอดภัย'), findsNothing);
 
       // Submit button
       expect(find.text('สร้างบัญชีผู้ใช้'), findsOneWidget);
@@ -277,6 +278,14 @@ class _FakeAuthRepository implements AuthRepository {
       refreshToken: 'refresh-token',
       role: role,
     );
+  }
+
+  @override
+  Future<bool> authenticateWithGoogle({
+    required String idToken,
+    UserRole? role,
+  }) async {
+    throw const AppException('Not implemented in fake');
   }
 
   @override

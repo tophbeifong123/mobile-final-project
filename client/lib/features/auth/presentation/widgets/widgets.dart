@@ -1,9 +1,10 @@
 export 'auth_divider.dart';
 export 'auth_social_button.dart';
 export 'auth_text_field.dart';
+export 'google_sign_in_button.dart';
 export 'auth_top_bar.dart';
 export 'neo_submit_button.dart';
-export 'password_strength_bar.dart';
+export 'registration_password_checklist.dart';
 export 'rocket_badge.dart';
 export 'role_segmented_toggle.dart';
 export 'social_icons.dart';

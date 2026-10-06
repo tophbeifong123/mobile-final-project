@@ -119,7 +119,7 @@ void main() {
   );
 
   test(
-    'forgot-password 400 explains the two permitted PSU email domains',
+    'forgot-password 400 explains invalid email without domain restrictions',
     () async {
       final dio = Dio();
       addTearDown(dio.close);
@@ -143,13 +143,13 @@ void main() {
       await expectLater(
         PasswordRecoveryRemoteDataSource(
           dio,
-        ).requestPasswordReset(email: 'student@gmail.com'),
+        ).requestPasswordReset(email: 'invalid-email'),
         throwsA(
           isA<PasswordRecoveryException>()
               .having(
                 (error) => error.message,
-                'allowed domain message',
-                PasswordRecoveryEmailPolicy.allowedDomainMessage,
+                'invalid email message',
+                PasswordRecoveryEmailPolicy.invalidEmailMessage,
               )
               .having((error) => error.invalidLink, 'invalidLink', false),
         ),

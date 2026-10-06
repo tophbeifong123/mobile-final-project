@@ -15,6 +15,7 @@ import 'package:client/features/company_jobs/presentation/providers/company_jobs
 import 'package:client/features/company_profile/domain/entities/company_profile.dart';
 import 'package:client/features/company_profile/presentation/providers/company_profile_controller.dart';
 import 'package:client/features/jobs/presentation/providers/jobs_controller.dart';
+import 'package:client/features/jobs/domain/entities/job.dart';
 import 'package:client/features/jobs/presentation/widgets/feed_top_bar.dart';
 import 'package:client/features/notifications/domain/entities/app_notification.dart';
 import 'package:client/features/notifications/presentation/providers/notifications_controller.dart';
@@ -34,6 +35,7 @@ const _companyPages = [
   (path: '/company/jobs', title: 'ประกาศของบริษัท', secondary: false),
   (path: '/company/profile', title: 'โปรไฟล์บริษัท', secondary: false),
   (path: '/company/jobs/new', title: 'สร้างประกาศ', secondary: true),
+  (path: '/company/jobs/job-1', title: 'รายละเอียดประกาศ', secondary: true),
   (path: '/company/jobs/job-1/edit', title: 'แก้ประกาศ', secondary: true),
   (
     path: '/company/jobs/job-1/applicants',
@@ -291,6 +293,9 @@ Future<GoRouter> _mountApp(
       companyJobDetailProvider.overrideWith(
         (ref, jobId) => _result(loadState, _editableJob),
       ),
+      companyOwnedJobProvider.overrideWith(
+        (ref, jobId) => _result(loadState, _ownedJob),
+      ),
       companyJobApplicantsProvider.overrideWith(
         (ref, jobId) => _result(loadState, const []),
       ),
@@ -300,7 +305,7 @@ Future<GoRouter> _mountApp(
       companyProfileControllerProvider.overrideWith(
         () => _ProfileController(loadState),
       ),
-      jobFeedProvider.overrideWith((ref) async => const []),
+      jobFeedProvider.overrideWith((ref) async => const JobPage()),
       savedJobsProvider.overrideWith((ref) async => const []),
       studentProfileControllerProvider.overrideWith(_StudentController.new),
       notificationsProvider.overrideWith(_EmptyNotifications.new),
@@ -353,6 +358,20 @@ Iterable<String> _registeredPaths(
   }
 }
 
+const _ownedJob = CompanyOwnedJob(
+  id: 'job-1',
+  title: 'Flutter Intern',
+  description: 'Build mobile apps',
+  province: 'สงขลา',
+  workMode: 'hybrid',
+  category: 'Software',
+  hasAllowance: false,
+  requirements: 'Flutter',
+  status: 'open',
+  version: 1,
+  applicantCount: 1,
+  pendingApplicantCount: 0,
+);
 const _editableJob = EditableJob(
   id: 'job-1',
   title: 'Flutter Intern',

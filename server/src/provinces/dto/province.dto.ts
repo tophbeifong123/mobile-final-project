@@ -12,13 +12,4 @@ export class ProvinceDto {
 
   @ApiProperty({ type: [String], example: ['กทม.', 'กรุงเทพฯ'] })
   aliases: string[];
-
-  @ApiProperty({
-    example: 13.753,
-    description: 'ตำแหน่งประมาณสำหรับเปิดแผนที่ ไม่ใช่พิกัดสำนักงาน',
-  })
-  centerLatitude: number;
-
-  @ApiProperty({ example: 100.5 })
-  centerLongitude: number;
 }

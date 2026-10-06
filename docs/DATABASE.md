@@ -13,6 +13,7 @@ users ||--o| student_profiles : "role = student"
 users ||--o| company_profiles : "role = company"
 provinces ||--o{ company_profiles : "selected office province"
 users ||--o{ refresh_tokens : has
+users ||--o{ auth_identities : Google provider identity
 users ||--o| password_reset_tokens : recovery
 
 company_profiles ||--o{ jobs : posts
@@ -56,6 +57,20 @@ applications ||--o{ outbox_messages : "enqueue on status change"
 | role | user_role | ตั้งตอนสมัคร แก้ไม่ได้ |
 | created_at | timestamptz | |
 | updated_at | timestamptz | |
+
+บัญชี Google-only มี password_hash เป็น null และ password login ต้องปฏิเสธอย่างปลอดภัยเมื่อ hash เป็น null. ตาราง auth_identities เก็บ provider (google), provider_subject (Google sub), user_id และเวลาสร้าง; unique (provider, provider_subject) และ FK ไป users. Email ยังคง unique ใน users; ห้ามผูกบัญชีเดิมอัตโนมัติจาก email.
+
+### auth_identities
+
+| คอลัมน์ | ชนิด | หมายเหตุ |
+|---|---|---|
+| id | uuid | PK |
+| user_id | uuid | FK → users.id |
+| provider | varchar | เช่น google |
+| provider_subject | varchar | ค่า sub จาก ID token ที่ verify แล้ว |
+| created_at | timestamptz | |
+
+Unique ที่ (provider, provider_subject) ใช้ระบุตัวผู้ให้บริการ ไม่ใช้ email เป็น identity.
 
 ### refresh_tokens
 
@@ -124,8 +139,6 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | description | text | |
 | province_id | smallint | null ได้, FK → provinces.id; รหัสจังหวัดตามกรมการปกครอง |
 | location | text | คอลัมน์เดิม; ที่อยู่สั้นแยกจากจังหวัด จำกัดข้อมูลใหม่ 255 ตัวอักษรใน service ไม่ตัดข้อมูลเก่า |
-| latitude | double precision | null ได้; พิกัดหมุดสำนักงาน WGS84 |
-| longitude | double precision | null ได้; ต้องมีหรือไม่มีพร้อม latitude |
 | website_url | varchar(1024) | เว็บไซต์ HTTP/HTTPS หรือค่าว่าง |
 | company_size | varchar(100) | ขนาดองค์กร หรือค่าว่าง |
 | perks | text[] | สวัสดิการที่บริษัทระบุ |
@@ -135,9 +148,7 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 
 ตัวเลขแดชบอร์ดไม่เก็บเป็นคอลัมน์ นับจาก `jobs` กับ `applications` แล้วเขียนทับค่าใน Redis ถ้า Redis หายให้นับจากตารางนี้ใหม่
 
-เว็บไซต์ ขนาดองค์กร สวัสดิการ ที่อยู่ และรูปหน้าปกมาจาก migration `1759300000000-add-details-and-cover-to-company-profiles` ที่มี up/down; IFND-141 อ่านข้อมูลล่าสุดผ่าน join ไม่เก็บสำเนาใน jobs. Migration IFND-138 เพิ่มเฉพาะมาสเตอร์จังหวัดและ `province_id`/`latitude`/`longitude` ไม่เพิ่มหรือลบคอลัมน์ `location` เดิมใน up/down.
-
-`latitude` และ `longitude` ต้องเป็นคู่ อยู่ในช่วงพิกัดที่ถูกต้อง และมี `province_id` ก่อนเสมอ เมื่อเปลี่ยนจังหวัดโดยไม่ส่งพิกัดใหม่ service ล้างหมุดเดิม ไม่เอาหมุดจากจังหวัดก่อนหน้ามาใช้ต่อ
+เว็บไซต์ ขนาดองค์กร สวัสดิการ ที่อยู่ และรูปหน้าปกมาจาก migration `1759300000000-add-details-and-cover-to-company-profiles` ที่มี up/down; IFND-141 อ่านข้อมูลล่าสุดผ่าน join ไม่เก็บสำเนาใน jobs. Migration `1791158400000-add-company-office-location` เพิ่มมาสเตอร์จังหวัดและ `province_id` โดยไม่เพิ่มหรือลบคอลัมน์ `location` เดิม. Migration `1791744000000-drop-office-pin` ลบ `latitude`/`longitude` ของโปรไฟล์และจุดกึ่งกลางจังหวัด เพราะไม่มีหน้าไหนแสดงแผนที่.
 
 ### provinces
 
@@ -148,10 +159,8 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | id | smallint | PK, รหัสจังหวัด |
 | name_th | varchar(100) | unique, ชื่อจังหวัดมาตรฐาน |
 | aliases | text[] | ชื่อเรียกสำหรับค้นหา |
-| center_latitude | double precision | จุดประมาณสำหรับเปิดแผนที่ในบริเวณจังหวัด ไม่ใช่พิกัดสำนักงาน |
-| center_longitude | double precision | WGS84, ใช้คู่กับ center_latitude |
 
-ข้อมูลรหัสและชื่ออิง [มาตรฐานจังหวัดกระทรวงพาณิชย์](https://std.moc.go.th/std/group/28) ส่วนจุดเปิดแผนที่เป็นพิกัดประมาณดัดแปลงจาก [Open Admin Data (CC BY 4.0)](https://github.com/open-admin-data/thailand-administrative-divisions) แอปใช้ข้อมูลนี้ในเครื่องหลังเรียก API ไม่เรียก geocoding ภายนอก
+ข้อมูลรหัสและชื่ออิง [มาตรฐานจังหวัดกระทรวงพาณิชย์](https://std.moc.go.th/std/group/28) แอปใช้ข้อมูลนี้ในเครื่องหลังเรียก API ไม่เรียก geocoding ภายนอก
 
 
 ### jobs
@@ -164,8 +173,10 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | description | text | |
 | province | varchar | ชื่อจังหวัดมาตรฐานตรงกับ `provinces.name_th`; ใช้กรองจังหวัด งานเดิมที่เป็นชื่อเรียกถูกปรับใน migration |
 | work_mode | work_mode | |
-| category | varchar | หมวดงาน |
+| category | varchar | หมวดงานจากรายการเดียวกันทั้งบริษัทและนักศึกษา: IT & Software, Design & UX/UI, Marketing, Data |
 | has_allowance | boolean | มีเบี้ยเลี้ยงหรือไม่ |
+| openings | integer | null ได้; เมื่อระบุต้องเป็นจำนวนเต็มบวก |
+| allowance_amount | integer | null ได้เมื่อไม่มีเบี้ยเลี้ยง; เมื่อมีต้องเป็นจำนวนบาท 1 ถึง 1,000,000 |
 | requirements | text | คุณสมบัติ |
 | skills | text[] | ทักษะที่เปิดรับ |
 | status | job_status | ค่าเริ่มต้น `open` |
@@ -174,6 +185,8 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | updated_at | timestamptz | |
 
 นักศึกษาเห็นและสมัครได้เฉพาะ `status = open` งาน `closed` ยังอยู่ในการจัดการของบริษัท
+
+จำนวนรับเป็นช่องว่างได้ ถ้ามีเบี้ยเลี้ยงต้องเก็บจำนวนเงินเป็นบาทจำนวนเต็ม ถ้าไม่มีต้องไม่เก็บจำนวนเงิน ประกาศเดิมที่เคยเก็บทศนิยมหรือศูนย์จะถูกล้างตอน migration แล้วคอลัมน์ถูกปรับเป็น integer
 
 ### saved_jobs
 
@@ -268,6 +281,8 @@ Worker ที่สำเร็จแล้วตั้ง `sent` เกิน�
 ### สมัครบัญชี
 
 `DataSource.transaction()` สร้าง `users` พร้อม `student_profiles` หรือ `company_profiles` ที่ว่างตาม role ถ้าสร้างโปรไฟล์ไม่สำเร็จ ทั้งคู่ถูกยกเลิก
+
+Google signup ทำใน transaction เดียวกัน: สร้าง user โดยไม่มี password hash, auth identity จาก token ที่ตรวจแล้ว และ role-specific profile. บัญชี Google ใหม่ต้องมี role ก่อนเริ่ม transaction; ถ้า email ชนบัญชีเดิมให้ยกเลิกโดยไม่เชื่อม identity. Unique identity/email constraints เป็นตัวตัดสินสุดท้ายเมื่อ request ชนกัน.
 
 ### สมัครงาน และเปิดหรือปิดรับสมัคร
 

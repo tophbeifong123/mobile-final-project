@@ -11,5 +11,10 @@ abstract class AuthRepository {
     required UserRole role,
   });
 
+  Future<bool> authenticateWithGoogle({
+    required String idToken,
+    UserRole? role,
+  });
+
   Future<void> logout();
 }

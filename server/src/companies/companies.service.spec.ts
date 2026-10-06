@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { UserRole } from '../auth/user-role.js';
+import { ApplicationStatus } from '../applications/application-status.js';
+
 import { ProvincesService } from '../provinces/provinces.service.js';
 import { StorageService } from '../storage/storage.service.js';
 import { CompaniesRepository } from './companies.repository.js';
@@ -56,6 +58,7 @@ describe('CompaniesService', () => {
         totalJobs: 5,
         openJobs: 3,
         totalApplicants: 12,
+        pendingApplicants: 7,
       });
 
       const result = await service.getDashboard(companyUser);
@@ -65,11 +68,13 @@ describe('CompaniesService', () => {
       );
       expect(repository.getDashboardSummary).toHaveBeenCalledWith(
         'company-profile-1',
+        [ApplicationStatus.Submitted, ApplicationStatus.Reviewing],
       );
       expect(result).toEqual({
         totalJobs: 5,
         openJobs: 3,
         totalApplicants: 12,
+        pendingApplicants: 7,
       });
     });
 
@@ -83,11 +88,26 @@ describe('CompaniesService', () => {
         totalJobs: 1,
         openJobs: 1,
         totalApplicants: 0,
+        pendingApplicants: 0,
       });
 
       const result = await service.getDashboard(companyUser);
 
       expect(result.totalApplicants).toBe(0);
+      expect(result.pendingApplicants).toBe(0);
+    });
+
+    it('returns all zero counts for a company without jobs', async () => {
+      repository.findCompanyProfileByUserId.mockResolvedValue({ id: 'empty-company' });
+      const empty = { totalJobs: 0, openJobs: 0, totalApplicants: 0, pendingApplicants: 0 };
+      repository.getDashboardSummary.mockResolvedValue(empty);
+      expect(await service.getDashboard(companyUser)).toEqual(empty);
+    });
+
+    it('propagates a count failure instead of presenting false zero counts', async () => {
+      repository.findCompanyProfileByUserId.mockResolvedValue({ id: 'company-profile-1' });
+      repository.getDashboardSummary.mockRejectedValueOnce(new Error('Database unavailable'));
+      await expect(service.getDashboard(companyUser)).rejects.toThrow('Database unavailable');
     });
 
     it('rejects student accessing company dashboard', async () => {
@@ -132,8 +152,6 @@ describe('CompaniesService', () => {
         logoObjectKey: 'company-logos/user-1/logo.png',
         provinceId: null,
         provinceName: null,
-        latitude: null,
-        longitude: null,
         websiteUrl: 'https://example.com',
         location: 'Bangkok',
         companySize: '51-200 คน',
@@ -268,8 +286,6 @@ describe('CompaniesService', () => {
         logoObjectKey: null,
         provinceId: null,
         provinceName: null,
-        latitude: null,
-        longitude: null,
         websiteUrl: 'https://updated.com',
         location: 'FYI Center',
         companySize: '201-500 คน',
@@ -278,7 +294,7 @@ describe('CompaniesService', () => {
       });
     });
 
-    it('saves a selected province, short address and office pin', async () => {
+    it('saves a selected province and short address', async () => {
       repository.findCompanyProfileByUserId.mockResolvedValue({
         id: 'company-profile-1',
         provinceId: null,
@@ -295,15 +311,11 @@ describe('CompaniesService', () => {
         provinceId: 90,
         province: { nameTh: 'สงขลา' },
         location: 'ถนนกาญจนวนิช',
-        latitude: 7.0064,
-        longitude: 100.5008,
       });
 
       const result = await service.updateProfile(companyUser, {
         provinceId: 90,
         location: ' ถนนกาญจนวนิช ',
-        latitude: 7.0064,
-        longitude: 100.5008,
       });
 
       expect(provincesService.requireById).toHaveBeenCalledWith(90);
@@ -312,41 +324,12 @@ describe('CompaniesService', () => {
         {
           provinceId: 90,
           location: 'ถนนกาญจนวนิช',
-          latitude: 7.0064,
-          longitude: 100.5008,
         },
       );
       expect(result).toMatchObject({
         provinceName: 'สงขลา',
         location: 'ถนนกาญจนวนิช',
       });
-    });
-
-    it('rejects saving an office pin before a province is selected', async () => {
-      repository.findCompanyProfileByUserId.mockResolvedValue({
-        id: 'company-profile-1',
-        provinceId: null,
-      });
-
-      await expect(
-        service.updateProfile(companyUser, { latitude: 7, longitude: 100 }),
-      ).rejects.toBeInstanceOf(BadRequestException);
-      expect(repository.updateProfile).not.toHaveBeenCalled();
-    });
-
-    it('rejects a partial or out-of-range coordinate pair', async () => {
-      repository.findCompanyProfileByUserId.mockResolvedValue({
-        id: 'company-profile-1',
-        provinceId: 90,
-      });
-
-      await expect(
-        service.updateProfile(companyUser, { latitude: 7 }),
-      ).rejects.toBeInstanceOf(BadRequestException);
-      await expect(
-        service.updateProfile(companyUser, { latitude: 91, longitude: 100 }),
-      ).rejects.toBeInstanceOf(BadRequestException);
-      expect(repository.updateProfile).not.toHaveBeenCalled();
     });
 
     it('rejects an address longer than the short-address column', async () => {
@@ -359,41 +342,6 @@ describe('CompaniesService', () => {
         service.updateProfile(companyUser, { location: 'ก'.repeat(256) }),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(repository.updateProfile).not.toHaveBeenCalled();
-    });
-
-    it('clears the old pin when province changes without a new pin', async () => {
-      repository.findCompanyProfileByUserId.mockResolvedValue({
-        id: 'company-profile-1',
-        provinceId: 10,
-        latitude: 13.75,
-        longitude: 100.5,
-      });
-      provincesService.requireById.mockResolvedValue({
-        id: 90,
-        nameTh: 'สงขลา',
-      });
-      repository.updateProfile.mockResolvedValue({
-        name: 'Tech Corp',
-        businessType: 'IT',
-        description: '',
-        logoObjectKey: null,
-        provinceId: 90,
-        province: { nameTh: 'สงขลา' },
-        location: '',
-        latitude: null,
-        longitude: null,
-      });
-
-      await service.updateProfile(companyUser, { provinceId: 90 });
-
-      expect(repository.updateProfile).toHaveBeenCalledWith(
-        'company-profile-1',
-        {
-          provinceId: 90,
-          latitude: null,
-          longitude: null,
-        },
-      );
     });
 
     it('rejects a province ID not in the 77-province master', async () => {

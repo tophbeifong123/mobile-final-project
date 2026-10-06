@@ -8,10 +8,7 @@ class JobRepositoryImpl implements JobRepository {
   final JobRemoteDataSource _remote;
 
   @override
-  Future<List<Job>> fetchFeed(JobFilter filter) async {
-    final models = await _remote.fetchFeed(filter);
-    return models.map((model) => model.toEntity()).toList();
-  }
+  Future<JobPage> fetchFeed(JobFilter filter) => _remote.fetchFeed(filter);
 
   @override
   Future<JobDetail> fetchDetail(String jobId) async {

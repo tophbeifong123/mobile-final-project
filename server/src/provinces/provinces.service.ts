@@ -12,8 +12,6 @@ export class ProvincesService {
       id: province.id,
       nameTh: province.nameTh,
       aliases: province.aliases,
-      centerLatitude: province.centerLatitude,
-      centerLongitude: province.centerLongitude,
     }));
   }
 

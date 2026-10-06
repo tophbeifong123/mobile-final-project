@@ -5,7 +5,9 @@ import '../../../../core/provinces/thai_province_picker.dart';
 import '../../../../core/widgets/app_primary_button.dart';
 import '../../../../core/widgets/skill_picker_sheet.dart';
 import '../../domain/entities/job.dart';
+import '../job_categories.dart';
 import '../job_labels.dart';
+import 'job_category_picker.dart';
 
 class JobFilterSheet extends StatefulWidget {
   const JobFilterSheet({
@@ -25,9 +27,8 @@ class _JobFilterSheetState extends State<JobFilterSheet> {
   late final TextEditingController _province = TextEditingController(
     text: widget.initial.province ?? '',
   );
-  late final TextEditingController _category = TextEditingController(
-    text: widget.initial.category ?? '',
-  );
+  late final TextEditingController _categoryField;
+  String? _category;
   WorkMode? _workMode;
   bool? _hasAllowance;
   late List<String> _skills;
@@ -37,6 +38,10 @@ class _JobFilterSheetState extends State<JobFilterSheet> {
   void initState() {
     super.initState();
     _workMode = widget.initial.workMode;
+    _category = isJobCategory(widget.initial.category ?? '')
+        ? widget.initial.category
+        : null;
+    _categoryField = TextEditingController(text: _category ?? '');
     _hasAllowance = widget.initial.hasAllowance;
     _skills = List<String>.from(widget.initial.skills);
   }
@@ -44,7 +49,7 @@ class _JobFilterSheetState extends State<JobFilterSheet> {
   @override
   void dispose() {
     _province.dispose();
-    _category.dispose();
+    _categoryField.dispose();
     super.dispose();
   }
 
@@ -104,48 +109,25 @@ class _JobFilterSheetState extends State<JobFilterSheet> {
               ),
               const SizedBox(height: 12),
               TextField(
-                controller: _category,
-                textInputAction: TextInputAction.done,
+                key: const Key('filter-category-picker'),
+                controller: _categoryField,
+                readOnly: true,
+                onTap: _openCategoryPicker,
                 decoration: InputDecoration(
                   labelText: 'หมวดงาน',
+                  hintText: 'เลือกจากรายการหมวดงาน',
                   prefixIcon: const Icon(Icons.category_outlined),
-                  suffixIcon: _category.text.isNotEmpty
-                      ? IconButton(
+                  suffixIcon: _category == null
+                      ? const Icon(Icons.keyboard_arrow_down)
+                      : IconButton(
                           tooltip: 'ล้างหมวดงาน',
-                          onPressed: () => setState(() => _category.clear()),
-                          icon: const Icon(Icons.clear, size: 20),
-                        )
-                      : null,
+                          onPressed: () => setState(() {
+                            _category = null;
+                            _categoryField.clear();
+                          }),
+                          icon: const Icon(Icons.close),
+                        ),
                 ),
-                onChanged: (_) => setState(() {}),
-              ),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 4,
-                children: [
-                  for (final cat in [
-                    'IT & Software',
-                    'Design & UX/UI',
-                    'Marketing',
-                    'Data',
-                  ])
-                    ActionChip(
-                      label: Text(cat),
-                      avatar: _category.text.trim() == cat
-                          ? const Icon(Icons.check, size: 16)
-                          : null,
-                      onPressed: () {
-                        setState(() {
-                          if (_category.text.trim() == cat) {
-                            _category.clear();
-                          } else {
-                            _category.text = cat;
-                          }
-                        });
-                      },
-                    ),
-                ],
               ),
               const SizedBox(height: 16),
               Text('เบี้ยเลี้ยง', style: textTheme.titleMedium),
@@ -276,10 +258,19 @@ class _JobFilterSheetState extends State<JobFilterSheet> {
       search: widget.initial.search,
       province: _emptyToNull(_province.text),
       workMode: _workMode,
-      category: _emptyToNull(_category.text),
+      category: _category,
       hasAllowance: _hasAllowance,
       skills: _skills,
     );
+  }
+
+  Future<void> _openCategoryPicker() async {
+    final selected = await showJobCategoryPicker(context, selected: _category);
+    if (!mounted || selected == null) return;
+    setState(() {
+      _category = selected;
+      _categoryField.text = selected;
+    });
   }
 
   Future<void> _openProvincePicker() async {

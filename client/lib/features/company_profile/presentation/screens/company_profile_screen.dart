@@ -4,12 +4,8 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
-import 'package:latlong2/latlong.dart';
 
-import '../../../../core/provinces/thai_province.dart';
 import '../../../../core/provinces/thai_province_picker.dart';
-import '../../../../core/provinces/thai_provinces_provider.dart';
-import '../widgets/office_map_picker.dart';
 
 import '../../../../core/error/app_exception.dart';
 import '../../../../core/theme/app_tokens.dart';
@@ -107,8 +103,6 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
   late List<String> _perks;
   int? _provinceId;
   String? _provinceName;
-  double? _latitude;
-  double? _longitude;
 
   bool _saving = false;
   bool _uploadingLogo = false;
@@ -157,8 +151,6 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
     _perks = List<String>.from(p.perks);
     _provinceId = p.provinceId;
     _provinceName = p.provinceName;
-    _latitude = p.latitude;
-    _longitude = p.longitude;
   }
 
   @override
@@ -714,22 +706,6 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
 
   Widget _buildLocationCard() {
     final textTheme = Theme.of(context).textTheme;
-    final provinceAsync = _provinceId == null
-        ? null
-        : ref.watch(thaiProvincesProvider);
-    final provinceList = provinceAsync?.asData?.value;
-    ThaiProvince? province;
-    if (provinceList != null && _provinceId != null) {
-      for (final item in provinceList) {
-        if (item.id == _provinceId) {
-          province = item;
-          break;
-        }
-      }
-    }
-    final pin = _latitude != null && _longitude != null
-        ? LatLng(_latitude!, _longitude!)
-        : null;
 
     return _buildCardShell(
       iconBg: NeoColors.skyBlue,
@@ -741,7 +717,7 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
           Text('ที่ตั้งสำนักงาน', style: textTheme.titleMedium),
           const Gap(4),
           Text(
-            'เลือกจังหวัดและใส่ที่อยู่แยกกัน แล้วปักหมุดจุดสำนักงาน',
+            'เลือกจังหวัดและใส่ที่อยู่สั้นที่นักศึกษาจะเห็น',
             style: textTheme.bodySmall,
           ),
           const Gap(14),
@@ -756,21 +732,17 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
                   icon: const Icon(Icons.location_on_outlined),
                   label: Align(
                     alignment: Alignment.centerLeft,
-                    child: Text(
-                      province?.nameTh ?? _provinceName ?? 'เลือกจังหวัด',
-                    ),
+                    child: Text(_provinceName ?? 'เลือกจังหวัด'),
                   ),
                 ),
               ),
               if (_provinceId != null)
                 IconButton(
                   key: const Key('company-clear-province'),
-                  tooltip: 'ล้างจังหวัดและหมุด',
+                  tooltip: 'ล้างจังหวัด',
                   onPressed: () => setState(() {
                     _provinceId = null;
                     _provinceName = null;
-                    _latitude = null;
-                    _longitude = null;
                   }),
                   icon: const Icon(Icons.close),
                 ),
@@ -786,29 +758,6 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
             maxLines: 2,
             validator: _validateLocation,
           ),
-          if (_provinceId != null) ...[
-            const Gap(14),
-            if (province != null)
-              OfficeMapPicker(
-                key: ValueKey('office-picker-${province.id}'),
-                province: province,
-                pin: pin,
-                onPinChanged: (position) => setState(() {
-                  _latitude = position?.latitude;
-                  _longitude = position?.longitude;
-                }),
-              )
-            else if (provinceAsync?.hasError ?? false)
-              TextButton(
-                onPressed: () => ref.invalidate(thaiProvincesProvider),
-                child: const Text('โหลดจังหวัดไม่สำเร็จ ลองใหม่'),
-              )
-            else
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16),
-                child: Text('กำลังโหลดแผนที่จังหวัด...'),
-              ),
-          ],
         ],
       ),
     );
@@ -1175,8 +1124,6 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
     _locationController.text = profile.location;
     _provinceId = profile.provinceId;
     _provinceName = profile.provinceName;
-    _latitude = profile.latitude;
-    _longitude = profile.longitude;
   }
 
   Future<void> _pickProvince() async {
@@ -1186,11 +1133,6 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
     );
     if (!mounted || selected == null) return;
     setState(() {
-      if (_provinceId != selected.id) {
-        // The previous office pin cannot silently move into another province.
-        _latitude = null;
-        _longitude = null;
-      }
       _provinceId = selected.id;
       _provinceName = selected.nameTh;
       _error = null;
@@ -1314,8 +1256,6 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
       description: _descriptionController.text.trim(),
       provinceId: () => _provinceId,
       provinceName: () => _provinceName,
-      latitude: () => _latitude,
-      longitude: () => _longitude,
       websiteUrl: _websiteUrlController.text.trim(),
       location: _locationController.text.trim(),
       companySize: _selectedCompanySize,

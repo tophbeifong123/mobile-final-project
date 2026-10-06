@@ -81,7 +81,7 @@ export class JobsController {
 
   @Get(':id/company-logo')
   @ApiOperation({
-    summary: 'โลโก้บริษัทบนรายละเอียดงานที่เปิดรับ (เฉพาะนักศึกษา)',
+    summary: 'โลโก้บริษัทบนการ์ดฟีด งานที่บันทึกไว้ และรายละเอียดงานที่เปิดรับ',
   })
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiResponse({
@@ -98,7 +98,7 @@ export class JobsController {
   @ApiResponse({ status: 400, description: 'รหัสประกาศไม่ถูกต้อง' })
   @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
   @ApiResponse({ status: 403, description: 'เฉพาะนักศึกษา' })
-  @ApiResponse({ status: 404, description: 'ไม่พบประกาศที่เปิดรับหรือโลโก้' })
+  @ApiResponse({ status: 404, description: 'ไม่พบประกาศหรือโลโก้' })
   async getCompanyLogo(
     @CurrentUser() user: AuthUser,
     @Param('id', ParseUUIDPipe) id: string,
