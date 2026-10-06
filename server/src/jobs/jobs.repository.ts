@@ -33,6 +33,8 @@ export interface OpenJobRecord {
   allowanceAmount?: number | null;
   skills: string[];
   status: JobStatus;
+  createdAt: Date;
+  companyLogoObjectKey: string | null;
 }
 
 export interface OpenJobDetail extends OpenJobRecord {
@@ -161,7 +163,10 @@ export class JobsRepository {
       .addSelect('job.allowanceAmount', 'allowanceAmount')
       .addSelect('job.skills', 'skills')
       .addSelect('job.status', 'status')
+      .addSelect('job.createdAt', 'createdAt')
+      .addSelect('company.logoObjectKey', 'companyLogoObjectKey')
       .orderBy('saved.createdAt', 'DESC')
+      .addOrderBy('job.id', 'DESC')
       .offset(skip)
       .limit(limit)
       .getRawMany<Record<string, unknown>>();
@@ -346,7 +351,10 @@ export class JobsRepository {
       .addSelect('job.allowanceAmount', 'allowanceAmount')
       .addSelect('job.skills', 'skills')
       .addSelect('job.status', 'status')
+      .addSelect('job.createdAt', 'createdAt')
+      .addSelect('company.logoObjectKey', 'companyLogoObjectKey')
       .orderBy('job.createdAt', 'DESC')
+      .addOrderBy('job.id', 'DESC')
       .offset(skip)
       .limit(limit)
       .getRawMany<Record<string, unknown>>();
@@ -367,6 +375,7 @@ export class JobsRepository {
       .select('job.id', 'id')
       .addSelect('job.title', 'title')
       .addSelect('job.description', 'description')
+      .addSelect('job.createdAt', 'createdAt')
       .addSelect('job.province', 'province')
       .addSelect('job.workMode', 'workMode')
       .addSelect('job.category', 'category')
@@ -436,6 +445,8 @@ function toOpenJob(row: Record<string, unknown>): OpenJobRecord {
     allowanceAmount: row.allowanceAmount == null ? null : Number(row.allowanceAmount),
     skills: readArray(row, 'skills'),
     status: readField(row, 'status') as JobStatus,
+    createdAt: new Date(readField(row, 'createdAt') as string | Date),
+    companyLogoObjectKey: readField(row, 'companyLogoObjectKey') as string | null,
   };
 }
 

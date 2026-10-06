@@ -151,7 +151,7 @@ Password recovery รองรับอีเมลที่ใช้สมั�
 | GET | /api/students/me/resume/file | Resume Preview / Download |
 | GET | /api/jobs | Home / Job Feed |
 | GET | /api/jobs/:id | Job Detail |
-| GET | /api/jobs/:id/company-logo | โลโก้บริษัทบน Job Detail เฉพาะประกาศที่เปิดรับและนักศึกษาที่ login แล้ว |
+| GET | /api/jobs/:id/company-logo | โลโก้บริษัทบนฟีด รายละเอียดงาน และ Saved Jobs เฉพาะประกาศที่เปิดรับและนักศึกษาที่ login แล้ว |
 | POST, DELETE | /api/jobs/:id/save | Save จาก Job Detail |
 | GET | /api/jobs/saved | Saved Jobs |
 | POST | /api/jobs/:id/applications | Apply Job |

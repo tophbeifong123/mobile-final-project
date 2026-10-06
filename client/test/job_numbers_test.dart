@@ -1,3 +1,4 @@
+import 'package:client/features/jobs/domain/entities/job.dart';
 import 'package:client/core/network/dio_client.dart';
 import 'package:client/core/storage/token_storage.dart';
 import 'package:client/core/theme/app_theme.dart';
@@ -75,7 +76,11 @@ void main() {
               overrides: [
                 tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
                 jobFeedProvider.overrideWith(
-                  (ref) async => [JobModel.fromJson(json).toEntity()],
+                  (ref) async => JobPage(
+                    items: [JobModel.fromJson(json).toEntity()],
+                    total: 1,
+                    totalPages: 1,
+                  ),
                 ),
                 savedJobsProvider.overrideWith(
                   (ref) async =>

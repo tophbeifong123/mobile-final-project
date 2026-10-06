@@ -11,7 +11,7 @@ class JobRemoteDataSource {
 
   final Dio _dio;
 
-  Future<List<JobModel>> fetchFeed(JobFilter filter) async {
+  Future<JobPage> fetchFeed(JobFilter filter) async {
     try {
       final response = await _dio.get<dynamic>(
         ApiConstants.jobs,
@@ -33,17 +33,26 @@ class JobRemoteDataSource {
       if (data == null) {
         throw const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
       }
-      final List<dynamic> list;
-      if (data is Map<String, dynamic> && data['items'] is List) {
-        list = data['items'] as List<dynamic>;
-      } else if (data is List) {
-        list = data;
-      } else {
+      if (data is! Map<String, dynamic> ||
+          data['items'] is! List ||
+          data['total'] is! int ||
+          data['totalPages'] is! int ||
+          data['page'] is! int ||
+          data['limit'] is! int) {
         throw const AppException('ข้อมูลไม่ถูกต้อง');
       }
-      return list
-          .map((item) => JobModel.fromJson(item as Map<String, dynamic>))
-          .toList();
+      return JobPage(
+        items: (data['items'] as List)
+            .map(
+              (item) =>
+                  JobModel.fromJson(item as Map<String, dynamic>).toEntity(),
+            )
+            .toList(),
+        total: data['total'] as int,
+        totalPages: data['totalPages'] as int,
+        page: data['page'] as int,
+        limit: data['limit'] as int,
+      );
     } on DioException catch (error) {
       throw mapJobError(error);
     }

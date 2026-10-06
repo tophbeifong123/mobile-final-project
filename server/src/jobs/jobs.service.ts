@@ -443,11 +443,15 @@ function toFeedItem(job: {
   allowanceAmount?: number | null;
   skills?: string[];
   status: JobStatus;
+  createdAt: Date;
+  companyLogoObjectKey?: string | null;
 }): JobFeedItemDto {
   const dto = new JobFeedItemDto();
   dto.id = job.id;
   dto.title = job.title;
   dto.companyName = job.companyName;
+  dto.createdAt = job.createdAt;
+  dto.companyLogoAvailable = Boolean(job.companyLogoObjectKey);
   dto.province = job.province;
   dto.workMode = job.workMode;
   dto.category = job.category;
