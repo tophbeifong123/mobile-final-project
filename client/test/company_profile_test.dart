@@ -382,9 +382,7 @@ void main() {
       expect(find.text('Tech Solutions Co.'), findsWidgets);
     },
   );
-  testWidgets('province alias selects the canonical province', (
-    tester,
-  ) async {
+  testWidgets('province alias selects the canonical province', (tester) async {
     tester.view.physicalSize = const Size(390, 900);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);

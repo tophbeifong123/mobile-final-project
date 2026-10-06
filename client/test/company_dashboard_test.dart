@@ -203,10 +203,10 @@ void main() {
           _job(id: 'job-$index', title: 'ประกาศ $index', pending: index + 1),
       ],
     );
-      await tester.drag(find.byType(ListView), const Offset(0, -700));
-      await tester.pumpAndSettle();
-      await tester.ensureVisible(find.text('ดูอีก 1 ประกาศ'));
-      await tester.tap(find.text('ดูอีก 1 ประกาศ'));
+    await tester.drag(find.byType(ListView), const Offset(0, -700));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('ดูอีก 1 ประกาศ'));
+    await tester.tap(find.text('ดูอีก 1 ประกาศ'));
     await tester.pumpAndSettle();
     expect(find.text('Manage Jobs Destination'), findsOneWidget);
     await tester.tap(find.text('Jobs'));
