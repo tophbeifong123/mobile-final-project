@@ -129,6 +129,20 @@ class CompanyJobsController extends Notifier<void> {
     );
     ref.invalidate(companyJobApplicantsProvider(jobId));
   }
+
+  Future<List<int>> downloadApplicantDocument({
+    required String jobId,
+    required String applicationId,
+    required String documentId,
+  }) {
+    return ref
+        .read(companyJobRepositoryProvider)
+        .downloadApplicantDocument(
+          jobId: jobId,
+          applicationId: applicationId,
+          documentId: documentId,
+        );
+  }
 }
 
 final companyJobsControllerProvider =

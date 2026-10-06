@@ -46,7 +46,7 @@ void main() {
 
     expect(find.text('Resume'), findsOneWidget);
     expect(find.text('my_resume.pdf'), findsOneWidget);
-    expect(find.text('เปลี่ยน'), findsOneWidget);
+    expect(find.text('แก้ไข'), findsOneWidget);
   });
 
   testWidgets(
@@ -80,7 +80,7 @@ void main() {
 
       expect(find.text('Resume'), findsOneWidget);
       expect(find.text('ยังไม่มี Resume ในระบบ'), findsOneWidget);
-      expect(find.text('อัปโหลด'), findsOneWidget);
+      expect(find.text('แก้ไข'), findsOneWidget);
     },
   );
 
@@ -116,11 +116,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('อัปโหลด Resume'), findsWidgets);
+      expect(find.text('เอกสารของฉัน'), findsOneWidget);
+      expect(find.text('Transcript'), findsOneWidget);
       expect(find.text('Resume ในระบบ'), findsOneWidget);
       expect(find.text('current_resume.pdf'), findsOneWidget);
       expect(find.text('เลือกไฟล์ PDF จากเครื่อง'), findsOneWidget);
-      expect(find.text('เลือกไฟล์'), findsOneWidget);
+      expect(find.text('แก้ไข CV'), findsOneWidget);
     },
   );
 }
@@ -174,4 +175,23 @@ class _FakeResumeRepository implements ResumeRepository {
   Future<List<int>> downloadResumePdf() async {
     return [0x25, 0x50, 0x44, 0x46];
   }
+
+  @override
+  Future<List<int>> downloadDocumentPdf(String id) async {
+    return [0x25, 0x50, 0x44, 0x46];
+  }
+
+  @override
+  Future<List<StudentDocument>> listDocuments() async => const [];
+
+  @override
+  Future<StudentDocument> uploadDocument({
+    required String kind,
+    required String filePath,
+    required String fileName,
+    List<int>? bytes,
+  }) async => StudentDocument(id: 'doc', type: kind, fileName: fileName);
+
+  @override
+  Future<void> deleteDocument(String id) async {}
 }

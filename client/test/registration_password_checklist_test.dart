@@ -13,14 +13,15 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   for (final entry in <String, bool>{
     'abcdefg': false,
-    'abcdefgh': true,
-    List.filled(72, 'a').join(): true,
+    'abcdefgh': false,
+    'Abcdef1!': true,
+    'Aa1!${List.filled(68, 'a').join()}': true,
     List.filled(73, 'a').join(): false,
-    List.filled(24, 'ก').join(): true,
+    'Aa1!${List.filled(22, 'ก').join()}aa': true,
     List.filled(25, 'ก').join(): false,
     List.filled(4, '🔐').join(): false,
-    List.filled(8, '🔐').join(): true,
-    List.filled(18, '🔐').join(): true,
+    List.filled(8, '🔐').join(): false,
+    'Aa1!${List.filled(17, '🔐').join()}': true,
     List.filled(19, '🔐').join(): false,
   }.entries) {
     test('Unicode/UTF-8 password boundary: ${entry.key}', () {
@@ -77,38 +78,56 @@ void main() {
   }
 
   testWidgets(
-    'checklist changes live and rechecks confirmation when password changes',
+    'compact guidance updates live and confirmation errors stay under field',
     (tester) async {
       await openRegister(tester);
       final password = find.byType(TextFormField).at(2);
       final confirmation = find.byType(TextFormField).at(3);
-      expect(find.text('ยังขาด: อย่างน้อย 8 ตัวอักษร'), findsOneWidget);
-      expect(find.text('ผ่านแล้ว: ไม่เกิน 72 ไบต์ (UTF-8)'), findsOneWidget);
-      expect(find.text('ยังขาด: ยืนยันรหัสผ่านตรงกัน'), findsOneWidget);
+      expect(
+        find.text('อย่างน้อย 8 ตัว มี A–Z, a–z, ตัวเลข และสัญลักษณ์'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('เพิ่มอีก:'), findsNothing);
+      expect(find.text('รหัสผ่านทั้งสองช่องไม่ตรงกัน'), findsNothing);
+      expect(find.textContaining('ไบต์ (UTF-8)'), findsNothing);
+
       await tester.enterText(password, 'abcdefgh');
       await tester.pump();
-      expect(find.text('ผ่านแล้ว: อย่างน้อย 8 ตัวอักษร'), findsOneWidget);
+      expect(
+        find.text('เพิ่มอีก: ตัวพิมพ์ใหญ่ A–Z, ตัวเลข, สัญลักษณ์ เช่น ! @ #'),
+        findsOneWidget,
+      );
+      await tester.enterText(password, 'Abcdef1!');
+      await tester.pump();
+      expect(find.textContaining('เพิ่มอีก:'), findsNothing);
+
       await tester.enterText(confirmation, 'different');
       await tester.pump();
-      expect(find.text('ยังขาด: ยืนยันรหัสผ่านตรงกัน'), findsOneWidget);
-      await tester.enterText(confirmation, 'abcdefgh');
+      expect(find.text('รหัสผ่านทั้งสองช่องไม่ตรงกัน'), findsOneWidget);
+      await tester.enterText(confirmation, 'Abcdef1!');
       await tester.pump();
-      expect(find.text('ผ่านแล้ว: ยืนยันรหัสผ่านตรงกัน'), findsOneWidget);
-      await tester.enterText(password, 'abcdefghx');
+      expect(find.text('รหัสผ่านทั้งสองช่องไม่ตรงกัน'), findsNothing);
+      await tester.enterText(password, 'Abcdef1!x');
       await tester.pump();
-      expect(find.text('ยังขาด: ยืนยันรหัสผ่านตรงกัน'), findsOneWidget);
-      await tester.enterText(password, List.filled(25, 'ก').join());
+      expect(find.text('รหัสผ่านทั้งสองช่องไม่ตรงกัน'), findsOneWidget);
+
+      await tester.enterText(password, '');
       await tester.pump();
-      expect(find.text('ยังขาด: ไม่เกิน 72 ไบต์ (UTF-8)'), findsOneWidget);
-      await tester.enterText(password, List.filled(4, '🔐').join());
-      await tester.pump();
-      expect(find.text('ยังขาด: อย่างน้อย 8 ตัวอักษร'), findsOneWidget);
-      expect(find.textContaining('ระดับความปลอดภัย'), findsNothing);
+      expect(find.textContaining('เพิ่มอีก:'), findsNothing);
+      expect(find.textContaining('ผ่านแล้ว:'), findsNothing);
+      expect(find.textContaining('ยังขาด:'), findsNothing);
+      expect(tester.takeException(), isNull);
     },
   );
 
   for (final password in [
     'short',
+    'abcdef1!',
+    'ABCDEF1!',
+    'Abcdefg!',
+    'Abcdef12',
+    'Abcdef1 ',
+    'Aa1!${List.filled(69, 'a').join()}',
     List.filled(73, 'a').join(),
     List.filled(25, 'ก').join(),
     List.filled(19, '🔐').join(),
@@ -128,37 +147,40 @@ void main() {
           ),
           findsOneWidget,
         );
-        expect(find.textContaining('ยังขาด:'), findsOneWidget);
-        expect(find.text('ผ่านแล้ว: ยืนยันรหัสผ่านตรงกัน'), findsOneWidget);
+        expect(
+          find.textContaining('เพิ่มอีก:'),
+          password.startsWith('Aa1!') ? findsNothing : findsOneWidget,
+        );
+        expect(find.text('รหัสผ่านทั้งสองช่องไม่ตรงกัน'), findsNothing);
       },
     );
   }
 
   testWidgets(
-    'mismatch blocks submission; correcting it permits signup without extra criteria',
+    'mismatch blocks submission; correcting a valid password permits signup',
     (tester) async {
       final repository = await openRegister(tester);
       await prepareOtherFields(tester);
-      await tester.enterText(find.byType(TextFormField).at(2), 'abcdefgh');
+      await tester.enterText(find.byType(TextFormField).at(2), 'Abcdef1!');
       await tester.enterText(find.byType(TextFormField).at(3), 'different');
       await submit(tester);
       expect(repository.calls, 0);
       expect(find.text('รหัสผ่านทั้งสองช่องไม่ตรงกัน'), findsOneWidget);
-      expect(find.text('ยังขาด: ยืนยันรหัสผ่านตรงกัน'), findsOneWidget);
-      await tester.enterText(find.byType(TextFormField).at(3), 'abcdefgh');
+      expect(find.textContaining('ยังขาด:'), findsNothing);
+      await tester.enterText(find.byType(TextFormField).at(3), 'Abcdef1!');
       await tester.pump();
       expect(find.text('รหัสผ่านทั้งสองช่องไม่ตรงกัน'), findsNothing);
-      expect(find.text('ผ่านแล้ว: ยืนยันรหัสผ่านตรงกัน'), findsOneWidget);
+      expect(find.textContaining('ผ่านแล้ว:'), findsNothing);
       await submit(tester);
       expect(repository.calls, 1);
-      expect(repository.password, 'abcdefgh');
+      expect(repository.password, 'Abcdef1!');
     },
   );
 
   for (final password in [
-    List.filled(72, 'a').join(),
-    List.filled(24, 'ก').join(),
-    List.filled(18, '🔐').join(),
+    'Aa1!${List.filled(68, 'a').join()}',
+    'Aa1!${List.filled(22, 'ก').join()}aa',
+    'Aa1!${List.filled(17, '🔐').join()}',
   ]) {
     testWidgets('company signup accepts exact 72-byte boundary: $password', (
       tester,

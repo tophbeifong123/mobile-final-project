@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:pdfx/pdfx.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -35,6 +36,39 @@ class ApplicantDetailScreen extends ConsumerStatefulWidget {
 
 class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
   bool _isUpdating = false;
+
+  Future<void> _openApplicantDocument(ApplicantDocument document) async {
+    try {
+      final bytes = await ref
+          .read(companyJobsControllerProvider.notifier)
+          .downloadApplicantDocument(
+            jobId: widget.jobId,
+            applicationId: widget.applicationId,
+            documentId: document.id,
+          );
+      if (bytes.isEmpty || !mounted) return;
+      final controller = PdfControllerPinch(
+        document: PdfDocument.openData(Uint8List.fromList(bytes)),
+      );
+      await showDialog<void>(
+        context: context,
+        builder: (context) => Dialog(
+          child: SizedBox(
+            width: MediaQuery.sizeOf(context).width * .92,
+            height: MediaQuery.sizeOf(context).height * .84,
+            child: PdfViewPinch(controller: controller),
+          ),
+        ),
+      );
+      controller.dispose();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(userVisibleError(error))));
+      }
+    }
+  }
 
   Future<void> _updateStatusToReviewing(Applicant applicant) async {
     setState(() => _isUpdating = true);
@@ -212,7 +246,44 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
                   applicationId: widget.applicationId,
                   resumeFileName: applicant.resumeFileName,
                   resumeObjectKey: applicant.resumeObjectKey,
+                  onOpen:
+                      applicant.documents.any((d) => d.id == 'application-cv')
+                      ? () => _openApplicantDocument(
+                          applicant.documents.firstWhere(
+                            (d) => d.id == 'application-cv',
+                          ),
+                        )
+                      : null,
                 ),
+                for (final document in applicant.documents.where(
+                  (d) => d.id != 'application-cv',
+                ))
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: CompanyApplicantCard(
+                      child: ListTile(
+                        leading: const Icon(
+                          Icons.picture_as_pdf_outlined,
+                          color: AppColors.primary,
+                        ),
+                        title: Text(
+                          document.type == 'transcript'
+                              ? 'Transcript'
+                              : 'เอกสารอื่น',
+                        ),
+                        subtitle: Text(
+                          document.fileName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        trailing: IconButton(
+                          tooltip: 'เปิดไฟล์ PDF',
+                          onPressed: () => _openApplicantDocument(document),
+                          icon: const Icon(Icons.open_in_new),
+                        ),
+                      ),
+                    ),
+                  ),
                 const SizedBox(height: 16),
                 _CoverLetterCard(coverLetter: applicant.coverLetter),
               ],
@@ -254,9 +325,19 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
                               mainAxisSize: MainAxisSize.min,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.rate_review_outlined, size: 20),
+                                Icon(
+                                  Icons.rate_review_outlined,
+                                  size: 20,
+                                  color: Colors.white,
+                                ),
                                 SizedBox(width: 8),
-                                Text('เปลี่ยนสถานะเป็น Reviewing'),
+                                Text(
+                                  'เปลี่ยนสถานะเป็น Reviewing',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -839,6 +920,7 @@ class _ResumeCard extends ConsumerWidget {
     required this.applicationId,
     this.resumeFileName,
     this.resumeObjectKey,
+    this.onOpen,
   });
 
   final String jobId;
@@ -846,6 +928,7 @@ class _ResumeCard extends ConsumerWidget {
 
   final String? resumeFileName;
   final String? resumeObjectKey;
+  final VoidCallback? onOpen;
 
   void _openPreview(BuildContext context) {
     final provider = applicantResumeBytesProvider((
@@ -869,11 +952,14 @@ class _ResumeCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
     final colors = context.colors;
+    final openResume =
+        onOpen ??
+        (resumeObjectKey != null && resumeObjectKey!.isNotEmpty
+            ? () => _openPreview(context)
+            : null);
 
     return CompanyApplicantCard(
-      onTap: resumeObjectKey != null && resumeObjectKey!.isNotEmpty
-          ? () => _openPreview(context)
-          : null,
+      onTap: openResume,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -928,17 +1014,22 @@ class _ResumeCard extends ConsumerWidget {
                     ],
                   ),
                 ),
+                IconButton(
+                  tooltip: 'เปิด CV PDF',
+                  onPressed: openResume,
+                  icon: const Icon(Icons.open_in_new),
+                ),
               ],
             ),
           ),
-          if (resumeObjectKey != null && resumeObjectKey!.isNotEmpty) ...[
+          if (openResume != null) ...[
             const Gap(12),
             NeoButton(
               text: 'เปิด Resume (PDF)',
               variant: NeoButtonVariant.secondary,
               icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
               isFullWidth: true,
-              onPressed: () => _openPreview(context),
+              onPressed: openResume,
             ),
           ],
         ],

@@ -70,7 +70,7 @@ describe('AuthService', () => {
 
     const result = await service.register({
       email: 'Student@Example.com',
-      password: 'password123',
+      password: 'Password123!',
       role: UserRole.Student,
     });
 
@@ -95,12 +95,27 @@ describe('AuthService', () => {
     await expect(
       service.register({
         email: 'student@example.com',
-        password: 'password123',
+        password: 'Password123!',
         role: UserRole.Student,
       }),
     ).rejects.toBeInstanceOf(ConflictException);
     expect(repository.createUserWithProfile).not.toHaveBeenCalled();
   });
+
+  it.each([UserRole.Student, UserRole.Company])(
+    'rejects a weak signup password before hashing for %s',
+    async (role) => {
+      await expect(
+        service.register({
+          email: 'person@example.com',
+          password: 'abcdefgh',
+          role,
+        }),
+      ).rejects.toThrow('Bad Request');
+      expect(passwords.hash).not.toHaveBeenCalled();
+      expect(repository.createUserWithProfile).not.toHaveBeenCalled();
+    },
+  );
 
   it('rejects login when the password is wrong', async () => {
     repository.findByEmail.mockResolvedValue({

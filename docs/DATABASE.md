@@ -26,6 +26,7 @@ applications ||--o{ application_status_events : timeline
 applications ||--o{ notifications : notifies
 student_profiles ||--o{ notifications : receives
 universities ||--o{ student_profiles : selected_university
+student_profiles ||--o{ student_documents : owns
 
 applications ||--o{ outbox_messages : "enqueue on status change"
 ```
@@ -126,6 +127,24 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | id | uuid | PK, deterministic จากชื่อมาตรฐาน |
 | name_th | varchar(255) | unique, ชื่อสำหรับแสดง |
 | aliases | text[] | ชื่อเรียกอื่นและคำย่อสำหรับค้นหา |
+### student_documents
+
+เก็บ metadata ของ PDF ที่อยู่ใน storage; ไฟล์จริงไม่อยู่ใน PostgreSQL
+
+| คอลัมน์ | ชนิด | หมายเหตุ |
+|---|---|---|
+| id | uuid | PK |
+| student_id | uuid | FK → student_profiles.id |
+| type | varchar(16) | `cv`, `transcript`, `other` |
+| object_key | varchar(1024) | storage key |
+| file_name | varchar(255) | ชื่อไฟล์สำหรับแสดง |
+| created_at / updated_at | timestamptz | |
+
+Partial unique index จำกัด CV และ transcript อย่างละหนึ่งไฟล์ต่อนักศึกษา. จำนวน `other` สูงสุด 3 ถูกบังคับใน service ภายใต้ transaction ที่ล็อกแถว student profile. Migration backfill CV เดิมโดยคง object key เดิม.
+
+การลบ metadata ทำภายใต้ transaction ที่ล็อกแถว student profile. เมื่อลบ CV ให้ล้าง Resume ปัจจุบันของโปรไฟล์ด้วย แต่จะลบ object จาก storage ก็ต่อเมื่อไม่มีใบสมัครอ้างถึงอยู่ เพื่อเก็บ CV snapshot ของใบสมัครเดิม.
+
+Migration `CreateStudentDocuments1759400000000` จะ rollback ไม่ได้เมื่อยังมี transcript/other metadata เพราะ schema เดิมไม่มีที่เก็บข้อมูลเหล่านี้; `down` ปฏิเสธอย่างชัดเจนในกรณีนั้น และคืน CV ปัจจุบันไปยังคอลัมน์เดิมก่อนลบตารางเมื่อทำได้. ไฟล์ storage ไม่ถูกลบจาก migration.
 
 ### company_profiles
 
@@ -208,6 +227,7 @@ Unique ที่ `(student_id, job_id)` บันทึกงานหนึ่�
 | job_id | uuid | FK → jobs.id |
 | cover_letter | text | บังคับมีตอนสมัคร |
 | resume_object_key | varchar | สำเนาคีย์ Resume ตอนสมัคร ไม่ตามไฟล์ที่อัปโหลดใหม่ทีหลัง |
+| resume_file_name | varchar | ชื่อ CV ณ เวลาสมัคร; null ได้สำหรับใบสมัครเก่าก่อน migration |
 | status | application_status | ค่าเริ่มต้น `submitted` |
 | version | int | optimistic lock, เริ่มที่ 1 |
 | created_at | timestamptz | |
@@ -289,6 +309,7 @@ Google signup ทำใน transaction เดียวกัน: สร้าง
 ใช้ pessimistic lock ที่แถว `jobs` ด้วย `SELECT ... FOR UPDATE` ใน transaction เดียวกัน
 
 - ตอนสมัคร: ล็อกแถวงาน ตรวจว่ายัง `open` ตรวจว่ามี Resume แล้วแทรก `applications` พร้อม event `submitted`
+- CV ปัจจุบันอยู่ใน `student_documents`; ตอนสมัครคัดลอก object key และชื่อไฟล์ไป `applications.resume_object_key` / `resume_file_name`. การแทนที่ CV ไม่เปลี่ยนใบสมัครเก่า และไฟล์ที่ใบสมัครอ้างถึงจะไม่ถูกลบ
 - ตอนปิดหรือเปิดรับ: ล็อกแถวงานแล้วค่อยเปลี่ยน `status`
 
 กันกรณีนักศึกษาสมัครงานที่กำลังถูกปิด และกันการปิดงานขณะกำลังสร้างใบสมัคร ไม่ใช้ optimistic lock ตรงนี้ เพราะการสมัครไม่ได้แก้แถวใบสมัครเดิม

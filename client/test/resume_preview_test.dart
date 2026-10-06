@@ -15,7 +15,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   testWidgets(
-    'tapping ดูตัวอย่าง opens ResumePreviewModal and closing dismisses it',
+    'tapping the resume file name opens ResumePreviewModal and closing dismisses it',
     (tester) async {
       tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1;
@@ -51,19 +51,17 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      // Verify resume card shows file name and preview button
+      // Verify resume card shows the active resume file name.
       expect(find.text('my_resume.pdf'), findsOneWidget);
-      expect(find.text('ดูตัวอย่าง'), findsOneWidget);
 
-      // Tap "ดูตัวอย่าง"
-      await tester.tap(find.text('ดูตัวอย่าง'));
+      // Tap the linked resume file name.
+      await tester.tap(find.text('my_resume.pdf'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
       // Verify modal is open and displays resume info
       expect(find.text('ตัวอย่างเรซูเม่ (PDF Preview)'), findsOneWidget);
       expect(find.text('ปิด'), findsOneWidget);
-      expect(find.text('เปลี่ยนไฟล์'), findsOneWidget);
 
       // Tap "ปิด"
       await tester.tap(find.text('ปิด'));
@@ -118,4 +116,23 @@ class _FakeResumeRepository implements ResumeRepository {
   Future<List<int>> downloadResumePdf() async {
     return [0x25, 0x50, 0x44, 0x46]; // %PDF
   }
+
+  @override
+  Future<List<int>> downloadDocumentPdf(String id) async {
+    return [0x25, 0x50, 0x44, 0x46]; // %PDF
+  }
+
+  @override
+  Future<List<StudentDocument>> listDocuments() async => const [];
+
+  @override
+  Future<StudentDocument> uploadDocument({
+    required String kind,
+    required String filePath,
+    required String fileName,
+    List<int>? bytes,
+  }) async => StudentDocument(id: 'doc', type: kind, fileName: fileName);
+
+  @override
+  Future<void> deleteDocument(String id) async {}
 }
