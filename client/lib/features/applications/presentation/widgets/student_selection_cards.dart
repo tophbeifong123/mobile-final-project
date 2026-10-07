@@ -78,6 +78,7 @@ class StudentSelectionCards extends StatelessWidget {
                   application.status != ApplicationStatus.rejected)
                 NeoButton(
                   text: 'เปิดลิงก์นัด',
+                  isFullWidth: true,
                   onPressed: busy ? null : () => onOpenLink(interviewUrl),
                 ),
             ],
@@ -98,12 +99,14 @@ class StudentSelectionCards extends StatelessWidget {
               if (canOpenExam)
                 NeoButton(
                   text: 'เปิดข้อสอบ',
+                  isFullWidth: true,
                   variant: NeoButtonVariant.outline,
                   onPressed: busy ? null : () => onOpenLink(examUrl!),
                 ),
               if (canOpenExam)
                 NeoButton(
                   text: 'ทำข้อสอบแล้ว',
+                  isFullWidth: true,
                   onPressed: busy ? null : onCompleteExam,
                 ),
             ],
@@ -178,7 +181,10 @@ class _StepCard extends StatelessWidget {
             const Gap(12),
             for (var index = 0; index < actions.length; index++) ...[
               if (index > 0) const Gap(8),
-              actions[index],
+              Align(
+                alignment: Alignment.center,
+                child: SizedBox(width: double.infinity, child: actions[index]),
+              ),
             ],
           ],
         ],
