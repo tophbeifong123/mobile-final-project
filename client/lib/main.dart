@@ -13,13 +13,16 @@ Future<void> main() async {
     return;
   }
 
-  await SentryFlutter.init((options) {
-    options.dsn = sentryDsn;
-    options.tracesSampleRate = 0.1;
-  }, appRunner: () {
-    WidgetsFlutterBinding.ensureInitialized();
-    runApp(const ProviderScope(child: MyApp()));
-  });
+  await SentryFlutter.init(
+    (options) {
+      options.dsn = sentryDsn;
+      options.tracesSampleRate = 0.1;
+    },
+    appRunner: () {
+      WidgetsFlutterBinding.ensureInitialized();
+      runApp(const ProviderScope(child: MyApp()));
+    },
+  );
 }
 
 class MyApp extends ConsumerWidget {
