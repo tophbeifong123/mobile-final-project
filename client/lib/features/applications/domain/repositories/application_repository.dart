@@ -8,5 +8,6 @@ abstract class ApplicationRepository {
   Future<JobApplication> apply({
     required String jobId,
     required String coverLetter,
+    List<String> documentIds = const [],
   });
 }

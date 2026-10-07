@@ -14,6 +14,8 @@ import 'package:client/features/student_profile/domain/entities/major.dart';
 import 'package:client/features/student_profile/domain/repositories/student_profile_repository.dart';
 import 'package:client/features/student_profile/presentation/providers/student_profile_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:client/features/resume/presentation/providers/resume_controller.dart';
+import 'package:client/features/resume/domain/entities/resume_file.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -61,6 +63,7 @@ void main() {
         ProviderScope(
           overrides: [
             tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+            studentDocumentsProvider.overrideWith((ref) async => []),
             studentProfileRepositoryProvider.overrideWithValue(
               _FakeStudentProfileRepository(profileWithoutResume),
             ),
@@ -98,6 +101,15 @@ void main() {
         ProviderScope(
           overrides: [
             tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+            studentDocumentsProvider.overrideWith(
+              (ref) async => const [
+                StudentDocument(
+                  id: 'cv',
+                  type: 'cv',
+                  fileName: 'my_resume.pdf',
+                ),
+              ],
+            ),
             studentProfileRepositoryProvider.overrideWithValue(
               _FakeStudentProfileRepository(profileWithResume),
             ),
@@ -116,7 +128,7 @@ void main() {
 
       expect(find.text('Flutter Developer Intern'), findsOneWidget);
       expect(find.text('Tech Co'), findsOneWidget);
-      expect(find.text('Resume ที่จะใช้'), findsOneWidget);
+      expect(find.text('CV ที่จะแนบ (จำเป็น)'), findsOneWidget);
       expect(find.text('my_resume.pdf'), findsOneWidget);
 
       final submitButton = tester.widget<FilledButton>(
@@ -147,6 +159,11 @@ void main() {
       ProviderScope(
         overrides: [
           tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+          studentDocumentsProvider.overrideWith(
+            (ref) async => const [
+              StudentDocument(id: 'cv', type: 'cv', fileName: 'my_resume.pdf'),
+            ],
+          ),
           studentProfileRepositoryProvider.overrideWithValue(
             _FakeStudentProfileRepository(profileWithResume),
           ),
@@ -217,6 +234,7 @@ class _FakeJobRepository implements JobRepository {
 class _FakeApplicationRepository implements ApplicationRepository {
   String? appliedJobId;
   String? appliedCoverLetter;
+  List<String>? attachedIds;
 
   @override
   Future<List<JobApplication>> fetchMine() async => [];
@@ -227,11 +245,13 @@ class _FakeApplicationRepository implements ApplicationRepository {
 
   @override
   Future<JobApplication> apply({
+    List<String> documentIds = const [],
     required String jobId,
     required String coverLetter,
   }) async {
     appliedJobId = jobId;
     appliedCoverLetter = coverLetter;
+    attachedIds = documentIds;
     return JobApplication(
       id: 'app-999',
       jobTitle: 'Flutter Developer Intern',

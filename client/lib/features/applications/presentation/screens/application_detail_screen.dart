@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../student_profile/presentation/widgets/resume_preview_modal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
@@ -128,7 +129,10 @@ class ApplicationDetailScreen extends ConsumerWidget {
                       const Gap(12),
                       _StatusTimelineCard(application: app),
                       const Gap(20),
-                      _ResumeCard(resumeObjectKey: app.resumeObjectKey),
+                      if (app.documents.isNotEmpty)
+                        _AttachedDocumentsCard(application: app)
+                      else
+                        _ResumeCard(resumeObjectKey: app.resumeObjectKey),
                       const Gap(16),
                       _CoverLetterCard(coverLetter: app.coverLetter),
                       const Gap(20),
@@ -154,6 +158,68 @@ class ApplicationDetailScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+class _AttachedDocumentsCard extends StatelessWidget {
+  const _AttachedDocumentsCard({required this.application});
+  final JobApplication application;
+  @override
+  Widget build(BuildContext context) => Card(
+    child: Padding(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'เอกสารที่แนบตอนสมัคร',
+            style: TextStyle(fontWeight: FontWeight.w800),
+          ),
+          const Text('ไฟล์ชุดนี้ไม่เปลี่ยนเมื่อแก้ไขคลังเอกสาร'),
+          for (final document in application.documents)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                document.fileName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              subtitle: Text(
+                {
+                      'cv': 'CV',
+                      'transcript': 'Transcript',
+                      'other': 'เอกสารอื่นๆ',
+                    }[document.type] ??
+                    document.type,
+              ),
+              trailing: IconButton(
+                tooltip: 'เปิดดู ${document.fileName}',
+                icon: const Icon(Icons.visibility_outlined),
+                onPressed: () => showDialog<void>(
+                  context: context,
+                  builder: (_) => Consumer(
+                    builder: (context, ref, _) {
+                      final key = (
+                        applicationId: application.id,
+                        documentId: document.id,
+                      );
+                      return ResumePreviewModal(
+                        fileName: document.fileName,
+                        readOnly: true,
+                        pdfBytes: ref.watch(
+                          applicationDocumentPdfProvider(key),
+                        ),
+                        onRetry: () =>
+                            ref.invalidate(applicationDocumentPdfProvider(key)),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _DetailTopBar extends StatelessWidget {
