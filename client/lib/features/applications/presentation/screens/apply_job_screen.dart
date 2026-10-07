@@ -11,6 +11,7 @@ import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/neo_button.dart';
 import '../../../jobs/presentation/providers/jobs_controller.dart';
 import '../../../resume/presentation/providers/resume_controller.dart';
+import '../../../student_profile/presentation/widgets/resume_preview_modal.dart';
 import '../widgets/application_documents_dialog.dart';
 import '../providers/applications_controller.dart';
 
@@ -197,69 +198,108 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
                     const Gap(16),
                   ] else ...[
                     _ApplicationCard(
-                      child: Row(
-                        children: [
-                          const Icon(
-                            LucideIcons.checkCircle2,
-                            color: AppColors.primary,
-                            size: 20,
-                          ),
-                          const Gap(12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Resume ที่จะใช้',
-                                  style: textTheme.labelSmall,
-                                ),
-                                const Gap(2),
-                                Text(
-                                  cv.fileName,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: textTheme.titleSmall,
-                                ),
-                              ],
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: _submitting
-                                ? null
-                                : () async {
-                                    final selected =
-                                        await ApplicationDocumentsDialog.show(
-                                          context,
-                                          selectedIds: _documentIds,
-                                        );
-                                    if (mounted && selected != null) {
-                                      setState(() => _documentIds = selected);
-                                    }
-                                  },
-                            child: const Text('เลือกเอกสาร'),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Gap(16),
-                  ],
-                  if (hasResume && _documentIds.any((id) => id != cv.id)) ...[
-                    _ApplicationCard(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          Row(
+                            children: [
+                              const Expanded(
+                                child: Text(
+                                  'เอกสารที่เลือกแนบ',
+                                  style: TextStyle(
+                                    color: NeoColors.inkSolid,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: _submitting
+                                    ? null
+                                    : () async {
+                                        final selected =
+                                            await ApplicationDocumentsDialog.show(
+                                              context,
+                                              selectedIds: _documentIds,
+                                            );
+                                        if (mounted && selected != null) {
+                                          setState(
+                                            () => _documentIds = selected,
+                                          );
+                                        }
+                                      },
+                                child: const Text('เลือกเอกสาร'),
+                              ),
+                            ],
+                          ),
                           const Text(
-                            'เอกสารเพิ่มเติมที่เลือก',
-                            style: TextStyle(fontWeight: FontWeight.w800),
+                            'บริษัทจะเห็นเฉพาะไฟล์ชุดนี้เมื่อส่งใบสมัคร',
+                            style: TextStyle(color: NeoColors.subtleInk),
                           ),
                           for (final document in documents.where(
                             (d) =>
-                                d.type != 'cv' && _documentIds.contains(d.id),
+                                d.type == 'cv' || _documentIds.contains(d.id),
                           ))
-                            Text(
-                              document.fileName,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+                            Padding(
+                              padding: const EdgeInsets.only(top: 12),
+                              child: AppCard(
+                                key: ValueKey(
+                                  'selected-document-${document.id}',
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 4,
+                                ),
+                                backgroundColor: NeoColors.paperCanvas,
+                                borderColor: NeoColors.inkSolid,
+                                borderWidth: 2,
+                                shadows: NeoShadows.elevation1,
+                                child: ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(
+                                    document.fileName,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: NeoColors.inkSolid,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    document.type == 'cv'
+                                        ? 'CV'
+                                        : document.type == 'transcript'
+                                        ? 'Transcript'
+                                        : 'เอกสารอื่นๆ',
+                                  ),
+                                  trailing: IconButton(
+                                    tooltip: 'เปิดดู ${document.fileName}',
+                                    icon: const Icon(
+                                      Icons.visibility_outlined,
+                                      color: NeoColors.inkSolid,
+                                    ),
+                                    onPressed: () => showDialog<void>(
+                                      context: context,
+                                      builder: (_) => Consumer(
+                                        builder: (context, ref, _) =>
+                                            ResumePreviewModal(
+                                              fileName: document.fileName,
+                                              readOnly: true,
+                                              pdfBytes: ref.watch(
+                                                studentDocumentPdfBytesProvider(
+                                                  document.id,
+                                                ),
+                                              ),
+                                              onRetry: () => ref.invalidate(
+                                                studentDocumentPdfBytesProvider(
+                                                  document.id,
+                                                ),
+                                              ),
+                                            ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
                             ),
                         ],
                       ),

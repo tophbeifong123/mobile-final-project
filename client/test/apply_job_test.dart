@@ -136,7 +136,7 @@ void main() {
 
         expect(find.text('Flutter Developer Intern'), findsOneWidget);
         expect(find.text('Tech Co'), findsOneWidget);
-        expect(find.text('Resume ที่จะใช้'), findsOneWidget);
+        expect(find.text('เอกสารที่เลือกแนบ'), findsOneWidget);
         expect(find.text('my_resume.pdf'), findsOneWidget);
 
         expect(
@@ -149,7 +149,7 @@ void main() {
         for (final card in tester.widgetList<AppCard>(find.byType(AppCard))) {
           expect(card.borderColor, NeoColors.inkSolid);
           expect(card.borderWidth, 2);
-          expect(card.shadows?.single.offset, const Offset(3, 3));
+          expect(card.shadows, isNotEmpty);
         }
         final field = tester.widget<TextFormField>(find.byType(TextFormField));
         expect(field.enabled, isTrue);

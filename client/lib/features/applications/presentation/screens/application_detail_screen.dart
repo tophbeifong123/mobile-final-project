@@ -188,7 +188,13 @@ class _AttachedDocumentsCard extends StatelessWidget {
   const _AttachedDocumentsCard({required this.application});
   final JobApplication application;
   @override
-  Widget build(BuildContext context) => Card(
+  Widget build(BuildContext context) => AppCard(
+    key: const ValueKey('attached-documents-container'),
+    padding: EdgeInsets.zero,
+    backgroundColor: NeoColors.pureWhite,
+    borderColor: NeoColors.inkSolid,
+    borderWidth: 2,
+    shadows: NeoShadows.elevation2,
     child: Padding(
       padding: const EdgeInsets.all(12),
       child: Column(
@@ -200,42 +206,64 @@ class _AttachedDocumentsCard extends StatelessWidget {
           ),
           const Text('ไฟล์ชุดนี้ไม่เปลี่ยนเมื่อแก้ไขคลังเอกสาร'),
           for (final document in application.documents)
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text(
-                document.fileName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              subtitle: Text(
-                {
-                      'cv': 'CV',
-                      'transcript': 'Transcript',
-                      'other': 'เอกสารอื่นๆ',
-                    }[document.type] ??
-                    document.type,
-              ),
-              trailing: IconButton(
-                tooltip: 'เปิดดู ${document.fileName}',
-                icon: const Icon(Icons.visibility_outlined),
-                onPressed: () => showDialog<void>(
-                  context: context,
-                  builder: (_) => Consumer(
-                    builder: (context, ref, _) {
-                      final key = (
-                        applicationId: application.id,
-                        documentId: document.id,
-                      );
-                      return ResumePreviewModal(
-                        fileName: document.fileName,
-                        readOnly: true,
-                        pdfBytes: ref.watch(
-                          applicationDocumentPdfProvider(key),
-                        ),
-                        onRetry: () =>
-                            ref.invalidate(applicationDocumentPdfProvider(key)),
-                      );
-                    },
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: AppCard(
+                key: ValueKey('attached-document-${document.id}'),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 4,
+                ),
+                backgroundColor: NeoColors.paperCanvas,
+                borderColor: NeoColors.inkSolid,
+                borderWidth: 2,
+                shadows: NeoShadows.elevation1,
+                child: ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(
+                    document.fileName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: NeoColors.inkSolid,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  subtitle: Text(
+                    {
+                          'cv': 'CV',
+                          'transcript': 'Transcript',
+                          'other': 'เอกสารอื่นๆ',
+                        }[document.type] ??
+                        document.type,
+                  ),
+                  trailing: IconButton(
+                    tooltip: 'เปิดดู ${document.fileName}',
+                    icon: const Icon(
+                      Icons.visibility_outlined,
+                      color: NeoColors.inkSolid,
+                    ),
+                    onPressed: () => showDialog<void>(
+                      context: context,
+                      builder: (_) => Consumer(
+                        builder: (context, ref, _) {
+                          final key = (
+                            applicationId: application.id,
+                            documentId: document.id,
+                          );
+                          return ResumePreviewModal(
+                            fileName: document.fileName,
+                            readOnly: true,
+                            pdfBytes: ref.watch(
+                              applicationDocumentPdfProvider(key),
+                            ),
+                            onRetry: () => ref.invalidate(
+                              applicationDocumentPdfProvider(key),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   ),
                 ),
               ),

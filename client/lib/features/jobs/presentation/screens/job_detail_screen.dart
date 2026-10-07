@@ -16,6 +16,7 @@ import '../../../../core/widgets/loading_view.dart';
 import '../../../../core/widgets/neo_button.dart';
 import '../../../company_profile/domain/entities/company_contact_policy.dart';
 import '../../../applications/presentation/widgets/application_documents_dialog.dart';
+import '../../../applications/presentation/providers/applications_controller.dart';
 import '../../../saved_jobs/presentation/providers/saved_jobs_controller.dart';
 import '../../../student_profile/domain/entities/student_profile.dart';
 import '../../domain/entities/company_logo.dart';
@@ -39,6 +40,13 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final detail = ref.watch(jobDetailProvider(widget.jobId));
+    final alreadyApplied =
+        ref
+            .watch(myApplicationsProvider)
+            .asData
+            ?.value
+            .any((application) => application.jobId == widget.jobId) ??
+        false;
     return Scaffold(
       backgroundColor: NeoColors.paperCanvas,
       appBar: AppBar(
@@ -87,6 +95,7 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
         data: (job) => _Actions(
           saving: _saving,
           saved: job.saved,
+          alreadyApplied: alreadyApplied,
           onSave: () => _toggleSave(job),
           onApply: () async {
             final selected = await ApplicationDocumentsDialog.show(context);
@@ -606,12 +615,14 @@ class _Actions extends StatelessWidget {
     required this.saved,
     required this.onSave,
     required this.onApply,
+    required this.alreadyApplied,
   });
 
   final bool saving;
   final bool saved;
   final VoidCallback onSave;
   final VoidCallback onApply;
+  final bool alreadyApplied;
 
   @override
   Widget build(BuildContext context) {
@@ -636,7 +647,18 @@ class _Actions extends StatelessWidget {
               ),
               const Gap(12),
               Expanded(
-                child: NeoButton(text: 'สมัครงาน', onPressed: onApply),
+                child: NeoButton(
+                  text: alreadyApplied ? 'สมัครแล้ว' : 'สมัครงาน',
+                  icon: alreadyApplied
+                      ? const Icon(
+                          Icons.check_rounded,
+                          color: NeoColors.mutedInk,
+                          size: 18,
+                        )
+                      : null,
+                  foregroundColor: alreadyApplied ? NeoColors.mutedInk : null,
+                  onPressed: alreadyApplied ? null : onApply,
+                ),
               ),
             ],
           ),
