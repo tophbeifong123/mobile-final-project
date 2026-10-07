@@ -488,7 +488,9 @@ class _JobSummaryCard extends StatelessWidget {
                 if (application.interviewMode != null &&
                     application.interviewMode!.isNotEmpty)
                   _MetaTag(
-                    label: interviewModeLabelFromApi(application.interviewMode!),
+                    label: interviewModeLabelFromApi(
+                      application.interviewMode!,
+                    ),
                     icon: Icons.event_outlined,
                   ),
                 if (application.category != null &&
