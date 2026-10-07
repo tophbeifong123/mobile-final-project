@@ -29,6 +29,7 @@ class AuthController extends AsyncNotifier<AuthSession?> {
   }
 
   Future<String?> register({
+    required String fullName,
     required String email,
     required String password,
     required UserRole role,
@@ -36,7 +37,12 @@ class AuthController extends AsyncNotifier<AuthSession?> {
     return _openSession(
       () => ref
           .read(authRepositoryProvider)
-          .register(email: email, password: password, role: role),
+          .register(
+            fullName: fullName,
+            email: email,
+            password: password,
+            role: role,
+          ),
     );
   }
 

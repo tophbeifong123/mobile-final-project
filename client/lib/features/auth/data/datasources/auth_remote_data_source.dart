@@ -20,11 +20,13 @@ class AuthRemoteDataSource {
   }
 
   Future<AuthSessionModel> register({
+    required String fullName,
     required String email,
     required String password,
     required String role,
   }) {
     return _postSession(ApiConstants.register, {
+      'fullName': fullName,
       'email': email,
       'password': password,
       'role': role,

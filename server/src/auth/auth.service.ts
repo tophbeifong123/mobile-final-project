@@ -57,11 +57,13 @@ export class AuthService {
     }
 
     const passwordHash = await this.passwords.hash(dto.password);
+    const fullName = normalizeProfileName(dto.fullName);
     try {
       const user = await this.authRepository.createUserWithProfile({
         email,
         passwordHash,
         role: dto.role,
+        fullName,
       });
       return await this.issueSession(user);
     } catch (error) {
@@ -110,6 +112,7 @@ export class AuthService {
         email,
         providerSubject: identity.subject,
         role: dto.role,
+        fullName: normalizeGoogleProfileName(identity.name),
       });
       return this.issueSession(user);
     } catch (error) {
@@ -244,6 +247,14 @@ export class AuthService {
       Date.now() + durationMs(configured, 7 * 24 * 60 * 60 * 1000),
     );
   }
+}
+
+function normalizeProfileName(value: string): string {
+  return value.trim();
+}
+
+function normalizeGoogleProfileName(value: string): string {
+  return value.trim().slice(0, 255);
 }
 
 function emailCollision(
