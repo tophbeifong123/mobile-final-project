@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/network/dio_client.dart';
+import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../data/datasources/company_profile_remote_data_source.dart';
 import '../../data/repositories/company_profile_repository_impl.dart';
 import '../../domain/entities/company_profile.dart';
@@ -19,6 +20,7 @@ final companyProfileRepositoryProvider = Provider<CompanyProfileRepository>((
 class CompanyProfileController extends AsyncNotifier<CompanyProfile> {
   @override
   Future<CompanyProfile> build() {
+    ref.watch(signedInSessionProvider);
     return ref.watch(companyProfileRepositoryProvider).fetchMe();
   }
 

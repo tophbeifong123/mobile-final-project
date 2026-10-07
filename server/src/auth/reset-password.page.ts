@@ -75,6 +75,8 @@ export function renderResetPasswordPage(nonce: string): string {
     <form id="reset-form" method="post" action="/reset-password" novalidate>
       <label for="password">รหัสผ่านใหม่</label>
       <input id="password" name="password" type="password" autocomplete="new-password" minlength="8" required>
+      <p style="margin: 8px 0 0; font-size: 12px">อย่างน้อย 8 ตัว มี A–Z, a–z, ตัวเลข และสัญลักษณ์</p>
+      <p id="requirements" style="margin: 4px 0 0; font-size: 12px" aria-live="polite" hidden></p>
       <label for="confirmation">ยืนยันรหัสผ่านใหม่</label>
       <input id="confirmation" name="confirmation" type="password" autocomplete="new-password" minlength="8" required>
       <button id="submit" type="submit">บันทึกรหัสผ่านใหม่</button>
@@ -91,6 +93,22 @@ export function renderResetPasswordPage(nonce: string): string {
     const submit = document.getElementById('submit');
     const password = document.getElementById('password');
     const confirmation = document.getElementById('confirmation');
+    const requirements = document.getElementById('requirements');
+    function missingConditions(next) {
+      return [
+        [Array.from(next).length >= 8, 'ให้ครบ 8 ตัว'],
+        [/[A-Z]/.test(next), 'ตัวพิมพ์ใหญ่ A–Z'],
+        [/[a-z]/.test(next), 'ตัวพิมพ์เล็ก a–z'],
+        [/[0-9]/.test(next), 'ตัวเลข'],
+        [/[\\x21-\\x2f\\x3a-\\x40\\x5b-\\x60\\x7b-\\x7e]/.test(next), 'สัญลักษณ์ เช่น ! @ #']
+      ].filter(function (condition) { return !condition[0]; })
+        .map(function (condition) { return condition[1]; });
+    }
+    password.addEventListener('input', function () {
+      const missing = missingConditions(password.value);
+      requirements.hidden = !password.value || !missing.length;
+      requirements.textContent = missing.length ? 'เพิ่มอีก: ' + missing.join(', ') : '';
+    });
     const tokenMatch = /^#token=([a-f0-9]{64})$/.exec(location.hash);
     const token = tokenMatch ? tokenMatch[1] : '';
 
@@ -116,8 +134,9 @@ export function renderResetPasswordPage(nonce: string): string {
       feedback.hidden = true;
       const next = password.value;
       const again = confirmation.value;
-      if (new TextEncoder().encode(next).length < 8) {
-        showError('รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร');
+      const missing = missingConditions(next);
+      if (missing.length) {
+        showError('เพิ่มอีก: ' + missing.join(', '));
         return;
       }
       if (new TextEncoder().encode(next).length > 72) {

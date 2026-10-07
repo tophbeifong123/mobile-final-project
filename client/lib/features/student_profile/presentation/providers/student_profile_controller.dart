@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/network/dio_client.dart';
+import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../data/datasources/student_profile_remote_data_source.dart';
 import '../../data/repositories/student_profile_repository_impl.dart';
 import '../../domain/entities/student_profile.dart';
@@ -21,6 +22,7 @@ final studentProfileRepositoryProvider = Provider<StudentProfileRepository>((
 class StudentProfileController extends AsyncNotifier<StudentProfile> {
   @override
   Future<StudentProfile> build() {
+    ref.watch(signedInSessionProvider);
     return ref.watch(studentProfileRepositoryProvider).fetchMe();
   }
 

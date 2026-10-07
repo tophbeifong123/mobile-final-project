@@ -110,3 +110,9 @@ class AuthController extends AsyncNotifier<AuthSession?> {
 
 final authControllerProvider =
     AsyncNotifierProvider<AuthController, AuthSession?>(AuthController.new);
+
+/// Account-scoped providers watch this. A new login replaces the cached
+/// profile, feed, and applications instead of keeping the previous account.
+final signedInSessionProvider = Provider<AuthSession?>((ref) {
+  return ref.watch(authControllerProvider).asData?.value;
+});

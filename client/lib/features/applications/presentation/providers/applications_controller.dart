@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/dio_client.dart';
+import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../data/datasources/application_remote_data_source.dart';
 import '../../data/repositories/application_repository_impl.dart';
 import '../../domain/entities/job_application.dart';
@@ -13,11 +14,13 @@ final applicationRepositoryProvider = Provider<ApplicationRepository>((ref) {
 });
 
 final myApplicationsProvider = FutureProvider<List<JobApplication>>((ref) {
+  ref.watch(signedInSessionProvider);
   return ref.watch(applicationRepositoryProvider).fetchMine();
 });
 
 final applicationDetailProvider = FutureProvider.family<JobApplication, String>(
   (ref, applicationId) {
+    ref.watch(signedInSessionProvider);
     return ref.watch(applicationRepositoryProvider).fetchDetail(applicationId);
   },
 );
