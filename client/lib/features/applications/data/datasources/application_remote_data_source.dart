@@ -80,6 +80,16 @@ class ApplicationRemoteDataSource {
     }
   }
 
+  Future<void> completeExam(String applicationId) async {
+    try {
+      await _dio.post<void>(
+        '${ApiConstants.applications}/$applicationId/exam/complete',
+      );
+    } on DioException catch (e) {
+      throw _mapApplicationError(e);
+    }
+  }
+
   AppException _mapApplicationError(DioException error) {
     final data = error.response?.data;
     if (data is Map<String, dynamic> && data['message'] != null) {

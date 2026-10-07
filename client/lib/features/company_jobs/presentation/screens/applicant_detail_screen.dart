@@ -19,6 +19,7 @@ import '../../../company_profile/domain/entities/company_contact_policy.dart';
 import '../../domain/entities/company_job.dart';
 import 'package:client/features/student_profile/domain/entities/student_profile.dart';
 import '../providers/company_jobs_controller.dart';
+import '../widgets/company_selection_section.dart';
 
 class ApplicantDetailScreen extends ConsumerStatefulWidget {
   const ApplicantDetailScreen({
@@ -100,6 +101,75 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
       if (mounted) {
         setState(() => _isUpdating = false);
       }
+    }
+  }
+
+  Future<void> _passExam() async {
+    setState(() => _isUpdating = true);
+    try {
+      await ref
+          .read(companyJobsControllerProvider.notifier)
+          .passExam(jobId: widget.jobId, applicationId: widget.applicationId);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(userVisibleError(error))));
+    } finally {
+      if (mounted) setState(() => _isUpdating = false);
+    }
+  }
+
+  Future<void> _editSelection({
+    required Applicant applicant,
+    required bool interview,
+  }) async {
+    final onSite = interview && applicant.interviewMode == 'on_site';
+    final result = await showDialog<({String url, DateTime when})>(
+      context: context,
+      builder: (context) => SelectionLinkDialog(
+        title: interview
+            ? (onSite ? 'นัดสัมภาษณ์ที่สำนักงาน' : 'ลิงก์นัดสัมภาษณ์')
+            : 'ลิงก์ข้อสอบ',
+        timeLabel: interview ? 'วันเวลานัด' : 'กำหนดส่ง',
+        requireUrl: !onSite,
+        initialUrl: interview
+            ? applicant.interviewUrl ?? ''
+            : applicant.examUrl ?? '',
+        initialWhen: interview
+            ? applicant.interviewStartsAt
+            : applicant.examDeadline,
+      ),
+    );
+    if (result == null || !mounted) return;
+    setState(() => _isUpdating = true);
+    try {
+      if (interview) {
+        await ref
+            .read(companyJobsControllerProvider.notifier)
+            .setInterviewLink(
+              jobId: widget.jobId,
+              applicationId: widget.applicationId,
+              url: result.url,
+              startsAt: result.when,
+            );
+      } else {
+        await ref
+            .read(companyJobsControllerProvider.notifier)
+            .setExamLink(
+              jobId: widget.jobId,
+              applicationId: widget.applicationId,
+              url: result.url,
+              deadline: result.when,
+            );
+      }
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(userVisibleError(error))));
+    } finally {
+      if (mounted) setState(() => _isUpdating = false);
     }
   }
 
@@ -276,12 +346,24 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
                         ),
                         trailing: IconButton(
                           tooltip: 'เปิดไฟล์ PDF',
-                          onPressed: () => _openApplicantDocument(document),
+                          onPressed: document.fileName.trim().isEmpty
+                              ? null
+                              : () => _openApplicantDocument(document),
                           icon: const Icon(Icons.open_in_new),
                         ),
                       ),
                     ),
                   ),
+                const SizedBox(height: 16),
+                CompanySelectionSection(
+                  applicant: applicant,
+                  busy: _isUpdating,
+                  onEditExam: () =>
+                      _editSelection(applicant: applicant, interview: false),
+                  onPassExam: _passExam,
+                  onEditInterview: () =>
+                      _editSelection(applicant: applicant, interview: true),
+                ),
                 const SizedBox(height: 16),
                 _CoverLetterCard(coverLetter: applicant.coverLetter),
               ],
@@ -344,6 +426,7 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
               ),
             );
           } else if (status == 'reviewing') {
+            final canAccept = applicant.interviewStartsAt != null;
             return SafeArea(
               child: Container(
                 padding: const EdgeInsets.all(kPagePadding),
@@ -353,41 +436,53 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
                     top: BorderSide(color: NeoColors.inkSolid, width: 2),
                   ),
                 ),
-                child: Row(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Expanded(
-                      child: NeoButton(
-                        variant: NeoButtonVariant.destructive,
-                        onPressed: _isUpdating
-                            ? null
-                            : () => _confirmDecision(
-                                targetStatus: 'rejected',
-                                applicantName: applicant.fullName,
-                              ),
-                        icon: const Icon(Icons.close_rounded, size: 18),
-                        child: const FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text('ปฏิเสธ (Reject)'),
-                        ),
+                    if (!canAccept) ...[
+                      const Text(
+                        'ตอบรับได้หลังนัดสัมภาษณ์แล้ว',
+                        style: TextStyle(fontWeight: FontWeight.w700),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: NeoButton(
-                        variant: NeoButtonVariant.secondary,
-                        backgroundColor: NeoColors.freshMint,
-                        onPressed: _isUpdating
-                            ? null
-                            : () => _confirmDecision(
-                                targetStatus: 'accepted',
-                                applicantName: applicant.fullName,
-                              ),
-                        icon: const Icon(Icons.check_rounded, size: 18),
-                        child: const FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text('ตอบรับ (Accept)'),
+                      const SizedBox(height: 8),
+                    ],
+                    Row(
+                      children: [
+                        Expanded(
+                          child: NeoButton(
+                            variant: NeoButtonVariant.destructive,
+                            onPressed: _isUpdating
+                                ? null
+                                : () => _confirmDecision(
+                                    targetStatus: 'rejected',
+                                    applicantName: applicant.fullName,
+                                  ),
+                            icon: const Icon(Icons.close_rounded, size: 18),
+                            child: const FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text('ปฏิเสธ (Reject)'),
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: NeoButton(
+                            variant: NeoButtonVariant.secondary,
+                            backgroundColor: NeoColors.freshMint,
+                            onPressed: _isUpdating || !canAccept
+                                ? null
+                                : () => _confirmDecision(
+                                    targetStatus: 'accepted',
+                                    applicantName: applicant.fullName,
+                                  ),
+                            icon: const Icon(Icons.check_rounded, size: 18),
+                            child: const FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text('ตอบรับ (Accept)'),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

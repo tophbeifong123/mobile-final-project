@@ -37,6 +37,7 @@ class StudentJobCard extends ConsumerWidget {
       details: [
         job.category,
         workModeLabel(job.workMode),
+        interviewModeLabel(job.interviewMode),
         if (job.openings != null) 'รับ ${job.openings} คน',
       ],
       createdAt: job.createdAt,

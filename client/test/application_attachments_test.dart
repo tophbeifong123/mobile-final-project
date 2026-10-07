@@ -52,6 +52,10 @@ class _Repo implements ApplicationRepository {
   @override
   Future<JobApplication> fetchDetail(String id) async =>
       throw UnimplementedError();
+
+  @override
+  Future<void> completeExam(String applicationId) async =>
+      throw UnimplementedError();
 }
 
 void main() {

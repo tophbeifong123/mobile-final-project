@@ -6,6 +6,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Put,
   Res,
   UseGuards,
 } from '@nestjs/common';
@@ -29,6 +30,8 @@ import { ApplicationResponseDto } from './dto/application-response.dto.js';
 import { ApplyJobDto } from './dto/apply-job.dto.js';
 import { JobApplicantItemDto } from './dto/job-applicant-item.dto.js';
 import { MyApplicationItemDto } from './dto/my-application-item.dto.js';
+import { SetExamLinkDto } from './dto/set-exam-link.dto.js';
+import { SetInterviewLinkDto } from './dto/set-interview-link.dto.js';
 import { UpdateApplicationStatusDto } from './dto/update-application-status.dto.js';
 
 @ApiTags('Applications')
@@ -68,6 +71,24 @@ export class ApplicationsController {
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<ApplicationDetailDto> {
     return this.applicationsService.getDetail(user, id);
+  }
+
+  @Post('applications/:id/exam/complete')
+  @ApiOperation({ summary: 'นักศึกษาแจ้งว่าทำข้อสอบแล้ว' })
+  @ApiParam({ name: 'id', format: 'uuid', description: 'รหัสใบสมัคร' })
+  @ApiResponse({ status: 201, type: ApplicationDetailDto })
+  @ApiResponse({
+    status: 400,
+    description: 'ยังไม่มีข้อสอบ เลยกำหนด กดซ้ำ หรือยังไม่ถึงขั้นพิจารณา',
+  })
+  @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
+  @ApiResponse({ status: 403, description: 'เฉพาะนักศึกษา' })
+  @ApiResponse({ status: 404, description: 'ไม่พบใบสมัคร' })
+  completeExam(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<ApplicationDetailDto> {
+    return this.applicationsService.completeExam(user, id);
   }
 
   @Post('jobs/:id/applications')
@@ -320,9 +341,77 @@ export class ApplicationsController {
     res.send(buffer);
   }
 
+  @Put('company/jobs/:id/applications/:applicationId/exam')
+  @ApiOperation({ summary: 'ส่งหรือแก้ลิงก์ข้อสอบพร้อมกำหนดเวลา' })
+  @ApiParam({ name: 'id', format: 'uuid', description: 'รหัสประกาศงาน' })
+  @ApiParam({ name: 'applicationId', format: 'uuid', description: 'รหัสใบสมัคร' })
+  @ApiBody({ type: SetExamLinkDto })
+  @ApiResponse({ status: 200, type: ApplicantDetailDto })
+  @ApiResponse({ status: 400, description: 'ลิงก์ เวลา หรือสถานะใบสมัครไม่ถูกต้อง' })
+  @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
+  @ApiResponse({ status: 403, description: 'เฉพาะบริษัท หรือไม่ใช่ประกาศของบริษัทนี้' })
+  @ApiResponse({ status: 404, description: 'ไม่พบใบสมัคร' })
+  setExamLink(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ParseUUIDPipe()) jobId: string,
+    @Param('applicationId', new ParseUUIDPipe()) applicationId: string,
+    @Body() dto: SetExamLinkDto,
+  ): Promise<ApplicantDetailDto> {
+    return this.applicationsService.setExamLink(user, jobId, applicationId, dto);
+  }
+
+  @Post('company/jobs/:id/applications/:applicationId/exam/pass')
+  @ApiOperation({
+    summary: 'ตรวจว่าข้อสอบผ่าน แล้วจึงเรียกสัมภาษณ์ได้',
+  })
+  @ApiParam({ name: 'id', format: 'uuid', description: 'รหัสประกาศงาน' })
+  @ApiParam({ name: 'applicationId', format: 'uuid', description: 'รหัสใบสมัคร' })
+  @ApiResponse({ status: 200, type: ApplicantDetailDto })
+  @ApiResponse({ status: 400, description: 'นักศึกษายังไม่ทำข้อสอบ หรือตรวจผ่านไปแล้ว' })
+  @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
+  @ApiResponse({ status: 403, description: 'เฉพาะบริษัท หรือไม่ใช่ประกาศของบริษัทนี้' })
+  @ApiResponse({ status: 404, description: 'ไม่พบใบสมัคร' })
+  passExam(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ParseUUIDPipe()) jobId: string,
+    @Param('applicationId', new ParseUUIDPipe()) applicationId: string,
+  ): Promise<ApplicantDetailDto> {
+    return this.applicationsService.passExam(user, jobId, applicationId);
+  }
+
+  @Put('company/jobs/:id/applications/:applicationId/interview')
+  @ApiOperation({
+    summary: 'เรียกสัมภาษณ์หลังตรวจว่าข้อสอบผ่าน',
+    description:
+      'ใช้ได้เมื่อใบสมัครกำลังพิจารณาและบริษัทกดว่าข้อสอบผ่านแล้ว สัมภาษณ์ออนไลน์ต้องมีลิงก์ สัมภาษณ์ออนไซต์ส่งเฉพาะวันเวลา',
+  })
+  @ApiParam({ name: 'id', format: 'uuid', description: 'รหัสประกาศงาน' })
+  @ApiParam({ name: 'applicationId', format: 'uuid', description: 'รหัสใบสมัคร' })
+  @ApiBody({ type: SetInterviewLinkDto })
+  @ApiResponse({ status: 200, type: ApplicantDetailDto })
+  @ApiResponse({ status: 400, description: 'ลิงก์ เวลา หรือสถานะใบสมัครไม่ถูกต้อง' })
+  @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
+  @ApiResponse({ status: 403, description: 'เฉพาะบริษัท หรือไม่ใช่ประกาศของบริษัทนี้' })
+  @ApiResponse({ status: 404, description: 'ไม่พบใบสมัคร' })
+  setInterviewLink(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ParseUUIDPipe()) jobId: string,
+    @Param('applicationId', new ParseUUIDPipe()) applicationId: string,
+    @Body() dto: SetInterviewLinkDto,
+  ): Promise<ApplicantDetailDto> {
+    return this.applicationsService.setInterviewLink(
+      user,
+      jobId,
+      applicationId,
+      dto,
+    );
+  }
+
   @Patch('company/jobs/:id/applications/:applicationId/status')
   @ApiOperation({
     summary: 'เปลี่ยนสถานะผู้สมัคร (Reviewing, Accepted, Rejected)',
+    description:
+      'ตอบรับได้เมื่อกำลังพิจารณาและมีวันเวลานัดสัมภาษณ์แล้ว ปฏิเสธได้ตลอดระหว่างกำลังพิจารณา',
   })
   @ApiParam({ name: 'id', format: 'uuid', description: 'รหัสประกาศงาน' })
   @ApiParam({

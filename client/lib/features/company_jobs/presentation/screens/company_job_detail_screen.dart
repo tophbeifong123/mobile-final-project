@@ -185,6 +185,10 @@ class _PostingColumn extends StatelessWidget {
               icon: LucideIcons.monitor,
               label: workModeLabelFromApi(job.workMode),
             ),
+            _MetaChip(
+              icon: LucideIcons.calendarCheck,
+              label: interviewModeLabelFromApi(job.interviewMode),
+            ),
             if (job.category.trim().isNotEmpty)
               _MetaChip(icon: LucideIcons.tag, label: job.category),
             if (job.openings != null)

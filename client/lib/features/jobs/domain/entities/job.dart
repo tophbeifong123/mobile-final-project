@@ -2,6 +2,8 @@ import '../../../student_profile/domain/entities/student_profile.dart';
 
 enum WorkMode { onSite, hybrid, remote }
 
+enum InterviewMode { online, onSite }
+
 enum JobStatus { open, closed }
 
 class JobFilter {
@@ -119,6 +121,7 @@ class Job {
     required this.companyName,
     required this.province,
     required this.workMode,
+    this.interviewMode = InterviewMode.online,
     required this.category,
     required this.hasAllowance,
     this.openings,
@@ -134,6 +137,7 @@ class Job {
   final String companyName;
   final String province;
   final WorkMode workMode;
+  final InterviewMode interviewMode;
   final String category;
   final bool hasAllowance;
   final int? openings;
@@ -166,6 +170,7 @@ class JobDetail {
     required this.description,
     required this.province,
     required this.workMode,
+    this.interviewMode = InterviewMode.online,
     required this.category,
     required this.hasAllowance,
     this.openings,
@@ -193,6 +198,7 @@ class JobDetail {
   final String description;
   final String province;
   final WorkMode workMode;
+  final InterviewMode interviewMode;
   final String category;
   final bool hasAllowance;
   final int? openings;
@@ -213,6 +219,21 @@ class JobDetail {
   final List<String> skills;
   final DateTime? createdAt;
   final DateTime? deadline;
+}
+
+String interviewModeToApi(InterviewMode mode) {
+  return switch (mode) {
+    InterviewMode.online => 'online',
+    InterviewMode.onSite => 'on_site',
+  };
+}
+
+InterviewMode interviewModeFromApi(String value) {
+  return switch (value) {
+    'online' => InterviewMode.online,
+    'on_site' => InterviewMode.onSite,
+    _ => throw FormatException('รูปแบบสัมภาษณ์ไม่รู้จัก'),
+  };
 }
 
 String workModeToApi(WorkMode mode) {

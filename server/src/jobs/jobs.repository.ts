@@ -8,7 +8,7 @@ import { CompanyProfile } from '../auth/entities/company-profile.entity.js';
 import { StudentProfile } from '../auth/entities/student-profile.entity.js';
 import { Job } from './entities/job.entity.js';
 import { SavedJob } from './entities/saved-job.entity.js';
-import { JobStatus, type WorkMode } from './job-enums.js';
+import { type InterviewMode, JobStatus, type WorkMode } from './job-enums.js';
 
 export interface OpenJobFilter {
   search?: string;
@@ -27,6 +27,7 @@ export interface OpenJobRecord {
   companyName: string;
   province: string;
   workMode: WorkMode;
+  interviewMode: InterviewMode;
   category: string;
   hasAllowance: boolean;
   openings: number | null;
@@ -57,6 +58,7 @@ export interface CompanyJobRecord {
   title: string;
   status: JobStatus;
   workMode: WorkMode;
+  interviewMode: InterviewMode;
   applicantCount: number;
   pendingApplicantCount: number;
   deadline: Date | null;
@@ -68,6 +70,7 @@ export interface NewJob {
   description: string;
   province: string;
   workMode: WorkMode;
+  interviewMode: InterviewMode;
   category: string;
   hasAllowance: boolean;
   openings: number | null;
@@ -84,6 +87,7 @@ export interface OwnedJobUpdate {
   description: string;
   province: string;
   workMode: WorkMode;
+  interviewMode: InterviewMode;
   category: string;
   hasAllowance: boolean;
   openings: number | null;
@@ -160,6 +164,7 @@ export class JobsRepository {
       .addSelect('company.name', 'companyName')
       .addSelect('job.province', 'province')
       .addSelect('job.workMode', 'workMode')
+      .addSelect('job.interviewMode', 'interviewMode')
       .addSelect('job.category', 'category')
       .addSelect('job.hasAllowance', 'hasAllowance')
       .addSelect('job.openings', 'openings')
@@ -194,6 +199,7 @@ export class JobsRepository {
                 j.title,
                 j.status,
                 j.work_mode      AS "workMode",
+                j.interview_mode AS "interviewMode",
                 j.deadline,
                 COUNT(a.id)::int AS "applicantCount",
                 COUNT(a.id) FILTER (WHERE a.status IN ('submitted', 'reviewing'))::int AS "pendingApplicantCount"
@@ -226,6 +232,7 @@ export class JobsRepository {
         description: input.description,
         province: input.province,
         workMode: input.workMode,
+        interviewMode: input.interviewMode,
         category: input.category,
         hasAllowance: input.hasAllowance,
         openings: input.openings ?? null,
@@ -272,6 +279,7 @@ export class JobsRepository {
     job.description = input.description;
     job.province = input.province;
     job.workMode = input.workMode;
+    job.interviewMode = input.interviewMode;
     job.category = input.category;
     job.hasAllowance = input.hasAllowance;
     job.openings = input.openings ?? null;
@@ -367,6 +375,7 @@ export class JobsRepository {
       .addSelect('company.name', 'companyName')
       .addSelect('job.province', 'province')
       .addSelect('job.workMode', 'workMode')
+      .addSelect('job.interviewMode', 'interviewMode')
       .addSelect('job.category', 'category')
       .addSelect('job.hasAllowance', 'hasAllowance')
       .addSelect('job.openings', 'openings')
@@ -401,6 +410,7 @@ export class JobsRepository {
       .addSelect('job.deadline', 'deadline')
       .addSelect('job.province', 'province')
       .addSelect('job.workMode', 'workMode')
+      .addSelect('job.interviewMode', 'interviewMode')
       .addSelect('job.category', 'category')
       .addSelect('job.hasAllowance', 'hasAllowance')
       .addSelect('job.openings', 'openings')
@@ -476,6 +486,7 @@ function toOpenJob(row: Record<string, unknown>): OpenJobRecord {
     companyName: String(readField(row, 'companyName') ?? ''),
     province: String(readField(row, 'province') ?? ''),
     workMode: readField(row, 'workMode') as WorkMode,
+    interviewMode: readField(row, 'interviewMode') as InterviewMode,
     category: String(readField(row, 'category') ?? ''),
     hasAllowance: readBoolean(row, 'hasAllowance'),
     openings: readCount(row, 'openings'),
@@ -517,6 +528,7 @@ function toCompanyJobRecord(row: Record<string, unknown>): CompanyJobRecord {
     title: String(readField(row, 'title') ?? ''),
     status: readField(row, 'status') as JobStatus,
     workMode: readField(row, 'workMode') as WorkMode,
+    interviewMode: readField(row, 'interviewMode') as InterviewMode,
     applicantCount: Number(readField(row, 'applicantCount') ?? 0),
     pendingApplicantCount: Number(readField(row, 'pendingApplicantCount') ?? 0),
     deadline: readOptionalDate(row, 'deadline'),

@@ -10,4 +10,6 @@ abstract class ApplicationRepository {
     required String coverLetter,
     List<String> documentIds = const [],
   });
+
+  Future<void> completeExam(String applicationId);
 }

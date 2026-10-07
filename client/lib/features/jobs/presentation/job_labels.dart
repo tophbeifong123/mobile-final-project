@@ -1,5 +1,20 @@
 import '../domain/entities/job.dart';
 
+String interviewModeLabel(InterviewMode mode) {
+  return switch (mode) {
+    InterviewMode.online => 'สัมภาษณ์ออนไลน์',
+    InterviewMode.onSite => 'สัมภาษณ์ออนไซต์',
+  };
+}
+
+String interviewModeLabelFromApi(String value) {
+  return switch (value) {
+    'online' => interviewModeLabel(InterviewMode.online),
+    'on_site' => interviewModeLabel(InterviewMode.onSite),
+    _ => value,
+  };
+}
+
 String workModeLabel(WorkMode mode) {
   return switch (mode) {
     WorkMode.onSite => 'On-site',

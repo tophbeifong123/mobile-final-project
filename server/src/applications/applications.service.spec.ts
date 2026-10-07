@@ -438,6 +438,12 @@ describe('ApplicationsService', () => {
         status: ApplicationStatus.Submitted,
         coverLetter: 'อยากฝึกงานที่นี่ครับ',
         createdAt: '2026-09-23T12:00:00.000Z',
+        examUrl: null,
+        examDeadline: null,
+        examCompletedAt: null,
+        examPassedAt: null,
+        interviewUrl: null,
+        interviewStartsAt: null,
       });
     });
   });
@@ -560,6 +566,13 @@ describe('ApplicationsService', () => {
         coverLetter: 'อยากฝึกงานที่นี่มากครับ',
         createdAt: '2026-09-23T12:00:00.000Z',
         updatedAt: '2026-09-23T12:30:00.000Z',
+        examUrl: null,
+        examDeadline: null,
+        examCompletedAt: null,
+        examPassedAt: null,
+        interviewUrl: null,
+        interviewStartsAt: null,
+        interviewMode: 'online',
       });
     });
   });

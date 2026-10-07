@@ -7,6 +7,7 @@ class SavedJob extends Job {
     required super.companyName,
     required super.province,
     required super.workMode,
+    super.interviewMode,
     required super.category,
     required super.hasAllowance,
     required super.status,

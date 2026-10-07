@@ -79,6 +79,7 @@ class _JobFormState extends ConsumerState<_JobForm> {
   late final TextEditingController _requirementsController;
   late final TextEditingController _allowanceAmountController;
   late WorkMode _workMode;
+  late InterviewMode _interviewMode;
   late String _category;
   late final TextEditingController _categoryController;
   late bool _hasAllowance;
@@ -108,6 +109,9 @@ class _JobFormState extends ConsumerState<_JobForm> {
       text: job?.allowanceAmount?.toString() ?? '',
     );
     _workMode = job == null ? WorkMode.hybrid : workModeFromApi(job.workMode);
+    _interviewMode = job == null
+        ? InterviewMode.online
+        : interviewModeFromApi(job.interviewMode);
     _category = isJobCategory(job?.category ?? '') ? job!.category : '';
     _categoryController = TextEditingController(text: _category);
     _hasAllowance = job?.hasAllowance ?? false;
@@ -167,6 +171,11 @@ class _JobFormState extends ConsumerState<_JobForm> {
         value: _workMode,
         enabled: !_busy,
         onChanged: (value) => setState(() => _workMode = value),
+      ),
+      interviewMode: _InterviewModePicker(
+        value: _interviewMode,
+        enabled: !_busy,
+        onChanged: (value) => setState(() => _interviewMode = value),
       ),
       category: InkWell(
         key: const Key('job-category-picker'),
@@ -428,6 +437,7 @@ class _JobFormState extends ConsumerState<_JobForm> {
       description: _descriptionController.text.trim(),
       province: _provinceController.text.trim(),
       workMode: workModeToApi(_workMode),
+      interviewMode: interviewModeToApi(_interviewMode),
       category: _category,
       hasAllowance: _hasAllowance,
       openings: int.tryParse(_openingsController.text.trim()),
@@ -569,6 +579,7 @@ class _FormColumn extends StatelessWidget {
     required this.description,
     required this.province,
     required this.workMode,
+    required this.interviewMode,
     required this.category,
     required this.openings,
     required this.allowance,
@@ -581,6 +592,7 @@ class _FormColumn extends StatelessWidget {
   final Widget description;
   final Widget province;
   final Widget workMode;
+  final Widget interviewMode;
   final Widget category;
   final Widget openings;
   final Widget allowance;
@@ -609,6 +621,8 @@ class _FormColumn extends StatelessWidget {
               province,
               const Gap(12),
               workMode,
+              const Gap(12),
+              interviewMode,
               const Gap(12),
               category,
               const Gap(12),
@@ -800,6 +814,68 @@ class _WorkModePicker extends StatelessWidget {
                   ),
                   child: Text(
                     workModeLabel(mode),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: NeoColors.inkSolid,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _InterviewModePicker extends StatelessWidget {
+  const _InterviewModePicker({
+    required this.value,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final InterviewMode value;
+  final bool enabled;
+  final ValueChanged<InterviewMode> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'รูปแบบสัมภาษณ์',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+            color: NeoColors.inkSolid,
+          ),
+        ),
+        const Gap(8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final mode in InterviewMode.values)
+              GestureDetector(
+                onTap: enabled ? () => onChanged(mode) : null,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: mode == value
+                        ? NeoColors.butterYellow
+                        : NeoColors.paperCanvas,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: NeoColors.inkSolid, width: 1.8),
+                    boxShadow: mode == value ? NeoShadows.elevation1 : null,
+                  ),
+                  child: Text(
+                    interviewModeLabel(mode),
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w800,

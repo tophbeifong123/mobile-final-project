@@ -8,6 +8,7 @@ class JobModel {
     required this.companyName,
     required this.province,
     required this.workMode,
+    this.interviewMode = InterviewMode.online,
     required this.category,
     required this.hasAllowance,
     this.openings,
@@ -25,6 +26,9 @@ class JobModel {
       companyName: json['companyName'] as String,
       province: json['province'] as String,
       workMode: workModeFromApi(json['workMode'] as String),
+      interviewMode: interviewModeFromApi(
+        json['interviewMode'] as String? ?? 'online',
+      ),
       category: json['category'] as String,
       hasAllowance: json['hasAllowance'] as bool,
       openings: json['openings'] as int?,
@@ -45,6 +49,7 @@ class JobModel {
   final String companyName;
   final String province;
   final WorkMode workMode;
+  final InterviewMode interviewMode;
   final String category;
   final bool hasAllowance;
   final int? openings;
@@ -61,6 +66,7 @@ class JobModel {
       companyName: companyName,
       province: province,
       workMode: workMode,
+      interviewMode: interviewMode,
       category: category,
       hasAllowance: hasAllowance,
       openings: openings,
@@ -80,6 +86,7 @@ class JobDetailModel {
     required this.description,
     required this.province,
     required this.workMode,
+    this.interviewMode = InterviewMode.online,
     required this.category,
     required this.hasAllowance,
     this.openings,
@@ -109,6 +116,9 @@ class JobDetailModel {
       description: json['description'] as String,
       province: json['province'] as String,
       workMode: workModeFromApi(json['workMode'] as String),
+      interviewMode: interviewModeFromApi(
+        json['interviewMode'] as String? ?? 'online',
+      ),
       category: json['category'] as String,
       hasAllowance: json['hasAllowance'] as bool,
       openings: json['openings'] as int?,
@@ -151,6 +161,7 @@ class JobDetailModel {
   final String description;
   final String province;
   final WorkMode workMode;
+  final InterviewMode interviewMode;
   final String category;
   final bool hasAllowance;
   final int? openings;
@@ -179,6 +190,7 @@ class JobDetailModel {
       description: description,
       province: province,
       workMode: workMode,
+      interviewMode: interviewMode,
       category: category,
       hasAllowance: hasAllowance,
       openings: openings,
