@@ -119,10 +119,10 @@ void main() {
 
       expect(find.text('เอกสารของฉัน'), findsOneWidget);
       expect(find.text('Transcript'), findsOneWidget);
-      expect(find.text('Resume ในระบบ'), findsOneWidget);
-      expect(find.text('current_resume.pdf'), findsOneWidget);
-      expect(find.text('เลือกไฟล์ PDF จากเครื่อง'), findsOneWidget);
-      expect(find.text('แก้ไข CV'), findsOneWidget);
+      expect(find.text('จำเป็นต่อการสมัครงาน'), findsOneWidget);
+      expect(find.text('เพิ่ม CV'), findsOneWidget);
+      expect(find.text('เพิ่ม Transcript'), findsOneWidget);
+      expect(find.text('เพิ่มไฟล์'), findsOneWidget);
     },
   );
 }
@@ -189,6 +189,7 @@ class _FakeResumeRepository implements ResumeRepository {
 
   @override
   Future<StudentDocument> uploadDocument({
+    String? replacingId,
     required String kind,
     required String filePath,
     required String fileName,

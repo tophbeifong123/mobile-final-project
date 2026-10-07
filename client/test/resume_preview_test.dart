@@ -130,6 +130,7 @@ class _FakeResumeRepository implements ResumeRepository {
 
   @override
   Future<StudentDocument> uploadDocument({
+    String? replacingId,
     required String kind,
     required String filePath,
     required String fileName,
