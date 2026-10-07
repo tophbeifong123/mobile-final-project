@@ -57,6 +57,17 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<AuthSession> linkGoogle({
+    required String idToken,
+    required String password,
+  }) async {
+    final model = await remote.linkGoogle(idToken: idToken, password: password);
+    final session = model.toEntity();
+    await tokenStorage.write(session);
+    return session;
+  }
+
+  @override
   Future<void> logout() async {
     try {
       await remote.logout();

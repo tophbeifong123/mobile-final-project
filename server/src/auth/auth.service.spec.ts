@@ -14,6 +14,7 @@ describe('AuthService', () => {
     findByGoogleSubject: vi.fn(),
     createUserWithProfile: vi.fn(),
     createGoogleUserWithProfile: vi.fn(),
+    linkGoogleIdentity: vi.fn(),
     saveRefreshToken: vi.fn(),
     rotateRefreshToken: vi.fn(),
     revokeAllForUser: vi.fn(),
@@ -203,8 +204,65 @@ describe('AuthService', () => {
         idToken: 'google-id-token',
         role: UserRole.Student,
       }),
-    ).rejects.toBeInstanceOf(ConflictException);
+    ).rejects.toMatchObject({
+      response: {
+        code: 'password_link_required',
+        email: 'new@example.com',
+        message: 'อีเมลนี้มีบัญชีอยู่แล้ว กรอกรหัสผ่านเดิมเพื่อผูก Google',
+      },
+    });
     expect(repository.createGoogleUserWithProfile).not.toHaveBeenCalled();
+    expect(repository.linkGoogleIdentity).not.toHaveBeenCalled();
+  });
+
+  it('links Google after the existing password is verified', async () => {
+    repository.findByGoogleSubject.mockResolvedValue(null);
+    repository.findByEmail.mockResolvedValue({
+      id: 'password-user',
+      email: 'new@example.com',
+      passwordHash: 'existing-hash',
+      role: UserRole.Student,
+    });
+    passwords.verify.mockResolvedValue(true);
+    repository.linkGoogleIdentity.mockResolvedValue('linked');
+
+    const result = await service.linkGooglePasswordAccount({
+      idToken: 'google-id-token',
+      password: 'password123',
+    });
+
+    expect(passwords.verify).toHaveBeenCalledWith(
+      'password123',
+      'existing-hash',
+    );
+    expect(repository.linkGoogleIdentity).toHaveBeenCalledWith(
+      'password-user',
+      'google-sub-1',
+    );
+    expect(repository.createGoogleUserWithProfile).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      accessToken: 'access-token',
+      role: 'student',
+    });
+  });
+
+  it('does not link Google when the password is wrong', async () => {
+    repository.findByGoogleSubject.mockResolvedValue(null);
+    repository.findByEmail.mockResolvedValue({
+      id: 'password-user',
+      email: 'new@example.com',
+      passwordHash: 'existing-hash',
+      role: UserRole.Student,
+    });
+    passwords.verify.mockResolvedValue(false);
+
+    await expect(
+      service.linkGooglePasswordAccount({
+        idToken: 'google-id-token',
+        password: 'wrong-password',
+      }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(repository.linkGoogleIdentity).not.toHaveBeenCalled();
   });
 
   it('uses the stored role for an existing Google identity', async () => {

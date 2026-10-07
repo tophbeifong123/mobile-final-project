@@ -14,12 +14,14 @@ class GoogleSignInButton extends StatefulWidget {
     super.key,
     required this.onIdToken,
     required this.onError,
-    this.label = 'Google',
+    this.label = 'เข้าสู่ระบบด้วย Google',
+    this.signUp = false,
   });
 
   final GoogleIdTokenCallback onIdToken;
   final ValueChanged<String> onError;
   final String label;
+  final bool signUp;
 
   @override
   State<GoogleSignInButton> createState() => _GoogleSignInButtonState();
@@ -73,6 +75,8 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton> {
       return google_web.buildWebGoogleSignInButton(
         onIdToken: widget.onIdToken,
         onError: widget.onError,
+        label: _busy ? 'กำลังเชื่อมต่อ…' : widget.label,
+        signUp: widget.signUp,
       );
     }
 

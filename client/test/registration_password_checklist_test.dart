@@ -219,6 +219,11 @@ class _AuthRepository implements AuthRepository {
     UserRole? role,
   }) async => throw UnimplementedError();
   @override
+  Future<AuthSession> linkGoogle({
+    required String idToken,
+    required String password,
+  }) async => throw UnimplementedError();
+  @override
   Future<AuthSession> register({
     required String email,
     required String password,

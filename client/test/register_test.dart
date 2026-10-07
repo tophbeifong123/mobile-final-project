@@ -77,7 +77,7 @@ void main() {
       expect(find.text('หรือลงทะเบียนด้วย'), findsOneWidget);
 
       // Social buttons
-      expect(find.text('Google'), findsOneWidget);
+      expect(find.text('ลงทะเบียนด้วย Google'), findsOneWidget);
       expect(find.text('SSO มหาวิทยาลัย'), findsNothing);
 
       // Footer
@@ -291,6 +291,14 @@ class _FakeAuthRepository implements AuthRepository {
   Future<bool> authenticateWithGoogle({
     required String idToken,
     UserRole? role,
+  }) async {
+    throw const AppException('Not implemented in fake');
+  }
+
+  @override
+  Future<AuthSession> linkGoogle({
+    required String idToken,
+    required String password,
   }) async {
     throw const AppException('Not implemented in fake');
   }

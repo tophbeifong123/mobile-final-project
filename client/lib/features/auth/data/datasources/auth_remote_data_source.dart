@@ -53,6 +53,16 @@ class AuthRemoteDataSource {
     }
   }
 
+  Future<AuthSessionModel> linkGoogle({
+    required String idToken,
+    required String password,
+  }) {
+    return _postSession(ApiConstants.googleLink, {
+      'idToken': idToken,
+      'password': password,
+    });
+  }
+
   Future<void> logout() async {
     try {
       await _dio.post<void>(ApiConstants.logout);
@@ -91,7 +101,13 @@ AppException mapAuthError(DioException error) {
     case 409:
       final data = error.response?.data;
       final message = data is Map<String, dynamic> ? data['message'] : null;
-      return AppException(message is String ? message : 'อีเมลนี้ถูกใช้แล้ว');
+      final code = data is Map<String, dynamic> ? data['code'] : null;
+      final email = data is Map<String, dynamic> ? data['email'] : null;
+      return AppException(
+        message is String ? message : 'อีเมลนี้ถูกใช้แล้ว',
+        code: code is String ? code : null,
+        email: email is String ? email : null,
+      );
     case 401:
       return const AppException('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
     case 400:
