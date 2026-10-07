@@ -28,6 +28,13 @@ export class JobApplicantItemDto {
   major: string;
 
   @ApiProperty({
+    example: 'student-avatars/student-123/avatar.png',
+    nullable: true,
+    description: 'Object key ของรูปโปรไฟล์ผู้สมัคร',
+  })
+  avatarObjectKey: string | null;
+
+  @ApiProperty({
     enum: ApplicationStatus,
     example: ApplicationStatus.Submitted,
     description: 'สถานะใบสมัคร',
@@ -45,4 +52,22 @@ export class JobApplicantItemDto {
     description: 'วันเวลาที่ยื่นใบสมัคร',
   })
   createdAt: string;
+
+  @ApiProperty({ nullable: true, example: 'https://exam.example/quiz' })
+  examUrl: string | null;
+
+  @ApiProperty({ nullable: true, format: 'date-time' })
+  examDeadline: string | null;
+
+  @ApiProperty({ nullable: true, format: 'date-time' })
+  examCompletedAt: string | null;
+
+  @ApiProperty({ nullable: true, format: 'date-time' })
+  examPassedAt: string | null;
+
+  @ApiProperty({ nullable: true, example: 'https://meet.example/room' })
+  interviewUrl: string | null;
+
+  @ApiProperty({ nullable: true, format: 'date-time' })
+  interviewStartsAt: string | null;
 }

@@ -7,7 +7,7 @@ import { StorageService } from '../storage/storage.service.js';
 import { CreateJobDto } from './dto/create-job.dto.js';
 import { UpdateJobDto } from './dto/update-job.dto.js';
 import { JobFeedQueryDto } from './dto/job-feed-query.dto.js';
-import { JobStatus, WorkMode } from './job-enums.js';
+import { InterviewMode, JobStatus, WorkMode } from './job-enums.js';
 import { JobsRepository } from './jobs.repository.js';
 import { JobsService } from './jobs.service.js';
 
@@ -18,6 +18,7 @@ const base = {
   description: 'Description',
   province: 'สงขลา',
   workMode: WorkMode.Remote,
+  interviewMode: InterviewMode.Online,
   category: 'IT & Software',
   hasAllowance: true,
   allowanceAmount: 8000,

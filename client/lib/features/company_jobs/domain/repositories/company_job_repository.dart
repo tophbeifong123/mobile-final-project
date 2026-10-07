@@ -37,4 +37,20 @@ abstract class CompanyJobRepository {
     required String applicationId,
     required String status,
   });
+
+  Future<void> setExamLink({
+    required String jobId,
+    required String applicationId,
+    required String url,
+    required DateTime deadline,
+  });
+
+  Future<void> passExam({required String jobId, required String applicationId});
+
+  Future<void> setInterviewLink({
+    required String jobId,
+    required String applicationId,
+    required String url,
+    required DateTime startsAt,
+  });
 }

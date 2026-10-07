@@ -28,6 +28,7 @@ describe('AuthService', () => {
     verify: vi.fn().mockResolvedValue({
       subject: 'google-sub-1',
       email: 'new@example.com',
+      name: 'Google Student',
     }),
   };
 
@@ -41,6 +42,7 @@ describe('AuthService', () => {
     googleTokens.verify.mockResolvedValue({
       subject: 'google-sub-1',
       email: 'new@example.com',
+      name: 'Google Student',
     });
     config.get.mockImplementation(
       (_key: string, fallback?: string) => fallback ?? '7d',
@@ -70,6 +72,7 @@ describe('AuthService', () => {
     });
 
     const result = await service.register({
+      fullName: '  มีนา  ',
       email: 'Student@Example.com',
       password: 'Password123!',
       role: UserRole.Student,
@@ -79,6 +82,7 @@ describe('AuthService', () => {
       email: 'student@example.com',
       passwordHash: 'hashed-password',
       role: UserRole.Student,
+      fullName: 'มีนา',
     });
     expect(result.accessToken).toBe('access-token');
     expect(result.role).toBe(UserRole.Student);
@@ -95,6 +99,7 @@ describe('AuthService', () => {
 
     await expect(
       service.register({
+        fullName: 'มีนา',
         email: 'student@example.com',
         password: 'Password123!',
         role: UserRole.Student,
@@ -108,6 +113,7 @@ describe('AuthService', () => {
     async (role) => {
       await expect(
         service.register({
+          fullName: 'มีนา',
           email: 'person@example.com',
           password: 'abcdefgh',
           role,
@@ -172,6 +178,7 @@ describe('AuthService', () => {
       email: 'new@example.com',
       passwordHash: null,
       role: UserRole.Company,
+      fullName: 'Google Student',
     });
 
     const result = await service.googleAuth({
@@ -183,6 +190,7 @@ describe('AuthService', () => {
       email: 'new@example.com',
       providerSubject: 'google-sub-1',
       role: UserRole.Company,
+      fullName: 'Google Student',
     });
     expect(result).toMatchObject({
       accessToken: 'access-token',

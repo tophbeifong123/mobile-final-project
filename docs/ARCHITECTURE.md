@@ -168,7 +168,7 @@ Password recovery รองรับอีเมลที่ใช้สมั�
 | GET | /api/students/me/documents | รายการเอกสาร |
 | POST | /api/students/me/documents/cv | อัปโหลด/แทนที่ CV (multipart/form-data, PDF, 10 MiB max) |
 | POST | /api/students/me/documents/transcript | อัปโหลด/แทนที่ transcript (multipart/form-data, PDF, 10 MiB max) |
-| POST | /api/students/me/documents/other | เพิ่มเอกสารอื่น (multipart/form-data, PDF, สูงสุด 3, 10 MiB max) |
+| POST | /api/students/me/documents/other | เพิ่มเอกสารอื่น หรือแทนที่ของตัวเองด้วย documentId แบบ transaction (multipart/form-data, PDF, สูงสุด 3, 10 MiB max) |
 | DELETE | /api/students/me/documents/:id | ลบ CV, transcript หรือเอกสารอื่น; CV ที่ถูกใช้สมัครงานแล้วจะคงไฟล์ snapshot ของใบสมัครไว้ |
 | GET | /api/students/me/documents/:id/file | เปิดเอกสารของตัวเอง |
 | GET | /api/jobs | Home / Job Feed |
@@ -209,11 +209,17 @@ Flutter โหลดรายละเอียดใหม่เมื่อก
 | PATCH | /api/company/jobs/:id/status | เปิดหรือปิดรับสมัคร |
 | GET | /api/company/jobs/:id/applications | Applicants List |
 | GET | /api/company/jobs/:id/applications/:applicationId | Applicant Detail |
-| GET | /api/company/jobs/:id/applications/:applicationId/documents/:documentId/file | เปิด CV snapshot หรือเอกสารปัจจุบัน |
+| GET | /api/company/jobs/:id/applications/:applicationId/documents/:documentId/file | เปิดเฉพาะ PDF snapshot ที่แนบกับใบสมัครของประกาศตัวเอง |
 | GET | /api/company/jobs/:id/applications/:applicationId/resume | เปิด PDF สำเนาของใบสมัครในแอป เฉพาะบริษัทเจ้าของประกาศ |
 | PATCH | /api/company/jobs/:id/applications/:applicationId/status | เปลี่ยนสถานะผู้สมัคร |
+| PUT | /api/company/jobs/:id/applications/:applicationId/exam | ส่งหรือแก้ลิงก์ข้อสอบพร้อมกำหนดเวลา |
+| POST | /api/company/jobs/:id/applications/:applicationId/exam/pass | ตรวจว่าข้อสอบผ่าน หลังนักศึกษาแจ้งว่าทำแล้ว |
+| PUT | /api/company/jobs/:id/applications/:applicationId/interview | เรียกสัมภาษณ์หลังบริษัทตรวจว่าข้อสอบผ่าน ออนไลน์ส่งลิงก์กับวันเวลา ออนไซต์ส่งวันเวลา |
+| POST | /api/applications/:id/exam/complete | นักศึกษาแจ้งว่าทำข้อสอบแล้ว |
 
 บริษัทเรียกได้เฉพาะประกาศและผู้สมัครของบริษัทตัวเอง ไม่เช่นนั้นตอบ 403
+
+POST /api/jobs/:id/applications รับ coverLetter และ documentIds (UUID ของเอกสารในคลังตัวเอง, ไม่เกิน 5, ห้ามซ้ำ). ApplicationsService บังคับ CV เสมอและเอกสารเพิ่มเติมเริ่มต้นไม่แนบ; repository ตรวจชุดที่เลือกซ้ำภายใต้ student profile lock และบันทึก application_documents ใน transaction เดียวกับใบสมัคร. รายละเอียดใบสมัครทั้งสองฝั่งส่ง documents เป็น ID/type/fileName ของ snapshot เท่านั้น ไม่มี object key ของเอกสารในคลังที่ไม่ได้เลือก. GET /api/applications/:id/documents/:documentId/file ให้นักศึกษาเปิด snapshot ของใบสมัครตัวเอง และเส้นทางบริษัทตรวจ role/เจ้าของประกาศ/คู่ใบสมัคร/สมาชิก snapshot ก่อนอ่าน storage. ทั้งสองส่ง PDF แบบ inline พร้อม private, no-store และ nosniff; ไม่มีไฟล์ตอบ 404, storage ล้มเหลวตอบ 503.
 
 เส้นทาง Resume ตรวจ role บริษัท เจ้าของประกาศ และคู่ job/application ใน ApplicationsService ก่อนอ่าน storage จากคีย์ของใบสมัคร ไม่อ่าน Resume ล่าสุดจาก Student Profile ส่ง application/pdf แบบ inline พร้อม private, no-store และ nosniff; ไม่มีไฟล์ตอบ 404 และ storage ล้มเหลวตอบ 503 โดยไม่เปิดเผยรายละเอียดภายใน Flutter เปิด modal PDF อ่านอย่างเดียวโดยใช้ Dio พร้อม token ไม่เรียกเส้นทาง Resume ของนักศึกษา และยังอยู่หน้ารายละเอียดหลังปิดหรือโหลดล้มเหลว
 
@@ -363,4 +369,4 @@ CORS เปิดให้แอปมือถือเรียกได้ต
 
 ## 10. นอกแบบนี้
 
-ไม่ทำแชท, นัดสัมภาษณ์, ยืนยัน email, login ด้วย social provider อื่นนอกจาก Google, ถอนใบสมัคร, หน้าโปรไฟล์บริษัทแยก, Admin, push notification นอกแอป หรือการเปลี่ยน role หลังสมัคร. Google Login รองรับ Android และ Web สำหรับทดสอบ; iOS ยังไม่อยู่ในขอบเขตนี้.
+ไม่ทำแชท, ระบบข้อสอบหรือปฏิทินในแอป, ยืนยัน email, login ด้วย social provider อื่นนอกจาก Google, ถอนใบสมัคร, หน้าโปรไฟล์บริษัทแยก, Admin, push notification นอกแอป หรือการเปลี่ยน role หลังสมัคร. ระหว่างกำลังพิจารณา บริษัทส่งลิงก์ข้อสอบก่อน นักศึกษาแจ้งว่าทำแล้ว บริษัทตรวจว่าผ่านจึงเรียกสัมภาษณ์ตามรูปแบบของประกาศ และตอบรับได้หลังมีนัดแล้ว. Google Login รองรับ Android และ Web สำหรับทดสอบ; iOS ยังไม่อยู่ในขอบเขตนี้.

@@ -197,6 +197,7 @@ export class StudentsService {
     user: AuthUser,
     type: StudentDocumentType,
     file?: UploadedFilePayload,
+    replacingId?: string,
   ) {
     this.assertStudent(user);
 
@@ -217,6 +218,15 @@ export class StudentsService {
     }
 
     const fileName = sanitizePdfName(file.originalname);
+    if (replacingId) {
+      if (type !== StudentDocumentType.Other) {
+        throw new BadRequestException('ระบุเอกสารที่จะแทนที่ได้เฉพาะเอกสารอื่น');
+      }
+      const previous = await this.studentsRepository.findDocument(profile.id, replacingId);
+      if (!previous || previous.type !== StudentDocumentType.Other) {
+        throw new NotFoundException('ไม่พบเอกสารอื่นที่ต้องการแทนที่');
+      }
+    }
     const objectKey =
       `student-documents/${user.userId}/${type}/${randomUUID()}.pdf`;
 
@@ -229,6 +239,7 @@ export class StudentsService {
           type,
           objectKey,
           fileName,
+          ...(replacingId ? { replacingId } : {}),
         });
 
       if (

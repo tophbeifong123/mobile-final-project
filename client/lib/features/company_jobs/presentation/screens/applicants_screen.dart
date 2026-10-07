@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
@@ -13,6 +15,7 @@ import '../widgets/company_applicant_widgets.dart';
 import '../../../../core/widgets/company_top_bar.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../domain/entities/company_job.dart';
+import '../../../applications/domain/selection_progress.dart';
 import '../providers/company_jobs_controller.dart';
 
 class ApplicantsScreen extends ConsumerWidget {
@@ -104,6 +107,7 @@ class ApplicantsScreen extends ConsumerWidget {
               itemBuilder: (context, index) {
                 final applicant = applicants[index];
                 return _ApplicantCard(
+                  jobId: jobId,
                   applicant: applicant,
                   onTap: () => context.push(
                     '/company/jobs/$jobId/applicants/${applicant.applicationId}',
@@ -118,16 +122,36 @@ class ApplicantsScreen extends ConsumerWidget {
   }
 }
 
-class _ApplicantCard extends StatelessWidget {
-  const _ApplicantCard({required this.applicant, required this.onTap});
+class _ApplicantCard extends ConsumerWidget {
+  const _ApplicantCard({
+    required this.jobId,
+    required this.applicant,
+    required this.onTap,
+  });
 
+  final String jobId;
   final Applicant applicant;
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
     final colors = context.colors;
+    final progress = selectionProgressLabel(
+      examUrl: applicant.examUrl,
+      examDeadline: applicant.examDeadline,
+      examCompletedAt: applicant.examCompletedAt,
+      examPassedAt: applicant.examPassedAt,
+      interviewUrl: applicant.interviewUrl,
+      interviewStartsAt: applicant.interviewStartsAt,
+    );
+    final avatarBytesAsync = ref.watch(
+      applicantAvatarBytesProvider((
+        jobId: jobId,
+        applicationId: applicant.applicationId,
+        avatarKey: applicant.avatarObjectKey,
+      )),
+    );
 
     return CompanyApplicantCard(
       onTap: onTap,
@@ -135,22 +159,7 @@ class _ApplicantCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: NeoColors.skyBlue,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: NeoColors.inkSolid, width: 1.5),
-            ),
-            child: const SizedBox(
-              width: 44,
-              height: 44,
-              child: Icon(
-                LucideIcons.user,
-                color: NeoColors.inkSolid,
-                size: 22,
-              ),
-            ),
-          ),
+          _ApplicantAvatar(avatarBytesAsync: avatarBytesAsync),
           const Gap(12),
           Expanded(
             child: Column(
@@ -202,6 +211,17 @@ class _ApplicantCard extends StatelessWidget {
                 ],
                 const Gap(10),
                 CompanyApplicantStatusChip(status: applicant.status),
+                if (progress != null) ...[
+                  const Gap(6),
+                  Text(
+                    progress,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -212,6 +232,51 @@ class _ApplicantCard extends StatelessWidget {
             size: 20,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ApplicantAvatar extends StatelessWidget {
+  const _ApplicantAvatar({required this.avatarBytesAsync});
+
+  final AsyncValue<List<int>?> avatarBytesAsync;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: NeoColors.skyBlue,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+      ),
+      child: SizedBox(
+        width: 44,
+        height: 44,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: avatarBytesAsync.when(
+            data: (bytes) => bytes != null && bytes.isNotEmpty
+                ? Image.memory(Uint8List.fromList(bytes), fit: BoxFit.cover)
+                : const Icon(
+                    LucideIcons.user,
+                    color: NeoColors.inkSolid,
+                    size: 22,
+                  ),
+            loading: () => const Center(
+              child: SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+            error: (_, _) => const Icon(
+              LucideIcons.user,
+              color: NeoColors.inkSolid,
+              size: 22,
+            ),
+          ),
+        ),
       ),
     );
   }

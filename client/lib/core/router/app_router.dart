@@ -168,7 +168,12 @@ List<RouteBase> _routes(GlobalKey<NavigatorState> rootNavigatorKey) {
         GoRoute(
           path: 'apply',
           builder: (context, state) {
-            return ApplyJobScreen(jobId: state.pathParameters['jobId']!);
+            return ApplyJobScreen(
+              jobId: state.pathParameters['jobId']!,
+              documentIds: state.extra is List<String>
+                  ? state.extra! as List<String>
+                  : const [],
+            );
           },
         ),
       ],

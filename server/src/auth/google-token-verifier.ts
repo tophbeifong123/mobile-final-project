@@ -7,6 +7,7 @@ export const GOOGLE_TOKEN_VERIFIER = Symbol('GOOGLE_TOKEN_VERIFIER');
 export interface VerifiedGoogleIdentity {
   subject: string;
   email: string;
+  name: string;
 }
 
 export interface GoogleTokenVerifier {
@@ -39,7 +40,11 @@ export class GoogleIdTokenVerifier implements GoogleTokenVerifier {
       if (!payload?.sub || !payload.email || payload.email_verified !== true) {
         throw new UnauthorizedException('Google account could not be verified');
       }
-      return { subject: payload.sub, email: payload.email };
+      return {
+        subject: payload.sub,
+        email: payload.email,
+        name: typeof payload.name === 'string' ? payload.name : '',
+      };
     } catch {
       throw new UnauthorizedException('Google ID token is invalid');
     }

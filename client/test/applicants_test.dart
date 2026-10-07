@@ -120,6 +120,132 @@ void main() {
     },
   );
 
+  testWidgets('applicants screen shows an uploaded applicant avatar', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final router = GoRouter(
+      initialLocation: '/company/jobs/job-1/applicants',
+      routes: [
+        GoRoute(
+          path: '/company/jobs/:jobId/applicants',
+          builder: (context, state) =>
+              ApplicantsScreen(jobId: state.pathParameters['jobId']!),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+          companyJobRepositoryProvider.overrideWithValue(
+            _FakeCompanyJobRepository(
+              applicants: const [
+                Applicant(
+                  applicationId: 'app-avatar',
+                  fullName: 'มีรูปโปรไฟล์',
+                  university: '',
+                  major: '',
+                  status: 'submitted',
+                  coverLetter: '',
+                  avatarObjectKey: 'student-avatars/student-1/avatar.png',
+                ),
+              ],
+            ),
+          ),
+          applicantAvatarBytesProvider.overrideWith(
+            (ref, arg) async => const [
+              0x89,
+              0x50,
+              0x4E,
+              0x47,
+              0x0D,
+              0x0A,
+              0x1A,
+              0x0A,
+              0x00,
+              0x00,
+              0x00,
+              0x0D,
+              0x49,
+              0x48,
+              0x44,
+              0x52,
+              0x00,
+              0x00,
+              0x00,
+              0x01,
+              0x00,
+              0x00,
+              0x00,
+              0x01,
+              0x08,
+              0x06,
+              0x00,
+              0x00,
+              0x00,
+              0x1F,
+              0x15,
+              0xC4,
+              0x89,
+              0x00,
+              0x00,
+              0x00,
+              0x0D,
+              0x49,
+              0x44,
+              0x41,
+              0x54,
+              0x08,
+              0xD7,
+              0x63,
+              0xF8,
+              0xCF,
+              0xC0,
+              0xF0,
+              0x1F,
+              0x00,
+              0x05,
+              0x00,
+              0x01,
+              0xFF,
+              0x89,
+              0x99,
+              0x3D,
+              0x1D,
+              0x00,
+              0x00,
+              0x00,
+              0x00,
+              0x49,
+              0x45,
+              0x4E,
+              0x44,
+              0xAE,
+              0x42,
+              0x60,
+              0x82,
+            ],
+          ),
+        ],
+        child: MaterialApp.router(
+          theme: AppTheme.lightTheme,
+          routerConfig: router,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('มีรูปโปรไฟล์'), findsOneWidget);
+    expect(find.byType(Image), findsOneWidget);
+  });
+
   testWidgets('tapping applicant navigates to applicant detail screen', (
     tester,
   ) async {
@@ -309,5 +435,27 @@ class _FakeCompanyJobRepository implements CompanyJobRepository {
     required String jobId,
     required String applicationId,
     required String status,
+  }) async {}
+
+  @override
+  Future<void> setExamLink({
+    required String jobId,
+    required String applicationId,
+    required String url,
+    required DateTime deadline,
+  }) async {}
+
+  @override
+  Future<void> passExam({
+    required String jobId,
+    required String applicationId,
+  }) async {}
+
+  @override
+  Future<void> setInterviewLink({
+    required String jobId,
+    required String applicationId,
+    required String url,
+    required DateTime startsAt,
   }) async {}
 }

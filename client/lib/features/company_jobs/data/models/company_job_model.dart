@@ -7,6 +7,7 @@ class CompanyJobModel {
     required this.title,
     required this.status,
     required this.workMode,
+    this.interviewMode = 'online',
     required this.applicantCount,
     required this.pendingApplicantCount,
     this.deadline,
@@ -18,6 +19,7 @@ class CompanyJobModel {
       title: json['title'] as String? ?? '',
       status: json['status'] as String? ?? 'open',
       workMode: json['workMode'] as String? ?? 'hybrid',
+      interviewMode: json['interviewMode'] as String? ?? 'online',
       applicantCount: json['applicantCount'] as int? ?? 0,
       pendingApplicantCount: json['pendingApplicantCount'] as int? ?? 0,
       deadline: json['deadline'] != null
@@ -30,6 +32,7 @@ class CompanyJobModel {
   final String title;
   final String status;
   final String workMode;
+  final String interviewMode;
   final int applicantCount;
   final int pendingApplicantCount;
   final DateTime? deadline;
@@ -40,6 +43,7 @@ class CompanyJobModel {
       title: title,
       status: status,
       workMode: workMode,
+      interviewMode: interviewMode,
       applicantCount: applicantCount,
       pendingApplicantCount: pendingApplicantCount,
       deadline: deadline,
@@ -54,6 +58,7 @@ class CompanyOwnedJobModel {
     required this.description,
     required this.province,
     required this.workMode,
+    this.interviewMode = 'online',
     required this.category,
     required this.hasAllowance,
     this.openings,
@@ -74,6 +79,7 @@ class CompanyOwnedJobModel {
       description: json['description'] as String? ?? '',
       province: json['province'] as String? ?? '',
       workMode: json['workMode'] as String? ?? 'hybrid',
+      interviewMode: json['interviewMode'] as String? ?? 'online',
       category: json['category'] as String? ?? '',
       hasAllowance: json['hasAllowance'] as bool? ?? false,
       openings: json['openings'] as int?,
@@ -99,6 +105,7 @@ class CompanyOwnedJobModel {
   final String description;
   final String province;
   final String workMode;
+  final String interviewMode;
   final String category;
   final bool hasAllowance;
   final int? openings;
@@ -118,6 +125,7 @@ class CompanyOwnedJobModel {
       description: description,
       province: province,
       workMode: workMode,
+      interviewMode: interviewMode,
       category: category,
       hasAllowance: hasAllowance,
       openings: openings,
@@ -158,6 +166,7 @@ class EditableJobModel {
     required this.description,
     required this.province,
     required this.workMode,
+    this.interviewMode = 'online',
     required this.category,
     required this.hasAllowance,
     this.openings,
@@ -175,6 +184,7 @@ class EditableJobModel {
       description: json['description'] as String? ?? '',
       province: json['province'] as String? ?? '',
       workMode: json['workMode'] as String? ?? 'hybrid',
+      interviewMode: json['interviewMode'] as String? ?? 'online',
       category: json['category'] as String? ?? '',
       hasAllowance: json['hasAllowance'] as bool? ?? false,
       openings: json['openings'] as int?,
@@ -195,6 +205,7 @@ class EditableJobModel {
   final String description;
   final String province;
   final String workMode;
+  final String interviewMode;
   final String category;
   final bool hasAllowance;
   final int? openings;
@@ -211,6 +222,7 @@ class EditableJobModel {
       description: description,
       province: province,
       workMode: workMode,
+      interviewMode: interviewMode,
       category: category,
       hasAllowance: hasAllowance,
       openings: openings,
@@ -241,6 +253,13 @@ class ApplicantModel {
     this.avatarObjectKey,
     this.createdAt,
     this.documents = const [],
+    this.examUrl,
+    this.examDeadline,
+    this.examCompletedAt,
+    this.examPassedAt,
+    this.interviewUrl,
+    this.interviewStartsAt,
+    this.interviewMode = 'online',
   });
 
   factory ApplicantModel.fromJson(Map<String, dynamic> json) {
@@ -282,6 +301,13 @@ class ApplicantModel {
           fileName: document['fileName'] as String,
         );
       }).toList(),
+      examUrl: json['examUrl'] as String?,
+      examDeadline: _parseSelectionDate(json['examDeadline']),
+      examCompletedAt: _parseSelectionDate(json['examCompletedAt']),
+      examPassedAt: _parseSelectionDate(json['examPassedAt']),
+      interviewUrl: json['interviewUrl'] as String?,
+      interviewStartsAt: _parseSelectionDate(json['interviewStartsAt']),
+      interviewMode: json['interviewMode'] as String? ?? 'online',
     );
   }
 
@@ -301,6 +327,13 @@ class ApplicantModel {
   final String? avatarObjectKey;
   final DateTime? createdAt;
   final List<ApplicantDocumentModel> documents;
+  final String? examUrl;
+  final DateTime? examDeadline;
+  final DateTime? examCompletedAt;
+  final DateTime? examPassedAt;
+  final String? interviewUrl;
+  final DateTime? interviewStartsAt;
+  final String interviewMode;
 
   Applicant toEntity() {
     return Applicant(
@@ -325,8 +358,20 @@ class ApplicantModel {
                 ApplicantDocument(id: d.id, type: d.type, fileName: d.fileName),
           )
           .toList(),
+      examUrl: examUrl,
+      examDeadline: examDeadline,
+      examCompletedAt: examCompletedAt,
+      examPassedAt: examPassedAt,
+      interviewUrl: interviewUrl,
+      interviewStartsAt: interviewStartsAt,
+      interviewMode: interviewMode,
     );
   }
+}
+
+DateTime? _parseSelectionDate(Object? value) {
+  if (value is! String || value.isEmpty) return null;
+  return DateTime.tryParse(value);
 }
 
 class ApplicantDocumentModel {

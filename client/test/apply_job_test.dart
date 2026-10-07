@@ -4,42 +4,23 @@ import 'package:client/core/error/app_exception.dart';
 import 'package:client/core/network/dio_client.dart';
 import 'package:client/core/storage/token_storage.dart';
 import 'package:client/core/theme/app_theme.dart';
+import 'package:client/core/theme/app_tokens.dart';
 import 'package:client/core/widgets/neo_button.dart';
 import 'package:client/features/applications/domain/entities/job_application.dart';
 import 'package:client/features/applications/domain/repositories/application_repository.dart';
+import 'package:client/features/applications/presentation/providers/applications_controller.dart';
 import 'package:client/features/applications/presentation/screens/apply_job_screen.dart';
 import 'package:client/features/jobs/domain/entities/job.dart';
 import 'package:client/features/jobs/domain/repositories/job_repository.dart';
 import 'package:client/features/jobs/presentation/providers/jobs_controller.dart';
-import 'package:client/features/student_profile/domain/entities/student_profile.dart';
-import 'package:client/features/student_profile/domain/entities/university.dart';
-import 'package:client/features/student_profile/domain/entities/major.dart';
-import 'package:client/features/student_profile/domain/repositories/student_profile_repository.dart';
-import 'package:client/features/student_profile/presentation/providers/student_profile_controller.dart';
+import 'package:client/features/resume/domain/entities/resume_file.dart';
+import 'package:client/features/resume/presentation/providers/resume_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
 void main() {
-  const profileWithResume = StudentProfile(
-    fullName: 'มีนา เพ็งชัย',
-    university: 'PSU',
-    major: 'IT',
-    skills: ['Flutter'],
-    portfolioUrl: 'https://example.com',
-    resumeFileName: 'my_resume.pdf',
-    resumeObjectKey: 'resumes/user-1/my_resume.pdf',
-  );
-  const profileWithoutResume = StudentProfile(
-    fullName: 'มีนา เพ็งชัย',
-    university: 'PSU',
-    major: 'IT',
-    skills: ['Flutter'],
-    portfolioUrl: null,
-    resumeFileName: null,
-    resumeObjectKey: null,
-  );
   const sampleJob = JobDetail(
     id: 'job-123',
     title: 'Flutter Developer Intern',
@@ -56,51 +37,62 @@ void main() {
     saved: false,
   );
 
-  testWidgets('with a Resume, shows real job details and submits once', (
+  const cvDocument = StudentDocument(
+    id: 'cv-123',
+    type: 'cv',
+    fileName: 'my_resume.pdf',
+  );
+
+  testWidgets('with a CV, shows real job details and submits once', (
     tester,
   ) async {
     final appRepository = _FakeApplicationRepository();
+
     await _mount(
       tester,
-      profile: profileWithResume,
+      documents: const [cvDocument],
       appRepository: appRepository,
     );
 
     expect(find.text('Flutter Developer Intern'), findsOneWidget);
     expect(find.text('Tech Co'), findsOneWidget);
     expect(find.text('my_resume.pdf'), findsOneWidget);
+
     await tester.enterText(
       find.byKey(const Key('apply-cover-letter')),
       'สนใจฝึกงานกับ Tech Co',
     );
-    await tester.ensureVisible(find.byKey(const Key('apply-submit')));
     await tester.tap(find.byKey(const Key('apply-submit')));
     await tester.pumpAndSettle();
 
     expect(appRepository.applyCalls, 1);
     expect(appRepository.appliedJobId, 'job-123');
     expect(appRepository.appliedCoverLetter, 'สนใจฝึกงานกับ Tech Co');
+    expect(appRepository.appliedDocumentIds, const ['cv-123']);
     expect(find.text('Submitted'), findsOneWidget);
   });
 
-  testWidgets('without a Resume, submit is disabled and upload route works', (
+  testWidgets('without a CV, submit is disabled and upload route works', (
     tester,
   ) async {
     final appRepository = _FakeApplicationRepository();
+
     await _mount(
       tester,
-      profile: profileWithoutResume,
+      documents: const [],
       appRepository: appRepository,
     );
 
     expect(find.text('ยังไม่มี CV ในระบบ'), findsOneWidget);
+
     final submit = tester.widget<NeoButton>(
       find.byKey(const Key('apply-submit')),
     );
     expect(submit.onPressed, isNull);
-    await tester.ensureVisible(find.byKey(const Key('apply-upload-cv')));
+
     await tester.tap(find.byKey(const Key('apply-upload-cv')));
     await tester.pumpAndSettle();
+
     expect(find.text('อัปโหลด Resume'), findsOneWidget);
     expect(appRepository.applyCalls, 0);
   });
@@ -109,9 +101,10 @@ void main() {
     tester,
   ) async {
     final appRepository = _FakeApplicationRepository();
+
     await _mount(
       tester,
-      profile: profileWithResume,
+      documents: const [cvDocument],
       appRepository: appRepository,
     );
 
@@ -119,7 +112,6 @@ void main() {
       find.byKey(const Key('apply-cover-letter')),
       '  \n  ',
     );
-    await tester.ensureVisible(find.byKey(const Key('apply-submit')));
     await tester.tap(find.byKey(const Key('apply-submit')));
     await tester.pumpAndSettle();
 
@@ -131,26 +123,30 @@ void main() {
     tester,
   ) async {
     final appRepository = _FakeApplicationRepository()..pending = Completer();
+
     await _mount(
       tester,
-      profile: profileWithResume,
+      documents: const [cvDocument],
       appRepository: appRepository,
     );
+
     await tester.enterText(
       find.byKey(const Key('apply-cover-letter')),
       'จดหมายสมัครงาน',
     );
-    await tester.ensureVisible(find.byKey(const Key('apply-submit')));
     await tester.tap(find.byKey(const Key('apply-submit')));
     await tester.pump();
 
     expect(find.text('กำลังส่งใบสมัคร'), findsOneWidget);
+
     await tester.tap(find.byKey(const Key('apply-submit')));
     await tester.pump();
+
     expect(appRepository.applyCalls, 1);
 
     appRepository.pending!.complete(_submitted('จดหมายสมัครงาน'));
     await tester.pumpAndSettle();
+
     expect(appRepository.applyCalls, 1);
   });
 
@@ -159,16 +155,17 @@ void main() {
   ) async {
     final appRepository = _FakeApplicationRepository()
       ..failure = const AppException('สมัครงานนี้แล้ว');
+
     await _mount(
       tester,
-      profile: profileWithResume,
+      documents: const [cvDocument],
       appRepository: appRepository,
     );
+
     await tester.enterText(
       find.byKey(const Key('apply-cover-letter')),
       'ข้อความที่ต้องเก็บไว้',
     );
-    await tester.ensureVisible(find.byKey(const Key('apply-submit')));
     await tester.tap(find.byKey(const Key('apply-submit')));
     await tester.pumpAndSettle();
 
@@ -185,6 +182,38 @@ void main() {
     expect(find.text('ยืนยันสมัคร'), findsOneWidget);
   });
 
+  testWidgets('selected additional documents are submitted with the CV', (
+    tester,
+  ) async {
+    final appRepository = _FakeApplicationRepository();
+
+    await _mount(
+      tester,
+      documents: const [
+        cvDocument,
+        StudentDocument(
+          id: 'portfolio-456',
+          type: 'portfolio',
+          fileName: 'portfolio.pdf',
+        ),
+      ],
+      appRepository: appRepository,
+      documentIds: const ['portfolio-456'],
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('apply-cover-letter')),
+      'สนใจตำแหน่งนี้',
+    );
+    await tester.tap(find.byKey(const Key('apply-submit')));
+    await tester.pumpAndSettle();
+
+    expect(
+      appRepository.appliedDocumentIds,
+      const ['cv-123', 'portfolio-456'],
+    );
+  });
+
   testWidgets('narrow screen and long job details do not overflow', (
     tester,
   ) async {
@@ -192,9 +221,10 @@ void main() {
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+
     await _mount(
       tester,
-      profile: profileWithoutResume,
+      documents: const [],
       appRepository: _FakeApplicationRepository(),
       job: const JobDetail(
         id: 'job-123',
@@ -215,14 +245,16 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+
     expect(tester.takeException(), isNull);
   });
 }
 
 Future<void> _mount(
   WidgetTester tester, {
-  required StudentProfile profile,
+  required List<StudentDocument> documents,
   required _FakeApplicationRepository appRepository,
+  List<String> documentIds = const [],
   JobDetail job = const JobDetail(
     id: 'job-123',
     title: 'Flutter Developer Intern',
@@ -244,8 +276,10 @@ Future<void> _mount(
     routes: [
       GoRoute(
         path: '/student/jobs/:jobId/apply',
-        builder: (context, state) =>
-            ApplyJobScreen(jobId: state.pathParameters['jobId']!),
+        builder: (context, state) => ApplyJobScreen(
+          jobId: state.pathParameters['jobId']!,
+          documentIds: documentIds,
+        ),
       ),
       GoRoute(
         path: '/student/resume',
@@ -258,13 +292,12 @@ Future<void> _mount(
     ],
   );
   addTearDown(router.dispose);
+
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
         tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
-        studentProfileRepositoryProvider.overrideWithValue(
-          _FakeStudentProfileRepository(profile),
-        ),
+        studentDocumentsProvider.overrideWith((ref) async => documents),
         jobRepositoryProvider.overrideWithValue(_FakeJobRepository(job)),
         applicationRepositoryProvider.overrideWithValue(appRepository),
       ],
@@ -285,37 +318,20 @@ JobApplication _submitted(String coverLetter) => JobApplication(
   coverLetter: coverLetter,
 );
 
-class _FakeStudentProfileRepository implements StudentProfileRepository {
-  _FakeStudentProfileRepository(this.profile);
-  final StudentProfile profile;
-
-  @override
-  Future<List<University>> searchUniversities(String query) async => const [];
-  @override
-  Future<List<Major>> searchMajors(String query) async => const [];
-  @override
-  Future<StudentProfile> fetchMe() async => profile;
-  @override
-  Future<StudentProfile> update(StudentProfile profile) async => profile;
-  @override
-  Future<StudentProfile> uploadAvatar({
-    required String filePath,
-    required String fileName,
-    List<int>? bytes,
-  }) async => profile;
-  @override
-  Future<StudentProfile> deleteAvatar() async => profile;
-}
-
 class _FakeJobRepository implements JobRepository {
   _FakeJobRepository(this.job);
+
   final JobDetail job;
+
   @override
   Future<JobPage> fetchFeed(JobFilter filter) async => const JobPage();
+
   @override
   Future<JobDetail> fetchDetail(String jobId) async => job;
+
   @override
   Future<void> save(String jobId) async {}
+
   @override
   Future<void> unsave(String jobId) async {}
 }
@@ -323,25 +339,35 @@ class _FakeJobRepository implements JobRepository {
 class _FakeApplicationRepository implements ApplicationRepository {
   String? appliedJobId;
   String? appliedCoverLetter;
+  List<String> appliedDocumentIds = [];
   int applyCalls = 0;
   Completer<JobApplication>? pending;
   Object? failure;
 
   @override
   Future<List<JobApplication>> fetchMine() async => [];
+
   @override
   Future<JobApplication> fetchDetail(String applicationId) async =>
       throw UnimplementedError();
+
   @override
   Future<JobApplication> apply({
     required String jobId,
     required String coverLetter,
+    List<String> documentIds = const [],
   }) async {
     applyCalls++;
     appliedJobId = jobId;
     appliedCoverLetter = coverLetter;
+    appliedDocumentIds = documentIds;
+
     if (failure != null) throw failure!;
     if (pending != null) return pending!.future;
+
     return _submitted(coverLetter);
   }
+
+  @override
+  Future<void> completeExam(String applicationId) async {}
 }

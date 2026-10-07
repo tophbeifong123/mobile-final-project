@@ -25,11 +25,13 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<AuthSession> register({
+    required String fullName,
     required String email,
     required String password,
     required UserRole role,
   }) async {
     final model = await remote.register(
+      fullName: fullName,
       email: email,
       password: password,
       role: role.name,

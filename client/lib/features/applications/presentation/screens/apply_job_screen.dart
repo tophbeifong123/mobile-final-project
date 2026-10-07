@@ -8,13 +8,19 @@ import '../../../../core/error/app_exception.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/neo_button.dart';
 import '../../../jobs/presentation/providers/jobs_controller.dart';
-import '../../../student_profile/presentation/providers/student_profile_controller.dart';
+import '../../../resume/presentation/providers/resume_controller.dart';
 import '../providers/applications_controller.dart';
+import '../widgets/application_documents_dialog.dart';
 
 class ApplyJobScreen extends ConsumerStatefulWidget {
-  const ApplyJobScreen({super.key, required this.jobId});
+  const ApplyJobScreen({
+    super.key,
+    required this.jobId,
+    this.documentIds = const [],
+  });
 
   final String jobId;
+  final List<String> documentIds;
 
   @override
   ConsumerState<ApplyJobScreen> createState() => _ApplyJobScreenState();
@@ -25,6 +31,7 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
   final _coverLetterController = TextEditingController();
   String? _error;
   bool _submitting = false;
+  late List<String> _documentIds = List.of(widget.documentIds);
 
   @override
   void dispose() {
@@ -35,11 +42,12 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-    final profileAsync = ref.watch(studentProfileControllerProvider);
-    final profile = profileAsync.asData?.value;
-    final hasResume =
-        (profile?.resumeFileName?.isNotEmpty ?? false) ||
-        (profile?.resumeObjectKey?.isNotEmpty ?? false);
+
+    final library = ref.watch(studentDocumentsProvider);
+    final documents = library.asData?.value ?? [];
+    final cv = documents.where((document) => document.type == 'cv').firstOrNull;
+    final hasResume = cv != null;
+
     final jobAsync = ref.watch(jobDetailProvider(widget.jobId));
     final job = jobAsync.asData?.value;
 
@@ -47,169 +55,237 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
       backgroundColor: NeoColors.paperCanvas,
       appBar: AppBar(
         title: const Text('สมัครงาน'),
+        centerTitle: false,
         backgroundColor: NeoColors.paperCanvas,
+        foregroundColor: NeoColors.inkSolid,
         surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        shape: const Border(
+          bottom: BorderSide(color: NeoColors.inkSolid, width: 2),
+        ),
       ),
       body: SafeArea(
         top: false,
-        child: ListView(
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          padding: const EdgeInsets.fromLTRB(kPagePadding, 8, kPagePadding, 24),
-          children: [
-            _NeoPanel(
-              color: NeoColors.butterYellow,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(LucideIcons.send, size: 24),
-                  const Gap(12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'ยืนยันการสมัคร',
-                          style: textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        const Gap(4),
-                        Text(
-                          'เขียน Cover Letter ให้ครบก่อนส่ง ใบสมัครใหม่จะมีสถานะ Submitted และสมัครได้ครั้งเดียวต่องาน',
-                          style: textTheme.bodyMedium,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.fromLTRB(
+              kPagePadding,
+              8,
+              kPagePadding,
+              24,
             ),
-            const Gap(16),
-            if (jobAsync.isLoading)
-              const _NeoPanel(child: Center(child: CircularProgressIndicator()))
-            else if (jobAsync.hasError)
+            children: [
               _NeoPanel(
-                color: NeoColors.errorBg,
-                child: Text(
-                  'โหลดรายละเอียดงานไม่ได้: ${userVisibleError(jobAsync.error!)}',
-                ),
-              )
-            else if (job != null) ...[
-              _NeoPanel(
-                color: NeoColors.pureWhite,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const _Eyebrow('ประกาศที่สมัคร'),
-                    const Gap(8),
-                    Text(
-                      job.title,
-                      style: textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
-                      softWrap: true,
-                    ),
-                    const Gap(6),
-                    Text(
-                      job.companyName,
-                      style: textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: NeoColors.subtleInk,
-                      ),
-                      softWrap: true,
-                    ),
-                  ],
-                ),
-              ),
-              const Gap(16),
-            ],
-            if (profileAsync.isLoading)
-              const _NeoPanel(child: Center(child: CircularProgressIndicator()))
-            else if (profileAsync.hasError)
-              _NeoPanel(
-                color: NeoColors.errorBg,
-                child: Text(
-                  'โหลดโปรไฟล์นักศึกษาไม่ได้: ${userVisibleError(profileAsync.error!)}',
-                ),
-              )
-            else if (!hasResume) ...[
-              _NeoPanel(
-                color: NeoColors.softRose,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(LucideIcons.triangleAlert, size: 20),
-                        const Gap(8),
-                        Expanded(
-                          child: Text(
-                            'ยังไม่มี CV ในระบบ',
-                            style: textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const Gap(8),
-                    const Text(
-                      'คุณต้องมี Resume เป็นไฟล์ PDF ก่อน จึงจะสามารถยื่นใบสมัครได้',
-                    ),
-                    const Gap(12),
-                    NeoButton(
-                      key: const Key('apply-upload-cv'),
-                      onPressed: () => context.push('/student/resume'),
-                      variant: NeoButtonVariant.outline,
-                      text: 'อัปโหลด Resume',
-                      icon: const Icon(LucideIcons.upload, size: 18),
-                    ),
-                  ],
-                ),
-              ),
-              const Gap(16),
-            ] else ...[
-              _NeoPanel(
-                color: NeoColors.freshMint,
+                color: NeoColors.butterYellow,
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(LucideIcons.fileCheck2, size: 22),
-                    const Gap(10),
+                    const Icon(LucideIcons.send, size: 24),
+                    const Gap(12),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const _Eyebrow('CV ที่จะใช้'),
-                          const Gap(3),
                           Text(
-                            profile?.resumeFileName?.isNotEmpty == true
-                                ? profile!.resumeFileName!
-                                : 'resume.pdf',
-                            style: textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
+                            'ยืนยันการสมัคร',
+                            style: textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w900,
                             ),
-                            softWrap: true,
+                          ),
+                          const Gap(4),
+                          Text(
+                            'เขียน Cover Letter และตรวจสอบ CV ก่อนส่ง ใบสมัครใหม่จะมีสถานะ Submitted และสมัครได้ครั้งเดียวต่องาน',
+                            style: textTheme.bodyMedium,
                           ),
                         ],
                       ),
-                    ),
-                    const Gap(8),
-                    NeoButton(
-                      onPressed: () => context.push('/student/resume'),
-                      variant: NeoButtonVariant.outline,
-                      height: 44,
-                      text: 'เปลี่ยน',
                     ),
                   ],
                 ),
               ),
               const Gap(16),
-            ],
-            _NeoPanel(
-              key: const Key('apply-form-card'),
-              color: NeoColors.pureWhite,
-              child: Form(
-                key: _formKey,
+              if (jobAsync.isLoading)
+                const _NeoPanel(
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (jobAsync.hasError)
+                _NeoPanel(
+                  color: NeoColors.errorBg,
+                  child: Text(
+                    'โหลดรายละเอียดงานไม่ได้: ${userVisibleError(jobAsync.error!)}',
+                  ),
+                )
+              else if (job != null) ...[
+                _NeoPanel(
+                  color: NeoColors.pureWhite,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const _Eyebrow('ประกาศที่สมัคร'),
+                      const Gap(8),
+                      Text(
+                        job.title,
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w900,
+                        ),
+                        softWrap: true,
+                      ),
+                      const Gap(6),
+                      Text(
+                        job.companyName,
+                        style: textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: NeoColors.subtleInk,
+                        ),
+                        softWrap: true,
+                      ),
+                    ],
+                  ),
+                ),
+                const Gap(16),
+              ] else
+                _NeoPanel(
+                  color: NeoColors.errorBg,
+                  child: Text('ไม่พบประกาศงาน ${widget.jobId}'),
+                ),
+              if (library.isLoading)
+                const _NeoPanel(
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (library.hasError)
+                _NeoPanel(
+                  color: NeoColors.errorBg,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'โหลดเอกสารไม่ได้: ${userVisibleError(library.error!)}',
+                      ),
+                      const Gap(12),
+                      NeoButton(
+                        onPressed: () =>
+                            ref.invalidate(studentDocumentsProvider),
+                        variant: NeoButtonVariant.outline,
+                        text: 'ลองใหม่',
+                      ),
+                    ],
+                  ),
+                )
+              else if (!hasResume) ...[
+                _NeoPanel(
+                  color: NeoColors.softRose,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(LucideIcons.triangleAlert, size: 20),
+                          const Gap(8),
+                          Expanded(
+                            child: Text(
+                              'ยังไม่มี CV ในระบบ',
+                              style: textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const Gap(8),
+                      const Text(
+                        'คุณต้องมี Resume เป็นไฟล์ PDF ก่อน จึงจะสามารถยื่นใบสมัครได้',
+                      ),
+                      const Gap(12),
+                      NeoButton(
+                        key: const Key('apply-upload-cv'),
+                        onPressed: () => context.push('/student/resume'),
+                        variant: NeoButtonVariant.outline,
+                        text: 'อัปโหลด Resume',
+                        icon: const Icon(LucideIcons.upload, size: 18),
+                      ),
+                    ],
+                  ),
+                ),
+                const Gap(16),
+              ] else ...[
+                _NeoPanel(
+                  color: NeoColors.freshMint,
+                  child: Row(
+                    children: [
+                      const Icon(LucideIcons.fileCheck2, size: 22),
+                      const Gap(10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const _Eyebrow('CV ที่จะใช้'),
+                            const Gap(3),
+                            Text(
+                              cv.fileName,
+                              style: textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w800,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Gap(8),
+                      NeoButton(
+                        onPressed: _submitting
+                            ? null
+                            : () async {
+                                final selected =
+                                    await ApplicationDocumentsDialog.show(
+                                  context,
+                                  selectedIds: _documentIds,
+                                );
+                                if (mounted && selected != null) {
+                                  setState(() => _documentIds = selected);
+                                }
+                              },
+                        variant: NeoButtonVariant.outline,
+                        height: 44,
+                        text: 'เลือกเอกสาร',
+                      ),
+                    ],
+                  ),
+                ),
+                if (_documentIds.any((id) => id != cv.id)) ...[
+                  const Gap(12),
+                  _NeoPanel(
+                    color: NeoColors.pureWhite,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const _Eyebrow('เอกสารเพิ่มเติมที่เลือก'),
+                        const Gap(8),
+                        for (final document in documents.where(
+                          (document) =>
+                              document.type != 'cv' &&
+                              _documentIds.contains(document.id),
+                        ))
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: Text(
+                              document.fileName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+                const Gap(16),
+              ],
+              _NeoPanel(
+                key: const Key('apply-form-card'),
+                color: NeoColors.pureWhite,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -227,6 +303,7 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
                       controller: _coverLetterController,
                       minLines: 8,
                       maxLines: 12,
+                      enabled: !_submitting,
                       textCapitalization: TextCapitalization.sentences,
                       decoration: const InputDecoration(
                         hintText: 'เขียน Cover Letter ของคุณที่นี่',
@@ -262,22 +339,39 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
                   ],
                 ),
               ),
+            ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: NeoColors.paperCanvas,
+          border: Border(
+            top: BorderSide(color: NeoColors.inkSolid, width: 2),
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              kPagePadding,
+              8,
+              kPagePadding,
+              16,
             ),
-            const Gap(24),
-            NeoButton(
+            child: NeoButton(
               key: const Key('apply-submit'),
               onPressed: (!hasResume || _submitting || job == null)
                   ? null
                   : _submit,
-              isLoading: _submitting,
               isFullWidth: true,
+              isLoading: _submitting,
               height: 52,
               text: _submitting ? 'กำลังส่งใบสมัคร' : 'ยืนยันสมัคร',
               trailingIcon: _submitting
                   ? null
                   : const Icon(LucideIcons.send, size: 18),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -285,20 +379,35 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+
+    final documents =
+        ref.read(studentDocumentsProvider).asData?.value ?? [];
+    final cv = documents.where((document) => document.type == 'cv').firstOrNull;
+
+    if (cv == null) {
+      setState(() => _error = 'ไม่พบ CV สำหรับใช้สมัครงาน');
+      return;
+    }
+
     setState(() {
       _submitting = true;
       _error = null;
     });
+
     try {
-      await ref
-          .read(applicationRepositoryProvider)
-          .apply(
-            jobId: widget.jobId,
-            coverLetter: _coverLetterController.text.trim(),
-          );
+      await ref.read(applicationRepositoryProvider).apply(
+        jobId: widget.jobId,
+        coverLetter: _coverLetterController.text.trim(),
+        documentIds: [
+          cv.id,
+          ..._documentIds.where((id) => id != cv.id),
+        ],
+      );
       ref.invalidate(applicationsControllerProvider);
       ref.invalidate(myApplicationsProvider);
+
       if (!mounted) return;
+
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('ส่งใบสมัครแล้ว')));
@@ -338,6 +447,7 @@ class _NeoPanel extends StatelessWidget {
 
 class _Eyebrow extends StatelessWidget {
   const _Eyebrow(this.text);
+
   final String text;
 
   @override

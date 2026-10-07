@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../student_profile/presentation/widgets/resume_preview_modal.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
@@ -8,7 +9,25 @@ import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../jobs/presentation/job_labels.dart';
 import '../../domain/entities/job_application.dart';
+import '../widgets/student_selection_cards.dart';
+import '../../../../core/navigation/open_external_link.dart';
 import '../providers/applications_controller.dart';
+
+Future<void> _completeExam(
+  BuildContext context,
+  WidgetRef ref,
+  String applicationId,
+) async {
+  try {
+    await ref.read(applicationRepositoryProvider).completeExam(applicationId);
+    ref.invalidate(applicationDetailProvider(applicationId));
+  } catch (error) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(userVisibleError(error))));
+  }
+}
 
 class ApplicationDetailScreen extends ConsumerWidget {
   const ApplicationDetailScreen({super.key, required this.applicationId});
@@ -123,12 +142,21 @@ class ApplicationDetailScreen extends ConsumerWidget {
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                     children: [
                       _JobSummaryCard(application: app),
+                      StudentSelectionCards(
+                        application: app,
+                        onOpenLink: openExternalLink,
+                        onCompleteExam: () =>
+                            _completeExam(context, ref, app.id),
+                      ),
                       const Gap(24),
                       _TimelineHeading(application: app),
                       const Gap(12),
                       _StatusTimelineCard(application: app),
                       const Gap(20),
-                      _ResumeCard(resumeObjectKey: app.resumeObjectKey),
+                      if (app.documents.isNotEmpty)
+                        _AttachedDocumentsCard(application: app)
+                      else
+                        _ResumeCard(resumeObjectKey: app.resumeObjectKey),
                       const Gap(16),
                       _CoverLetterCard(coverLetter: app.coverLetter),
                       const Gap(20),
@@ -154,6 +182,68 @@ class ApplicationDetailScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+class _AttachedDocumentsCard extends StatelessWidget {
+  const _AttachedDocumentsCard({required this.application});
+  final JobApplication application;
+  @override
+  Widget build(BuildContext context) => Card(
+    child: Padding(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'เอกสารที่แนบตอนสมัคร',
+            style: TextStyle(fontWeight: FontWeight.w800),
+          ),
+          const Text('ไฟล์ชุดนี้ไม่เปลี่ยนเมื่อแก้ไขคลังเอกสาร'),
+          for (final document in application.documents)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                document.fileName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              subtitle: Text(
+                {
+                      'cv': 'CV',
+                      'transcript': 'Transcript',
+                      'other': 'เอกสารอื่นๆ',
+                    }[document.type] ??
+                    document.type,
+              ),
+              trailing: IconButton(
+                tooltip: 'เปิดดู ${document.fileName}',
+                icon: const Icon(Icons.visibility_outlined),
+                onPressed: () => showDialog<void>(
+                  context: context,
+                  builder: (_) => Consumer(
+                    builder: (context, ref, _) {
+                      final key = (
+                        applicationId: application.id,
+                        documentId: document.id,
+                      );
+                      return ResumePreviewModal(
+                        fileName: document.fileName,
+                        readOnly: true,
+                        pdfBytes: ref.watch(
+                          applicationDocumentPdfProvider(key),
+                        ),
+                        onRetry: () =>
+                            ref.invalidate(applicationDocumentPdfProvider(key)),
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _DetailTopBar extends StatelessWidget {
@@ -248,6 +338,7 @@ class _JobSummaryCard extends StatelessWidget {
     final hasMetadata =
         application.province?.isNotEmpty == true ||
         application.workMode?.isNotEmpty == true ||
+        application.interviewMode?.isNotEmpty == true ||
         application.category?.isNotEmpty == true ||
         application.hasAllowance != null;
 
@@ -393,6 +484,14 @@ class _JobSummaryCard extends StatelessWidget {
                   _MetaTag(
                     label: workModeLabelFromApi(application.workMode!),
                     icon: Icons.devices_outlined,
+                  ),
+                if (application.interviewMode != null &&
+                    application.interviewMode!.isNotEmpty)
+                  _MetaTag(
+                    label: interviewModeLabelFromApi(
+                      application.interviewMode!,
+                    ),
+                    icon: Icons.event_outlined,
                   ),
                 if (application.category != null &&
                     application.category!.isNotEmpty)
@@ -629,9 +728,7 @@ class _StatusTimelineCard extends StatelessWidget {
               const Gap(20),
               _TimelineStepItem(
                 title: 'กำลังพิจารณา',
-                description: reviewStarted
-                    ? 'บริษัทกำลังตรวจประวัติและ Resume'
-                    : 'รอการตรวจสอบจากบริษัท',
+                description: _reviewDescription(application),
                 date: _eventDate(ApplicationStatus.reviewing),
                 state: decided
                     ? _StepState.completed
@@ -1053,6 +1150,33 @@ String _statusHeadline(ApplicationStatus status) {
     ApplicationStatus.accepted => 'ยินดีด้วย! คุณผ่านการคัดเลือก',
     ApplicationStatus.rejected => 'บริษัทแจ้งผลการคัดเลือกแล้ว',
   };
+}
+
+String _reviewDescription(JobApplication application) {
+  final hasInterview =
+      (application.interviewUrl?.isNotEmpty ?? false) ||
+      application.interviewStartsAt != null;
+  if (hasInterview) {
+    return application.interviewMode == 'on_site'
+        ? 'บริษัทเรียกสัมภาษณ์ที่สำนักงานแล้ว'
+        : 'บริษัทเรียกสัมภาษณ์ออนไลน์แล้ว';
+  }
+  if (application.examPassedAt != null) {
+    return 'ข้อสอบผ่านแล้ว รอบริษัทนัดสัมภาษณ์';
+  }
+  if (application.examCompletedAt != null) {
+    return 'ทำข้อสอบแล้ว รอผลตรวจจากบริษัท';
+  }
+  if (application.examUrl?.isNotEmpty == true) {
+    return 'บริษัทส่งข้อสอบแล้ว ทำก่อนถึงกำหนด';
+  }
+  final reviewing =
+      application.status == ApplicationStatus.reviewing ||
+      application.status == ApplicationStatus.accepted ||
+      application.status == ApplicationStatus.rejected;
+  return reviewing
+      ? 'บริษัทกำลังตรวจประวัติและ Resume'
+      : 'รอการตรวจสอบจากบริษัท';
 }
 
 String _statusMessage(ApplicationStatus status) {

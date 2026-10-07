@@ -9,6 +9,24 @@ class ApplicationRemoteDataSource {
 
   final Dio _dio;
 
+  Future<List<int>> downloadDocument(
+    String applicationId,
+    String documentId,
+  ) async {
+    try {
+      final response = await _dio.get<List<int>>(
+        '${ApiConstants.applications}/$applicationId/documents/$documentId/file',
+        options: Options(responseType: ResponseType.bytes),
+      );
+      if (response.data == null || response.data!.isEmpty) {
+        throw const AppException('ไม่พบไฟล์เอกสารใบสมัคร');
+      }
+      return response.data!;
+    } on DioException catch (error) {
+      throw _mapApplicationError(error);
+    }
+  }
+
   Future<List<JobApplicationModel>> fetchMine() async {
     try {
       final response = await _dio.get<List<dynamic>>(ApiConstants.applications);
@@ -45,17 +63,28 @@ class ApplicationRemoteDataSource {
   Future<JobApplicationModel> apply({
     required String jobId,
     required String coverLetter,
+    List<String> documentIds = const [],
   }) async {
     try {
       final response = await _dio.post<Map<String, dynamic>>(
         '${ApiConstants.jobs}/$jobId/applications',
-        data: {'coverLetter': coverLetter},
+        data: {'coverLetter': coverLetter, 'documentIds': documentIds},
       );
       final data = response.data;
       if (data == null) {
         throw const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
       }
       return JobApplicationModel.fromJson(data);
+    } on DioException catch (e) {
+      throw _mapApplicationError(e);
+    }
+  }
+
+  Future<void> completeExam(String applicationId) async {
+    try {
+      await _dio.post<void>(
+        '${ApiConstants.applications}/$applicationId/exam/complete',
+      );
     } on DioException catch (e) {
       throw _mapApplicationError(e);
     }

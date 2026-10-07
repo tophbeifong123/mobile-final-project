@@ -286,6 +286,35 @@ describe('StudentsService', () => {
     });
   });
 
+  describe('replace other document', () => {
+    const pdf: UploadedFilePayload = { originalname: 'replacement.pdf', mimetype: 'application/pdf', size: 15, buffer: Buffer.from('%PDF-1.4 valid') };
+    it('checks ownership and passes replacement ID without deleting the old file first', async () => {
+      repository.findByUserId.mockResolvedValue({ ...stored, id: 'profile-1' });
+      repository.findDocument.mockResolvedValue({ type: 'other' });
+      repository.saveDocument.mockResolvedValue({ document: { id: 'new' }, replacedDocument: { objectKey: 'old.pdf' } });
+      repository.isObjectReferencedByApplication.mockResolvedValue(false);
+      await service.uploadDocument(student, 'other' as never, pdf, 'old-id');
+      expect(repository.findDocument).toHaveBeenCalledWith('profile-1', 'old-id');
+      expect(repository.saveDocument).toHaveBeenCalledWith(expect.objectContaining({ studentId: 'profile-1', replacingId: 'old-id' }));
+      expect(storage.delete).toHaveBeenCalledWith('old.pdf');
+      expect(storage.put.mock.invocationCallOrder[0]).toBeLessThan(storage.delete.mock.invocationCallOrder[0]);
+    });
+    it.each([null, { type: 'cv' }])('rejects foreign/missing or wrong-type targets before writing a file: %s', async (target) => {
+      repository.findByUserId.mockResolvedValue({ ...stored, id: 'profile-1' });
+      repository.findDocument.mockResolvedValue(target);
+      await expect(service.uploadDocument(student, 'other' as never, pdf, 'old-id')).rejects.toBeInstanceOf(NotFoundException);
+      expect(storage.put).not.toHaveBeenCalled();
+    });
+    it('keeps an application-referenced old object after replacement', async () => {
+      repository.findByUserId.mockResolvedValue({ ...stored, id: 'profile-1' });
+      repository.findDocument.mockResolvedValue({ type: 'other' });
+      repository.saveDocument.mockResolvedValue({ document: { id: 'new' }, replacedDocument: { objectKey: 'old.pdf' } });
+      repository.isObjectReferencedByApplication.mockResolvedValue(true);
+      await service.uploadDocument(student, 'other' as never, pdf, 'old-id');
+      expect(storage.delete).not.toHaveBeenCalled();
+    });
+  });
+
   describe('getResumeFile', () => {
     it('returns buffer and fileName for student with uploaded resume', async () => {
       repository.findByUserId.mockResolvedValue(stored);

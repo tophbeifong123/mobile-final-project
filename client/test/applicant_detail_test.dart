@@ -32,6 +32,18 @@ void main() {
         portfolioUrl: 'https://github.com/somchai',
         resumeFileName: 'somchai-resume.pdf',
         resumeObjectKey: 'resumes/somchai.pdf',
+        documents: const [
+          ApplicantDocument(
+            id: 'snapshot-cv-uuid',
+            type: 'cv',
+            fileName: 'somchai-resume.pdf',
+          ),
+          ApplicantDocument(
+            id: 'snapshot-transcript-uuid',
+            type: 'transcript',
+            fileName: 'attached-transcript.pdf',
+          ),
+        ],
         createdAt: DateTime(2026, 9, 23, 14, 0),
       );
 
@@ -99,6 +111,14 @@ void main() {
         find.text('สำเนา Resume ในระบบ ณ วันที่ยื่นใบสมัคร'),
         findsOneWidget,
       );
+
+      await tester.scrollUntilVisible(
+        find.text('attached-transcript.pdf'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('attached-transcript.pdf'), findsOneWidget);
+      expect(find.text('เอกสารอื่น'), findsNothing);
 
       await tester.scrollUntilVisible(
         find.text('Cover Letter'),
@@ -320,6 +340,7 @@ void main() {
         coverLetter: 'มีความสนใจและพร้อมจะเรียนรู้งานอย่างเต็มที่ครับ',
         skills: const ['Flutter'],
         createdAt: DateTime(2026, 9, 23, 14, 0),
+        interviewStartsAt: DateTime(2026, 10, 20, 10),
       );
 
       final fakeRepo = _FakeCompanyJobRepository(applicant: applicant);
@@ -386,6 +407,7 @@ void main() {
       coverLetter: 'มีความสนใจและพร้อมจะเรียนรู้งานอย่างเต็มที่ครับ',
       skills: const ['Flutter'],
       createdAt: DateTime(2026, 9, 23, 14, 0),
+      interviewStartsAt: DateTime(2026, 10, 20, 10),
     );
 
     final fakeRepo = _FakeCompanyJobRepository(applicant: applicant);
@@ -658,6 +680,64 @@ void main() {
       expect(find.text('ระบบค้นหาที่ฝึกงาน'), findsOneWidget);
     },
   );
+
+  testWidgets('resume open controls stay disabled when the file is missing', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final router = GoRouter(
+      initialLocation: '/company/jobs/job-1/applicants/app-1',
+      routes: [
+        GoRoute(
+          path: '/company/jobs/:jobId/applicants/:applicationId',
+          builder: (context, state) => ApplicantDetailScreen(
+            jobId: state.pathParameters['jobId']!,
+            applicationId: state.pathParameters['applicationId']!,
+          ),
+        ),
+      ],
+    );
+    addTearDown(router.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+          companyJobRepositoryProvider.overrideWithValue(
+            _FakeCompanyJobRepository(
+              applicant: Applicant(
+                applicationId: 'app-1',
+                fullName: 'อลิซ',
+                university: 'มหาวิทยาลัยทดสอบ',
+                major: 'คอมพิวเตอร์',
+                status: 'submitted',
+                coverLetter: 'สวัสดี',
+              ),
+            ),
+          ),
+        ],
+        child: MaterialApp.router(
+          theme: AppTheme.lightTheme,
+          routerConfig: router,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.byTooltip('เปิด CV PDF'), 300);
+
+    expect(find.text('ไม่มีไฟล์ Resume'), findsOneWidget);
+    final button = tester.widget<IconButton>(
+      find.byWidgetPredicate(
+        (widget) => widget is IconButton && widget.tooltip == 'เปิด CV PDF',
+      ),
+    );
+    expect(button.onPressed, isNull);
+    expect(find.text('เปิด Resume (PDF)'), findsNothing);
+  });
 }
 
 class _FakeCompanyJobRepository implements CompanyJobRepository {
@@ -748,4 +828,26 @@ class _FakeCompanyJobRepository implements CompanyJobRepository {
       );
     }
   }
+
+  @override
+  Future<void> setExamLink({
+    required String jobId,
+    required String applicationId,
+    required String url,
+    required DateTime deadline,
+  }) async {}
+
+  @override
+  Future<void> passExam({
+    required String jobId,
+    required String applicationId,
+  }) async {}
+
+  @override
+  Future<void> setInterviewLink({
+    required String jobId,
+    required String applicationId,
+    required String url,
+    required DateTime startsAt,
+  }) async {}
 }

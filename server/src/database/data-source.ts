@@ -1,4 +1,6 @@
 import 'reflect-metadata';
+import { ApplicationDocument } from '../applications/entities/application-document.entity.js';
+import { CreateApplicationDocuments1791950000000 } from './migrations/1791950000000-create-application-documents.js';
 import { AddJobOpeningsAllowance1791840000000 } from './migrations/1791840000000-add-job-openings-allowance.js';
 import { DataSource } from 'typeorm';
 import { ApplicationStatusEvent } from '../applications/entities/application-status-event.entity.js';
@@ -23,7 +25,11 @@ import { AddCompanyOfficeLocation1791158400000 } from './migrations/179115840000
 import { DropOfficePin1791744000000 } from './migrations/1791744000000-drop-office-pin.js';
 import { AddAllowanceAmountAndJobCategories1791830400000 } from './migrations/1791830400000-add-allowance-amount-and-job-categories.js';
 import { NormalizeAllowanceAmount1791850000000 } from './migrations/1791850000000-normalize-allowance-amount.js';
+import { AddCompanyContactLinks1791860000000 } from './migrations/1791860000000-add-company-contact-links.js';
 import { UniqueGoogleIdentityPerUser1791940000000 } from './migrations/1791940000000-unique-google-identity-per-user.js';
+import { AddApplicationSelectionLinks1792000000000 } from './migrations/1792000000000-add-application-selection-links.js';
+import { AddJobInterviewMode1792100000000 } from './migrations/1792100000000-add-job-interview-mode.js';
+import { AddExamPassedAt1792200000000 } from './migrations/1792200000000-add-exam-passed-at.js';
 import { AddGoogleAuthIdentities1759300000000 } from './migrations/1759300000000-add-google-auth-identities.js';
 import { AddBioContactsPortfoliosToStudentProfiles1759100000000 } from './migrations/1759100000000-add-bio-contacts-portfolios-to-student-profiles.js';
 import { AddDetailsAndCoverToCompanyProfiles1759300000000 } from './migrations/1759300000000-add-details-and-cover-to-company-profiles.js';
@@ -56,6 +62,7 @@ export const AppDataSource = new DataSource({
     Job,
     SavedJob,
     Application,
+    ApplicationDocument,
     ApplicationStatusEvent,
     Notification,
     StudentDocument,
@@ -85,6 +92,11 @@ export const AppDataSource = new DataSource({
     AddAllowanceAmountAndJobCategories1791830400000,
     AddJobOpeningsAllowance1791840000000,
     NormalizeAllowanceAmount1791850000000,
+    AddCompanyContactLinks1791860000000,
     UniqueGoogleIdentityPerUser1791940000000,
+    CreateApplicationDocuments1791950000000,
+    AddApplicationSelectionLinks1792000000000,
+    AddJobInterviewMode1792100000000,
+    AddExamPassedAt1792200000000,
   ],
 });

@@ -70,6 +70,7 @@ class CompanyJobRemoteDataSource {
           'description': posting.description,
           'province': posting.province,
           'workMode': posting.workMode,
+          'interviewMode': posting.interviewMode,
           'category': posting.category,
           'hasAllowance': posting.hasAllowance,
           'openings': posting.openings,
@@ -102,6 +103,7 @@ class CompanyJobRemoteDataSource {
           'description': posting.description,
           'province': posting.province,
           'workMode': posting.workMode,
+          'interviewMode': posting.interviewMode,
           'category': posting.category,
           'hasAllowance': posting.hasAllowance,
           'openings': posting.openings,
@@ -208,6 +210,51 @@ class CompanyJobRemoteDataSource {
       await _dio.patch<Map<String, dynamic>>(
         '${ApiConstants.companyJobs}/$jobId/applications/$applicationId/status',
         data: {'status': status},
+      );
+    } on DioException catch (error) {
+      throw mapCompanyJobError(error);
+    }
+  }
+
+  Future<void> setExamLink({
+    required String jobId,
+    required String applicationId,
+    required String url,
+    required DateTime deadline,
+  }) async {
+    try {
+      await _dio.put<Map<String, dynamic>>(
+        '${ApiConstants.companyJobs}/$jobId/applications/$applicationId/exam',
+        data: {'url': url, 'deadline': deadline.toUtc().toIso8601String()},
+      );
+    } on DioException catch (error) {
+      throw mapCompanyJobError(error);
+    }
+  }
+
+  Future<void> passExam({
+    required String jobId,
+    required String applicationId,
+  }) async {
+    try {
+      await _dio.post<Map<String, dynamic>>(
+        '${ApiConstants.companyJobs}/$jobId/applications/$applicationId/exam/pass',
+      );
+    } on DioException catch (error) {
+      throw mapCompanyJobError(error);
+    }
+  }
+
+  Future<void> setInterviewLink({
+    required String jobId,
+    required String applicationId,
+    required String url,
+    required DateTime startsAt,
+  }) async {
+    try {
+      await _dio.put<Map<String, dynamic>>(
+        '${ApiConstants.companyJobs}/$jobId/applications/$applicationId/interview',
+        data: {'url': url, 'startsAt': startsAt.toUtc().toIso8601String()},
       );
     } on DioException catch (error) {
       throw mapCompanyJobError(error);
