@@ -39,10 +39,18 @@ class StudentProfile {
     this.resumeFileName,
     this.resumeObjectKey,
     this.avatarObjectKey,
+    this.universityId,
+    this.customUniversityName,
+    this.majorId,
+    this.customMajorName,
   });
 
   final String fullName;
   final String university;
+  final String? universityId;
+  final String? customUniversityName;
+  final String? majorId;
+  final String? customMajorName;
   final String major;
   final List<String> skills;
   final String bio;
@@ -56,6 +64,10 @@ class StudentProfile {
   StudentProfile copyWith({
     String? fullName,
     String? university,
+    Object? universityId = _unset,
+    Object? customUniversityName = _unset,
+    Object? majorId = _unset,
+    Object? customMajorName = _unset,
     String? major,
     List<String>? skills,
     String? bio,
@@ -69,6 +81,16 @@ class StudentProfile {
     return StudentProfile(
       fullName: fullName ?? this.fullName,
       university: university ?? this.university,
+      universityId: identical(universityId, _unset)
+          ? this.universityId
+          : universityId as String?,
+      customUniversityName: identical(customUniversityName, _unset)
+          ? this.customUniversityName
+          : customUniversityName as String?,
+      majorId: identical(majorId, _unset) ? this.majorId : majorId as String?,
+      customMajorName: identical(customMajorName, _unset)
+          ? this.customMajorName
+          : customMajorName as String?,
       major: major ?? this.major,
       skills: skills ?? this.skills,
       bio: bio ?? this.bio,
@@ -81,3 +103,5 @@ class StudentProfile {
     );
   }
 }
+
+const _unset = Object();

@@ -12,7 +12,10 @@ class CompanyJobRemoteDataSource {
 
   Future<List<CompanyJobModel>> fetchMine() async {
     try {
-      final response = await _dio.get<dynamic>(ApiConstants.companyJobs);
+      final response = await _dio.get<dynamic>(
+        ApiConstants.companyJobs,
+        queryParameters: const {'limit': 100},
+      );
       final data = response.data;
       if (data == null) {
         throw const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
@@ -34,6 +37,16 @@ class CompanyJobRemoteDataSource {
   }
 
   Future<EditableJobModel> fetchOne(String jobId) async {
+    final data = await _getJob(jobId);
+    return EditableJobModel.fromJson(data);
+  }
+
+  Future<CompanyOwnedJobModel> fetchOwned(String jobId) async {
+    final data = await _getJob(jobId);
+    return CompanyOwnedJobModel.fromJson(data);
+  }
+
+  Future<Map<String, dynamic>> _getJob(String jobId) async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
         '${ApiConstants.companyJobs}/$jobId',
@@ -42,7 +55,7 @@ class CompanyJobRemoteDataSource {
       if (data == null) {
         throw const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
       }
-      return EditableJobModel.fromJson(data);
+      return data;
     } on DioException catch (error) {
       throw mapCompanyJobError(error);
     }
@@ -57,8 +70,12 @@ class CompanyJobRemoteDataSource {
           'description': posting.description,
           'province': posting.province,
           'workMode': posting.workMode,
+          'interviewMode': posting.interviewMode,
           'category': posting.category,
           'hasAllowance': posting.hasAllowance,
+          'openings': posting.openings,
+          if (posting.allowanceAmount != null)
+            'allowanceAmount': posting.allowanceAmount,
           'requirements': posting.requirements,
           'skills': posting.skills,
         },
@@ -86,8 +103,12 @@ class CompanyJobRemoteDataSource {
           'description': posting.description,
           'province': posting.province,
           'workMode': posting.workMode,
+          'interviewMode': posting.interviewMode,
           'category': posting.category,
           'hasAllowance': posting.hasAllowance,
+          'openings': posting.openings,
+          if (posting.allowanceAmount != null)
+            'allowanceAmount': posting.allowanceAmount,
           'requirements': posting.requirements,
           'skills': posting.skills,
           'version': version,
@@ -160,6 +181,26 @@ class CompanyJobRemoteDataSource {
     }
   }
 
+  Future<List<int>> downloadApplicantDocument({
+    required String jobId,
+    required String applicationId,
+    required String documentId,
+  }) async {
+    try {
+      final response = await _dio.get<List<int>>(
+        ApiConstants.applicantDocumentFile(jobId, applicationId, documentId),
+        options: Options(responseType: ResponseType.bytes),
+      );
+      final bytes = response.data;
+      if (bytes == null || bytes.isEmpty) {
+        throw const AppException('ไม่พบข้อมูลไฟล์เอกสาร');
+      }
+      return bytes;
+    } on DioException catch (error) {
+      throw mapCompanyJobError(error);
+    }
+  }
+
   Future<void> updateApplicantStatus({
     required String jobId,
     required String applicationId,
@@ -169,6 +210,51 @@ class CompanyJobRemoteDataSource {
       await _dio.patch<Map<String, dynamic>>(
         '${ApiConstants.companyJobs}/$jobId/applications/$applicationId/status',
         data: {'status': status},
+      );
+    } on DioException catch (error) {
+      throw mapCompanyJobError(error);
+    }
+  }
+
+  Future<void> setExamLink({
+    required String jobId,
+    required String applicationId,
+    required String url,
+    required DateTime deadline,
+  }) async {
+    try {
+      await _dio.put<Map<String, dynamic>>(
+        '${ApiConstants.companyJobs}/$jobId/applications/$applicationId/exam',
+        data: {'url': url, 'deadline': deadline.toUtc().toIso8601String()},
+      );
+    } on DioException catch (error) {
+      throw mapCompanyJobError(error);
+    }
+  }
+
+  Future<void> passExam({
+    required String jobId,
+    required String applicationId,
+  }) async {
+    try {
+      await _dio.post<Map<String, dynamic>>(
+        '${ApiConstants.companyJobs}/$jobId/applications/$applicationId/exam/pass',
+      );
+    } on DioException catch (error) {
+      throw mapCompanyJobError(error);
+    }
+  }
+
+  Future<void> setInterviewLink({
+    required String jobId,
+    required String applicationId,
+    required String url,
+    required DateTime startsAt,
+  }) async {
+    try {
+      await _dio.put<Map<String, dynamic>>(
+        '${ApiConstants.companyJobs}/$jobId/applications/$applicationId/interview',
+        data: {'url': url, 'startsAt': startsAt.toUtc().toIso8601String()},
       );
     } on DioException catch (error) {
       throw mapCompanyJobError(error);

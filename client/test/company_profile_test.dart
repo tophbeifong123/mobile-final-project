@@ -3,12 +3,17 @@ import 'package:client/core/network/dio_client.dart';
 import 'package:client/core/storage/token_storage.dart';
 import 'package:client/core/theme/app_theme.dart';
 import 'package:client/features/company_profile/domain/entities/company_profile.dart';
+import 'package:client/features/company_profile/domain/entities/company_website_policy.dart';
 import 'package:client/features/company_profile/domain/repositories/company_profile_repository.dart';
 import 'package:client/features/company_profile/presentation/providers/company_profile_controller.dart';
 import 'package:client/features/company_profile/presentation/screens/company_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'package:client/core/provinces/thai_province.dart';
+import 'package:client/core/provinces/thai_provinces_provider.dart';
+import 'package:client/features/company_profile/data/models/company_profile_model.dart';
 
 void main() {
   const mockProfile = CompanyProfile(
@@ -22,6 +27,37 @@ void main() {
     perks: ['💻 MacBook Pro', '🍱 Free Lunch'],
     coverObjectKey: null,
   );
+
+  test('company profile JSON keeps office fields separate', () {
+    final model = CompanyProfileModel.fromJson(const {
+      'name': 'Tech Solutions Co.',
+      'businessType': 'ซอฟต์แวร์',
+      'description': '',
+      'logoObjectKey': null,
+      'provinceId': 90,
+      'provinceName': 'สงขลา',
+      'location': 'อาคาร A ถนนนิพัทธ์อุทิศ',
+    });
+
+    expect(
+      CompanyProfileModel.fromEntity(model.toEntity()).toJson(),
+      model.toJson(),
+    );
+    expect(model.toEntity().provinceId, 90);
+    expect(model.toEntity().provinceName, 'สงขลา');
+    expect(model.toEntity().location, 'อาคาร A ถนนนิพัทธ์อุทิศ');
+    expect(model.toJson(), {
+      'name': 'Tech Solutions Co.',
+      'businessType': 'ซอฟต์แวร์',
+      'description': '',
+      'websiteUrl': '',
+      'contactLinks': <Map<String, dynamic>>[],
+      'companySize': '',
+      'perks': <String>[],
+      'provinceId': 90,
+      'location': 'อาคาร A ถนนนิพัทธ์อุทิศ',
+    });
+  });
 
   testWidgets(
     'renders redesigned company profile with neo-brutalist cards and fields',
@@ -48,8 +84,11 @@ void main() {
       await tester.pumpAndSettle();
 
       // Top Bar & Branding
-      expect(find.text('InternFinder'), findsOneWidget);
-      expect(find.text('FOR BUSINESS'), findsOneWidget);
+      expect(find.text('InternMatch'), findsOneWidget);
+      expect(find.text('บริษัท'), findsOneWidget);
+      expect(find.text('บรรยากาศการทำงานจริง (Life at Office)'), findsNothing);
+      expect(find.text('Team & Collab'), findsNothing);
+      expect(find.text('Pantry & Snacks'), findsNothing);
 
       // Cover & Avatar section
       expect(find.text('เปลี่ยนรูปหน้าปก'), findsOneWidget);
@@ -91,6 +130,85 @@ void main() {
       expect(find.text('ออกจากระบบ'), findsOneWidget);
     },
   );
+
+  testWidgets('invalid website cannot save and displays a reason', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final repo = _FakeCompanyProfileRepository(profile: mockProfile);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+          companyProfileRepositoryProvider.overrideWithValue(repo),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: const CompanyProfileScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final field = find.widgetWithText(
+      TextFormField,
+      'https://techsolutions.co',
+    );
+    await tester.ensureVisible(field);
+    await tester.enterText(field, 'javascript:alert(1)');
+    await tester.ensureVisible(find.text('บันทึกโปรไฟล์'));
+    await tester.tap(find.text('บันทึกโปรไฟล์'));
+    await tester.pumpAndSettle();
+    expect(repo.updateCalls, 0);
+    expect(find.text(companyWebsiteError), findsOneWidget);
+  });
+
+  testWidgets('saved profile fields survive opening a new page', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final repo = _FakeCompanyProfileRepository(profile: mockProfile);
+    Widget page() => ProviderScope(
+      overrides: [
+        tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+        companyProfileRepositoryProvider.overrideWithValue(repo),
+      ],
+      child: MaterialApp(
+        theme: AppTheme.lightTheme,
+        home: const CompanyProfileScreen(),
+      ),
+    );
+    await tester.pumpWidget(page());
+    await tester.pumpAndSettle();
+    final name = find.widgetWithText(TextFormField, 'Tech Solutions Co.').first;
+    await tester.enterText(name, 'Saved Company');
+    final website = find.widgetWithText(
+      TextFormField,
+      'https://techsolutions.co',
+    );
+    await tester.ensureVisible(website);
+    await tester.enterText(website, 'https://saved.example.com');
+    await tester.ensureVisible(find.text('บันทึกโปรไฟล์'));
+    await tester.tap(find.text('บันทึกโปรไฟล์'));
+    await tester.pumpAndSettle();
+    expect(repo.updateCalls, 1);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    await tester.pumpWidget(page());
+    await tester.pumpAndSettle();
+    expect(find.text('Saved Company'), findsWidgets);
+    expect(find.text('https://saved.example.com'), findsOneWidget);
+    expect(repo.profile.businessType, mockProfile.businessType);
+    expect(repo.profile.description, mockProfile.description);
+    expect(repo.profile.companySize, mockProfile.companySize);
+    expect(repo.profile.perks, mockProfile.perks);
+    expect(repo.profile.location, mockProfile.location);
+  });
 
   testWidgets('validates required fields before submitting', (tester) async {
     tester.view.physicalSize = const Size(390, 844);
@@ -261,16 +379,374 @@ void main() {
       await tester.tap(find.text('ลองอีกครั้ง'));
       await tester.pumpAndSettle();
 
-      expect(find.text('InternFinder'), findsOneWidget);
+      expect(find.text('InternMatch'), findsOneWidget);
       expect(find.text('Tech Solutions Co.'), findsWidgets);
     },
   );
+  testWidgets('province alias selects the canonical province', (tester) async {
+    tester.view.physicalSize = const Size(390, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repo = _FakeCompanyProfileRepository(profile: mockProfile);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+          companyProfileRepositoryProvider.overrideWithValue(repo),
+          thaiProvincesProvider.overrideWith((ref) async => _provinces),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: const CompanyProfileScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(
+      find.byKey(const Key('company-province-picker')),
+    );
+    await tester.tap(find.byKey(const Key('company-province-picker')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'กทม.');
+    await tester.pumpAndSettle();
+    expect(find.text('กรุงเทพมหานคร'), findsOneWidget);
+    await tester.tap(find.text('กรุงเทพมหานคร'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ปักหมุดสำนักงาน'), findsNothing);
+
+    await _tapSave(tester);
+    await tester.pumpAndSettle();
+
+    expect(repo.profile.provinceId, 10);
+    expect(repo.profile.provinceName, 'กรุงเทพมหานคร');
+  });
+
+  testWidgets('saved company office keeps province and short address', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repo = _FakeCompanyProfileRepository(
+      profile: const CompanyProfile(
+        name: 'Tech Solutions Co.',
+        businessType: 'ซอฟต์แวร์',
+        description: 'พัฒนาแอปพลิเคชันมือถือและเว็บ',
+        logoObjectKey: null,
+        provinceId: 90,
+        provinceName: 'สงขลา',
+        location: 'อาคาร A ถนนนิพัทธ์อุทิศ',
+        websiteUrl: 'https://example.com',
+        companySize: '201-500',
+        perks: ['Mentor'],
+      ),
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+          companyProfileRepositoryProvider.overrideWithValue(repo),
+          thaiProvincesProvider.overrideWith((ref) async => _provinces),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: const CompanyProfileScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('สงขลา'), findsOneWidget);
+    expect(find.text('อาคาร A ถนนนิพัทธ์อุทิศ'), findsOneWidget);
+    expect(find.text('ปักหมุดสำนักงาน'), findsNothing);
+
+    await _tapSave(tester);
+    await tester.pumpAndSettle();
+    expect(repo.profile.provinceId, 90);
+    expect(repo.profile.location, 'อาคาร A ถนนนิพัทธ์อุทิศ');
+    expect(repo.profile.websiteUrl, 'https://example.com');
+    expect(repo.profile.companySize, '201-500');
+    expect(repo.profile.perks, ['Mentor']);
+  });
+
+  testWidgets('clearing province saves without a province', (tester) async {
+    tester.view.physicalSize = const Size(390, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repo = _FakeCompanyProfileRepository(
+      profile: const CompanyProfile(
+        name: 'Tech Solutions Co.',
+        businessType: 'ซอฟต์แวร์',
+        description: '',
+        logoObjectKey: null,
+        provinceId: 90,
+        provinceName: 'สงขลา',
+      ),
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+          companyProfileRepositoryProvider.overrideWithValue(repo),
+          thaiProvincesProvider.overrideWith((ref) async => _provinces),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: const CompanyProfileScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('company-clear-province')),
+      250,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.byKey(const Key('company-clear-province')));
+    await tester.pumpAndSettle();
+    expect(find.text('เลือกจังหวัด'), findsOneWidget);
+
+    await _tapSave(tester);
+    await tester.pumpAndSettle();
+    expect(repo.profile.provinceId, isNull);
+  });
+
+  testWidgets('changing province saves the newly selected province', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repo = _FakeCompanyProfileRepository(
+      profile: const CompanyProfile(
+        name: 'Tech Solutions Co.',
+        businessType: 'ซอฟต์แวร์',
+        description: '',
+        logoObjectKey: null,
+        provinceId: 90,
+        provinceName: 'สงขลา',
+      ),
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+          companyProfileRepositoryProvider.overrideWithValue(repo),
+          thaiProvincesProvider.overrideWith((ref) async => _provinces),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: const CompanyProfileScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('company-province-picker')),
+      250,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.byKey(const Key('company-province-picker')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('กรุงเทพมหานคร'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('กรุงเทพมหานคร'), findsOneWidget);
+
+    await _tapSave(tester);
+    await tester.pumpAndSettle();
+    expect(repo.profile.provinceId, 10);
+  });
+
+  testWidgets('logo update preserves unsaved form', (tester) async {
+    tester.view.physicalSize = const Size(390, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repo = _FakeCompanyProfileRepository(
+      profile: const CompanyProfile(
+        name: 'ชื่อเดิม',
+        businessType: 'ประเภทเดิม',
+        description: 'คำอธิบายเดิม',
+        logoObjectKey: null,
+        provinceId: 90,
+        provinceName: 'สงขลา',
+        location: 'ที่อยู่เดิม',
+      ),
+    );
+    final container = ProviderContainer(
+      overrides: [
+        tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+        companyProfileRepositoryProvider.overrideWithValue(repo),
+        thaiProvincesProvider.overrideWith((ref) async => _provinces),
+      ],
+    );
+    addTearDown(container.dispose);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: const CompanyProfileScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'ชื่อเดิม'),
+      'ชื่อที่ยังไม่บันทึก',
+    );
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'คำอธิบายเดิม'),
+      'คำอธิบายใหม่',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'ที่อยู่เดิม'),
+      'อาคารใหม่ ถนนสีลม',
+    );
+
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('company-province-picker')),
+      250,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.byKey(const Key('company-province-picker')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('กรุงเทพมหานคร'));
+    await tester.pumpAndSettle();
+
+    // A logo response still contains the previously saved office data.
+    await container
+        .read(companyProfileControllerProvider.notifier)
+        .uploadLogo(filePath: '', fileName: 'logo.png', bytes: [1, 2, 3]);
+    await tester.pumpAndSettle();
+
+    expect(repo.uploadLogoCalls, 1);
+    expect(repo.profile.provinceId, 90);
+    expect(repo.profile.location, 'ที่อยู่เดิม');
+    expect(repo.profile.logoObjectKey, isNotNull);
+    expect(
+      find.widgetWithText(TextFormField, 'ชื่อที่ยังไม่บันทึก'),
+      findsOneWidget,
+    );
+
+    expect(find.widgetWithText(TextFormField, 'คำอธิบายใหม่'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.widgetWithText(TextFormField, 'อาคารใหม่ ถนนสีลม'),
+      250,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(
+      find.widgetWithText(TextFormField, 'อาคารใหม่ ถนนสีลม'),
+      findsOneWidget,
+    );
+    expect(find.text('กรุงเทพมหานคร'), findsOneWidget);
+
+    await _tapSave(tester);
+    await tester.pumpAndSettle();
+    expect(repo.lastUpdateRequest?.name, 'ชื่อที่ยังไม่บันทึก');
+    expect(repo.lastUpdateRequest?.businessType, 'ประเภทเดิม');
+    expect(repo.lastUpdateRequest?.description, 'คำอธิบายใหม่');
+    expect(repo.lastUpdateRequest?.location, 'อาคารใหม่ ถนนสีลม');
+    expect(repo.lastUpdateRequest?.provinceId, 10);
+  });
+
+  testWidgets('successful save applies authoritative profile response', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final repo = _FakeCompanyProfileRepository(
+      profile: mockProfile,
+      updateResponse: (draft) => CompanyProfile(
+        name: 'ชื่อจากเซิร์ฟเวอร์',
+        businessType: 'ประเภทจากเซิร์ฟเวอร์',
+        description: 'คำอธิบายจากเซิร์ฟเวอร์',
+        logoObjectKey: draft.logoObjectKey,
+        provinceId: 10,
+        provinceName: 'กรุงเทพมหานคร',
+        location: 'ที่อยู่จากเซิร์ฟเวอร์',
+      ),
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+          companyProfileRepositoryProvider.overrideWithValue(repo),
+          thaiProvincesProvider.overrideWith((ref) async => _provinces),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: const CompanyProfileScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Tech Solutions Co.'),
+      'ชื่อที่ส่ง',
+    );
+    await _tapSave(tester);
+    await tester.pumpAndSettle();
+
+    expect(repo.lastUpdateRequest?.name, 'ชื่อที่ส่ง');
+    expect(
+      find.widgetWithText(TextFormField, 'ชื่อจากเซิร์ฟเวอร์'),
+      findsOneWidget,
+    );
+    expect(repo.profile.businessType, 'ประเภทจากเซิร์ฟเวอร์');
+    expect(
+      find.widgetWithText(TextFormField, 'คำอธิบายจากเซิร์ฟเวอร์'),
+      findsOneWidget,
+    );
+    expect(
+      find.widgetWithText(TextFormField, 'ที่อยู่จากเซิร์ฟเวอร์'),
+      findsOneWidget,
+    );
+    expect(find.text('กรุงเทพมหานคร'), findsOneWidget);
+    expect(find.text('ที่อยู่จากเซิร์ฟเวอร์'), findsWidgets);
+  });
+}
+
+const _provinces = [
+  ThaiProvince(id: 10, nameTh: 'กรุงเทพมหานคร', aliases: ['กทม.']),
+  ThaiProvince(id: 90, nameTh: 'สงขลา'),
+];
+
+Future<void> _tapSave(WidgetTester tester) async {
+  await tester.scrollUntilVisible(
+    find.text('บันทึกโปรไฟล์'),
+    250,
+    scrollable: find.byType(Scrollable).first,
+  );
+  await tester.tap(find.text('บันทึกโปรไฟล์'));
 }
 
 class _FakeCompanyProfileRepository implements CompanyProfileRepository {
-  _FakeCompanyProfileRepository({required this.profile});
+  _FakeCompanyProfileRepository({required this.profile, this.updateResponse});
 
   CompanyProfile profile;
+  final CompanyProfile Function(CompanyProfile)? updateResponse;
+  CompanyProfile? lastUpdateRequest;
   int updateCalls = 0;
   int uploadLogoCalls = 0;
   int uploadCoverCalls = 0;
@@ -283,7 +759,8 @@ class _FakeCompanyProfileRepository implements CompanyProfileRepository {
   @override
   Future<CompanyProfile> update(CompanyProfile updated) async {
     updateCalls++;
-    profile = updated;
+    lastUpdateRequest = updated;
+    profile = updateResponse?.call(updated) ?? updated;
     return profile;
   }
 

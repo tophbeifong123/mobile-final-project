@@ -47,6 +47,7 @@ server/node_modules/
 server/dist/
 server/.cache/
 server/coverage/
+server/uploads/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -106,6 +107,15 @@ client/coverage/
 postgres_data/
 mongo_data/
 
+# Local AI session context
+AI_INDEX.md
+aiTask/
+aiTask/(task)googleLogin.md
+
 
 *.tsbuildinfo
+
+
+# Local Security Tools
+tools/
 

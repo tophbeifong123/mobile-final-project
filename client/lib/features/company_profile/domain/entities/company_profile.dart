@@ -1,11 +1,16 @@
+import '../../../student_profile/domain/entities/student_profile.dart';
+
 class CompanyProfile {
   const CompanyProfile({
     required this.name,
     required this.businessType,
     required this.description,
     this.logoObjectKey,
-    this.websiteUrl = '',
+    this.provinceId,
+    this.provinceName,
     this.location = '',
+    this.websiteUrl = '',
+    this.contactLinks = const [],
     this.companySize = '',
     this.perks = const [],
     this.coverObjectKey,
@@ -15,8 +20,11 @@ class CompanyProfile {
   final String businessType;
   final String description;
   final String? logoObjectKey;
-  final String websiteUrl;
+  final int? provinceId;
+  final String? provinceName;
   final String location;
+  final String websiteUrl;
+  final List<ContactLink> contactLinks;
   final String companySize;
   final List<String> perks;
   final String? coverObjectKey;
@@ -27,7 +35,10 @@ class CompanyProfile {
     String? description,
     String? Function()? logoObjectKey,
     String? websiteUrl,
+    List<ContactLink>? contactLinks,
     String? location,
+    int? Function()? provinceId,
+    String? Function()? provinceName,
     String? companySize,
     List<String>? perks,
     String? Function()? coverObjectKey,
@@ -40,7 +51,10 @@ class CompanyProfile {
           ? logoObjectKey()
           : this.logoObjectKey,
       websiteUrl: websiteUrl ?? this.websiteUrl,
+      contactLinks: contactLinks ?? this.contactLinks,
       location: location ?? this.location,
+      provinceId: provinceId != null ? provinceId() : this.provinceId,
+      provinceName: provinceName != null ? provinceName() : this.provinceName,
       companySize: companySize ?? this.companySize,
       perks: perks ?? this.perks,
       coverObjectKey: coverObjectKey != null

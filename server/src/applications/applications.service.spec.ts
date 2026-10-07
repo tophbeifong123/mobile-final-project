@@ -26,6 +26,7 @@ import {
 import { ApplicationsRepository } from './applications.repository.js';
 import { ApplicationsService } from './applications.service.js';
 import { Application } from './entities/application.entity.js';
+import { StudentDocumentType } from '../students/student-document.entity.js';
 
 describe('ApplicationsService', () => {
   let service: ApplicationsService;
@@ -61,13 +62,23 @@ describe('ApplicationsService', () => {
     repository = {
       findStudentProfileByUserId: vi.fn(),
       findApplication: vi.fn(),
+      findStudentCv: vi.fn().mockResolvedValue(null),
+      findStudentDocuments: vi
+        .fn()
+        .mockResolvedValue([
+          {
+            id: 'cv',
+            type: StudentDocumentType.Cv,
+            objectKey: studentProfile.resumeObjectKey,
+            fileName: studentProfile.resumeFileName,
+          },
+        ]),
       applyJob: vi.fn(),
     } as unknown as ApplicationsRepository;
 
-    service = new ApplicationsService(
-      repository,
-      { get: vi.fn() } as unknown as StorageService,
-    );
+    service = new ApplicationsService(repository, {
+      get: vi.fn(),
+    } as unknown as StorageService);
   });
 
   it('rejects if user role is not student', async () => {
@@ -91,6 +102,7 @@ describe('ApplicationsService', () => {
   });
 
   it('rejects if student profile has no resumeObjectKey', async () => {
+    vi.mocked(repository.findStudentDocuments).mockResolvedValue([]);
     vi.mocked(repository.findStudentProfileByUserId).mockResolvedValue({
       ...studentProfile,
       resumeObjectKey: null,
@@ -128,13 +140,50 @@ describe('ApplicationsService', () => {
       jobId: 'job-1',
       coverLetter: 'I am passionate about this internship',
       resumeObjectKey: studentProfile.resumeObjectKey,
+      resumeFileName: studentProfile.resumeFileName,
       actorUserId: studentUser.userId,
+      documentIds: [],
     });
 
     expect(result.id).toBe('app-123');
     expect(result.status).toBe(ApplicationStatus.Submitted);
     expect(result.coverLetter).toBe('I am passionate about this internship');
     expect(result.resumeObjectKey).toBe(studentProfile.resumeObjectKey);
+  });
+
+  it('passes the current CV filename to the application snapshot', async () => {
+    vi.mocked(repository.findStudentProfileByUserId).mockResolvedValue(
+      studentProfile as any,
+    );
+    vi.mocked(repository.findStudentDocuments).mockResolvedValue([
+      {
+        id: 'cv',
+        type: StudentDocumentType.Cv,
+        objectKey: 'student-documents/student-123/cv/current.pdf',
+        fileName: 'current-cv.pdf',
+      } as any,
+    ]);
+    vi.mocked(repository.applyJob).mockResolvedValue({
+      id: 'app-123',
+      studentId: studentProfile.id,
+      jobId: 'job-1',
+      coverLetter: 'Hello',
+      resumeObjectKey: 'student-documents/student-123/cv/current.pdf',
+      resumeFileName: 'current-cv.pdf',
+      status: ApplicationStatus.Submitted,
+      version: 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as Application);
+
+    await service.apply(studentUser, 'job-1', { coverLetter: 'Hello' });
+
+    expect(repository.applyJob).toHaveBeenCalledWith(
+      expect.objectContaining({
+        resumeObjectKey: 'student-documents/student-123/cv/current.pdf',
+        resumeFileName: 'current-cv.pdf',
+      }),
+    );
   });
 
   it('propagates NotFoundException when job is not found', async () => {
@@ -242,7 +291,9 @@ describe('ApplicationsService', () => {
       vi.mocked(repository.findStudentProfileByUserId).mockResolvedValue(
         studentProfile as any,
       );
-      (repository as any).findApplicationDetail = vi.fn().mockResolvedValue(null);
+      (repository as any).findApplicationDetail = vi
+        .fn()
+        .mockResolvedValue(null);
 
       await expect(service.getDetail(studentUser, 'app-1')).rejects.toThrow(
         new NotFoundException(APPLICATION_NOT_FOUND),
@@ -358,15 +409,14 @@ describe('ApplicationsService', () => {
       (repository as any).findCompanyProfileByUserId = vi
         .fn()
         .mockResolvedValue(companyProfile);
-      (repository as any).findJobById = vi
-        .fn()
-        .mockResolvedValue(targetJob);
+      (repository as any).findJobById = vi.fn().mockResolvedValue(targetJob);
       (repository as any).listJobApplicants = vi.fn().mockResolvedValue([
         {
           applicationId: 'app-1',
           fullName: 'สมชาย ใจดี',
           university: 'มหาวิทยาลัยเกษตรศาสตร์',
           major: 'วิทยาการคอมพิวเตอร์',
+          avatarObjectKey: 'student-avatars/student-1/avatar.png',
           status: ApplicationStatus.Submitted,
           coverLetter: 'อยากฝึกงานที่นี่ครับ',
           createdAt: new Date('2026-09-23T12:00:00Z'),
@@ -384,9 +434,16 @@ describe('ApplicationsService', () => {
         fullName: 'สมชาย ใจดี',
         university: 'มหาวิทยาลัยเกษตรศาสตร์',
         major: 'วิทยาการคอมพิวเตอร์',
+        avatarObjectKey: 'student-avatars/student-1/avatar.png',
         status: ApplicationStatus.Submitted,
         coverLetter: 'อยากฝึกงานที่นี่ครับ',
         createdAt: '2026-09-23T12:00:00.000Z',
+        examUrl: null,
+        examDeadline: null,
+        examCompletedAt: null,
+        examPassedAt: null,
+        interviewUrl: null,
+        interviewStartsAt: null,
       });
     });
   });
@@ -449,9 +506,7 @@ describe('ApplicationsService', () => {
       (repository as any).findCompanyProfileByUserId = vi
         .fn()
         .mockResolvedValue(companyProfile);
-      (repository as any).findJobById = vi
-        .fn()
-        .mockResolvedValue(targetJob);
+      (repository as any).findJobById = vi.fn().mockResolvedValue(targetJob);
       (repository as any).findCompanyApplicantDetail = vi
         .fn()
         .mockResolvedValue(null);
@@ -465,9 +520,7 @@ describe('ApplicationsService', () => {
       (repository as any).findCompanyProfileByUserId = vi
         .fn()
         .mockResolvedValue(companyProfile);
-      (repository as any).findJobById = vi
-        .fn()
-        .mockResolvedValue(targetJob);
+      (repository as any).findJobById = vi.fn().mockResolvedValue(targetJob);
       (repository as any).findCompanyApplicantDetail = vi
         .fn()
         .mockResolvedValue({
@@ -513,6 +566,13 @@ describe('ApplicationsService', () => {
         coverLetter: 'อยากฝึกงานที่นี่มากครับ',
         createdAt: '2026-09-23T12:00:00.000Z',
         updatedAt: '2026-09-23T12:30:00.000Z',
+        examUrl: null,
+        examDeadline: null,
+        examCompletedAt: null,
+        examPassedAt: null,
+        interviewUrl: null,
+        interviewStartsAt: null,
+        interviewMode: 'online',
       });
     });
   });
@@ -599,23 +659,28 @@ describe('ApplicationsService', () => {
       (repository as any).findJobById = vi.fn().mockResolvedValue(targetJob);
       (repository as any).updateApplicationStatus = vi
         .fn()
-        .mockResolvedValue({ id: 'app-1', status: ApplicationStatus.Reviewing });
-      (repository as any).findCompanyApplicantDetail = vi.fn().mockResolvedValue({
-        applicationId: 'app-1',
-        jobId: 'job-123',
-        studentId: 'student-profile-123',
-        fullName: 'สมชาย ใจดี',
-        university: 'มหาวิทยาลัยเกษตรศาสตร์',
-        major: 'วิทยาการคอมพิวเตอร์',
-        skills: ['Flutter'],
-        portfolioUrl: null,
-        resumeFileName: 'resume.pdf',
-        status: ApplicationStatus.Reviewing,
-        coverLetter: 'อยากฝึกงานที่นี่มากครับ',
-        resumeObjectKey: 'resumes/somchai.pdf',
-        createdAt: new Date('2026-09-23T12:00:00Z'),
-        updatedAt: new Date('2026-09-23T12:45:00Z'),
-      });
+        .mockResolvedValue({
+          id: 'app-1',
+          status: ApplicationStatus.Reviewing,
+        });
+      (repository as any).findCompanyApplicantDetail = vi
+        .fn()
+        .mockResolvedValue({
+          applicationId: 'app-1',
+          jobId: 'job-123',
+          studentId: 'student-profile-123',
+          fullName: 'สมชาย ใจดี',
+          university: 'มหาวิทยาลัยเกษตรศาสตร์',
+          major: 'วิทยาการคอมพิวเตอร์',
+          skills: ['Flutter'],
+          portfolioUrl: null,
+          resumeFileName: 'resume.pdf',
+          status: ApplicationStatus.Reviewing,
+          coverLetter: 'อยากฝึกงานที่นี่มากครับ',
+          resumeObjectKey: 'resumes/somchai.pdf',
+          createdAt: new Date('2026-09-23T12:00:00Z'),
+          updatedAt: new Date('2026-09-23T12:45:00Z'),
+        });
 
       const result = await service.updateApplicantStatus(
         companyUser,
@@ -624,9 +689,7 @@ describe('ApplicationsService', () => {
         { status: ApplicationStatus.Reviewing },
       );
 
-      expect(
-        (repository as any).updateApplicationStatus,
-      ).toHaveBeenCalledWith({
+      expect((repository as any).updateApplicationStatus).toHaveBeenCalledWith({
         jobId: 'job-123',
         applicationId: 'app-1',
         newStatus: ApplicationStatus.Reviewing,
@@ -647,22 +710,24 @@ describe('ApplicationsService', () => {
       (repository as any).updateApplicationStatus = vi
         .fn()
         .mockResolvedValue({ id: 'app-1', status: ApplicationStatus.Accepted });
-      (repository as any).findCompanyApplicantDetail = vi.fn().mockResolvedValue({
-        applicationId: 'app-1',
-        jobId: 'job-123',
-        studentId: 'student-profile-123',
-        fullName: 'สมชาย ใจดี',
-        university: 'มหาวิทยาลัยเกษตรศาสตร์',
-        major: 'วิทยาการคอมพิวเตอร์',
-        skills: ['Flutter'],
-        portfolioUrl: null,
-        resumeFileName: 'resume.pdf',
-        status: ApplicationStatus.Accepted,
-        coverLetter: 'อยากฝึกงานที่นี่มากครับ',
-        resumeObjectKey: 'resumes/somchai.pdf',
-        createdAt: new Date('2026-09-23T12:00:00Z'),
-        updatedAt: new Date('2026-09-23T13:00:00Z'),
-      });
+      (repository as any).findCompanyApplicantDetail = vi
+        .fn()
+        .mockResolvedValue({
+          applicationId: 'app-1',
+          jobId: 'job-123',
+          studentId: 'student-profile-123',
+          fullName: 'สมชาย ใจดี',
+          university: 'มหาวิทยาลัยเกษตรศาสตร์',
+          major: 'วิทยาการคอมพิวเตอร์',
+          skills: ['Flutter'],
+          portfolioUrl: null,
+          resumeFileName: 'resume.pdf',
+          status: ApplicationStatus.Accepted,
+          coverLetter: 'อยากฝึกงานที่นี่มากครับ',
+          resumeObjectKey: 'resumes/somchai.pdf',
+          createdAt: new Date('2026-09-23T12:00:00Z'),
+          updatedAt: new Date('2026-09-23T13:00:00Z'),
+        });
 
       const result = await service.updateApplicantStatus(
         companyUser,
@@ -671,9 +736,7 @@ describe('ApplicationsService', () => {
         { status: ApplicationStatus.Accepted },
       );
 
-      expect(
-        (repository as any).updateApplicationStatus,
-      ).toHaveBeenCalledWith({
+      expect((repository as any).updateApplicationStatus).toHaveBeenCalledWith({
         jobId: 'job-123',
         applicationId: 'app-1',
         newStatus: ApplicationStatus.Accepted,
@@ -693,22 +756,24 @@ describe('ApplicationsService', () => {
       (repository as any).updateApplicationStatus = vi
         .fn()
         .mockResolvedValue({ id: 'app-1', status: ApplicationStatus.Rejected });
-      (repository as any).findCompanyApplicantDetail = vi.fn().mockResolvedValue({
-        applicationId: 'app-1',
-        jobId: 'job-123',
-        studentId: 'student-profile-123',
-        fullName: 'สมชาย ใจดี',
-        university: 'มหาวิทยาลัยเกษตรศาสตร์',
-        major: 'วิทยาการคอมพิวเตอร์',
-        skills: ['Flutter'],
-        portfolioUrl: null,
-        resumeFileName: 'resume.pdf',
-        status: ApplicationStatus.Rejected,
-        coverLetter: 'อยากฝึกงานที่นี่มากครับ',
-        resumeObjectKey: 'resumes/somchai.pdf',
-        createdAt: new Date('2026-09-23T12:00:00Z'),
-        updatedAt: new Date('2026-09-23T13:00:00Z'),
-      });
+      (repository as any).findCompanyApplicantDetail = vi
+        .fn()
+        .mockResolvedValue({
+          applicationId: 'app-1',
+          jobId: 'job-123',
+          studentId: 'student-profile-123',
+          fullName: 'สมชาย ใจดี',
+          university: 'มหาวิทยาลัยเกษตรศาสตร์',
+          major: 'วิทยาการคอมพิวเตอร์',
+          skills: ['Flutter'],
+          portfolioUrl: null,
+          resumeFileName: 'resume.pdf',
+          status: ApplicationStatus.Rejected,
+          coverLetter: 'อยากฝึกงานที่นี่มากครับ',
+          resumeObjectKey: 'resumes/somchai.pdf',
+          createdAt: new Date('2026-09-23T12:00:00Z'),
+          updatedAt: new Date('2026-09-23T13:00:00Z'),
+        });
 
       const result = await service.updateApplicantStatus(
         companyUser,
@@ -717,9 +782,7 @@ describe('ApplicationsService', () => {
         { status: ApplicationStatus.Rejected },
       );
 
-      expect(
-        (repository as any).updateApplicationStatus,
-      ).toHaveBeenCalledWith({
+      expect((repository as any).updateApplicationStatus).toHaveBeenCalledWith({
         jobId: 'job-123',
         applicationId: 'app-1',
         newStatus: ApplicationStatus.Rejected,
@@ -738,8 +801,13 @@ describe('ApplicationsService', () => {
       (repository as any).findJobById = vi.fn().mockResolvedValue(targetJob);
       (repository as any).updateApplicationStatus = vi
         .fn()
-        .mockResolvedValue({ id: 'app-1', status: ApplicationStatus.Reviewing });
-      (repository as any).findCompanyApplicantDetail = vi.fn().mockResolvedValue(null);
+        .mockResolvedValue({
+          id: 'app-1',
+          status: ApplicationStatus.Reviewing,
+        });
+      (repository as any).findCompanyApplicantDetail = vi
+        .fn()
+        .mockResolvedValue(null);
 
       await expect(
         service.updateApplicantStatus(companyUser, 'job-123', 'app-1', {
@@ -749,4 +817,3 @@ describe('ApplicationsService', () => {
     });
   });
 });
-

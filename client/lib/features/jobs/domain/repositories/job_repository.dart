@@ -1,7 +1,7 @@
 import '../entities/job.dart';
 
 abstract class JobRepository {
-  Future<List<Job>> fetchFeed(JobFilter filter);
+  Future<JobPage> fetchFeed(JobFilter filter);
 
   Future<JobDetail> fetchDetail(String jobId);
 

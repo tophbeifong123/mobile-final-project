@@ -8,16 +8,33 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { QueryFailedError } from 'typeorm';
-import { AuthRepository } from './auth.repository.js';
+import {
+  AuthRepository,
+  GoogleLinkUserMissingError,
+  GoogleSubjectTakenError,
+  UserAlreadyHasDifferentGoogleError,
+} from './auth.repository.js';
+import { type GoogleAuthDto } from './dto/google-auth.dto.js';
+import { type GoogleLinkDto } from './dto/google-link.dto.js';
+import { type GoogleRoleRequiredDto } from './dto/google-role-required.dto.js';
 import { AuthSessionDto } from './dto/auth-session.dto.js';
 import { LoginDto } from './dto/login.dto.js';
 import { RefreshDto } from './dto/refresh.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { User } from './entities/user.entity.js';
 import { PASSWORD_HASHER, type PasswordHasher } from './password-hasher.js';
+import { validateRegistrationPassword } from './registration-password-policy.js';
+import {
+  GOOGLE_TOKEN_VERIFIER,
+  type GoogleTokenVerifier,
+} from './google-token-verifier.js';
 
 const INVALID_CREDENTIALS = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
 const DUPLICATE_EMAIL = 'อีเมลนี้ถูกใช้แล้ว';
+const GOOGLE_LINK_REQUIRED =
+  'อีเมลนี้มีบัญชีอยู่แล้ว กรอกรหัสผ่านเดิมเพื่อผูก Google';
+const GOOGLE_ALREADY_LINKED_ELSEWHERE = 'บัญชีนี้ผูกกับ Google อื่นอยู่แล้ว';
+const GOOGLE_SUBJECT_TAKEN = 'บัญชี Google นี้ถูกใช้แล้ว';
 const INVALID_REFRESH = 'refresh token ใช้ไม่ได้';
 
 @Injectable()
@@ -27,9 +44,12 @@ export class AuthService {
     private readonly jwtService: JwtService,
     @Inject(PASSWORD_HASHER) private readonly passwords: PasswordHasher,
     private readonly config: ConfigService,
+    @Inject(GOOGLE_TOKEN_VERIFIER)
+    private readonly googleTokens: GoogleTokenVerifier,
   ) {}
 
   async register(dto: RegisterDto): Promise<AuthSessionDto> {
+    validateRegistrationPassword(dto.password);
     const email = normalizeEmail(dto.email);
     const existing = await this.authRepository.findByEmail(email);
     if (existing) {
@@ -37,11 +57,13 @@ export class AuthService {
     }
 
     const passwordHash = await this.passwords.hash(dto.password);
+    const fullName = normalizeProfileName(dto.fullName);
     try {
       const user = await this.authRepository.createUserWithProfile({
         email,
         passwordHash,
         role: dto.role,
+        fullName,
       });
       return await this.issueSession(user);
     } catch (error) {
@@ -55,12 +77,117 @@ export class AuthService {
   async login(dto: LoginDto): Promise<AuthSessionDto> {
     const email = normalizeEmail(dto.email);
     const user = await this.authRepository.findByEmail(email);
-    const passwordMatches = user
+    const passwordMatches = user?.passwordHash
       ? await this.passwords.verify(dto.password, user.passwordHash)
       : false;
     if (!user || !passwordMatches) {
       throw new UnauthorizedException(INVALID_CREDENTIALS);
     }
+    return this.issueSession(user);
+  }
+
+  async googleAuth(
+    dto: GoogleAuthDto,
+  ): Promise<AuthSessionDto | GoogleRoleRequiredDto> {
+    const identity = await this.googleTokens.verify(dto.idToken);
+    const linkedUser = await this.authRepository.findByGoogleSubject(
+      identity.subject,
+    );
+    if (linkedUser) {
+      return this.issueSession(linkedUser);
+    }
+
+    const email = normalizeEmail(identity.email);
+    const emailUser = await this.authRepository.findByEmail(email);
+    if (emailUser) {
+      throw emailCollision(emailUser.passwordHash, email);
+    }
+
+    if (!dto.role) {
+      return { code: 'role_required' };
+    }
+
+    try {
+      const user = await this.authRepository.createGoogleUserWithProfile({
+        email,
+        providerSubject: identity.subject,
+        role: dto.role,
+        fullName: normalizeGoogleProfileName(identity.name),
+      });
+      return this.issueSession(user);
+    } catch (error) {
+      if (!isUniqueViolation(error)) {
+        throw error;
+      }
+
+      // A concurrent request may have created this exact identity or claimed
+      // the email with another provider. Re-read to return the safe outcome.
+      const racedIdentity = await this.authRepository.findByGoogleSubject(
+        identity.subject,
+      );
+      if (racedIdentity) {
+        return this.issueSession(racedIdentity);
+      }
+      const existing = await this.authRepository.findByEmail(email);
+      if (existing) {
+        throw emailCollision(existing.passwordHash, email);
+      }
+      throw new ConflictException(GOOGLE_SUBJECT_TAKEN);
+    }
+  }
+
+  async linkGooglePasswordAccount(dto: GoogleLinkDto): Promise<AuthSessionDto> {
+    const identity = await this.googleTokens.verify(dto.idToken);
+    const email = normalizeEmail(identity.email);
+    const linkedUser = await this.authRepository.findByGoogleSubject(
+      identity.subject,
+    );
+    if (linkedUser) {
+      if (normalizeEmail(linkedUser.email) === email) {
+        return this.issueSession(linkedUser);
+      }
+      throw new ConflictException(GOOGLE_SUBJECT_TAKEN);
+    }
+
+    const user = await this.authRepository.findByEmail(email);
+    if (!user?.passwordHash) {
+      throw new UnauthorizedException(INVALID_CREDENTIALS);
+    }
+    const passwordMatches = await this.passwords.verify(
+      dto.password,
+      user.passwordHash,
+    );
+    if (!passwordMatches) {
+      throw new UnauthorizedException(INVALID_CREDENTIALS);
+    }
+
+    try {
+      await this.authRepository.linkGoogleIdentity(user.id, identity.subject);
+    } catch (error) {
+      if (error instanceof GoogleSubjectTakenError) {
+        throw new ConflictException(GOOGLE_SUBJECT_TAKEN);
+      }
+      if (
+        error instanceof UserAlreadyHasDifferentGoogleError ||
+        error instanceof GoogleLinkUserMissingError
+      ) {
+        throw new ConflictException(GOOGLE_ALREADY_LINKED_ELSEWHERE);
+      }
+      if (!isUniqueViolation(error)) {
+        throw error;
+      }
+      const raced = await this.authRepository.findByGoogleSubject(
+        identity.subject,
+      );
+      if (raced?.id === user.id) {
+        return this.issueSession(user);
+      }
+      if (raced) {
+        throw new ConflictException(GOOGLE_SUBJECT_TAKEN);
+      }
+      throw new ConflictException(GOOGLE_ALREADY_LINKED_ELSEWHERE);
+    }
+
     return this.issueSession(user);
   }
 
@@ -78,6 +205,7 @@ export class AuthService {
     const accessToken = await this.jwtService.signAsync({
       sub: rotated.userId,
       role: rotated.role,
+      tokenVersion: rotated.tokenVersion,
     });
     return {
       accessToken,
@@ -94,13 +222,18 @@ export class AuthService {
     const accessToken = await this.jwtService.signAsync({
       sub: user.id,
       role: user.role,
+      tokenVersion: user.tokenVersion ?? 0,
     });
     const refreshToken = randomBytes(32).toString('base64url');
-    await this.authRepository.saveRefreshToken({
+    const saved = await this.authRepository.saveRefreshToken({
       userId: user.id,
       tokenHash: hashRefreshToken(refreshToken),
       expiresAt: this.refreshExpiry(),
+      tokenVersion: user.tokenVersion ?? 0,
     });
+    if (!saved) {
+      throw new UnauthorizedException(INVALID_CREDENTIALS);
+    }
     return {
       accessToken,
       refreshToken,
@@ -110,8 +243,35 @@ export class AuthService {
 
   private refreshExpiry(): Date {
     const configured = this.config.get<string>('JWT_REFRESH_EXPIRATION', '7d');
-    return new Date(Date.now() + durationMs(configured, 7 * 24 * 60 * 60 * 1000));
+    return new Date(
+      Date.now() + durationMs(configured, 7 * 24 * 60 * 60 * 1000),
+    );
   }
+}
+
+function normalizeProfileName(value: string): string {
+  return value.trim();
+}
+
+function normalizeGoogleProfileName(value: string): string {
+  return value.trim().slice(0, 255);
+}
+
+function emailCollision(
+  passwordHash: string | null,
+  email: string,
+): ConflictException {
+  if (passwordHash) {
+    return new ConflictException({
+      code: 'password_link_required',
+      message: GOOGLE_LINK_REQUIRED,
+      email,
+    });
+  }
+  return new ConflictException({
+    code: 'google_email_taken',
+    message: GOOGLE_ALREADY_LINKED_ELSEWHERE,
+  });
 }
 
 function normalizeEmail(email: string): string {

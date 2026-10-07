@@ -6,6 +6,7 @@ import 'package:client/features/auth/domain/entities/auth_session.dart';
 import 'package:client/features/auth/domain/repositories/auth_repository.dart';
 import 'package:client/features/auth/presentation/providers/auth_controller.dart';
 import 'package:client/features/auth/presentation/screens/register_screen.dart';
+import 'package:client/features/auth/presentation/widgets/rocket_badge.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -53,14 +54,21 @@ void main() {
       // Field headers
       expect(find.text('ชื่อ - นามสกุล'), findsOneWidget);
       expect(find.text('ตรงตามบัตร/รหัสนักศึกษา'), findsOneWidget);
-      expect(find.text('อีเมลมหาวิทยาลัย'), findsOneWidget);
+      expect(find.text('อีเมล'), findsOneWidget);
+      expect(find.byIcon(Icons.rocket_launch_rounded), findsNothing);
+      expect(find.byType(RocketBadge), findsNothing);
+      expect(find.byIcon(Icons.spa_outlined), findsNothing);
       expect(find.text('ตั้งรหัสผ่าน'), findsOneWidget);
-      expect(find.text('อย่างน้อย 8 ตัวอักษร'), findsOneWidget);
+      expect(
+        find.text('อย่างน้อย 8 ตัว มี A–Z, a–z, ตัวเลข และสัญลักษณ์'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('ไบต์ (UTF-8)'), findsNothing);
+      expect(find.textContaining('เพิ่มอีก:'), findsNothing);
       expect(find.text('ยืนยันรหัสผ่าน'), findsOneWidget);
 
-      // Password strength
-      expect(find.text('ระดับความปลอดภัย: '), findsOneWidget);
-      expect(find.text('ยังไม่ปลอดภัย'), findsOneWidget);
+      expect(find.text('เงื่อนไขรหัสผ่าน'), findsNothing);
+      expect(find.textContaining('ระดับความปลอดภัย'), findsNothing);
 
       // Submit button
       expect(find.text('สร้างบัญชีผู้ใช้'), findsOneWidget);
@@ -69,8 +77,8 @@ void main() {
       expect(find.text('หรือลงทะเบียนด้วย'), findsOneWidget);
 
       // Social buttons
-      expect(find.text('Google'), findsOneWidget);
-      expect(find.text('SSO มหาวิทยาลัย'), findsOneWidget);
+      expect(find.text('ลงทะเบียนด้วย Google'), findsOneWidget);
+      expect(find.text('SSO มหาวิทยาลัย'), findsNothing);
 
       // Footer
       expect(find.text('เข้าสู่ระบบ'), findsOneWidget);
@@ -101,14 +109,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('อีเมลมหาวิทยาลัย'), findsOneWidget);
+    expect(find.text('อีเมล'), findsOneWidget);
     expect(find.text('ตรงตามบัตร/รหัสนักศึกษา'), findsOneWidget);
 
     // Tap Company Role
     await tester.tap(find.text('บริษัท / องค์กร'));
     await tester.pumpAndSettle();
 
-    expect(find.text('อีเมลบริษัท'), findsOneWidget);
+    expect(find.text('อีเมล'), findsOneWidget);
     expect(find.text('ชื่อผู้ติดต่อ / บริษัท'), findsOneWidget);
   });
 
@@ -242,6 +250,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(fakeAuthRepo.registerCalls, 1);
+    expect(fakeAuthRepo.lastRegisteredFullName, 'กวิน รัตนพงษ์');
     expect(fakeAuthRepo.lastRegisteredEmail, 'student@university.ac.th');
     expect(fakeAuthRepo.lastRegisteredRole, UserRole.student);
   });
@@ -249,6 +258,7 @@ void main() {
 
 class _FakeAuthRepository implements AuthRepository {
   int registerCalls = 0;
+  String? lastRegisteredFullName;
   String? lastRegisteredEmail;
   UserRole? lastRegisteredRole;
 
@@ -265,11 +275,13 @@ class _FakeAuthRepository implements AuthRepository {
 
   @override
   Future<AuthSession> register({
+    required String fullName,
     required String email,
     required String password,
     required UserRole role,
   }) async {
     registerCalls++;
+    lastRegisteredFullName = fullName;
     lastRegisteredEmail = email;
     lastRegisteredRole = role;
     return AuthSession(
@@ -277,6 +289,22 @@ class _FakeAuthRepository implements AuthRepository {
       refreshToken: 'refresh-token',
       role: role,
     );
+  }
+
+  @override
+  Future<bool> authenticateWithGoogle({
+    required String idToken,
+    UserRole? role,
+  }) async {
+    throw const AppException('Not implemented in fake');
+  }
+
+  @override
+  Future<AuthSession> linkGoogle({
+    required String idToken,
+    required String password,
+  }) async {
+    throw const AppException('Not implemented in fake');
   }
 
   @override

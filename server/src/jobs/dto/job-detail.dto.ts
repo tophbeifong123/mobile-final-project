@@ -1,5 +1,6 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { JobStatus, WorkMode } from '../job-enums.js';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ContactLinkDto } from '../../students/dto/contact-link.dto.js';
+import { InterviewMode, JobStatus, WorkMode } from '../job-enums.js';
 
 export class JobDetailDto {
   @ApiProperty()
@@ -17,11 +18,27 @@ export class JobDetailDto {
   @ApiProperty({ enum: WorkMode })
   workMode: WorkMode;
 
+  @ApiProperty({ enum: InterviewMode, example: InterviewMode.OnSite })
+  interviewMode: InterviewMode;
+
   @ApiProperty({ example: 'IT & Software' })
   category: string;
 
   @ApiProperty()
   hasAllowance: boolean;
+
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    minimum: 1,
+    maximum: 2147483647,
+    example: 3,
+    description: 'จำนวนรับ; null เมื่อไม่ได้ระบุ',
+  })
+  openings: number | null;
+
+  @ApiPropertyOptional({ example: 8000, nullable: true })
+  allowanceAmount: number | null;
 
   @ApiProperty()
   requirements: string;
@@ -32,6 +49,21 @@ export class JobDetailDto {
   @ApiProperty({ enum: JobStatus, example: JobStatus.Open })
   status: JobStatus;
 
+  @ApiProperty({
+    type: String,
+    format: 'date-time',
+    description: 'วันเวลาสร้างประกาศ',
+  })
+  createdAt: Date;
+
+  @ApiPropertyOptional({
+    type: String,
+    format: 'date-time',
+    nullable: true,
+    description: 'วันปิดรับ; null เมื่อไม่ได้ระบุ',
+  })
+  deadline: Date | null;
+
   @ApiProperty({ example: 'InternFinder' })
   companyName: string;
 
@@ -40,6 +72,41 @@ export class JobDetailDto {
 
   @ApiProperty()
   companyDescription: string;
+
+  @ApiProperty({
+    example: 'https://example.com',
+    description: 'เว็บไซต์ที่บันทึกในโปรไฟล์บริษัท; ค่าว่างเมื่อไม่ได้ระบุ',
+  })
+  companyWebsiteUrl: string;
+
+  @ApiProperty({
+    type: () => [ContactLinkDto],
+    description:
+      'ช่องทางติดต่อจากโปรไฟล์บริษัทล่าสุด; รายการว่างเมื่อไม่ได้ระบุ',
+  })
+  companyContactLinks: ContactLinkDto[];
+
+  @ApiProperty({ example: '51-200', description: 'ขนาดองค์กรจากโปรไฟล์บริษัท' })
+  companySize: string;
+
+  @ApiProperty({ type: [String], example: ['MacBook', 'Free Lunch'] })
+  companyPerks: string[];
+
+  @ApiProperty({
+    example: 'อาคาร A ถนนนิพัทธ์อุทิศ',
+    description: 'ที่อยู่สำนักงานจาก location ในโปรไฟล์ ไม่ใช่จังหวัดของประกาศ',
+  })
+  companyLocation: string;
+
+  @ApiProperty({
+    description: 'มีโลโก้บริษัท; ดาวน์โหลดผ่าน GET /api/jobs/:id/company-logo',
+  })
+  companyLogoAvailable: boolean;
+
+  @ApiProperty({
+    description: 'มีรูปหน้าปกบริษัท; ดาวน์โหลดผ่าน GET /api/jobs/:id/company-cover',
+  })
+  companyCoverAvailable: boolean;
 
   @ApiProperty({ description: 'นักศึกษานี้บันทึกประกาศนี้ไว้แล้วหรือยัง' })
   saved: boolean;

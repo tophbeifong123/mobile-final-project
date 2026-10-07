@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
   VersionColumn,
 } from 'typeorm';
-import { JobStatus, WorkMode } from '../job-enums.js';
+import { InterviewMode, JobStatus, WorkMode } from '../job-enums.js';
 
 @Entity('jobs')
 export class Job {
@@ -33,16 +33,30 @@ export class Job {
   })
   workMode: WorkMode;
 
+  @Column({
+    name: 'interview_mode',
+    type: 'enum',
+    enum: InterviewMode,
+    enumName: 'interview_mode',
+  })
+  interviewMode: InterviewMode;
+
   @Column({ type: 'varchar', length: 255 })
   category: string;
 
   @Column({ name: 'has_allowance', type: 'boolean' })
   hasAllowance: boolean;
 
+  @Column({ type: 'integer', nullable: true })
+  openings: number | null;
+
+  @Column({ name: 'allowance_amount', type: 'int', nullable: true })
+  allowanceAmount: number | null;
+
   @Column({ type: 'text' })
   requirements: string;
 
-  @Column('text', { array: true, default: () => "ARRAY[]::text[]" })
+  @Column('text', { array: true, default: () => 'ARRAY[]::text[]' })
   skills: string[];
 
   @Column({

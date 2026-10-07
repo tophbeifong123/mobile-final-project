@@ -1,4 +1,6 @@
 import { randomUUID } from 'node:crypto';
+import { isURL } from 'class-validator';
+import { ApplicationStatus } from '../applications/application-status.js';
 import {
   BadRequestException,
   ForbiddenException,
@@ -9,21 +11,34 @@ import { type AuthUser } from '../auth/auth-user.js';
 import { UserRole } from '../auth/user-role.js';
 import { StorageService } from '../storage/storage.service.js';
 import { type UploadedFilePayload } from '../storage/uploaded-file.interface.js';
+import { ProvincesService } from '../provinces/provinces.service.js';
 import { CompaniesRepository } from './companies.repository.js';
 import { CompanyDashboardSummaryDto } from './dto/company-dashboard-summary.dto.js';
 import { CompanyProfileDto } from './dto/company-profile.dto.js';
 import { UpdateCompanyProfileDto } from './dto/update-company-profile.dto.js';
+import { ContactLinkDto } from '../students/dto/contact-link.dto.js';
 
 const COMPANY_ONLY = 'เฉพาะบริษัทเท่านั้น';
 const COMPANY_NOT_FOUND = 'ไม่พบโปรไฟล์บริษัท';
 const FILE_REQUIRED = 'กรุณาเลือกไฟล์รูปภาพ';
-const ONLY_IMAGE_ALLOWED = 'เลือกได้เฉพาะไฟล์รูปภาพเท่านั้น (PNG, JPG, WEBP, SVG)';
+const ONLY_IMAGE_ALLOWED =
+  'เลือกได้เฉพาะไฟล์รูปภาพเท่านั้น (PNG, JPG, WEBP, SVG)';
+const COMPANY_CONTACT_PLATFORMS = new Set([
+  'phone',
+  'email',
+  'line',
+  'linkedin',
+  'facebook',
+  'instagram',
+  'other',
+]);
 
 @Injectable()
 export class CompaniesService {
   constructor(
     private readonly companiesRepository: CompaniesRepository,
     private readonly storageService: StorageService,
+    private readonly provincesService: ProvincesService,
   ) {}
 
   async getDashboard(user: AuthUser): Promise<CompanyDashboardSummaryDto> {
@@ -38,12 +53,14 @@ export class CompaniesService {
 
     const summary = await this.companiesRepository.getDashboardSummary(
       profile.id,
+      [ApplicationStatus.Submitted, ApplicationStatus.Reviewing],
     );
 
     const dto = new CompanyDashboardSummaryDto();
     dto.totalJobs = summary.totalJobs;
     dto.openJobs = summary.openJobs;
     dto.totalApplicants = summary.totalApplicants;
+    dto.pendingApplicants = summary.pendingApplicants;
     return dto;
   }
 
@@ -73,15 +90,71 @@ export class CompaniesService {
       throw new NotFoundException(COMPANY_NOT_FOUND);
     }
 
-    const saved = await this.companiesRepository.updateProfile(profile.id, {
-      name: dto.name.trim(),
-      businessType: dto.businessType.trim(),
-      description: dto.description.trim(),
-      websiteUrl: dto.websiteUrl !== undefined ? dto.websiteUrl.trim() : undefined,
-      location: dto.location !== undefined ? dto.location.trim() : undefined,
-      companySize: dto.companySize !== undefined ? dto.companySize.trim() : undefined,
-      perks: dto.perks !== undefined ? dto.perks : undefined,
-    });
+    const websiteUrl = dto.websiteUrl?.trim();
+    if (
+      websiteUrl &&
+      !isURL(websiteUrl, {
+        protocols: ['http', 'https'],
+        require_protocol: true,
+        require_valid_protocol: true,
+        disallow_auth: true,
+      })
+    ) {
+      throw new BadRequestException(
+        'เว็บไซต์ต้องเป็น URL ที่ถูกต้องและขึ้นต้นด้วย http:// หรือ https:// โดยไม่มีชื่อผู้ใช้หรือรหัสผ่าน',
+      );
+    }
+    const data: {
+      name?: string;
+      businessType?: string;
+      description?: string;
+      websiteUrl?: string;
+      companySize?: string;
+      perks?: string[];
+      provinceId?: number | null;
+      location?: string;
+      contactLinks?: Array<{
+        id: string;
+        platform: string;
+        label?: string;
+        value: string;
+      }>;
+    } = {};
+    if (typeof dto.name === 'string') data.name = dto.name.trim();
+    if (typeof dto.businessType === 'string')
+      data.businessType = dto.businessType.trim();
+    if (typeof dto.description === 'string')
+      data.description = dto.description.trim();
+    if (typeof dto.location === 'string') {
+      const location = dto.location.trim();
+      if (location.length > 255) {
+        throw new BadRequestException('ที่อยู่ต้องไม่เกิน 255 ตัวอักษร');
+      }
+      data.location = location;
+    }
+
+    if (websiteUrl !== undefined) data.websiteUrl = websiteUrl;
+    if (dto.contactLinks !== undefined) {
+      data.contactLinks = normalizeCompanyContactLinks(dto.contactLinks);
+    }
+    if (dto.companySize !== undefined) data.companySize = dto.companySize.trim();
+    if (dto.perks !== undefined) data.perks = dto.perks;
+
+    if (dto.provinceId !== undefined) {
+      if (dto.provinceId !== null) {
+        await this.provincesService.requireById(dto.provinceId);
+      }
+      data.provinceId = dto.provinceId;
+    }
+
+    if (Object.keys(data).length === 0) {
+      throw new BadRequestException('ไม่มีข้อมูลสำหรับแก้ไข');
+    }
+
+    const saved = await this.companiesRepository.updateProfile(
+      profile.id,
+      data,
+    );
 
     if (!saved) {
       throw new NotFoundException(COMPANY_NOT_FOUND);
@@ -295,7 +368,11 @@ export class CompaniesService {
       file.originalname?.toLowerCase().endsWith('.svg') ||
       file.mimetype === 'image/svg+xml' ||
       (file.buffer &&
-        file.buffer.subarray(0, 100).toString('utf8').toLowerCase().includes('<svg'));
+        file.buffer
+          .subarray(0, 100)
+          .toString('utf8')
+          .toLowerCase()
+          .includes('<svg'));
 
     const isImageMime = Boolean(file.mimetype?.startsWith('image/'));
     const hasImageExt = Boolean(
@@ -357,24 +434,104 @@ export class CompaniesService {
   }
 }
 
+function normalizeCompanyContactLinks(links: ContactLinkDto[]): Array<{
+  id: string;
+  platform: string;
+  label?: string;
+  value: string;
+}> {
+  return links.map((item) => {
+    const platform = item.platform.trim().toLowerCase();
+    if (!COMPANY_CONTACT_PLATFORMS.has(platform)) {
+      throw new BadRequestException('ประเภทช่องทางติดต่อไม่ถูกต้อง');
+    }
+    const value = item.value.trim();
+    if (!value || value.length > 500) {
+      throw new BadRequestException(
+        'ข้อมูลติดต่อต้องไม่ว่างและไม่เกิน 500 ตัวอักษร',
+      );
+    }
+    assertCompanyContactValue(platform, value);
+    const label = item.label?.trim();
+    if (label && label.length > 100) {
+      throw new BadRequestException('ป้ายชื่อช่องทางติดต่อต้องไม่เกิน 100 ตัวอักษร');
+    }
+    const id = item.id?.trim();
+    return {
+      id: id && id.length <= 50 ? id : randomUUID(),
+      platform,
+      ...(label ? { label } : {}),
+      value,
+    };
+  });
+}
+
+function assertCompanyContactValue(platform: string, value: string): void {
+  if (platform === 'email') {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) || value.length > 254) {
+      throw new BadRequestException('อีเมลติดต่อไม่ถูกต้อง');
+    }
+    return;
+  }
+  if (platform === 'phone') {
+    const digits = value.replace(/[\s().-]/g, '');
+    if (!/^\+?\d{8,15}$/.test(digits)) {
+      throw new BadRequestException('เบอร์โทรศัพท์ไม่ถูกต้อง');
+    }
+    return;
+  }
+  if (value.includes('://') || value.toLowerCase().startsWith('javascript:')) {
+    if (
+      !isURL(value, {
+        protocols: ['http', 'https'],
+        require_protocol: true,
+        require_valid_protocol: true,
+        disallow_auth: true,
+      })
+    ) {
+      throw new BadRequestException(
+        'ลิงก์ติดต่อต้องขึ้นต้นด้วย http:// หรือ https:// และไม่มีชื่อผู้ใช้หรือรหัสผ่าน',
+      );
+    }
+  }
+}
+
 function toProfileDto(profile: {
   name: string;
   businessType: string;
   description: string;
-  logoObjectKey?: string | null;
-  websiteUrl?: string;
+  logoObjectKey: string | null;
+  provinceId?: number | null;
+  province?: { nameTh: string } | null;
   location?: string;
+  websiteUrl?: string;
   companySize?: string;
   perks?: string[];
   coverObjectKey?: string | null;
+  contactLinks?: Array<{
+    id?: string;
+    platform: string;
+    label?: string;
+    value: string;
+  }>;
 }): CompanyProfileDto {
   const dto = new CompanyProfileDto();
   dto.name = profile.name;
   dto.businessType = profile.businessType;
   dto.description = profile.description;
   dto.logoObjectKey = profile.logoObjectKey ?? null;
-  dto.websiteUrl = profile.websiteUrl ?? '';
+  dto.provinceId = profile.provinceId ?? null;
+  dto.provinceName = profile.province?.nameTh ?? null;
   dto.location = profile.location ?? '';
+  dto.websiteUrl = profile.websiteUrl ?? '';
+  dto.contactLinks = (profile.contactLinks ?? []).map((item) => {
+    const link = new ContactLinkDto();
+    link.id = item.id;
+    link.platform = item.platform;
+    link.label = item.label;
+    link.value = item.value;
+    return link;
+  });
   dto.companySize = profile.companySize ?? '';
   dto.perks = profile.perks ?? [];
   dto.coverObjectKey = profile.coverObjectKey ?? null;

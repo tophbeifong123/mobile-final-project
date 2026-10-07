@@ -5,14 +5,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gap/gap.dart';
 
+import '../../../../core/provinces/thai_province_picker.dart';
+
 import '../../../../core/error/app_exception.dart';
 import '../../../../core/theme/app_tokens.dart';
+import '../../../../core/widgets/company_top_bar.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/loading_view.dart';
 import '../../../../core/widgets/neo_button.dart';
 import '../../../auth/presentation/providers/auth_controller.dart';
+import '../../../student_profile/domain/entities/student_profile.dart';
 import '../../domain/entities/company_profile.dart';
+import '../../domain/entities/company_website_policy.dart';
 import '../providers/company_profile_controller.dart';
+import '../widgets/company_contact_links_editor.dart';
 
 class CompanyProfileScreen extends ConsumerWidget {
   const CompanyProfileScreen({super.key});
@@ -23,7 +29,9 @@ class CompanyProfileScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: NeoColors.paperCanvas,
+      appBar: const CompanyTopBar(title: 'โปรไฟล์บริษัท'),
       body: SafeArea(
+        top: false,
         child: profileAsync.when(
           loading: () => const LoadingView(label: 'กำลังโหลดโปรไฟล์บริษัท'),
           error: (error, _) => _ProfileError(
@@ -95,6 +103,9 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
 
   late String _selectedCompanySize;
   late List<String> _perks;
+  late List<ContactLink> _contactLinks;
+  int? _provinceId;
+  String? _provinceName;
 
   bool _saving = false;
   bool _uploadingLogo = false;
@@ -139,33 +150,11 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
     _locationController = TextEditingController(text: p.location);
     _newPerkController = TextEditingController();
 
-    _selectedCompanySize = p.companySize.isNotEmpty ? p.companySize : '51-200';
+    _selectedCompanySize = p.companySize;
     _perks = List<String>.from(p.perks);
-  }
-
-  @override
-  void didUpdateWidget(covariant _CompanyProfileForm oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.profile != widget.profile) {
-      final p = widget.profile;
-      if (_nameController.text != p.name) _nameController.text = p.name;
-      if (_businessTypeController.text != p.businessType) {
-        _businessTypeController.text = p.businessType;
-      }
-      if (_descriptionController.text != p.description) {
-        _descriptionController.text = p.description;
-      }
-      if (_websiteUrlController.text != p.websiteUrl) {
-        _websiteUrlController.text = p.websiteUrl;
-      }
-      if (_locationController.text != p.location) {
-        _locationController.text = p.location;
-      }
-      if (p.companySize.isNotEmpty && _selectedCompanySize != p.companySize) {
-        _selectedCompanySize = p.companySize;
-      }
-      _perks = List<String>.from(p.perks);
-    }
+    _contactLinks = List<ContactLink>.from(p.contactLinks);
+    _provinceId = p.provinceId;
+    _provinceName = p.provinceName;
   }
 
   @override
@@ -190,13 +179,13 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildTopBar(),
-                const Gap(14),
                 _buildCoverAndAvatarSection(),
                 const Gap(16),
                 _buildHeaderTitleSection(),
                 const Gap(16),
                 _buildGeneralInfoCard(),
+                const Gap(16),
+                _buildContactCard(),
                 const Gap(16),
                 _buildLocationCard(),
                 const Gap(16),
@@ -214,92 +203,6 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
             Positioned(top: 16, left: 20, right: 20, child: _buildSavedToast()),
         ],
       ),
-    );
-  }
-
-  Widget _buildTopBar() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: NeoColors.butterYellow,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: NeoColors.inkSolid, width: 2.5),
-                boxShadow: NeoShadows.elevation1,
-              ),
-              child: const Icon(
-                Icons.corporate_fare,
-                size: 22,
-                color: NeoColors.inkSolid,
-              ),
-            ),
-            const Gap(10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: const [
-                Text(
-                  'InternFinder',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: NeoColors.inkSolid,
-                    letterSpacing: -0.3,
-                  ),
-                ),
-                Text(
-                  'FOR BUSINESS',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    color: NeoColors.electricIndigo,
-                    letterSpacing: 0.6,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-        Container(
-          width: 42,
-          height: 42,
-          decoration: BoxDecoration(
-            color: NeoColors.surfaceCream,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: NeoColors.inkSolid, width: 2.5),
-            boxShadow: NeoShadows.elevation1,
-          ),
-          child: Stack(
-            children: [
-              const Center(
-                child: Icon(
-                  Icons.notifications_outlined,
-                  size: 22,
-                  color: NeoColors.inkSolid,
-                ),
-              ),
-              Positioned(
-                top: 6,
-                right: 6,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: NeoColors.electricIndigo,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: NeoColors.inkSolid, width: 1),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
     );
   }
 
@@ -672,8 +575,21 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
             hint: 'https://www.bitkub.com',
             prefixIcon: Icons.language,
             keyboardType: TextInputType.url,
+            validator: validateCompanyWebsite,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildContactCard() {
+    return _buildCardShell(
+      iconBg: NeoColors.freshMint,
+      icon: Icons.alternate_email_rounded,
+      title: 'ช่องทางติดต่อ',
+      child: CompanyContactLinksEditor(
+        links: _contactLinks,
+        onChanged: (links) => setState(() => _contactLinks = links),
       ),
     );
   }
@@ -807,6 +723,8 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
   }
 
   Widget _buildLocationCard() {
+    final textTheme = Theme.of(context).textTheme;
+
     return _buildCardShell(
       iconBg: NeoColors.skyBlue,
       icon: Icons.location_on_rounded,
@@ -814,44 +732,49 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildFieldLabel(label: 'ที่ตั้งสำนักงาน (Office Address)'),
+          Text('ที่ตั้งสำนักงาน', style: textTheme.titleMedium),
+          const Gap(4),
+          Text(
+            'เลือกจังหวัดและใส่ที่อยู่สั้นที่นักศึกษาจะเห็น',
+            style: textTheme.bodySmall,
+          ),
+          const Gap(14),
+          Text('จังหวัด', style: textTheme.titleSmall),
+          const Gap(6),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  key: const Key('company-province-picker'),
+                  onPressed: _pickProvince,
+                  icon: const Icon(Icons.location_on_outlined),
+                  label: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(_provinceName ?? 'เลือกจังหวัด'),
+                  ),
+                ),
+              ),
+              if (_provinceId != null)
+                IconButton(
+                  key: const Key('company-clear-province'),
+                  tooltip: 'ล้างจังหวัด',
+                  onPressed: () => setState(() {
+                    _provinceId = null;
+                    _provinceName = null;
+                  }),
+                  icon: const Icon(Icons.close),
+                ),
+            ],
+          ),
+          const Gap(12),
+          _buildFieldLabel(label: 'ที่อยู่สำนักงาน (แบบสั้น)'),
           const Gap(4),
           _buildTextInput(
             controller: _locationController,
-            hint: 'FYI Center อาคาร 2 ชั้น 11 ถนนรัชดาภิเษก คลองเตย กรุงเทพฯ',
-            maxLines: 3,
-          ),
-          const Gap(12),
-          // Transit preview pill
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            decoration: BoxDecoration(
-              color: NeoColors.surfaceCream,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: NeoColors.inkSolid, width: 1.5),
-              boxShadow: NeoShadows.elevation1,
-            ),
-            child: Row(
-              children: const [
-                Icon(
-                  Icons.train_rounded,
-                  size: 18,
-                  color: NeoColors.electricIndigo,
-                ),
-                Gap(8),
-                Expanded(
-                  child: Text(
-                    'ใกล้สถานีรถไฟฟ้า MRT / BTS จุดเชื่อมต่อการเดินทางสะดวก',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: NeoColors.inkSolid,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+            hint: 'เช่น อาคาร A ถนนพระราม 1',
+            keyboardType: TextInputType.streetAddress,
+            maxLines: 2,
+            validator: _validateLocation,
           ),
         ],
       ),
@@ -873,74 +796,6 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
             hint:
                 'บริษัทผู้นำด้านเทคโนโลยี เรามุ่งมั่นพัฒนาคนรุ่นใหม่ สนับสนุนให้นักศึกษาได้ลงมือทำจริง...',
             maxLines: 4,
-          ),
-          const Gap(14),
-          _buildFieldLabel(label: 'บรรยากาศการทำงานจริง (Life at Office)'),
-          const Gap(6),
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: NeoColors.freshMint.withValues(alpha: 0.4),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: NeoColors.inkSolid, width: 2),
-                    boxShadow: NeoShadows.elevation1,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(
-                        Icons.groups_rounded,
-                        size: 26,
-                        color: NeoColors.inkSolid,
-                      ),
-                      Gap(4),
-                      Text(
-                        'Team & Collab',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: NeoColors.inkSolid,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const Gap(10),
-              Expanded(
-                child: Container(
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: NeoColors.butterYellow.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: NeoColors.inkSolid, width: 2),
-                    boxShadow: NeoShadows.elevation1,
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(
-                        Icons.coffee_rounded,
-                        size: 26,
-                        color: NeoColors.inkSolid,
-                      ),
-                      Gap(4),
-                      Text(
-                        'Pantry & Snacks',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: NeoColors.inkSolid,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
           ),
         ],
       ),
@@ -1268,6 +1123,41 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
     );
   }
 
+  String? _validateLocation(String? value) {
+    if ((value?.trim().length ?? 0) > 255) {
+      return 'ที่อยู่ต้องไม่เกิน 255 ตัวอักษร';
+    }
+    return null;
+  }
+
+  void _applySavedProfile(CompanyProfile profile) {
+    // Only a successful profile save replaces the draft. A logo upload also
+    // updates the provider, but must leave in-progress form edits untouched.
+    _nameController.text = profile.name;
+    _businessTypeController.text = profile.businessType;
+    _descriptionController.text = profile.description;
+    _websiteUrlController.text = profile.websiteUrl;
+    _contactLinks = List<ContactLink>.from(profile.contactLinks);
+    _selectedCompanySize = profile.companySize;
+    _perks = List<String>.from(profile.perks);
+    _locationController.text = profile.location;
+    _provinceId = profile.provinceId;
+    _provinceName = profile.provinceName;
+  }
+
+  Future<void> _pickProvince() async {
+    final selected = await showThaiProvincePicker(
+      context,
+      selectedProvinceId: _provinceId,
+    );
+    if (!mounted || selected == null) return;
+    setState(() {
+      _provinceId = selected.id;
+      _provinceName = selected.nameTh;
+      _error = null;
+    });
+  }
+
   Future<void> _pickAndUploadLogo() async {
     setState(() => _error = null);
     try {
@@ -1383,16 +1273,24 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
       name: _nameController.text.trim(),
       businessType: _businessTypeController.text.trim(),
       description: _descriptionController.text.trim(),
+      provinceId: () => _provinceId,
+      provinceName: () => _provinceName,
       websiteUrl: _websiteUrlController.text.trim(),
+      contactLinks: _contactLinks,
       location: _locationController.text.trim(),
       companySize: _selectedCompanySize,
       perks: _perks,
     );
 
     try {
-      await ref.read(companyProfileControllerProvider.notifier).save(updated);
+      final saved = await ref
+          .read(companyProfileControllerProvider.notifier)
+          .save(updated);
       if (!mounted) return;
-      setState(() => _showSavedToast = true);
+      setState(() {
+        _applySavedProfile(saved);
+        _showSavedToast = true;
+      });
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('บันทึกโปรไฟล์แล้ว')));

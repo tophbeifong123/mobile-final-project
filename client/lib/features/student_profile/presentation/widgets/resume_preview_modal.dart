@@ -13,30 +13,54 @@ import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/neo_button.dart';
 import '../../../resume/presentation/providers/resume_controller.dart';
 
+/// Injectable renderer boundary; production uses the existing native/web PDF loader.
+final resumePdfDocumentLoaderProvider =
+    Provider<Future<PdfDocument> Function(List<int>)?>((ref) => null);
+
 /// Neo-Brutalist Resume PDF Preview Modal Dialog
 class ResumePreviewModal extends ConsumerWidget {
-  const ResumePreviewModal({super.key, required this.fileName, this.onReplace});
+  const ResumePreviewModal({
+    super.key,
+    required this.fileName,
+    this.documentId,
+    this.onReplace,
+    this.pdfBytes,
+    this.onRetry,
+    this.readOnly = false,
+  }) : assert(!readOnly || (pdfBytes != null && onRetry != null));
 
   final String fileName;
+  final String? documentId;
   final VoidCallback? onReplace;
+  final AsyncValue<List<int>>? pdfBytes;
+  final VoidCallback? onRetry;
+  final bool readOnly;
 
   static Future<void> show(
     BuildContext context, {
     required String fileName,
+    String? documentId,
     VoidCallback? onReplace,
   }) {
     return showDialog<void>(
       context: context,
       barrierDismissible: true,
       barrierColor: Colors.black.withValues(alpha: 0.6),
-      builder: (context) =>
-          ResumePreviewModal(fileName: fileName, onReplace: onReplace),
+      builder: (context) => ResumePreviewModal(
+        fileName: fileName,
+        documentId: documentId,
+        onReplace: onReplace,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final pdfBytesAsync = ref.watch(resumePdfBytesProvider);
+    final AsyncValue<List<int>> pdfBytesAsync =
+        pdfBytes ??
+        (documentId == null
+            ? ref.watch(resumePdfBytesProvider)
+            : ref.watch(studentDocumentPdfBytesProvider(documentId!)));
 
     return Dialog(
       backgroundColor: Colors.transparent,
@@ -66,12 +90,16 @@ class ResumePreviewModal extends ConsumerWidget {
                 // Main Preview Canvas
                 Expanded(
                   child: pdfBytesAsync.when(
+                    skipLoadingOnRefresh: false,
                     loading: () => const _PdfLoadingView(
                       message: 'กำลังดาวน์โหลดเอกสาร PDF...',
                     ),
                     error: (err, _) => _buildErrorState(ref, err),
-                    data: (bytes) =>
-                        _PdfViewerCanvas(bytes: bytes, fileName: fileName),
+                    data: (bytes) => _PdfViewerCanvas(
+                      bytes: bytes,
+                      fileName: fileName,
+                      openDocument: ref.watch(resumePdfDocumentLoaderProvider),
+                    ),
                   ),
                 ),
 
@@ -214,7 +242,8 @@ class ResumePreviewModal extends ConsumerWidget {
             ),
             const Gap(16),
             NeoButton(
-              onPressed: () => ref.invalidate(resumePdfBytesProvider),
+              onPressed:
+                  onRetry ?? () => ref.invalidate(resumePdfBytesProvider),
               text: 'ลองอีกครั้ง',
               icon: const Icon(Icons.refresh_rounded, size: 16),
               variant: NeoButtonVariant.secondary,
@@ -248,23 +277,25 @@ class ResumePreviewModal extends ConsumerWidget {
               height: 40,
             ),
           ),
-          const Gap(10),
-          Expanded(
-            child: NeoButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                if (onReplace != null) {
-                  onReplace!();
-                } else {
-                  context.push('/student/resume');
-                }
-              },
-              text: 'เปลี่ยนไฟล์',
-              icon: const Icon(Icons.sync_rounded, size: 16),
-              variant: NeoButtonVariant.secondary,
-              height: 40,
+          if (!readOnly) ...[
+            const Gap(10),
+            Expanded(
+              child: NeoButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  if (onReplace != null) {
+                    onReplace!();
+                  } else {
+                    context.push('/student/resume');
+                  }
+                },
+                text: 'เปลี่ยนไฟล์',
+                icon: const Icon(Icons.sync_rounded, size: 16),
+                variant: NeoButtonVariant.secondary,
+                height: 40,
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -273,7 +304,13 @@ class ResumePreviewModal extends ConsumerWidget {
 
 /// Dedicated PDF Viewer Canvas that isolates the PdfController lifecycle
 class _PdfViewerCanvas extends StatefulWidget {
-  const _PdfViewerCanvas({required this.bytes, required this.fileName});
+  const _PdfViewerCanvas({
+    required this.bytes,
+    required this.fileName,
+    this.openDocument,
+  });
+
+  final Future<PdfDocument> Function(List<int>)? openDocument;
 
   final List<int> bytes;
   final String fileName;
@@ -284,18 +321,22 @@ class _PdfViewerCanvas extends StatefulWidget {
 
 class _PdfViewerCanvasState extends State<_PdfViewerCanvas> {
   late final PdfController _controller;
+  late final Future<PdfDocument> _documentFuture;
   Object? _renderError;
   File? _tempFile;
 
   @override
   void initState() {
     super.initState();
-    _controller = PdfController(document: _openDocument(widget.bytes));
+    _documentFuture =
+        widget.openDocument?.call(widget.bytes) ?? _openDocument(widget.bytes);
+    _controller = PdfController(document: _documentFuture);
   }
 
   // Support both Web (in-memory openData via pdf.js) and Native (temp file openFile
   // to avoid Android IPC 64KB pipe-buffer limit)
   Future<PdfDocument> _openDocument(List<int> bytes) async {
+    if (!await hasPdfSupport()) throw PlatformNotSupportedException();
     if (kIsWeb) {
       return PdfDocument.openData(Uint8List.fromList(bytes));
     }
@@ -316,9 +357,16 @@ class _PdfViewerCanvasState extends State<_PdfViewerCanvas> {
   @override
   void dispose() {
     _controller.dispose();
-    if (!kIsWeb) {
-      _tempFile?.delete().ignore();
-    }
+    _documentFuture
+        .then<void>((document) async {
+          if (!document.isClosed) await document.close();
+        })
+        .whenComplete(() async {
+          if (!kIsWeb && _tempFile != null && await _tempFile!.exists()) {
+            await _tempFile!.delete();
+          }
+        })
+        .ignore();
     super.dispose();
   }
 

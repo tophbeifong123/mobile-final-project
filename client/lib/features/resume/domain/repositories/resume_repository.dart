@@ -8,4 +8,14 @@ abstract class ResumeRepository {
   });
 
   Future<List<int>> downloadResumePdf();
+  Future<List<int>> downloadDocumentPdf(String id);
+  Future<List<StudentDocument>> listDocuments();
+  Future<StudentDocument> uploadDocument({
+    String? replacingId,
+    required String kind,
+    required String filePath,
+    required String fileName,
+    List<int>? bytes,
+  });
+  Future<void> deleteDocument(String id);
 }

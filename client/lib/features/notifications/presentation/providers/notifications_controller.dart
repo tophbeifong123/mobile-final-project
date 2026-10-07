@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/dio_client.dart';
+import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../data/datasources/notification_remote_data_source.dart';
 import '../../data/repositories/notification_repository_impl.dart';
 import '../../domain/entities/app_notification.dart';
@@ -20,6 +21,7 @@ final notificationsProvider =
 class NotificationsNotifier extends AsyncNotifier<List<AppNotification>> {
   @override
   Future<List<AppNotification>> build() async {
+    ref.watch(signedInSessionProvider);
     final repo = ref.watch(notificationRepositoryProvider);
     return repo.fetchAll();
   }

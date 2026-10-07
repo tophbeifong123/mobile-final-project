@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/network/dio_client.dart';
+import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../data/datasources/company_job_remote_data_source.dart';
+import '../../data/datasources/applicant_resume_remote_data_source.dart';
 import '../../data/repositories/company_job_repository_impl.dart';
 import '../../domain/entities/company_job.dart';
 import '../../domain/repositories/company_job_repository.dart';
@@ -14,7 +16,15 @@ final companyJobRepositoryProvider = Provider<CompanyJobRepository>((ref) {
   );
 });
 
+final applicantResumeBytesProvider = FutureProvider.autoDispose
+    .family<List<int>, ({String jobId, String applicationId})>((ref, arg) {
+      return ApplicantResumeRemoteDataSource(
+        ref.watch(dioProvider),
+      ).fetch(arg.jobId, arg.applicationId);
+    });
+
 final companyJobListProvider = FutureProvider<List<CompanyJob>>((ref) {
+  ref.watch(signedInSessionProvider);
   return ref.watch(companyJobRepositoryProvider).fetchMine();
 });
 
@@ -22,11 +32,21 @@ final companyJobDetailProvider = FutureProvider.family<EditableJob, String>((
   ref,
   jobId,
 ) {
+  ref.watch(signedInSessionProvider);
   return ref.watch(companyJobRepositoryProvider).fetchOne(jobId);
+});
+
+final companyOwnedJobProvider = FutureProvider.family<CompanyOwnedJob, String>((
+  ref,
+  jobId,
+) {
+  ref.watch(signedInSessionProvider);
+  return ref.watch(companyJobRepositoryProvider).fetchOwned(jobId);
 });
 
 final companyJobApplicantsProvider =
     FutureProvider.family<List<Applicant>, String>((ref, jobId) {
+      ref.watch(signedInSessionProvider);
       return ref.watch(companyJobRepositoryProvider).fetchApplicants(jobId);
     });
 
@@ -35,6 +55,7 @@ final companyApplicantDetailProvider =
       ref,
       arg,
     ) {
+      ref.watch(signedInSessionProvider);
       return ref
           .watch(companyJobRepositoryProvider)
           .fetchApplicant(jobId: arg.jobId, applicationId: arg.applicationId);
@@ -91,6 +112,7 @@ class CompanyJobsController extends Notifier<void> {
         .setStatus(jobId: jobId, status: status);
     ref.invalidate(companyJobListProvider);
     ref.invalidate(companyJobDetailProvider(jobId));
+    ref.invalidate(companyOwnedJobProvider(jobId));
   }
 
   Future<void> updateApplicantStatus({
@@ -112,6 +134,74 @@ class CompanyJobsController extends Notifier<void> {
       )),
     );
     ref.invalidate(companyJobApplicantsProvider(jobId));
+  }
+
+  Future<void> setExamLink({
+    required String jobId,
+    required String applicationId,
+    required String url,
+    required DateTime deadline,
+  }) async {
+    await ref
+        .read(companyJobRepositoryProvider)
+        .setExamLink(
+          jobId: jobId,
+          applicationId: applicationId,
+          url: url,
+          deadline: deadline,
+        );
+    _refreshApplicant(jobId, applicationId);
+  }
+
+  Future<void> passExam({
+    required String jobId,
+    required String applicationId,
+  }) async {
+    await ref
+        .read(companyJobRepositoryProvider)
+        .passExam(jobId: jobId, applicationId: applicationId);
+    _refreshApplicant(jobId, applicationId);
+  }
+
+  Future<void> setInterviewLink({
+    required String jobId,
+    required String applicationId,
+    required String url,
+    required DateTime startsAt,
+  }) async {
+    await ref
+        .read(companyJobRepositoryProvider)
+        .setInterviewLink(
+          jobId: jobId,
+          applicationId: applicationId,
+          url: url,
+          startsAt: startsAt,
+        );
+    _refreshApplicant(jobId, applicationId);
+  }
+
+  void _refreshApplicant(String jobId, String applicationId) {
+    ref.invalidate(
+      companyApplicantDetailProvider((
+        jobId: jobId,
+        applicationId: applicationId,
+      )),
+    );
+    ref.invalidate(companyJobApplicantsProvider(jobId));
+  }
+
+  Future<List<int>> downloadApplicantDocument({
+    required String jobId,
+    required String applicationId,
+    required String documentId,
+  }) {
+    return ref
+        .read(companyJobRepositoryProvider)
+        .downloadApplicantDocument(
+          jobId: jobId,
+          applicationId: applicationId,
+          documentId: documentId,
+        );
   }
 }
 

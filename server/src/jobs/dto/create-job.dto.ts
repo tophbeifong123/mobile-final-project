@@ -4,12 +4,17 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsIn,
+  IsInt,
   IsOptional,
   IsString,
+  Max,
   MaxLength,
+  Min,
   MinLength,
 } from 'class-validator';
-import { WorkMode } from '../job-enums.js';
+import { JOB_CATEGORIES } from '../job-categories.js';
+import { InterviewMode, WorkMode } from '../job-enums.js';
 
 function trimString({ value }: { value: unknown }): unknown {
   return typeof value === 'string' ? value.trim() : value;
@@ -29,7 +34,12 @@ export class CreateJobDto {
   @MinLength(1)
   description: string;
 
-  @ApiProperty({ example: 'สงขลา', maxLength: 255 })
+  @ApiProperty({
+    example: 'สงขลา',
+    maxLength: 255,
+    description:
+      'ชื่อจังหวัดมาตรฐานหรือชื่อเรียกจาก GET /api/provinces; ระบบบันทึกชื่อมาตรฐาน',
+  })
   @Transform(trimString)
   @IsString()
   @MinLength(1)
@@ -40,16 +50,48 @@ export class CreateJobDto {
   @IsEnum(WorkMode)
   workMode: WorkMode;
 
-  @ApiProperty({ example: 'IT & Software', maxLength: 255 })
+  @ApiProperty({
+    enum: InterviewMode,
+    example: InterviewMode.Online,
+    description: 'รูปแบบสัมภาษณ์ของประกาศนี้ ออนไลน์ใช้ลิงก์นัด ออนไซต์นัดที่สำนักงาน',
+  })
+  @IsEnum(InterviewMode)
+  interviewMode: InterviewMode;
+
+  @ApiProperty({ example: 'IT & Software', enum: JOB_CATEGORIES })
   @Transform(trimString)
   @IsString()
-  @MinLength(1)
-  @MaxLength(255)
+  @IsIn(JOB_CATEGORIES)
   category: string;
 
   @ApiProperty({ example: true })
   @IsBoolean()
   hasAllowance: boolean;
+
+  @ApiPropertyOptional({
+    type: Number,
+    nullable: true,
+    minimum: 1,
+    maximum: 2147483647,
+    example: 3,
+    description: 'จำนวนรับ เป็นจำนวนเต็มบวก; ไม่ระบุหรือ null ได้',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(2147483647)
+  openings?: number | null;
+
+  @ApiPropertyOptional({
+    example: 8000,
+    nullable: true,
+    description: 'จำนวนเงินบาท บังคับเมื่อมีเบี้ยเลี้ยง และต้องว่างเมื่อไม่มี',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(1_000_000)
+  allowanceAmount?: number | null;
 
   @ApiProperty({ example: 'กำลังศึกษาอยู่และใช้ Flutter ได้' })
   @Transform(trimString)

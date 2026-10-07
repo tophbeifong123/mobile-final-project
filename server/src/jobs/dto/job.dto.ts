@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { JobStatus, WorkMode } from '../job-enums.js';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { InterviewMode, JobStatus, WorkMode } from '../job-enums.js';
 
 export class JobDto {
   @ApiProperty()
@@ -17,11 +17,27 @@ export class JobDto {
   @ApiProperty({ enum: WorkMode })
   workMode: WorkMode;
 
+  @ApiProperty({ enum: InterviewMode, example: InterviewMode.Online })
+  interviewMode: InterviewMode;
+
   @ApiProperty({ example: 'IT & Software' })
   category: string;
 
   @ApiProperty()
   hasAllowance: boolean;
+
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    minimum: 1,
+    maximum: 2147483647,
+    example: 3,
+    description: 'จำนวนรับ; null เมื่อไม่ได้ระบุ',
+  })
+  openings: number | null;
+
+  @ApiPropertyOptional({ example: 8000, nullable: true })
+  allowanceAmount: number | null;
 
   @ApiProperty()
   requirements: string;

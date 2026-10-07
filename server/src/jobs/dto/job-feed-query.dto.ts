@@ -4,11 +4,13 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsIn,
   IsOptional,
   IsString,
   MaxLength,
 } from 'class-validator';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto.js';
+import { JOB_CATEGORIES } from '../job-categories.js';
 import { WorkMode } from '../job-enums.js';
 
 function emptyToUndefined({ value }: { value: unknown }): unknown {
@@ -27,7 +29,10 @@ export class JobFeedQueryDto extends PaginationQueryDto {
   @MaxLength(255)
   search?: string;
 
-  @ApiPropertyOptional({ example: 'สงขลา' })
+  @ApiPropertyOptional({
+    example: 'สงขลา',
+    description: 'ชื่อจังหวัดมาตรฐานหรือชื่อเรียกจาก GET /api/provinces',
+  })
   @Transform(emptyToUndefined)
   @IsOptional()
   @IsString()
@@ -39,11 +44,10 @@ export class JobFeedQueryDto extends PaginationQueryDto {
   @IsEnum(WorkMode)
   workMode?: WorkMode;
 
-  @ApiPropertyOptional({ example: 'IT & Software' })
+  @ApiPropertyOptional({ example: 'IT & Software', enum: JOB_CATEGORIES })
   @Transform(emptyToUndefined)
   @IsOptional()
-  @IsString()
-  @MaxLength(255)
+  @IsIn(JOB_CATEGORIES)
   category?: string;
 
   @ApiPropertyOptional({ example: true })

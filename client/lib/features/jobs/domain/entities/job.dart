@@ -1,4 +1,8 @@
+import '../../../student_profile/domain/entities/student_profile.dart';
+
 enum WorkMode { onSite, hybrid, remote }
+
+enum InterviewMode { online, onSite }
 
 enum JobStatus { open, closed }
 
@@ -117,10 +121,15 @@ class Job {
     required this.companyName,
     required this.province,
     required this.workMode,
+    this.interviewMode = InterviewMode.online,
     required this.category,
     required this.hasAllowance,
+    this.openings,
+    this.allowanceAmount,
     required this.status,
     this.skills = const [],
+    this.createdAt,
+    this.companyLogoAvailable = false,
   });
 
   final String id;
@@ -128,10 +137,30 @@ class Job {
   final String companyName;
   final String province;
   final WorkMode workMode;
+  final InterviewMode interviewMode;
   final String category;
   final bool hasAllowance;
+  final int? openings;
+  final int? allowanceAmount;
   final JobStatus status;
   final List<String> skills;
+  final DateTime? createdAt;
+  final bool companyLogoAvailable;
+}
+
+class JobPage {
+  const JobPage({
+    this.items = const [],
+    this.total = 0,
+    this.page = 1,
+    this.limit = 20,
+    this.totalPages = 0,
+  });
+  final List<Job> items;
+  final int total;
+  final int page;
+  final int limit;
+  final int totalPages;
 }
 
 class JobDetail {
@@ -141,15 +170,27 @@ class JobDetail {
     required this.description,
     required this.province,
     required this.workMode,
+    this.interviewMode = InterviewMode.online,
     required this.category,
     required this.hasAllowance,
+    this.openings,
+    this.allowanceAmount,
     required this.requirements,
     required this.status,
     required this.companyName,
     required this.businessType,
     required this.companyDescription,
     required this.saved,
+    this.companyWebsiteUrl = '',
+    this.companyContactLinks = const [],
+    this.companySize = '',
+    this.companyLocation = '',
+    this.companyPerks = const [],
+    this.companyLogoAvailable = false,
+    this.companyCoverAvailable = false,
     this.skills = const [],
+    this.createdAt,
+    this.deadline,
   });
 
   final String id;
@@ -157,15 +198,42 @@ class JobDetail {
   final String description;
   final String province;
   final WorkMode workMode;
+  final InterviewMode interviewMode;
   final String category;
   final bool hasAllowance;
+  final int? openings;
+  final int? allowanceAmount;
   final String requirements;
   final JobStatus status;
   final String companyName;
   final String businessType;
   final String companyDescription;
+  final String companyWebsiteUrl;
+  final List<ContactLink> companyContactLinks;
+  final String companySize;
+  final String companyLocation;
+  final List<String> companyPerks;
+  final bool companyLogoAvailable;
+  final bool companyCoverAvailable;
   final bool saved;
   final List<String> skills;
+  final DateTime? createdAt;
+  final DateTime? deadline;
+}
+
+String interviewModeToApi(InterviewMode mode) {
+  return switch (mode) {
+    InterviewMode.online => 'online',
+    InterviewMode.onSite => 'on_site',
+  };
+}
+
+InterviewMode interviewModeFromApi(String value) {
+  return switch (value) {
+    'online' => InterviewMode.online,
+    'on_site' => InterviewMode.onSite,
+    _ => throw FormatException('รูปแบบสัมภาษณ์ไม่รู้จัก'),
+  };
 }
 
 String workModeToApi(WorkMode mode) {

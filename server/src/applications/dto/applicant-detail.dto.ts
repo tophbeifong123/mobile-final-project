@@ -1,9 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { ApplicationDocumentDto } from './application-document.dto.js';
 import { ContactLinkDto } from '../../students/dto/contact-link.dto.js';
 import { PortfolioLinkDto } from '../../students/dto/portfolio-link.dto.js';
+import { InterviewMode } from '../../jobs/job-enums.js';
 import { ApplicationStatus } from '../application-status.js';
 
 export class ApplicantDetailDto {
+  @ApiProperty({
+    type: [ApplicationDocumentDto],
+    description: 'เฉพาะเอกสารที่เลือกแนบ ณ เวลาสมัคร ไม่อ่านคลังปัจจุบัน',
+  })
+  documents: Array<{ id: string; type: string; fileName: string }>;
+
   @ApiProperty({
     format: 'uuid',
     example: '11111111-1111-1111-1111-111111111111',
@@ -44,7 +52,8 @@ export class ApplicantDetailDto {
   skills: string[];
 
   @ApiProperty({
-    example: 'นักศึกษาชั้นปีที่ 4 มุ่งมั่นหาประสบการณ์ฝึกงานด้าน Flutter & Node.js',
+    example:
+      'นักศึกษาชั้นปีที่ 4 มุ่งมั่นหาประสบการณ์ฝึกงานด้าน Flutter & Node.js',
     description: 'เกี่ยวกับฉัน (Bio)',
   })
   bio: string;
@@ -112,4 +121,29 @@ export class ApplicantDetailDto {
     description: 'วันเวลาที่อัปเดตล่าสุด',
   })
   updatedAt: string;
+
+  @ApiProperty({ nullable: true, example: 'https://exam.example/quiz' })
+  examUrl: string | null;
+
+  @ApiProperty({ nullable: true, format: 'date-time' })
+  examDeadline: string | null;
+
+  @ApiProperty({ nullable: true, format: 'date-time' })
+  examCompletedAt: string | null;
+
+  @ApiProperty({
+    nullable: true,
+    format: 'date-time',
+    description: 'เวลาที่บริษัทตรวจว่าข้อสอบผ่าน',
+  })
+  examPassedAt: string | null;
+
+  @ApiProperty({ nullable: true, example: 'https://meet.example/room' })
+  interviewUrl: string | null;
+
+  @ApiProperty({ nullable: true, format: 'date-time' })
+  interviewStartsAt: string | null;
+
+  @ApiProperty({ enum: InterviewMode, example: InterviewMode.Online })
+  interviewMode: InterviewMode;
 }

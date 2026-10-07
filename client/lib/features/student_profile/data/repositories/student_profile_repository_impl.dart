@@ -2,6 +2,8 @@ import '../../domain/entities/student_profile.dart';
 import '../../domain/repositories/student_profile_repository.dart';
 import '../datasources/student_profile_remote_data_source.dart';
 import '../models/student_profile_model.dart';
+import '../../domain/entities/university.dart';
+import '../../domain/entities/major.dart';
 
 class StudentProfileRepositoryImpl implements StudentProfileRepository {
   StudentProfileRepositoryImpl(this._remote);
@@ -12,6 +14,13 @@ class StudentProfileRepositoryImpl implements StudentProfileRepository {
   Future<StudentProfile> fetchMe() async {
     return (await _remote.fetchMe()).toEntity();
   }
+
+  @override
+  Future<List<University>> searchUniversities(String query) =>
+      _remote.searchUniversities(query);
+
+  @override
+  Future<List<Major>> searchMajors(String query) => _remote.searchMajors(query);
 
   @override
   Future<StudentProfile> update(StudentProfile profile) async {

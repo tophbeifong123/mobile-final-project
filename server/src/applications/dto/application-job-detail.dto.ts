@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { WorkMode } from '../../jobs/job-enums.js';
+import { InterviewMode, WorkMode } from '../../jobs/job-enums.js';
 
 export class ApplicationJobDetailDto {
   @ApiProperty({ format: 'uuid', description: 'รหัสประกาศงาน' })
@@ -16,6 +16,9 @@ export class ApplicationJobDetailDto {
 
   @ApiProperty({ enum: WorkMode, description: 'รูปแบบการทำงาน' })
   workMode: WorkMode;
+
+  @ApiProperty({ enum: InterviewMode, description: 'รูปแบบสัมภาษณ์ของประกาศ' })
+  interviewMode: InterviewMode;
 
   @ApiProperty({ description: 'หมวดหมู่งาน' })
   category: string;

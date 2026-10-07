@@ -21,26 +21,28 @@ class AuthSocialButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 46,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
+        height: 50,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
           color: NeoColors.pureWhite,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: NeoColors.inkSolid, width: 2),
-          boxShadow: NeoShadows.elevation2,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: NeoColors.inkSolid, width: 2.2),
+          boxShadow: NeoShadows.elevation3,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             icon,
-            const Gap(8),
+            const Gap(10),
             Flexible(
               child: Text(
                 label,
                 overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w800,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.3,
                   color: NeoColors.inkSolid,
                 ),
               ),

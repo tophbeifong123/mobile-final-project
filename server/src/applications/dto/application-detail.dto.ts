@@ -1,16 +1,25 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { ApplicationDocumentDto } from './application-document.dto.js';
 import { ApplicationStatus } from '../application-status.js';
 import { ApplicationJobDetailDto } from './application-job-detail.dto.js';
 import { TimelineEventDto } from './timeline-event.dto.js';
 
 export class ApplicationDetailDto {
+  @ApiProperty({
+    type: [ApplicationDocumentDto],
+    description: 'สำเนาเอกสารที่แนบตอนสมัคร',
+  })
+  documents: ApplicationDocumentDto[];
   @ApiProperty({ format: 'uuid', description: 'รหัสใบสมัคร' })
   id: string;
 
   @ApiProperty({ format: 'uuid', description: 'รหัสประกาศงาน' })
   jobId: string;
 
-  @ApiProperty({ type: () => ApplicationJobDetailDto, description: 'ข้อมูลงาน' })
+  @ApiProperty({
+    type: () => ApplicationJobDetailDto,
+    description: 'ข้อมูลงาน',
+  })
   job: ApplicationJobDetailDto;
 
   @ApiProperty({
@@ -36,6 +45,24 @@ export class ApplicationDetailDto {
     description: 'เวลาอัปเดตสถานะล่าสุด',
   })
   updatedAt: string;
+
+  @ApiProperty({ nullable: true })
+  examUrl: string | null;
+
+  @ApiProperty({ nullable: true, format: 'date-time' })
+  examDeadline: string | null;
+
+  @ApiProperty({ nullable: true, format: 'date-time' })
+  examCompletedAt: string | null;
+
+  @ApiProperty({ nullable: true, format: 'date-time' })
+  examPassedAt: string | null;
+
+  @ApiProperty({ nullable: true })
+  interviewUrl: string | null;
+
+  @ApiProperty({ nullable: true, format: 'date-time' })
+  interviewStartsAt: string | null;
 
   @ApiProperty({
     type: () => [TimelineEventDto],

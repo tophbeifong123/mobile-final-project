@@ -5,6 +5,8 @@ abstract class CompanyJobRepository {
 
   Future<EditableJob> fetchOne(String jobId);
 
+  Future<CompanyOwnedJob> fetchOwned(String jobId);
+
   Future<CreatedJob> create(JobPosting posting);
 
   Future<EditableJob> update({
@@ -24,9 +26,31 @@ abstract class CompanyJobRepository {
     required String applicationId,
   });
 
+  Future<List<int>> downloadApplicantDocument({
+    required String jobId,
+    required String applicationId,
+    required String documentId,
+  });
+
   Future<void> updateApplicantStatus({
     required String jobId,
     required String applicationId,
     required String status,
+  });
+
+  Future<void> setExamLink({
+    required String jobId,
+    required String applicationId,
+    required String url,
+    required DateTime deadline,
+  });
+
+  Future<void> passExam({required String jobId, required String applicationId});
+
+  Future<void> setInterviewLink({
+    required String jobId,
+    required String applicationId,
+    required String url,
+    required DateTime startsAt,
   });
 }

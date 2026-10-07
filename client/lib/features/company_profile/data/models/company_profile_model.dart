@@ -1,3 +1,4 @@
+import '../../../student_profile/data/models/student_profile_model.dart';
 import '../../domain/entities/company_profile.dart';
 
 class CompanyProfileModel {
@@ -6,8 +7,11 @@ class CompanyProfileModel {
     required this.businessType,
     required this.description,
     this.logoObjectKey,
-    this.websiteUrl = '',
+    this.provinceId,
+    this.provinceName,
     this.location = '',
+    this.websiteUrl = '',
+    this.contactLinks = const [],
     this.companySize = '',
     this.perks = const [],
     this.coverObjectKey,
@@ -19,8 +23,15 @@ class CompanyProfileModel {
       businessType: json['businessType'] as String? ?? '',
       description: json['description'] as String? ?? '',
       logoObjectKey: json['logoObjectKey'] as String?,
-      websiteUrl: json['websiteUrl'] as String? ?? '',
+      provinceId: (json['provinceId'] as num?)?.toInt(),
+      provinceName: json['provinceName'] as String?,
       location: json['location'] as String? ?? '',
+      websiteUrl: json['websiteUrl'] as String? ?? '',
+      contactLinks: (json['contactLinks'] as List<dynamic>? ?? const [])
+          .map(
+            (item) => ContactLinkModel.fromJson(item as Map<String, dynamic>),
+          )
+          .toList(),
       companySize: json['companySize'] as String? ?? '',
       perks:
           (json['perks'] as List<dynamic>?)
@@ -38,10 +49,15 @@ class CompanyProfileModel {
       description: entity.description,
       logoObjectKey: entity.logoObjectKey,
       websiteUrl: entity.websiteUrl,
+      contactLinks: entity.contactLinks
+          .map(ContactLinkModel.fromEntity)
+          .toList(),
       location: entity.location,
       companySize: entity.companySize,
       perks: entity.perks,
       coverObjectKey: entity.coverObjectKey,
+      provinceId: entity.provinceId,
+      provinceName: entity.provinceName,
     );
   }
 
@@ -49,8 +65,11 @@ class CompanyProfileModel {
   final String businessType;
   final String description;
   final String? logoObjectKey;
-  final String websiteUrl;
+  final int? provinceId;
+  final String? provinceName;
   final String location;
+  final String websiteUrl;
+  final List<ContactLinkModel> contactLinks;
   final String companySize;
   final List<String> perks;
   final String? coverObjectKey;
@@ -61,8 +80,11 @@ class CompanyProfileModel {
       businessType: businessType,
       description: description,
       logoObjectKey: logoObjectKey,
-      websiteUrl: websiteUrl,
+      provinceId: provinceId,
+      provinceName: provinceName,
       location: location,
+      websiteUrl: websiteUrl,
+      contactLinks: contactLinks.map((link) => link.toEntity()).toList(),
       companySize: companySize,
       perks: perks,
       coverObjectKey: coverObjectKey,
@@ -74,8 +96,10 @@ class CompanyProfileModel {
       'name': name,
       'businessType': businessType,
       'description': description,
-      'websiteUrl': websiteUrl,
+      'provinceId': provinceId,
       'location': location,
+      'websiteUrl': websiteUrl,
+      'contactLinks': contactLinks.map((link) => link.toJson()).toList(),
       'companySize': companySize,
       'perks': perks,
     };

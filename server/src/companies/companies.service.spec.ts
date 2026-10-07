@@ -5,6 +5,9 @@ import {
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { UserRole } from '../auth/user-role.js';
+import { ApplicationStatus } from '../applications/application-status.js';
+
+import { ProvincesService } from '../provinces/provinces.service.js';
 import { StorageService } from '../storage/storage.service.js';
 import { CompaniesRepository } from './companies.repository.js';
 import { CompaniesService } from './companies.service.js';
@@ -25,6 +28,7 @@ describe('CompaniesService', () => {
     get: vi.fn(),
     delete: vi.fn(),
   };
+  const provincesService = { requireById: vi.fn() };
 
   const companyUser = { userId: 'company-user-1', role: UserRole.Company };
   const studentUser = { userId: 'student-user-1', role: UserRole.Student };
@@ -36,6 +40,7 @@ describe('CompaniesService', () => {
         CompaniesService,
         { provide: CompaniesRepository, useValue: repository },
         { provide: StorageService, useValue: storageService },
+        { provide: ProvincesService, useValue: provincesService },
       ],
     }).compile();
 
@@ -53,6 +58,7 @@ describe('CompaniesService', () => {
         totalJobs: 5,
         openJobs: 3,
         totalApplicants: 12,
+        pendingApplicants: 7,
       });
 
       const result = await service.getDashboard(companyUser);
@@ -62,11 +68,13 @@ describe('CompaniesService', () => {
       );
       expect(repository.getDashboardSummary).toHaveBeenCalledWith(
         'company-profile-1',
+        [ApplicationStatus.Submitted, ApplicationStatus.Reviewing],
       );
       expect(result).toEqual({
         totalJobs: 5,
         openJobs: 3,
         totalApplicants: 12,
+        pendingApplicants: 7,
       });
     });
 
@@ -80,11 +88,26 @@ describe('CompaniesService', () => {
         totalJobs: 1,
         openJobs: 1,
         totalApplicants: 0,
+        pendingApplicants: 0,
       });
 
       const result = await service.getDashboard(companyUser);
 
       expect(result.totalApplicants).toBe(0);
+      expect(result.pendingApplicants).toBe(0);
+    });
+
+    it('returns all zero counts for a company without jobs', async () => {
+      repository.findCompanyProfileByUserId.mockResolvedValue({ id: 'empty-company' });
+      const empty = { totalJobs: 0, openJobs: 0, totalApplicants: 0, pendingApplicants: 0 };
+      repository.getDashboardSummary.mockResolvedValue(empty);
+      expect(await service.getDashboard(companyUser)).toEqual(empty);
+    });
+
+    it('propagates a count failure instead of presenting false zero counts', async () => {
+      repository.findCompanyProfileByUserId.mockResolvedValue({ id: 'company-profile-1' });
+      repository.getDashboardSummary.mockRejectedValueOnce(new Error('Database unavailable'));
+      await expect(service.getDashboard(companyUser)).rejects.toThrow('Database unavailable');
     });
 
     it('rejects student accessing company dashboard', async () => {
@@ -127,11 +150,14 @@ describe('CompaniesService', () => {
         businessType: 'Software',
         description: 'Tech Company',
         logoObjectKey: 'company-logos/user-1/logo.png',
+        provinceId: null,
+        provinceName: null,
         websiteUrl: 'https://example.com',
         location: 'Bangkok',
         companySize: '51-200 คน',
         perks: ['Free Lunch'],
         coverObjectKey: 'company-covers/user-1/cover.jpg',
+        contactLinks: [],
       });
     });
 
@@ -151,6 +177,68 @@ describe('CompaniesService', () => {
   });
 
   describe('updateProfile', () => {
+    it.each([
+      'example.com',
+      'ftp://example.com',
+      'javascript:alert(1)',
+      'https://',
+      'https://invalid_domain.com',
+      'https://example .com',
+      'https://user:password@example.com',
+    ])(
+      'rejects invalid website %s without persisting any changes',
+      async (websiteUrl) => {
+        repository.findCompanyProfileByUserId.mockResolvedValue({
+          id: 'company-profile-1',
+        });
+        await expect(
+          service.updateProfile(companyUser, {
+            name: 'Company',
+            businessType: 'IT',
+            description: 'Description',
+            websiteUrl,
+          }),
+        ).rejects.toThrow('เว็บไซต์ต้องเป็น URL');
+        expect(repository.updateProfile).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each(['', 'https://example.com/careers?lang=th', 'http://example.com'])(
+      'persists all profile fields and reads them back after reopening: %s',
+      async (websiteUrl) => {
+        const profile = {
+          id: 'company-profile-1',
+          name: 'Company',
+          businessType: 'IT',
+          description: 'Description',
+          logoObjectKey: null,
+          coverObjectKey: null,
+          websiteUrl,
+          companySize: '201-500',
+          perks: ['MacBook'],
+          location: 'อาคาร A',
+        };
+        repository.findCompanyProfileByUserId.mockResolvedValue(profile);
+        repository.updateProfile.mockResolvedValue(profile);
+        const saved = await service.updateProfile(companyUser, profile);
+        const reopened = await service.getProfile(companyUser);
+        expect(reopened).toEqual(saved);
+        expect(reopened).toMatchObject({
+          name: 'Company',
+          businessType: 'IT',
+          description: 'Description',
+          websiteUrl,
+          companySize: '201-500',
+          perks: ['MacBook'],
+          location: 'อาคาร A',
+        });
+        expect(repository.updateProfile).toHaveBeenCalledWith(
+          'company-profile-1',
+          expect.objectContaining({ websiteUrl }),
+        );
+      },
+    );
+
     it('updates company profile fields and returns updated DTO', async () => {
       repository.findCompanyProfileByUserId.mockResolvedValue({
         id: 'company-profile-1',
@@ -197,12 +285,126 @@ describe('CompaniesService', () => {
         businessType: 'Consulting',
         description: 'Updated Description',
         logoObjectKey: null,
+        provinceId: null,
+        provinceName: null,
         websiteUrl: 'https://updated.com',
         location: 'FYI Center',
         companySize: '201-500 คน',
         perks: ['MacBook'],
         coverObjectKey: null,
+        contactLinks: [],
       });
+    });
+
+    it('saves company contact links and rejects a bad phone without writing', async () => {
+      repository.findCompanyProfileByUserId.mockResolvedValue({
+        id: 'company-profile-1',
+      });
+      repository.updateProfile.mockResolvedValue({
+        name: 'Tech Corp',
+        businessType: 'IT',
+        description: '',
+        logoObjectKey: null,
+        contactLinks: [
+          { id: 'c1', platform: 'phone', label: 'ฝ่ายบุคคล', value: '0812345678' },
+          { id: 'c2', platform: 'email', value: 'hr@example.com' },
+        ],
+      });
+
+      const saved = await service.updateProfile(companyUser, {
+        contactLinks: [
+          { id: 'c1', platform: ' Phone ', label: ' ฝ่ายบุคคล ', value: ' 081-234-5678 ' },
+          { platform: 'email', value: 'hr@example.com' },
+        ],
+      });
+
+      expect(repository.updateProfile).toHaveBeenCalledWith(
+        'company-profile-1',
+        {
+          contactLinks: [
+            { id: 'c1', platform: 'phone', label: 'ฝ่ายบุคคล', value: '081-234-5678' },
+            expect.objectContaining({
+              platform: 'email',
+              value: 'hr@example.com',
+            }),
+          ],
+        },
+      );
+      expect(saved.contactLinks).toEqual([
+        { id: 'c1', platform: 'phone', label: 'ฝ่ายบุคคล', value: '0812345678' },
+        { id: 'c2', platform: 'email', label: undefined, value: 'hr@example.com' },
+      ]);
+
+      await expect(
+        service.updateProfile(companyUser, {
+          contactLinks: [{ platform: 'phone', value: '123' }],
+        }),
+      ).rejects.toThrow('เบอร์โทรศัพท์ไม่ถูกต้อง');
+    });
+
+    it('saves a selected province and short address', async () => {
+      repository.findCompanyProfileByUserId.mockResolvedValue({
+        id: 'company-profile-1',
+        provinceId: null,
+      });
+      provincesService.requireById.mockResolvedValue({
+        id: 90,
+        nameTh: 'สงขลา',
+      });
+      repository.updateProfile.mockResolvedValue({
+        name: 'Tech Corp',
+        businessType: 'IT',
+        description: '',
+        logoObjectKey: null,
+        provinceId: 90,
+        province: { nameTh: 'สงขลา' },
+        location: 'ถนนกาญจนวนิช',
+      });
+
+      const result = await service.updateProfile(companyUser, {
+        provinceId: 90,
+        location: ' ถนนกาญจนวนิช ',
+      });
+
+      expect(provincesService.requireById).toHaveBeenCalledWith(90);
+      expect(repository.updateProfile).toHaveBeenCalledWith(
+        'company-profile-1',
+        {
+          provinceId: 90,
+          location: 'ถนนกาญจนวนิช',
+        },
+      );
+      expect(result).toMatchObject({
+        provinceName: 'สงขลา',
+        location: 'ถนนกาญจนวนิช',
+      });
+    });
+
+    it('rejects an address longer than the short-address column', async () => {
+      repository.findCompanyProfileByUserId.mockResolvedValue({
+        id: 'company-profile-1',
+        provinceId: null,
+      });
+
+      await expect(
+        service.updateProfile(companyUser, { location: 'ก'.repeat(256) }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(repository.updateProfile).not.toHaveBeenCalled();
+    });
+
+    it('rejects a province ID not in the 77-province master', async () => {
+      repository.findCompanyProfileByUserId.mockResolvedValue({
+        id: 'company-profile-1',
+        provinceId: null,
+      });
+      provincesService.requireById.mockRejectedValue(
+        new BadRequestException('ไม่พบจังหวัดที่เลือก'),
+      );
+
+      await expect(
+        service.updateProfile(companyUser, { provinceId: 999 }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(repository.updateProfile).not.toHaveBeenCalled();
     });
 
     it('rejects student updating company profile', async () => {
@@ -250,7 +452,9 @@ describe('CompaniesService', () => {
         coverObjectKey: null,
       });
 
-      const pngHeader = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+      const pngHeader = Buffer.from([
+        0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+      ]);
       const file = {
         fieldname: 'file',
         originalname: 'logo.png',
@@ -271,13 +475,15 @@ describe('CompaniesService', () => {
         'image/png',
       );
       expect(repository.updateLogoObjectKey).toHaveBeenCalled();
-      expect(result.logoObjectKey).toBe('company-logos/company-user-1/mock.png');
+      expect(result.logoObjectKey).toBe(
+        'company-logos/company-user-1/mock.png',
+      );
     });
 
     it('throws BadRequestException when file is missing', async () => {
-      await expect(service.uploadLogo(companyUser, undefined)).rejects.toBeInstanceOf(
-        BadRequestException,
-      );
+      await expect(
+        service.uploadLogo(companyUser, undefined),
+      ).rejects.toBeInstanceOf(BadRequestException);
     });
 
     it('throws BadRequestException when file is not an image', async () => {
@@ -291,9 +497,9 @@ describe('CompaniesService', () => {
         buffer: pdfHeader,
       };
 
-      await expect(service.uploadLogo(companyUser, file)).rejects.toBeInstanceOf(
-        BadRequestException,
-      );
+      await expect(
+        service.uploadLogo(companyUser, file),
+      ).rejects.toBeInstanceOf(BadRequestException);
     });
 
     it('rejects student uploading company logo', async () => {
@@ -306,9 +512,9 @@ describe('CompaniesService', () => {
         buffer: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
       };
 
-      await expect(service.uploadLogo(studentUser, file)).rejects.toBeInstanceOf(
-        ForbiddenException,
-      );
+      await expect(
+        service.uploadLogo(studentUser, file),
+      ).rejects.toBeInstanceOf(ForbiddenException);
     });
   });
 
@@ -359,8 +565,13 @@ describe('CompaniesService', () => {
       });
 
       const result = await service.deleteLogo(companyUser);
-      expect(storageService.delete).toHaveBeenCalledWith('company-logos/user/test.png');
-      expect(repository.updateLogoObjectKey).toHaveBeenCalledWith('company-profile-1', null);
+      expect(storageService.delete).toHaveBeenCalledWith(
+        'company-logos/user/test.png',
+      );
+      expect(repository.updateLogoObjectKey).toHaveBeenCalledWith(
+        'company-profile-1',
+        null,
+      );
       expect(result.logoObjectKey).toBeNull();
     });
   });
@@ -398,7 +609,9 @@ describe('CompaniesService', () => {
       const result = await service.uploadCover(companyUser, file);
       expect(storageService.put).toHaveBeenCalled();
       expect(repository.updateCoverObjectKey).toHaveBeenCalled();
-      expect(result.coverObjectKey).toBe('company-covers/company-user-1/mock.jpg');
+      expect(result.coverObjectKey).toBe(
+        'company-covers/company-user-1/mock.jpg',
+      );
     });
 
     it('gets cover file and returns buffer and mimeType', async () => {
@@ -433,8 +646,13 @@ describe('CompaniesService', () => {
       });
 
       const result = await service.deleteCover(companyUser);
-      expect(storageService.delete).toHaveBeenCalledWith('company-covers/user/test.jpg');
-      expect(repository.updateCoverObjectKey).toHaveBeenCalledWith('company-profile-1', null);
+      expect(storageService.delete).toHaveBeenCalledWith(
+        'company-covers/user/test.jpg',
+      );
+      expect(repository.updateCoverObjectKey).toHaveBeenCalledWith(
+        'company-profile-1',
+        null,
+      );
       expect(result.coverObjectKey).toBeNull();
     });
   });

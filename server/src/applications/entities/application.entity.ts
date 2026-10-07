@@ -25,6 +25,9 @@ export class Application {
   @Column({ name: 'resume_object_key', type: 'varchar', length: 1024 })
   resumeObjectKey: string;
 
+  @Column({ name: 'resume_file_name', type: 'varchar', length: 255, nullable: true })
+  resumeFileName: string | null;
+
   @Column({
     type: 'enum',
     enum: ApplicationStatus,
@@ -32,6 +35,24 @@ export class Application {
     default: ApplicationStatus.Submitted,
   })
   status: ApplicationStatus;
+
+  @Column({ name: 'exam_url', type: 'varchar', length: 2048, nullable: true })
+  examUrl: string | null;
+
+  @Column({ name: 'exam_deadline', type: 'timestamptz', nullable: true })
+  examDeadline: Date | null;
+
+  @Column({ name: 'exam_completed_at', type: 'timestamptz', nullable: true })
+  examCompletedAt: Date | null;
+
+  @Column({ name: 'exam_passed_at', type: 'timestamptz', nullable: true })
+  examPassedAt: Date | null;
+
+  @Column({ name: 'interview_url', type: 'varchar', length: 2048, nullable: true })
+  interviewUrl: string | null;
+
+  @Column({ name: 'interview_starts_at', type: 'timestamptz', nullable: true })
+  interviewStartsAt: Date | null;
 
   @VersionColumn()
   version: number;

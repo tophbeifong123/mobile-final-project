@@ -1,13 +1,37 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsEnum, IsString, MinLength } from 'class-validator';
+import { Transform } from 'class-transformer';
+import {
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 import { UserRole } from '../user-role.js';
 
 export class RegisterDto {
+  @ApiProperty({
+    example: 'กวิน รัตนพงษ์',
+    maxLength: 255,
+    description: 'ชื่อที่จะแสดงในโปรไฟล์หลังสมัคร',
+  })
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(255)
+  fullName: string;
+
   @ApiProperty({ example: 'student@example.com' })
   @IsEmail()
   email: string;
 
-  @ApiProperty({ minLength: 8, example: 'password123' })
+  @ApiProperty({
+    minLength: 8,
+    example: 'Password123!',
+    description:
+      'อย่างน้อย 8 ตัวอักษร ไม่เกิน 72 ไบต์ UTF-8 มี A-Z, a-z, 0-9 และอักขระพิเศษ ASCII อย่างน้อยชนิดละ 1 ตัว (ไม่นับช่องว่าง)',
+  })
   @IsString()
   @MinLength(8)
   password: string;

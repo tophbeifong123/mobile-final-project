@@ -6,6 +6,7 @@ import {
   IsOptional,
   IsString,
   IsUrl,
+  IsUUID,
   MaxLength,
   MinLength,
   ValidateNested,
@@ -25,19 +26,29 @@ export class UpdateStudentProfileDto {
   @MaxLength(255)
   fullName: string;
 
-  @ApiProperty({ example: 'มหาวิทยาลัยสงขลานครินทร์', maxLength: 255 })
-  @Transform(trimString)
-  @IsString()
-  @MinLength(1)
-  @MaxLength(255)
-  university: string;
+  @ApiProperty({ format: 'uuid', nullable: true, required: false, description: 'ID จาก GET /api/universities; ส่ง null เพื่อล้างค่า' })
+  @IsOptional()
+  @IsUUID()
+  universityId?: string | null;
 
-  @ApiProperty({ example: 'วิทยาการคอมพิวเตอร์', maxLength: 255 })
+  @ApiProperty({ example: 'สถาบันการศึกษาอื่น', maxLength: 255, nullable: true, required: false })
+  @IsOptional()
   @Transform(trimString)
   @IsString()
-  @MinLength(1)
   @MaxLength(255)
-  major: string;
+  customUniversityName?: string | null;
+
+  @ApiProperty({ format: 'uuid', nullable: true, required: false, description: 'ID จาก GET /api/majors; ส่ง null เพื่อล้างค่า' })
+  @IsOptional()
+  @IsUUID()
+  majorId?: string | null;
+
+  @ApiProperty({ example: 'สาขาอื่น', maxLength: 255, nullable: true, required: false, description: 'ใช้เมื่อสาขาไม่มีในรายการ' })
+  @IsOptional()
+  @Transform(trimString)
+  @IsString()
+  @MaxLength(255)
+  customMajorName?: string | null;
 
   @ApiProperty({ type: [String], example: ['Flutter', 'SQL'] })
   @Transform(({ value }: { value: unknown }) => {

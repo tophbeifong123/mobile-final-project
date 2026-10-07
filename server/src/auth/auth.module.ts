@@ -2,25 +2,39 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthController } from './auth.controller.js';
+import { ResetPasswordPageController } from './reset-password-page.controller.js';
+import { AuthIdentity } from './entities/auth-identity.entity.js';
 import { AuthRepository } from './auth.repository.js';
 import { AuthService } from './auth.service.js';
 import { CompanyProfile } from './entities/company-profile.entity.js';
 import { RefreshToken } from './entities/refresh-token.entity.js';
+import { PasswordResetToken } from './entities/password-reset-token.entity.js';
 import { StudentProfile } from './entities/student-profile.entity.js';
 import { User } from './entities/user.entity.js';
 import { JwtStrategy } from './jwt.strategy.js';
 import { BcryptPasswordHasher, PASSWORD_HASHER } from './password-hasher.js';
+import {
+  GOOGLE_TOKEN_VERIFIER,
+  GoogleIdTokenVerifier,
+} from './google-token-verifier.js';
+import { PasswordResetMailer } from './password-reset-mailer.js';
+import { PasswordRecoveryService } from './password-recovery.service.js';
+import { PasswordRecoveryRateLimitGuard } from './password-recovery-rate-limit.guard.js';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       User,
+      AuthIdentity,
       RefreshToken,
+      PasswordResetToken,
       StudentProfile,
       CompanyProfile,
     ]),
+    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 10 }]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       inject: [ConfigService],
@@ -41,13 +55,17 @@ import { BcryptPasswordHasher, PASSWORD_HASHER } from './password-hasher.js';
       },
     }),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, ResetPasswordPageController],
   exports: [PassportModule, JwtStrategy],
   providers: [
     AuthService,
     AuthRepository,
     JwtStrategy,
+    PasswordResetMailer,
+    PasswordRecoveryService,
+    PasswordRecoveryRateLimitGuard,
     { provide: PASSWORD_HASHER, useClass: BcryptPasswordHasher },
+    { provide: GOOGLE_TOKEN_VERIFIER, useClass: GoogleIdTokenVerifier },
   ],
 })
 export class AuthModule {}

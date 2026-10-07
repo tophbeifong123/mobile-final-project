@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -6,9 +7,13 @@ import {
 } from '@nestjs/common';
 import { type AuthUser } from '../auth/auth-user.js';
 import { UserRole } from '../auth/user-role.js';
+import { ProvincesService } from '../provinces/provinces.service.js';
+import { StorageService } from '../storage/storage.service.js';
 import { CompanyJobItemDto } from './dto/company-job-item.dto.js';
 import { CreateJobDto } from './dto/create-job.dto.js';
+import { ContactLinkDto } from '../students/dto/contact-link.dto.js';
 import { JobDetailDto } from './dto/job-detail.dto.js';
+import { CompanyOwnedJobDto } from './dto/company-owned-job.dto.js';
 import { JobDto } from './dto/job.dto.js';
 import { JobFeedItemDto } from './dto/job-feed-item.dto.js';
 import { JobFeedQueryDto } from './dto/job-feed-query.dto.js';
@@ -18,8 +23,39 @@ import { PaginationQueryDto } from '../common/dto/pagination-query.dto.js';
 import { toPaginatedResult } from '../common/dto/paginated-result.js';
 import { UpdateJobDto } from './dto/update-job.dto.js';
 import { UpdateJobStatusDto } from './dto/update-job-status.dto.js';
-import { JobStatus, WorkMode } from './job-enums.js';
+import { isJobCategory } from './job-categories.js';
+import { InterviewMode, JobStatus, WorkMode } from './job-enums.js';
 import { JobsRepository, JobVersionConflictError } from './jobs.repository.js';
+
+function categoryOf(value: string): string {
+  const category = value.trim();
+  if (!isJobCategory(category)) {
+    throw new BadRequestException('เลือกหมวดงานจากรายการ');
+  }
+  return category;
+}
+
+function allowanceAmountOf(dto: {
+  hasAllowance: boolean;
+  allowanceAmount?: number | null;
+}): number | null {
+  if (!dto.hasAllowance) {
+    if (dto.allowanceAmount != null) {
+      throw new BadRequestException('ไม่มีเบี้ยเลี้ยงจึงไม่ต้องใส่จำนวนเงิน');
+    }
+    return null;
+  }
+  const amount = dto.allowanceAmount;
+  if (
+    amount == null ||
+    !Number.isInteger(amount) ||
+    amount < 1 ||
+    amount > 1_000_000
+  ) {
+    throw new BadRequestException('ระบุจำนวนเบี้ยเลี้ยงเป็นบาท');
+  }
+  return amount;
+}
 
 const COMPANY_ONLY = 'เฉพาะบริษัทเท่านั้น';
 const COMPANY_NOT_FOUND = 'ไม่พบโปรไฟล์บริษัท';
@@ -31,7 +67,11 @@ const STALE_JOB = 'ประกาศถูกแก้ไปแล้ว โห
 
 @Injectable()
 export class JobsService {
-  constructor(private readonly jobsRepository: JobsRepository) {}
+  constructor(
+    private readonly jobsRepository: JobsRepository,
+    private readonly provincesService: ProvincesService,
+    private readonly storageService: StorageService,
+  ) {}
 
   async create(user: AuthUser, dto: CreateJobDto): Promise<JobDto> {
     if (user.role !== UserRole.Company) {
@@ -43,14 +83,18 @@ export class JobsService {
       throw new NotFoundException(COMPANY_NOT_FOUND);
     }
 
+    const province = await this.provincesService.resolveName(dto.province);
     const job = await this.jobsRepository.create({
+      openings: openingsOf(dto.openings),
       companyId,
       title: dto.title.trim(),
       description: dto.description.trim(),
-      province: dto.province.trim(),
+      province,
       workMode: dto.workMode,
-      category: dto.category.trim(),
+      interviewMode: dto.interviewMode,
+      category: categoryOf(dto.category),
       hasAllowance: dto.hasAllowance,
+      allowanceAmount: allowanceAmountOf(dto),
       requirements: dto.requirements.trim(),
       skills: dto.skills ?? [],
     });
@@ -66,9 +110,12 @@ export class JobsService {
     }
     const page = Math.max(1, query.page ?? 1);
     const limit = Math.min(100, Math.max(1, query.limit ?? 20));
+    const province = query.province
+      ? await this.provincesService.resolveName(query.province)
+      : undefined;
     const result = await this.jobsRepository.findOpen({
       search: query.search,
-      province: query.province,
+      province,
       workMode: query.workMode,
       category: query.category,
       hasAllowance: query.hasAllowance,
@@ -97,6 +144,38 @@ export class JobsService {
       ? await this.jobsRepository.isSaved(studentId, jobId)
       : false;
     return toDetail(job, saved);
+  }
+
+  async getCompanyLogo(
+    user: AuthUser,
+    jobId: string,
+  ): Promise<{ buffer: Buffer; mimeType: string }> {
+    if (user.role !== UserRole.Student) {
+      throw new ForbiddenException(STUDENT_ONLY);
+    }
+    const job = await this.jobsRepository.findOpenById(jobId);
+    if (!job) throw new NotFoundException(JOB_NOT_FOUND);
+    const key = job.companyLogoObjectKey;
+    if (!key) throw new NotFoundException('ไม่พบโลโก้บริษัท');
+    const buffer = await this.storageService.get(key);
+    if (!buffer) throw new NotFoundException('ไม่พบโลโก้บริษัท');
+    return { buffer, mimeType: imageMimeType(key) };
+  }
+
+  async getCompanyCover(
+    user: AuthUser,
+    jobId: string,
+  ): Promise<{ buffer: Buffer; mimeType: string }> {
+    if (user.role !== UserRole.Student) {
+      throw new ForbiddenException(STUDENT_ONLY);
+    }
+    const job = await this.jobsRepository.findOpenById(jobId);
+    if (!job) throw new NotFoundException(JOB_NOT_FOUND);
+    const key = job.companyCoverObjectKey;
+    if (!key) throw new NotFoundException('ไม่พบรูปหน้าปกบริษัท');
+    const buffer = await this.storageService.get(key);
+    if (!buffer) throw new NotFoundException('ไม่พบรูปหน้าปกบริษัท');
+    return { buffer, mimeType: imageMimeType(key) };
   }
 
   async save(user: AuthUser, jobId: string): Promise<void> {
@@ -157,26 +236,35 @@ export class JobsService {
     );
   }
 
-  async getMine(user: AuthUser, jobId: string): Promise<JobDto> {
+  async getMine(user: AuthUser, jobId: string): Promise<CompanyOwnedJobDto> {
     const companyId = await this.requireCompanyId(user);
     const job = await this.requireOwnedJob(companyId, jobId);
-    return toDto(job);
+    const counts = await this.jobsRepository.countApplicants(jobId);
+    return toOwnedDto(job, counts);
   }
 
-  async update(user: AuthUser, jobId: string, dto: UpdateJobDto): Promise<JobDto> {
+  async update(
+    user: AuthUser,
+    jobId: string,
+    dto: UpdateJobDto,
+  ): Promise<JobDto> {
     const companyId = await this.requireCompanyId(user);
     await this.requireOwnedJob(companyId, jobId);
+    const province = await this.provincesService.resolveName(dto.province);
     try {
       const updated = await this.jobsRepository.updateOwned({
+        openings: openingsOf(dto.openings),
         id: jobId,
         companyId,
         version: dto.version,
         title: dto.title.trim(),
         description: dto.description.trim(),
-        province: dto.province.trim(),
+        province,
         workMode: dto.workMode,
-        category: dto.category.trim(),
+        interviewMode: dto.interviewMode,
+        category: categoryOf(dto.category),
         hasAllowance: dto.hasAllowance,
+        allowanceAmount: allowanceAmountOf(dto),
         requirements: dto.requirements.trim(),
         skills: dto.skills ?? [],
       });
@@ -259,8 +347,11 @@ function toDto(job: {
   description: string;
   province: string;
   workMode: JobDto['workMode'];
+  interviewMode: JobDto['interviewMode'];
   category: string;
   hasAllowance: boolean;
+  openings?: number | null;
+  allowanceAmount?: number | null;
   requirements: string;
   skills?: string[];
   status: JobStatus;
@@ -272,13 +363,38 @@ function toDto(job: {
   dto.description = job.description;
   dto.province = job.province;
   dto.workMode = job.workMode;
+  dto.interviewMode = job.interviewMode;
   dto.category = job.category;
   dto.hasAllowance = job.hasAllowance;
+  dto.openings = job.openings ?? null;
+  dto.allowanceAmount = job.allowanceAmount ?? null;
   dto.requirements = job.requirements;
   dto.skills = job.skills ?? [];
   dto.status = job.status;
   dto.version = job.version;
   return dto;
+}
+
+function publicContactLinks(links: unknown): ContactLinkDto[] {
+  if (!Array.isArray(links)) return [];
+  return links.flatMap((item) => {
+    if (!item || typeof item !== 'object') return [];
+    const record = item as Record<string, unknown>;
+    const platform =
+      typeof record.platform === 'string' ? record.platform.trim() : '';
+    const value = typeof record.value === 'string' ? record.value.trim() : '';
+    if (!platform || !value) return [];
+    const dto = new ContactLinkDto();
+    if (typeof record.id === 'string' && record.id.trim()) {
+      dto.id = record.id.trim();
+    }
+    dto.platform = platform;
+    if (typeof record.label === 'string' && record.label.trim()) {
+      dto.label = record.label.trim();
+    }
+    dto.value = value;
+    return [dto];
+  });
 }
 
 function toDetail(
@@ -288,14 +404,26 @@ function toDetail(
     description: string;
     province: string;
     workMode: JobDetailDto['workMode'];
+    interviewMode: JobDetailDto['interviewMode'];
     category: string;
     hasAllowance: boolean;
+    openings?: number | null;
+    allowanceAmount?: number | null;
     requirements: string;
     skills?: string[];
     status: JobStatus;
+    createdAt: Date;
+    deadline?: Date | null;
     companyName: string;
     businessType: string;
     companyDescription: string;
+    companyWebsiteUrl?: string;
+    companyContactLinks?: unknown;
+    companySize?: string;
+    companyPerks?: string[];
+    companyLocation?: string;
+    companyLogoObjectKey?: string | null;
+    companyCoverObjectKey?: string | null;
   },
   saved: boolean,
 ): JobDetailDto {
@@ -305,15 +433,68 @@ function toDetail(
   dto.description = job.description;
   dto.province = job.province;
   dto.workMode = job.workMode;
+  dto.interviewMode = job.interviewMode;
   dto.category = job.category;
   dto.hasAllowance = job.hasAllowance;
+  dto.openings = job.openings ?? null;
+  dto.allowanceAmount = job.allowanceAmount ?? null;
   dto.requirements = job.requirements;
   dto.skills = job.skills ?? [];
   dto.status = job.status;
+  dto.createdAt = job.createdAt;
+  dto.deadline = job.deadline ?? null;
   dto.companyName = job.companyName;
   dto.businessType = job.businessType;
   dto.companyDescription = job.companyDescription;
+  dto.companyWebsiteUrl = job.companyWebsiteUrl ?? '';
+  dto.companyContactLinks = publicContactLinks(job.companyContactLinks);
+  dto.companySize = job.companySize ?? '';
+  dto.companyPerks = job.companyPerks ?? [];
+  dto.companyLocation = job.companyLocation ?? '';
+  dto.companyLogoAvailable = Boolean(job.companyLogoObjectKey);
+  dto.companyCoverAvailable = Boolean(job.companyCoverObjectKey);
   dto.saved = saved;
+  return dto;
+}
+
+function toOwnedDto(
+  job: {
+    id: string;
+    title: string;
+    description: string;
+    province: string;
+    workMode: CompanyOwnedJobDto['workMode'];
+    interviewMode: CompanyOwnedJobDto['interviewMode'];
+    category: string;
+    hasAllowance: boolean;
+    openings?: number | null;
+    allowanceAmount?: number | null;
+    requirements: string;
+    skills?: string[];
+    status: JobStatus;
+    version: number;
+    deadline: Date | null;
+  },
+  counts: { applicantCount: number; pendingApplicantCount: number },
+): CompanyOwnedJobDto {
+  const dto = new CompanyOwnedJobDto();
+  dto.id = job.id;
+  dto.title = job.title;
+  dto.description = job.description;
+  dto.province = job.province;
+  dto.workMode = job.workMode;
+  dto.interviewMode = job.interviewMode;
+  dto.category = job.category;
+  dto.hasAllowance = job.hasAllowance;
+  dto.openings = job.openings ?? null;
+  dto.allowanceAmount = job.allowanceAmount ?? null;
+  dto.requirements = job.requirements;
+  dto.skills = job.skills ?? [];
+  dto.status = job.status;
+  dto.version = job.version;
+  dto.applicantCount = counts.applicantCount;
+  dto.pendingApplicantCount = counts.pendingApplicantCount;
+  dto.deadline = job.deadline;
   return dto;
 }
 
@@ -322,6 +503,7 @@ function toCompanyItem(job: {
   title: string;
   status: JobStatus;
   workMode: WorkMode;
+  interviewMode: InterviewMode;
   applicantCount: number;
   pendingApplicantCount: number;
   deadline: Date | null;
@@ -331,10 +513,41 @@ function toCompanyItem(job: {
   dto.title = job.title;
   dto.status = job.status;
   dto.workMode = job.workMode;
+  dto.interviewMode = job.interviewMode;
   dto.applicantCount = job.applicantCount;
   dto.pendingApplicantCount = job.pendingApplicantCount;
   dto.deadline = job.deadline;
   return dto;
+}
+
+function openingsOf(value: number | null | undefined): number | null {
+  const openings = value ?? null;
+  if (
+    openings !== null &&
+    (!Number.isInteger(openings) || openings < 1 || openings > 2147483647)
+  ) {
+    throw new BadRequestException(
+      'จำนวนรับต้องเป็นจำนวนเต็มบวก ไม่เกิน 2147483647',
+    );
+  }
+  return openings;
+}
+
+function imageMimeType(key: string): string {
+  const extension = key.split('.').pop()?.toLowerCase();
+  switch (extension) {
+    case 'svg':
+      return 'image/svg+xml';
+    case 'jpg':
+    case 'jpeg':
+      return 'image/jpeg';
+    case 'webp':
+      return 'image/webp';
+    case 'gif':
+      return 'image/gif';
+    default:
+      return 'image/png';
+  }
 }
 
 function toFeedItem(job: {
@@ -343,19 +556,29 @@ function toFeedItem(job: {
   companyName: string;
   province: string;
   workMode: JobFeedItemDto['workMode'];
+  interviewMode: JobFeedItemDto['interviewMode'];
   category: string;
   hasAllowance: boolean;
+  openings?: number | null;
+  allowanceAmount?: number | null;
   skills?: string[];
   status: JobStatus;
+  createdAt: Date;
+  companyLogoObjectKey?: string | null;
 }): JobFeedItemDto {
   const dto = new JobFeedItemDto();
   dto.id = job.id;
   dto.title = job.title;
   dto.companyName = job.companyName;
+  dto.createdAt = job.createdAt;
+  dto.companyLogoAvailable = Boolean(job.companyLogoObjectKey);
   dto.province = job.province;
   dto.workMode = job.workMode;
+  dto.interviewMode = job.interviewMode;
   dto.category = job.category;
   dto.hasAllowance = job.hasAllowance;
+  dto.openings = job.openings ?? null;
+  dto.allowanceAmount = job.allowanceAmount ?? null;
   dto.skills = job.skills ?? [];
   dto.status = job.status;
   return dto;

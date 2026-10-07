@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { DataSource, OptimisticLockVersionMismatchError, QueryFailedError } from 'typeorm';
+import {
+  DataSource,
+  OptimisticLockVersionMismatchError,
+  QueryFailedError,
+} from 'typeorm';
 import { CompanyProfile } from '../auth/entities/company-profile.entity.js';
 import { StudentProfile } from '../auth/entities/student-profile.entity.js';
 import { Job } from './entities/job.entity.js';
 import { SavedJob } from './entities/saved-job.entity.js';
-import { JobStatus, type WorkMode } from './job-enums.js';
+import { type InterviewMode, JobStatus, type WorkMode } from './job-enums.js';
 
 export interface OpenJobFilter {
   search?: string;
@@ -23,17 +27,30 @@ export interface OpenJobRecord {
   companyName: string;
   province: string;
   workMode: WorkMode;
+  interviewMode: InterviewMode;
   category: string;
   hasAllowance: boolean;
+  openings: number | null;
+  allowanceAmount: number | null;
   skills: string[];
   status: JobStatus;
+  createdAt: Date;
+  companyLogoObjectKey: string | null;
 }
 
 export interface OpenJobDetail extends OpenJobRecord {
   description: string;
   requirements: string;
+  deadline: Date | null;
   businessType: string;
   companyDescription: string;
+  companyWebsiteUrl: string;
+  companyContactLinks: unknown[];
+  companySize: string;
+  companyPerks: string[];
+  companyLocation: string;
+  companyLogoObjectKey: string | null;
+  companyCoverObjectKey: string | null;
 }
 
 export interface CompanyJobRecord {
@@ -41,6 +58,7 @@ export interface CompanyJobRecord {
   title: string;
   status: JobStatus;
   workMode: WorkMode;
+  interviewMode: InterviewMode;
   applicantCount: number;
   pendingApplicantCount: number;
   deadline: Date | null;
@@ -52,8 +70,11 @@ export interface NewJob {
   description: string;
   province: string;
   workMode: WorkMode;
+  interviewMode: InterviewMode;
   category: string;
   hasAllowance: boolean;
+  openings: number | null;
+  allowanceAmount: number | null;
   requirements: string;
   skills?: string[];
 }
@@ -66,8 +87,11 @@ export interface OwnedJobUpdate {
   description: string;
   province: string;
   workMode: WorkMode;
+  interviewMode: InterviewMode;
   category: string;
   hasAllowance: boolean;
+  openings: number | null;
+  allowanceAmount: number | null;
   requirements: string;
   skills?: string[];
 }
@@ -100,7 +124,9 @@ export class JobsRepository {
 
   async save(studentId: string, jobId: string): Promise<void> {
     try {
-      await this.dataSource.getRepository(SavedJob).insert({ studentId, jobId });
+      await this.dataSource
+        .getRepository(SavedJob)
+        .insert({ studentId, jobId });
     } catch (error) {
       if (!isUniqueViolation(error)) {
         throw error;
@@ -138,11 +164,17 @@ export class JobsRepository {
       .addSelect('company.name', 'companyName')
       .addSelect('job.province', 'province')
       .addSelect('job.workMode', 'workMode')
+      .addSelect('job.interviewMode', 'interviewMode')
       .addSelect('job.category', 'category')
       .addSelect('job.hasAllowance', 'hasAllowance')
+      .addSelect('job.openings', 'openings')
+      .addSelect('job.allowanceAmount', 'allowanceAmount')
       .addSelect('job.skills', 'skills')
       .addSelect('job.status', 'status')
+      .addSelect('job.createdAt', 'createdAt')
+      .addSelect('company.logoObjectKey', 'companyLogoObjectKey')
       .orderBy('saved.createdAt', 'DESC')
+      .addOrderBy('job.id', 'DESC')
       .offset(skip)
       .limit(limit)
       .getRawMany<Record<string, unknown>>();
@@ -167,9 +199,10 @@ export class JobsRepository {
                 j.title,
                 j.status,
                 j.work_mode      AS "workMode",
+                j.interview_mode AS "interviewMode",
                 j.deadline,
                 COUNT(a.id)::int AS "applicantCount",
-                COUNT(a.id) FILTER (WHERE a.status = 'submitted')::int AS "pendingApplicantCount"
+                COUNT(a.id) FILTER (WHERE a.status IN ('submitted', 'reviewing'))::int AS "pendingApplicantCount"
          FROM jobs j
          LEFT JOIN applications a ON a.job_id = j.id
          WHERE j.company_id = $1
@@ -199,8 +232,11 @@ export class JobsRepository {
         description: input.description,
         province: input.province,
         workMode: input.workMode,
+        interviewMode: input.interviewMode,
         category: input.category,
         hasAllowance: input.hasAllowance,
+        openings: input.openings ?? null,
+        allowanceAmount: input.allowanceAmount,
         requirements: input.requirements,
         skills: input.skills ?? [],
         status: JobStatus.Open,
@@ -210,6 +246,25 @@ export class JobsRepository {
 
   findById(id: string): Promise<Job | null> {
     return this.dataSource.getRepository(Job).findOne({ where: { id } });
+  }
+
+  async countApplicants(jobId: string): Promise<{
+    applicantCount: number;
+    pendingApplicantCount: number;
+  }> {
+    const rows = await this.dataSource.query<
+      Array<{ applicantCount: number; pendingApplicantCount: number }>
+    >(
+      `SELECT COUNT(a.id)::int AS "applicantCount",
+              COUNT(a.id) FILTER (WHERE a.status IN ('submitted', 'reviewing'))::int AS "pendingApplicantCount"
+       FROM applications a
+       WHERE a.job_id = $1`,
+      [jobId],
+    );
+    return {
+      applicantCount: Number(rows[0]?.applicantCount ?? 0),
+      pendingApplicantCount: Number(rows[0]?.pendingApplicantCount ?? 0),
+    };
   }
 
   async updateOwned(input: OwnedJobUpdate): Promise<Job | null> {
@@ -224,8 +279,11 @@ export class JobsRepository {
     job.description = input.description;
     job.province = input.province;
     job.workMode = input.workMode;
+    job.interviewMode = input.interviewMode;
     job.category = input.category;
     job.hasAllowance = input.hasAllowance;
+    job.openings = input.openings ?? null;
+    job.allowanceAmount = input.allowanceAmount;
     job.requirements = input.requirements;
     if (input.skills !== undefined) {
       job.skills = input.skills;
@@ -317,11 +375,17 @@ export class JobsRepository {
       .addSelect('company.name', 'companyName')
       .addSelect('job.province', 'province')
       .addSelect('job.workMode', 'workMode')
+      .addSelect('job.interviewMode', 'interviewMode')
       .addSelect('job.category', 'category')
       .addSelect('job.hasAllowance', 'hasAllowance')
+      .addSelect('job.openings', 'openings')
+      .addSelect('job.allowanceAmount', 'allowanceAmount')
       .addSelect('job.skills', 'skills')
       .addSelect('job.status', 'status')
+      .addSelect('job.createdAt', 'createdAt')
+      .addSelect('company.logoObjectKey', 'companyLogoObjectKey')
       .orderBy('job.createdAt', 'DESC')
+      .addOrderBy('job.id', 'DESC')
       .offset(skip)
       .limit(limit)
       .getRawMany<Record<string, unknown>>();
@@ -342,16 +406,28 @@ export class JobsRepository {
       .select('job.id', 'id')
       .addSelect('job.title', 'title')
       .addSelect('job.description', 'description')
+      .addSelect('job.createdAt', 'createdAt')
+      .addSelect('job.deadline', 'deadline')
       .addSelect('job.province', 'province')
       .addSelect('job.workMode', 'workMode')
+      .addSelect('job.interviewMode', 'interviewMode')
       .addSelect('job.category', 'category')
       .addSelect('job.hasAllowance', 'hasAllowance')
+      .addSelect('job.openings', 'openings')
+      .addSelect('job.allowanceAmount', 'allowanceAmount')
       .addSelect('job.requirements', 'requirements')
       .addSelect('job.skills', 'skills')
       .addSelect('job.status', 'status')
       .addSelect('company.name', 'companyName')
       .addSelect('company.businessType', 'businessType')
       .addSelect('company.description', 'companyDescription')
+      .addSelect('company.websiteUrl', 'companyWebsiteUrl')
+      .addSelect('company.contactLinks', 'companyContactLinks')
+      .addSelect('company.companySize', 'companySize')
+      .addSelect('company.perks', 'companyPerks')
+      .addSelect('company.location', 'companyLocation')
+      .addSelect('company.logoObjectKey', 'companyLogoObjectKey')
+      .addSelect('company.coverObjectKey', 'companyCoverObjectKey')
       .getRawOne<Record<string, unknown>>()
       .then((row) => (row ? toOpenJobDetail(row) : null));
   }
@@ -371,6 +447,18 @@ function escapeLike(value: string): string {
 
 function readField(row: Record<string, unknown>, key: string): unknown {
   return row[key] ?? row[key.toLowerCase()];
+}
+
+function readJsonArray(row: Record<string, unknown>, key: string): unknown[] {
+  let value = readField(row, key);
+  if (typeof value === 'string' && value.length > 0) {
+    try {
+      value = JSON.parse(value) as unknown;
+    } catch {
+      return [];
+    }
+  }
+  return Array.isArray(value) ? value : [];
 }
 
 function readArray(row: Record<string, unknown>, key: string): string[] {
@@ -398,10 +486,15 @@ function toOpenJob(row: Record<string, unknown>): OpenJobRecord {
     companyName: String(readField(row, 'companyName') ?? ''),
     province: String(readField(row, 'province') ?? ''),
     workMode: readField(row, 'workMode') as WorkMode,
+    interviewMode: readField(row, 'interviewMode') as InterviewMode,
     category: String(readField(row, 'category') ?? ''),
     hasAllowance: readBoolean(row, 'hasAllowance'),
+    openings: readCount(row, 'openings'),
+    allowanceAmount: readAmount(row, 'allowanceAmount'),
     skills: readArray(row, 'skills'),
     status: readField(row, 'status') as JobStatus,
+    createdAt: new Date(readField(row, 'createdAt') as string | Date),
+    companyLogoObjectKey: readField(row, 'companyLogoObjectKey') as string | null,
   };
 }
 
@@ -410,22 +503,64 @@ function toOpenJobDetail(row: Record<string, unknown>): OpenJobDetail {
     ...toOpenJob(row),
     description: String(readField(row, 'description') ?? ''),
     requirements: String(readField(row, 'requirements') ?? ''),
+    deadline: readOptionalDate(row, 'deadline'),
     businessType: String(readField(row, 'businessType') ?? ''),
     companyDescription: String(readField(row, 'companyDescription') ?? ''),
+    companyWebsiteUrl: String(readField(row, 'companyWebsiteUrl') ?? ''),
+    companyContactLinks: readJsonArray(row, 'companyContactLinks'),
+    companySize: String(readField(row, 'companySize') ?? ''),
+    companyPerks: readArray(row, 'companyPerks'),
+    companyLocation: String(readField(row, 'companyLocation') ?? ''),
+    companyLogoObjectKey:
+      readField(row, 'companyLogoObjectKey') == null
+        ? null
+        : String(readField(row, 'companyLogoObjectKey')),
+    companyCoverObjectKey:
+      readField(row, 'companyCoverObjectKey') == null
+        ? null
+        : String(readField(row, 'companyCoverObjectKey')),
   };
 }
 
 function toCompanyJobRecord(row: Record<string, unknown>): CompanyJobRecord {
-  const deadline = readField(row, 'deadline');
   return {
     id: String(readField(row, 'id')),
     title: String(readField(row, 'title') ?? ''),
     status: readField(row, 'status') as JobStatus,
     workMode: readField(row, 'workMode') as WorkMode,
+    interviewMode: readField(row, 'interviewMode') as InterviewMode,
     applicantCount: Number(readField(row, 'applicantCount') ?? 0),
     pendingApplicantCount: Number(readField(row, 'pendingApplicantCount') ?? 0),
-    deadline: deadline instanceof Date ? deadline : deadline ? new Date(String(deadline)) : null,
+    deadline: readOptionalDate(row, 'deadline'),
   };
+}
+
+function readOptionalDate(
+  row: Record<string, unknown>,
+  key: string,
+): Date | null {
+  const value = readField(row, key);
+  if (value == null || value === '') {
+    return null;
+  }
+  const date = value instanceof Date ? value : new Date(String(value));
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function readCount(row: Record<string, unknown>, key: string): number | null {
+  const value = readField(row, key);
+  if (value == null || value === '') return null;
+  const count = Number(value);
+  return Number.isInteger(count) ? count : null;
+}
+
+function readAmount(row: Record<string, unknown>, key: string): number | null {
+  const value = readField(row, key);
+  if (value == null || value === '') {
+    return null;
+  }
+  const amount = Number(value);
+  return Number.isInteger(amount) ? amount : null;
 }
 
 function readBoolean(row: Record<string, unknown>, key: string): boolean {

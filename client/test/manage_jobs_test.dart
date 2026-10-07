@@ -32,9 +32,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Flutter Intern'), findsOneWidget);
-    expect(find.text('เปิดรับสมัคร'), findsOneWidget);
+    expect(find.text('เปิดรับสมัคร'), findsWidgets);
     expect(find.text('งานที่ปิดแล้ว'), findsOneWidget);
-    expect(find.text('ปิดรับสมัคร'), findsOneWidget);
+    expect(find.text('ปิดรับสมัคร'), findsWidgets);
     expect(find.text('แก้ไข'), findsNWidgets(2));
     expect(find.text('ผู้สมัคร'), findsNWidgets(2));
   });
@@ -91,7 +91,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('โหลดประกาศไม่ได้'), findsOneWidget);
+    expect(find.text('โหลดประกาศไม่ได้'), findsWidgets);
     expect(find.text('ลองอีกครั้ง'), findsOneWidget);
   });
 }
@@ -124,6 +124,11 @@ class _CompanyJobs implements CompanyJobRepository {
 
   @override
   Future<EditableJob> fetchOne(String jobId) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<CompanyOwnedJob> fetchOwned(String jobId) {
     throw UnimplementedError();
   }
 
@@ -169,10 +174,45 @@ class _CompanyJobs implements CompanyJobRepository {
   }
 
   @override
+  Future<List<int>> downloadApplicantDocument({
+    required String jobId,
+    required String applicationId,
+    required String documentId,
+  }) async => throw UnimplementedError();
+
+  @override
   Future<void> updateApplicantStatus({
     required String jobId,
     required String applicationId,
     required String status,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> setExamLink({
+    required String jobId,
+    required String applicationId,
+    required String url,
+    required DateTime deadline,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> passExam({
+    required String jobId,
+    required String applicationId,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> setInterviewLink({
+    required String jobId,
+    required String applicationId,
+    required String url,
+    required DateTime startsAt,
   }) {
     throw UnimplementedError();
   }

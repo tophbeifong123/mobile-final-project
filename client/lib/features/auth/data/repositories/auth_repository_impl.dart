@@ -25,15 +25,45 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<AuthSession> register({
+    required String fullName,
     required String email,
     required String password,
     required UserRole role,
   }) async {
     final model = await remote.register(
+      fullName: fullName,
       email: email,
       password: password,
       role: role.name,
     );
+    final session = model.toEntity();
+    await tokenStorage.write(session);
+    return session;
+  }
+
+  @override
+  Future<bool> authenticateWithGoogle({
+    required String idToken,
+    UserRole? role,
+  }) async {
+    final response = await remote.authenticateWithGoogle(
+      idToken: idToken,
+      role: role?.name,
+    );
+    final model = response.session;
+    if (model == null) {
+      return response.roleRequired;
+    }
+    await tokenStorage.write(model.toEntity());
+    return false;
+  }
+
+  @override
+  Future<AuthSession> linkGoogle({
+    required String idToken,
+    required String password,
+  }) async {
+    final model = await remote.linkGoogle(idToken: idToken, password: password);
     final session = model.toEntity();
     await tokenStorage.write(session);
     return session;

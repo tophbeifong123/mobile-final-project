@@ -6,6 +6,7 @@ class CompanyJob {
     required this.title,
     required this.status,
     required this.workMode,
+    this.interviewMode = 'online',
     required this.applicantCount,
     required this.pendingApplicantCount,
     this.deadline,
@@ -15,6 +16,7 @@ class CompanyJob {
   final String title;
   final String status;
   final String workMode;
+  final String interviewMode;
   final int applicantCount;
   final int pendingApplicantCount;
   final DateTime? deadline;
@@ -26,8 +28,11 @@ class JobPosting {
     required this.description,
     required this.province,
     required this.workMode,
+    this.interviewMode = 'online',
     required this.category,
     required this.hasAllowance,
+    this.openings,
+    this.allowanceAmount,
     required this.requirements,
     this.skills = const [],
   });
@@ -36,10 +41,53 @@ class JobPosting {
   final String description;
   final String province;
   final String workMode;
+  final String interviewMode;
   final String category;
   final bool hasAllowance;
+  final int? openings;
+  final int? allowanceAmount;
   final String requirements;
   final List<String> skills;
+}
+
+class CompanyOwnedJob {
+  const CompanyOwnedJob({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.province,
+    required this.workMode,
+    this.interviewMode = 'online',
+    required this.category,
+    required this.hasAllowance,
+    this.openings,
+    this.allowanceAmount,
+    required this.requirements,
+    required this.status,
+    required this.version,
+    required this.applicantCount,
+    required this.pendingApplicantCount,
+    this.skills = const [],
+    this.deadline,
+  });
+
+  final String id;
+  final String title;
+  final String description;
+  final String province;
+  final String workMode;
+  final String interviewMode;
+  final String category;
+  final bool hasAllowance;
+  final int? openings;
+  final int? allowanceAmount;
+  final String requirements;
+  final String status;
+  final int version;
+  final int applicantCount;
+  final int pendingApplicantCount;
+  final List<String> skills;
+  final DateTime? deadline;
 }
 
 class CreatedJob {
@@ -56,8 +104,11 @@ class EditableJob {
     required this.description,
     required this.province,
     required this.workMode,
+    this.interviewMode = 'online',
     required this.category,
     required this.hasAllowance,
+    this.openings,
+    this.allowanceAmount,
     required this.requirements,
     required this.status,
     required this.version,
@@ -69,8 +120,11 @@ class EditableJob {
   final String description;
   final String province;
   final String workMode;
+  final String interviewMode;
   final String category;
   final bool hasAllowance;
+  final int? openings;
+  final int? allowanceAmount;
   final String requirements;
   final String status;
   final int version;
@@ -94,6 +148,14 @@ class Applicant {
     this.resumeFileName,
     this.avatarObjectKey,
     this.createdAt,
+    this.documents = const [],
+    this.examUrl,
+    this.examDeadline,
+    this.examCompletedAt,
+    this.examPassedAt,
+    this.interviewUrl,
+    this.interviewStartsAt,
+    this.interviewMode = 'online',
   });
 
   final String applicationId;
@@ -111,4 +173,23 @@ class Applicant {
   final String? resumeFileName;
   final String? avatarObjectKey;
   final DateTime? createdAt;
+  final List<ApplicantDocument> documents;
+  final String? examUrl;
+  final DateTime? examDeadline;
+  final DateTime? examCompletedAt;
+  final DateTime? examPassedAt;
+  final String? interviewUrl;
+  final DateTime? interviewStartsAt;
+  final String interviewMode;
+}
+
+class ApplicantDocument {
+  const ApplicantDocument({
+    required this.id,
+    required this.type,
+    required this.fileName,
+  });
+  final String id;
+  final String type;
+  final String fileName;
 }

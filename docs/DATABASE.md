@@ -11,7 +11,10 @@
 ```text
 users ||--o| student_profiles : "role = student"
 users ||--o| company_profiles : "role = company"
+provinces ||--o{ company_profiles : "selected office province"
 users ||--o{ refresh_tokens : has
+users ||--o{ auth_identities : Google provider identity
+users ||--o| password_reset_tokens : recovery
 
 company_profiles ||--o{ jobs : posts
 student_profiles ||--o{ saved_jobs : saves
@@ -22,6 +25,8 @@ jobs ||--o{ applications : receives
 applications ||--o{ application_status_events : timeline
 applications ||--o{ notifications : notifies
 student_profiles ||--o{ notifications : receives
+universities ||--o{ student_profiles : selected_university
+student_profiles ||--o{ student_documents : owns
 
 applications ||--o{ outbox_messages : "enqueue on status change"
 ```
@@ -34,6 +39,7 @@ applications ||--o{ outbox_messages : "enqueue on status change"
 |---|---|
 | user_role | `student`, `company` |
 | work_mode | `on_site`, `hybrid`, `remote` |
+| interview_mode | `online`, `on_site` |
 | job_status | `open`, `closed` |
 | application_status | `submitted`, `reviewing`, `accepted`, `rejected` |
 | outbox_status | `pending`, `processing`, `sent`, `dead` |
@@ -49,9 +55,24 @@ applications ||--o{ outbox_messages : "enqueue on status change"
 | id | uuid | PK |
 | email | varchar | unique, ไม่ซ้ำทั้งระบบ |
 | password_hash | varchar | เก็บค่า hash ไม่เก็บรหัสตรง |
+| token_version | integer | ค่าเริ่มต้น 0 เพิ่มหลังรีเซ็ตรหัสผ่านเพื่อยกเลิก access token เดิม |
 | role | user_role | ตั้งตอนสมัคร แก้ไม่ได้ |
 | created_at | timestamptz | |
 | updated_at | timestamptz | |
+
+บัญชี Google-only มี password_hash เป็น null และ password login ต้องปฏิเสธอย่างปลอดภัยเมื่อ hash เป็น null. ตาราง auth_identities เก็บ provider (google), provider_subject (Google sub), user_id และเวลาสร้าง; unique (provider, provider_subject), unique (user_id, provider) และ FK ไป users. Email ยังคง unique ใน users. การผูก Google เข้ากับบัญชีรหัสผ่านเดิมเกิดหลังตรวจรหัสผ่านเท่านั้น ไม่ผูกจาก email โดยอัตโนมัติ.
+
+### auth_identities
+
+| คอลัมน์ | ชนิด | หมายเหตุ |
+|---|---|---|
+| id | uuid | PK |
+| user_id | uuid | FK → users.id |
+| provider | varchar | เช่น google |
+| provider_subject | varchar | ค่า sub จาก ID token ที่ verify แล้ว |
+| created_at | timestamptz | |
+
+Unique ที่ (provider, provider_subject) ใช้ระบุตัวผู้ให้บริการ ไม่ใช้ email เป็น identity. Unique ที่ (user_id, provider) ทำให้บัญชีหนึ่งผูก Google ได้หนึ่งรายการ.
 
 ### refresh_tokens
 
@@ -66,6 +87,18 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | revoked_at | timestamptz | null แปลว่ายังใช้ได้ |
 | created_at | timestamptz | |
 
+### password_reset_tokens
+
+| คอลัมน์ | ชนิด | หมายเหตุ |
+|---|---|---|
+| id | uuid | PK |
+| user_id | uuid | unique, FK → users.id ON DELETE CASCADE |
+| token_hash | varchar(64) | unique, SHA-256 ของ token; ไม่เก็บ token ดิบ |
+| expires_at | timestamptz | หมดอายุใน 15 นาที |
+| created_at | timestamptz | ใช้จำกัดอีเมลใหม่ไม่เกินหนึ่งครั้งต่อนาที |
+
+ตอนออกลิงก์และรีเซ็ตให้ล็อก user ก่อน token เสมอ ตอนรีเซ็ตให้เทียบรหัสใหม่กับ hash ปัจจุบันขณะถือ lock หากซ้ำให้ปฏิเสธโดยยังคงลิงก์ไว้ รีเซ็ตที่สำเร็จเปลี่ยน password_hash, เพิ่ม token_version, เพิกถอน refresh token และลบ reset token ใน transaction เดียว เพื่อกันใช้ลิงก์ซ้ำและ session ที่สร้างพร้อมกับการรีเซ็ต
+
 ### student_profiles
 
 | คอลัมน์ | ชนิด | หมายเหตุ |
@@ -73,8 +106,10 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | id | uuid | PK |
 | user_id | uuid | unique, FK → users.id |
 | full_name | varchar | |
-| university | varchar | |
-| major | varchar | สาขา |
+| university_id | uuid | null ได้, FK → universities.id |
+| custom_university_name | varchar(255) | null ได้; ใช้เมื่อไม่ได้เลือกจากมาสเตอร์ |
+| major_id | uuid | null ได้, FK → majors.id |
+| custom_major_name | varchar(255) | null ได้; ใช้เมื่อไม่ได้เลือกจากมาสเตอร์ |
 | skills | text[] | ทักษะ |
 | bio | text | ข้อมูลเกี่ยวกับฉัน / แนะนำตัว |
 | contact_links | jsonb | รายการช่องทางติดต่อ (phone, line, linkedin ฯลฯ) |
@@ -84,6 +119,43 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | resume_file_name | varchar | ชื่อไฟล์ที่ผู้ใช้เลือก |
 | created_at | timestamptz | |
 | updated_at | timestamptz | |
+
+`university_id` และ `custom_university_name` มี CHECK constraint `university_id IS NULL OR custom_university_name IS NULL`; ทั้งคู่ null หมายถึงยังไม่ได้ระบุ. Migration `1791244800000-add-student-university-master` สร้างมาสเตอร์และ backfill ชื่อเดิมโดย normalize whitespace/periods แล้ว match แบบ exact กับชื่อหรือ alias; ชื่อ unmatched/ambiguous เก็บเป็น custom โดยไม่เดา. Rollback คืนชื่อที่แสดงปัจจุบันลงคอลัมน์เดิมก่อนถอด FK/คอลัมน์ใหม่และตารางมาสเตอร์.
+
+ตาราง `majors` เก็บชื่อสาขาแนะนำ. `major_id` และ `custom_major_name` อยู่ภายใต้ CHECK ที่ห้ามมีค่าพร้อมกัน; migration เพิ่ม unique master, backfill ชื่อที่ตรงแบบ exact และเก็บชื่ออื่นเป็น custom. Rollback รวมชื่อที่แสดงกลับลงคอลัมน์ `major` เดิมก่อนลบ schema ใหม่.
+
+| majors column | type | notes |
+|---|---|---|
+| id | uuid | PK, deterministic จากชื่อมาตรฐาน |
+| name_th | varchar(255) | unique, ชื่อสำหรับแสดง |
+
+ค้นหาคำแนะนำผ่าน `GET /api/majors?q=...`; รายการเป็นคำแนะนำ ไม่ใช่ allowlist สำหรับค่าที่โปรไฟล์บันทึกได้.
+
+มาสเตอร์ seed จาก [MHESI Open Data: รายชื่อสถาบันอุดมศึกษา](https://data.mhesi.go.th/dataset/univ_uni_11_03) (academic year 2563; metadata ระบุข้อมูลล่าสุด 1 มีนาคม 2564 และปรับปรุงชุดข้อมูล 24 สิงหาคม 2568). Migration ฝัง snapshot ไม่เรียก network. ชื่อวิทยาเขตที่ระบุชัดถูกรวมที่สถาบันต้นสังกัด และเพิ่ม aliases สำหรับคำย่อที่ค้นหาบ่อย เช่น `ม.อ.` และ `PSU`. เนื่องจาก metadata ของแหล่งข้อมูลระบุปีการศึกษา 2563 ให้ผู้ตรวจยืนยันว่าขอบเขต snapshot นี้เพียงพอก่อน release.
+
+| คอลัมน์ | ชนิด | หมายเหตุ |
+|---|---|---|
+| id | uuid | PK, deterministic จากชื่อมาตรฐาน |
+| name_th | varchar(255) | unique, ชื่อสำหรับแสดง |
+| aliases | text[] | ชื่อเรียกอื่นและคำย่อสำหรับค้นหา |
+### student_documents
+
+เก็บ metadata ของ PDF ที่อยู่ใน storage; ไฟล์จริงไม่อยู่ใน PostgreSQL
+
+| คอลัมน์ | ชนิด | หมายเหตุ |
+|---|---|---|
+| id | uuid | PK |
+| student_id | uuid | FK → student_profiles.id |
+| type | varchar(16) | `cv`, `transcript`, `other` |
+| object_key | varchar(1024) | storage key |
+| file_name | varchar(255) | ชื่อไฟล์สำหรับแสดง |
+| created_at / updated_at | timestamptz | |
+
+Partial unique index จำกัด CV และ transcript อย่างละหนึ่งไฟล์ต่อนักศึกษา. จำนวน `other` สูงสุด 3 ถูกบังคับใน service ภายใต้ transaction ที่ล็อกแถว student profile. Migration backfill CV เดิมโดยคง object key เดิม.
+
+การลบ metadata ทำภายใต้ transaction ที่ล็อกแถว student profile. เมื่อลบ CV ให้ล้าง Resume ปัจจุบันของโปรไฟล์ด้วย แต่จะลบ object จาก storage ก็ต่อเมื่อไม่มี applications.resume_object_key หรือ application_documents.object_key อ้างถึงอยู่ เพื่อเก็บ snapshot ทุกชนิดของใบสมัครเดิม.
+
+Migration `CreateStudentDocuments1759400000000` จะ rollback ไม่ได้เมื่อยังมี transcript/other metadata เพราะ schema เดิมไม่มีที่เก็บข้อมูลเหล่านี้; `down` ปฏิเสธอย่างชัดเจนในกรณีนั้น และคืน CV ปัจจุบันไปยังคอลัมน์เดิมก่อนลบตารางเมื่อทำได้. ไฟล์ storage ไม่ถูกลบจาก migration.
 
 ### company_profiles
 
@@ -95,10 +167,32 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | logo_object_key | varchar | คีย์ไฟล์ใน MinIO, null ได้ |
 | business_type | varchar | ประเภทกิจการ |
 | description | text | |
+| province_id | smallint | null ได้, FK → provinces.id; รหัสจังหวัดตามกรมการปกครอง |
+| location | text | คอลัมน์เดิม; ที่อยู่สั้นแยกจากจังหวัด จำกัดข้อมูลใหม่ 255 ตัวอักษรใน service ไม่ตัดข้อมูลเก่า |
+| website_url | varchar(1024) | เว็บไซต์ HTTP/HTTPS หรือค่าว่าง |
+| contact_links | jsonb | ช่องทางติดต่อที่บริษัทบันทึกเอง ไม่เกิน 8 รายการ ค่าเริ่มต้น `[]` ไม่ใช่อีเมลเข้าสู่ระบบ |
+| company_size | varchar(100) | ขนาดองค์กร หรือค่าว่าง |
+| perks | text[] | สวัสดิการที่บริษัทระบุ |
+| cover_object_key | varchar(1024) | คีย์รูปหน้าปกบริษัท, null ได้ |
 | created_at | timestamptz | |
 | updated_at | timestamptz | |
 
 ตัวเลขแดชบอร์ดไม่เก็บเป็นคอลัมน์ นับจาก `jobs` กับ `applications` แล้วเขียนทับค่าใน Redis ถ้า Redis หายให้นับจากตารางนี้ใหม่
+
+เว็บไซต์ ขนาดองค์กร สวัสดิการ ที่อยู่ และรูปหน้าปกมาจาก migration `1759300000000-add-details-and-cover-to-company-profiles` ที่มี up/down. ช่องทางติดต่อของบริษัทมาจาก migration `1791860000000-add-company-contact-links` รูปแบบเดียวกับ `student_profiles.contact_links` แต่จำกัด 8 รายการใน service. IFND-141 อ่านข้อมูลล่าสุดผ่าน join ไม่เก็บสำเนาใน jobs. Migration `1791158400000-add-company-office-location` เพิ่มมาสเตอร์จังหวัดและ `province_id` โดยไม่เพิ่มหรือลบคอลัมน์ `location` เดิม. Migration `1791744000000-drop-office-pin` ลบ `latitude`/`longitude` ของโปรไฟล์และจุดกึ่งกลางจังหวัด เพราะไม่มีหน้าไหนแสดงแผนที่.
+
+### provinces
+
+มาสเตอร์จังหวัดไทย 77 แห่ง seed โดย migration `1791158400000-add-company-office-location` รหัส `id` เป็นรหัสจังหวัดตามกรมการปกครอง ชื่อไทยมาตรฐานเดียวกับคำที่ใช้กรองงาน และมีชื่อเรียกอื่นสำหรับค้นหา (เช่น `กทม.` → `กรุงเทพมหานคร`)
+
+| คอลัมน์ | ชนิด | หมายเหตุ |
+|---|---|---|
+| id | smallint | PK, รหัสจังหวัด |
+| name_th | varchar(100) | unique, ชื่อจังหวัดมาตรฐาน |
+| aliases | text[] | ชื่อเรียกสำหรับค้นหา |
+
+ข้อมูลรหัสและชื่ออิง [มาตรฐานจังหวัดกระทรวงพาณิชย์](https://std.moc.go.th/std/group/28) แอปใช้ข้อมูลนี้ในเครื่องหลังเรียก API ไม่เรียก geocoding ภายนอก
+
 
 ### jobs
 
@@ -108,10 +202,13 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | company_id | uuid | FK → company_profiles.id |
 | title | varchar | |
 | description | text | |
-| province | varchar | ใช้กรองจังหวัด |
+| province | varchar | ชื่อจังหวัดมาตรฐานตรงกับ `provinces.name_th`; ใช้กรองจังหวัด งานเดิมที่เป็นชื่อเรียกถูกปรับใน migration |
 | work_mode | work_mode | |
-| category | varchar | หมวดงาน |
+| interview_mode | interview_mode | รูปแบบสัมภาษณ์ของประกาศ บังคับทุกแถว งานเดิมที่ทำงานออนไซต์ถูกตั้งเป็น `on_site` นอกนั้นเป็น `online` |
+| category | varchar | หมวดงานจากรายการเดียวกันทั้งบริษัทและนักศึกษา: IT & Software, Design & UX/UI, Marketing, Data |
 | has_allowance | boolean | มีเบี้ยเลี้ยงหรือไม่ |
+| openings | integer | null ได้; เมื่อระบุต้องเป็นจำนวนเต็มบวก |
+| allowance_amount | integer | null ได้เมื่อไม่มีเบี้ยเลี้ยง; เมื่อมีต้องเป็นจำนวนบาท 1 ถึง 1,000,000 |
 | requirements | text | คุณสมบัติ |
 | skills | text[] | ทักษะที่เปิดรับ |
 | status | job_status | ค่าเริ่มต้น `open` |
@@ -120,6 +217,8 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | updated_at | timestamptz | |
 
 นักศึกษาเห็นและสมัครได้เฉพาะ `status = open` งาน `closed` ยังอยู่ในการจัดการของบริษัท
+
+จำนวนรับเป็นช่องว่างได้ ถ้ามีเบี้ยเลี้ยงต้องเก็บจำนวนเงินเป็นบาทจำนวนเต็ม ถ้าไม่มีต้องไม่เก็บจำนวนเงิน ประกาศเดิมที่เคยเก็บทศนิยมหรือศูนย์จะถูกล้างตอน migration แล้วคอลัมน์ถูกปรับเป็น integer
 
 ### saved_jobs
 
@@ -141,12 +240,36 @@ Unique ที่ `(student_id, job_id)` บันทึกงานหนึ่�
 | job_id | uuid | FK → jobs.id |
 | cover_letter | text | บังคับมีตอนสมัคร |
 | resume_object_key | varchar | สำเนาคีย์ Resume ตอนสมัคร ไม่ตามไฟล์ที่อัปโหลดใหม่ทีหลัง |
+| resume_file_name | varchar | ชื่อ CV ณ เวลาสมัคร; null ได้สำหรับใบสมัครเก่าก่อน migration |
 | status | application_status | ค่าเริ่มต้น `submitted` |
 | version | int | optimistic lock, เริ่มที่ 1 |
 | created_at | timestamptz | |
 | updated_at | timestamptz | |
+| exam_url | varchar(2048) | null ได้ ลิงก์ข้อสอบภายนอก ต้องคู่กับ exam_deadline |
+| exam_deadline | timestamptz | null ได้ กำหนดเวลาที่นักศึกษาทำข้อสอบได้ |
+| exam_completed_at | timestamptz | null ได้ เวลาที่นักศึกษาแจ้งว่าทำแล้ว ไม่ใช่คะแนน |
+| exam_passed_at | timestamptz | null ได้ เวลาที่บริษัทตรวจว่าข้อสอบผ่าน ตั้งได้เมื่อมี exam_completed_at แล้ว |
+| interview_url | varchar(2048) | null ได้ ลิงก์นัดออนไลน์ สัมภาษณ์ออนไซต์เว้นว่าง |
+| interview_starts_at | timestamptz | null ได้เมื่อยังไม่นัด เมื่อมีนัดต้องมีค่านี้ ลิงก์ต้องมีคู่กับเวลานี้เฉพาะนัดออนไลน์ |
 
 Unique ที่ `(student_id, job_id)` คือตัวกันสมัครซ้ำ แม้ request สองตัวชนกันพร้อมกัน
+
+### application_documents
+
+| คอลัมน์ | ชนิด | หมายเหตุ |
+|---|---|---|
+| id | uuid | PK; ใช้เปิดไฟล์ snapshot ไม่ใช่ ID ของไฟล์ในคลัง |
+| application_id | uuid | FK → applications.id, ON DELETE CASCADE |
+| type | varchar(16) | CHECK: `cv`, `transcript`, `other` |
+| file_name | varchar(255) | ชื่อไฟล์ ณ เวลาสมัคร |
+| object_key | varchar(1024) | คีย์ไฟล์ ณ เวลาสมัคร |
+| created_at | timestamptz | |
+
+Partial unique index จำกัด CV และ Transcript ชนิดละหนึ่งไฟล์ต่อใบสมัคร; มี index ที่ application_id และ object_key. ไม่มี FK ไป student_documents เพื่อให้ลบหรือแทนที่คลังได้โดย snapshot ไม่เปลี่ยน.
+
+Service เลือก CV เสมอและเลือกเอกสารเพิ่มเติมตาม documentIds เท่านั้น (ค่าเริ่มต้นไม่แนบ). Transaction ล็อก student profile แล้วตรวจไฟล์ที่เลือกอีกครั้งก่อนล็อกงานและสร้างใบสมัคร, snapshot และ status event พร้อมกัน; ID ที่ไม่มีอยู่หรือไม่ใช่ของนักศึกษานี้ทำให้ทั้ง transaction ถูกปฏิเสธ. เก็บ CV ในคอลัมน์เดิมของ applications ด้วยเพื่อรองรับเส้นทาง Resume เดิม.
+
+Migration CreateApplicationDocuments1791950000000 backfill เฉพาะ CV จากใบสมัครเดิม ไม่ดึง Transcript/เอกสารอื่นเวอร์ชันปัจจุบันมาแนบย้อนหลัง. down คืน CV ไปคอลัมน์เดิมก่อนลบตาราง และปฏิเสธ rollback หากมี snapshot ชนิดอื่นเพื่อไม่ให้ข้อมูลหาย; ไม่ลบไฟล์ storage.
 
 ### application_status_events
 
@@ -204,6 +327,8 @@ Worker ที่สำเร็จแล้วตั้ง `sent` เกิน�
 | notifications | student_id, created_at | หน้ารายการแจ้งเตือน |
 | outbox_messages | status, available_at | worker ดึงงานที่ถึงเวลา |
 | refresh_tokens | user_id | logout ของ user นั้น |
+| student_profiles | university_id | join ชื่อมหาวิทยาลัยใน applicant list |
+| company_profiles | province_id | FK และการอ่านโปรไฟล์พร้อมจังหวัด |
 
 ## 5. Transaction และ lock
 
@@ -213,11 +338,14 @@ Worker ที่สำเร็จแล้วตั้ง `sent` เกิน�
 
 `DataSource.transaction()` สร้าง `users` พร้อม `student_profiles` หรือ `company_profiles` ที่ว่างตาม role ถ้าสร้างโปรไฟล์ไม่สำเร็จ ทั้งคู่ถูกยกเลิก
 
+Google signup ทำใน transaction เดียวกัน: สร้าง user โดยไม่มี password hash, auth identity จาก token ที่ตรวจแล้ว และ role-specific profile. บัญชี Google ใหม่ต้องมี role ก่อนเริ่ม transaction; ถ้า email ชนบัญชีเดิมให้ยกเลิกโดยไม่เชื่อม identity. Unique identity/email constraints เป็นตัวตัดสินสุดท้ายเมื่อ request ชนกัน.
+
 ### สมัครงาน และเปิดหรือปิดรับสมัคร
 
 ใช้ pessimistic lock ที่แถว `jobs` ด้วย `SELECT ... FOR UPDATE` ใน transaction เดียวกัน
 
 - ตอนสมัคร: ล็อกแถวงาน ตรวจว่ายัง `open` ตรวจว่ามี Resume แล้วแทรก `applications` พร้อม event `submitted`
+- ไฟล์ปัจจุบันอยู่ใน `student_documents`; ตอนสมัครคัดลอกชนิด ชื่อไฟล์ และ object key ของ CV และเฉพาะเอกสารเพิ่มเติมที่เลือกไป `application_documents` พร้อมคง CV ใน `applications.resume_object_key` / `resume_file_name`. การแทนที่หรือลบคลังไม่เปลี่ยนใบสมัครเก่า และไฟล์ทุกชนิดที่ใบสมัครอ้างถึงจะไม่ถูกลบ
 - ตอนปิดหรือเปิดรับ: ล็อกแถวงานแล้วค่อยเปลี่ยน `status`
 
 กันกรณีนักศึกษาสมัครงานที่กำลังถูกปิด และกันการปิดงานขณะกำลังสร้างใบสมัคร ไม่ใช้ optimistic lock ตรงนี้ เพราะการสมัครไม่ได้แก้แถวใบสมัครเดิม
@@ -242,3 +370,12 @@ Worker ที่สำเร็จแล้วตั้ง `sent` เกิน�
 ไม่เก็บไฟล์ PDF หรือรูป logo ในตาราง เก็บเฉพาะ object key ของ MinIO
 
 ไม่เก็บตัวเลขแดชบอร์ดเป็นตารางสรุป และไม่เก็บ access token
+
+## 7. ตรวจ migration และ API ที่ตั้งสำนักงาน
+
+หลัง `npm run build` ใน `server/` รัน `test/company-office-location.integration.mjs` กับ PostgreSQL สำหรับทดสอบในเครื่องที่พอร์ตแยกจาก 5432 โดยกำหนด `OFFICE_INTEGRATION_PORT` สคริปต์ใช้ผู้ใช้ `postgres` แบบ trust และสร้างฐานข้อมูลชื่อสุ่มของตัวเอง จากนั้นตรวจ `up`/`down`, ข้อมูลประกาศเดิม, กติกาพิกัด, การกรองงาน และชนิดข้อมูลใน Swagger ก่อนลบเฉพาะฐานข้อมูลทดสอบนั้น
+
+```powershell
+$env:OFFICE_INTEGRATION_PORT = '5443'
+node --test test/company-office-location.integration.mjs
+```

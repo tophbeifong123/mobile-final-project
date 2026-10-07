@@ -1,25 +1,20 @@
 import '../../../jobs/domain/entities/job.dart';
 
-class SavedJob {
+class SavedJob extends Job {
   const SavedJob({
-    required this.id,
-    required this.title,
-    required this.companyName,
-    required this.province,
-    required this.workMode,
-    required this.category,
-    required this.hasAllowance,
-    required this.status,
-    this.skills = const [],
+    required super.id,
+    required super.title,
+    required super.companyName,
+    required super.province,
+    required super.workMode,
+    super.interviewMode,
+    required super.category,
+    required super.hasAllowance,
+    required super.status,
+    super.openings,
+    super.allowanceAmount,
+    super.skills,
+    super.createdAt,
+    super.companyLogoAvailable,
   });
-
-  final String id;
-  final String title;
-  final String companyName;
-  final String province;
-  final WorkMode workMode;
-  final String category;
-  final bool hasAllowance;
-  final JobStatus status;
-  final List<String> skills;
 }

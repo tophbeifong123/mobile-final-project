@@ -31,4 +31,22 @@ export class MyApplicationItemDto {
 
   @ApiProperty()
   updatedAt: string;
+
+  @ApiProperty({ nullable: true })
+  examUrl: string | null;
+
+  @ApiProperty({ nullable: true, format: 'date-time' })
+  examDeadline: string | null;
+
+  @ApiProperty({ nullable: true, format: 'date-time' })
+  examCompletedAt: string | null;
+
+  @ApiProperty({ nullable: true, format: 'date-time' })
+  examPassedAt: string | null;
+
+  @ApiProperty({ nullable: true })
+  interviewUrl: string | null;
+
+  @ApiProperty({ nullable: true, format: 'date-time' })
+  interviewStartsAt: string | null;
 }

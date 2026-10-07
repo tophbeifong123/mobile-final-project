@@ -1,4 +1,6 @@
 import 'package:client/core/network/dio_client.dart';
+import 'package:client/core/provinces/thai_province.dart';
+import 'package:client/core/provinces/thai_provinces_provider.dart';
 import 'package:client/core/storage/token_storage.dart';
 import 'package:client/core/theme/app_theme.dart';
 import 'package:client/features/jobs/domain/entities/job.dart';
@@ -11,6 +13,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  const provinces = [
+    ThaiProvince(id: 90, nameTh: 'สงขลา'),
+    ThaiProvince(
+      id: 10,
+      nameTh: 'กรุงเทพมหานคร',
+      aliases: ['กรุงเทพฯ', 'กทม.'],
+    ),
+  ];
+
   const sampleJobs = [
     Job(
       id: 'job-1',
@@ -26,7 +37,7 @@ void main() {
       id: 'job-2',
       title: 'UI/UX Designer Intern',
       companyName: 'Design Studio',
-      province: 'กรุงเทพฯ',
+      province: 'กรุงเทพมหานคร',
       workMode: WorkMode.hybrid,
       category: 'Design & UX/UI',
       hasAllowance: false,
@@ -44,11 +55,16 @@ void main() {
     ),
   ];
 
-  Widget buildScreen(JobRepository repo) {
+  Widget buildScreen(WidgetTester tester, JobRepository repo) {
+    tester.view.physicalSize = const Size(390, 1100);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     return ProviderScope(
       overrides: [
         tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
         jobRepositoryProvider.overrideWithValue(repo),
+        thaiProvincesProvider.overrideWith((ref) async => provinces),
       ],
       child: MaterialApp(
         theme: AppTheme.lightTheme,
@@ -58,22 +74,32 @@ void main() {
   }
 
   testWidgets('home lists open jobs and renders details', (tester) async {
-    await tester.pumpWidget(buildScreen(_FilteringJobRepository(sampleJobs)));
+    await tester.pumpWidget(
+      buildScreen(tester, _FilteringJobRepository(sampleJobs)),
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Flutter Intern'), findsOneWidget);
     expect(find.text('UI/UX Designer Intern'), findsOneWidget);
     expect(find.text('Marketing Trainee'), findsOneWidget);
-    expect(find.text('On-site'), findsOneWidget);
+    expect(
+      find.descendant(of: find.byType(JobCard), matching: find.text('On-site')),
+      findsOneWidget,
+    );
     expect(
       find.descendant(of: find.byType(JobCard), matching: find.text('Hybrid')),
       findsOneWidget,
     );
-    expect(find.text('Remote'), findsOneWidget);
+    expect(
+      find.descendant(of: find.byType(JobCard), matching: find.text('Online')),
+      findsOneWidget,
+    );
   });
 
   testWidgets('search input filters jobs by keyword', (tester) async {
-    await tester.pumpWidget(buildScreen(_FilteringJobRepository(sampleJobs)));
+    await tester.pumpWidget(
+      buildScreen(tester, _FilteringJobRepository(sampleJobs)),
+    );
     await tester.pumpAndSettle();
 
     final searchField = find.byType(TextField).first;
@@ -82,6 +108,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Flutter Intern'), findsOneWidget);
+    expect(find.text('สัมภาษณ์ออนไลน์'), findsOneWidget);
     expect(find.text('UI/UX Designer Intern'), findsNothing);
     expect(find.text('Marketing Trainee'), findsNothing);
 
@@ -99,7 +126,9 @@ void main() {
   testWidgets(
     'tapping work mode chip filters jobs by work mode and unselecting clears it',
     (tester) async {
-      await tester.pumpWidget(buildScreen(_FilteringJobRepository(sampleJobs)));
+      await tester.pumpWidget(
+        buildScreen(tester, _FilteringJobRepository(sampleJobs)),
+      );
       await tester.pumpAndSettle();
 
       // Tap Online chip
@@ -125,7 +154,9 @@ void main() {
   testWidgets(
     'filter button opens bottom sheet, applying filters updates the feed and badge',
     (tester) async {
-      await tester.pumpWidget(buildScreen(_FilteringJobRepository(sampleJobs)));
+      await tester.pumpWidget(
+        buildScreen(tester, _FilteringJobRepository(sampleJobs)),
+      );
       await tester.pumpAndSettle();
 
       // Open filter bottom sheet
@@ -141,9 +172,12 @@ void main() {
         findsOneWidget,
       );
 
-      // Enter province
+      // Pick province from the same canonical list as the company profile.
       final provinceField = find.widgetWithText(TextField, 'จังหวัด');
-      await tester.enterText(provinceField, 'สงขลา');
+      await tester.tap(provinceField);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('province-90')));
+      await tester.pumpAndSettle();
 
       // Tap "มีเบี้ยเลี้ยง"
       final allowanceChip = find.widgetWithText(FilterChip, 'มีเบี้ยเลี้ยง');
@@ -179,6 +213,36 @@ void main() {
       expect(find.text('Marketing Trainee'), findsOneWidget);
     },
   );
+
+  testWidgets('province alias search applies the canonical name', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      buildScreen(tester, _FilteringJobRepository(sampleJobs)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('ตัวกรอง'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextField, 'จังหวัด'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextField, 'ค้นหาจังหวัด'),
+      'กทม',
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('province-10')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('province-10')));
+    await tester.pumpAndSettle();
+    final applyButton = find.widgetWithText(FilledButton, 'ใช้ตัวกรอง');
+    await tester.ensureVisible(applyButton);
+    await tester.tap(applyButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text('UI/UX Designer Intern'), findsOneWidget);
+    expect(find.text('Flutter Intern'), findsNothing);
+    expect(find.text('Marketing Trainee'), findsNothing);
+  });
 }
 
 class _FilteringJobRepository implements JobRepository {
@@ -187,8 +251,8 @@ class _FilteringJobRepository implements JobRepository {
   final List<Job> _allJobs;
 
   @override
-  Future<List<Job>> fetchFeed(JobFilter filter) async {
-    return _allJobs.where((job) {
+  Future<JobPage> fetchFeed(JobFilter filter) async {
+    final items = _allJobs.where((job) {
       if (filter.search.trim().isNotEmpty) {
         final query = filter.search.trim().toLowerCase();
         final matchesTitle = job.title.toLowerCase().contains(query);
@@ -219,6 +283,16 @@ class _FilteringJobRepository implements JobRepository {
       }
       return true;
     }).toList();
+    return JobPage(
+      items: items
+          .skip((filter.page - 1) * filter.limit)
+          .take(filter.limit)
+          .toList(),
+      total: items.length,
+      page: filter.page,
+      limit: filter.limit,
+      totalPages: (items.length / filter.limit).ceil(),
+    );
   }
 
   @override

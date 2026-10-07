@@ -1,11 +1,18 @@
-import { ConflictException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { UserRole } from '../auth/user-role.js';
+import { ProvincesService } from '../provinces/provinces.service.js';
+import { StorageService } from '../storage/storage.service.js';
 import { CreateJobDto } from './dto/create-job.dto.js';
 import { JobFeedQueryDto } from './dto/job-feed-query.dto.js';
 import { UpdateJobDto } from './dto/update-job.dto.js';
 import { UpdateJobStatusDto } from './dto/update-job-status.dto.js';
-import { JobStatus, WorkMode } from './job-enums.js';
+import { InterviewMode, JobStatus, WorkMode } from './job-enums.js';
 import { JobsRepository, JobVersionConflictError } from './jobs.repository.js';
 import { JobsService } from './jobs.service.js';
 
@@ -25,22 +32,53 @@ describe('JobsService', () => {
     updateOwnedStatus: vi.fn(),
     deleteOwned: vi.fn(),
     listByCompany: vi.fn(),
+    countApplicants: vi.fn(),
   };
+  const provincesService = { resolveName: vi.fn() };
 
   let service: JobsService;
+  const storage = { get: vi.fn() };
 
   const company = { userId: 'user-1', role: UserRole.Company };
   const student = { userId: 'user-2', role: UserRole.Student };
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    provincesService.resolveName.mockImplementation(async (name: string) =>
+      name.trim(),
+    );
     const module = await Test.createTestingModule({
       providers: [
         JobsService,
         { provide: JobsRepository, useValue: repository },
+        { provide: ProvincesService, useValue: provincesService },
+        { provide: StorageService, useValue: storage },
       ],
     }).compile();
     service = module.get(JobsService);
+  });
+
+  it('preserves total/page metadata and maps the same card fields in feed and saved jobs', async () => {
+    const createdAt = new Date('2026-10-01T12:00:00Z');
+    const item = { id: 'job-21', title: 'Intern', companyName: 'Company', province: 'สงขลา',
+      workMode: WorkMode.Remote, category: 'IT', hasAllowance: false, status: JobStatus.Open,
+      createdAt, companyLogoObjectKey: 'company-logos/company/logo.png' };
+    repository.findOpen.mockResolvedValue({ items: [item], total: 21 });
+    repository.findStudentId.mockResolvedValue('student-1');
+    repository.listSaved.mockResolvedValue({ items: [item], total: 21 });
+    const query = Object.assign(new JobFeedQueryDto(), { page: 2, limit: 20 });
+    const feed = await service.listOpen(student, query);
+    const saved = await service.listSaved(student, { page: 2, limit: 20 });
+    expect(feed).toEqual(expect.objectContaining({ total: 21, totalPages: 2, page: 2, limit: 20 }));
+    expect(saved).toEqual(feed);
+    expect(feed.items[0]).toEqual(expect.objectContaining({ createdAt, companyLogoAvailable: true, hasAllowance: false }));
+    expect(feed.items[0]).not.toHaveProperty('companyLogoObjectKey');
+    expect(repository.findOpen).toHaveBeenCalledWith(expect.objectContaining({ page: 2, limit: 20 }));
+  });
+
+  it('returns zero pages for empty feed', async () => {
+    repository.findOpen.mockResolvedValue({ items: [], total: 0 });
+    expect(await service.listOpen(student, new JobFeedQueryDto())).toEqual({ items: [], total: 0, totalPages: 0, page: 1, limit: 20 });
   });
 
   it('creates an open job for the signed-in company', async () => {
@@ -51,7 +89,7 @@ describe('JobsService', () => {
       description: 'ช่วยพัฒนาแอป',
       province: 'สงขลา',
       workMode: WorkMode.Hybrid,
-      category: 'IT',
+      category: 'IT & Software',
       hasAllowance: true,
       requirements: 'ใช้ Flutter ได้',
       status: JobStatus.Open,
@@ -62,20 +100,25 @@ describe('JobsService', () => {
     dto.description = ' ช่วยพัฒนาแอป ';
     dto.province = ' สงขลา ';
     dto.workMode = WorkMode.Hybrid;
-    dto.category = ' IT ';
+    dto.interviewMode = InterviewMode.Online;
+    dto.category = ' IT & Software ';
     dto.hasAllowance = true;
+    dto.allowanceAmount = 8000;
     dto.requirements = ' ใช้ Flutter ได้ ';
 
     const result = await service.create(company, dto);
 
     expect(repository.create).toHaveBeenCalledWith({
+      openings: null,
       companyId: 'company-1',
       title: 'Flutter Intern',
       description: 'ช่วยพัฒนาแอป',
       province: 'สงขลา',
       workMode: WorkMode.Hybrid,
-      category: 'IT',
+      interviewMode: InterviewMode.Online,
+      category: 'IT & Software',
       hasAllowance: true,
+      allowanceAmount: 8000,
       requirements: 'ใช้ Flutter ได้',
       skills: [],
     });
@@ -89,7 +132,7 @@ describe('JobsService', () => {
     dto.description = 'รายละเอียด';
     dto.province = 'สงขลา';
     dto.workMode = WorkMode.Remote;
-    dto.category = 'IT';
+    dto.category = 'IT & Software';
     dto.hasAllowance = false;
     dto.requirements = 'คุณสมบัติ';
 
@@ -99,6 +142,46 @@ describe('JobsService', () => {
     expect(repository.findCompanyId).not.toHaveBeenCalled();
   });
 
+  it('stores a canonical province for a colloquial job province', async () => {
+    repository.findCompanyId.mockResolvedValue('company-1');
+    provincesService.resolveName.mockResolvedValue('กรุงเทพมหานคร');
+    repository.create.mockResolvedValue({
+      id: 'job-1',
+      title: 'งาน',
+      province: 'กรุงเทพมหานคร',
+      status: JobStatus.Open,
+    });
+    const dto = new CreateJobDto();
+    dto.title = 'งาน';
+    dto.description = 'รายละเอียด';
+    dto.province = 'กทม.';
+    dto.workMode = WorkMode.OnSite;
+    dto.category = 'IT & Software';
+    dto.hasAllowance = false;
+    dto.requirements = 'คุณสมบัติ';
+
+    await service.create(company, dto);
+
+    expect(provincesService.resolveName).toHaveBeenCalledWith('กทม.');
+    expect(repository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ province: 'กรุงเทพมหานคร' }),
+    );
+  });
+
+  it('rejects a job province absent from the master', async () => {
+    repository.findCompanyId.mockResolvedValue('company-1');
+    provincesService.resolveName.mockRejectedValue(
+      new BadRequestException('ไม่พบจังหวัดที่เลือก'),
+    );
+    const dto = new CreateJobDto();
+    dto.province = 'ไม่มีจังหวัดนี้';
+
+    await expect(service.create(company, dto)).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+    expect(repository.create).not.toHaveBeenCalled();
+  });
+
   it('returns not found when the company profile row is missing', async () => {
     repository.findCompanyId.mockResolvedValue(null);
     const dto = new CreateJobDto();
@@ -106,7 +189,7 @@ describe('JobsService', () => {
     dto.description = 'รายละเอียด';
     dto.province = 'สงขลา';
     dto.workMode = WorkMode.OnSite;
-    dto.category = 'IT';
+    dto.category = 'IT & Software';
     dto.hasAllowance = false;
     dto.requirements = 'คุณสมบัติ';
 
@@ -125,7 +208,7 @@ describe('JobsService', () => {
           companyName: 'InternFinder',
           province: 'สงขลา',
           workMode: WorkMode.Hybrid,
-          category: 'IT',
+          category: 'IT & Software',
           hasAllowance: true,
           status: JobStatus.Open,
         },
@@ -136,7 +219,7 @@ describe('JobsService', () => {
     query.search = 'flutter';
     query.province = 'สงขลา';
     query.workMode = WorkMode.Hybrid;
-    query.category = 'IT';
+    query.category = 'IT & Software';
     query.hasAllowance = true;
 
     const result = await service.listOpen(student, query);
@@ -145,7 +228,7 @@ describe('JobsService', () => {
       search: 'flutter',
       province: 'สงขลา',
       workMode: WorkMode.Hybrid,
-      category: 'IT',
+      category: 'IT & Software',
       hasAllowance: true,
       page: 1,
       limit: 20,
@@ -168,7 +251,7 @@ describe('JobsService', () => {
           companyName: 'InternFinder',
           province: 'สงขลา',
           workMode: WorkMode.Hybrid,
-          category: 'IT',
+          category: 'IT & Software',
           hasAllowance: true,
           skills: ['Flutter', 'Dart'],
           status: JobStatus.Open,
@@ -195,6 +278,19 @@ describe('JobsService', () => {
     expect(result.items[0]?.skills).toEqual(['Flutter', 'Dart']);
   });
 
+  it('uses the canonical province name to filter the student feed', async () => {
+    provincesService.resolveName.mockResolvedValue('กรุงเทพมหานคร');
+    repository.findOpen.mockResolvedValue({ items: [], total: 0 });
+    const query = new JobFeedQueryDto();
+    query.province = 'กรุงเทพฯ';
+
+    await service.listOpen(student, query);
+
+    expect(repository.findOpen).toHaveBeenCalledWith(
+      expect.objectContaining({ province: 'กรุงเทพมหานคร' }),
+    );
+  });
+
   it('rejects a company reading the student feed', async () => {
     await expect(
       service.listOpen(company, new JobFeedQueryDto()),
@@ -209,13 +305,24 @@ describe('JobsService', () => {
       description: 'ช่วยพัฒนาแอป',
       province: 'สงขลา',
       workMode: WorkMode.Hybrid,
-      category: 'IT',
+      category: 'IT & Software',
       hasAllowance: true,
       requirements: 'ใช้ Flutter ได้',
       status: JobStatus.Open,
+      createdAt: new Date('2026-10-01T12:00:00.000Z'),
+      deadline: new Date('2026-12-31T00:00:00.000Z'),
       companyName: 'InternFinder',
       businessType: 'ซอฟต์แวร์',
       companyDescription: 'แพลตฟอร์มฝึกงาน',
+      companyWebsiteUrl: 'https://example.com',
+      companyContactLinks: [
+        { id: 'c1', platform: 'phone', label: 'ฝ่ายบุคคล', value: '0812345678' },
+      ],
+      companySize: '51-200',
+      companyPerks: ['MacBook', 'Free Lunch'],
+      companyLocation: 'อาคาร A ถนนนิพัทธ์อุทิศ',
+      companyLogoObjectKey: 'company-logos/company-1/logo.png',
+      companyCoverObjectKey: 'company-covers/company-1/cover.jpg',
     });
     repository.findStudentId.mockResolvedValue('student-1');
     repository.isSaved.mockResolvedValue(true);
@@ -225,9 +332,116 @@ describe('JobsService', () => {
     expect(repository.findOpenById).toHaveBeenCalledWith('job-1');
     expect(result.companyName).toBe('InternFinder');
     expect(result.businessType).toBe('ซอฟต์แวร์');
+    expect(result.companyDescription).toBe('แพลตฟอร์มฝึกงาน');
+    expect(result.companyWebsiteUrl).toBe('https://example.com');
+    expect(result.companyContactLinks).toEqual([
+      { id: 'c1', platform: 'phone', label: 'ฝ่ายบุคคล', value: '0812345678' },
+    ]);
+    expect(result.companySize).toBe('51-200');
+    expect(result.companyPerks).toEqual(['MacBook', 'Free Lunch']);
+    expect(result.companyLocation).toBe('อาคาร A ถนนนิพัทธ์อุทิศ');
+    expect(result.companyLogoAvailable).toBe(true);
+    expect(result.companyCoverAvailable).toBe(true);
+    expect(result).not.toHaveProperty('companyLogoObjectKey');
+    expect(result).not.toHaveProperty('companyCoverObjectKey');
     expect(result.description).toBe('ช่วยพัฒนาแอป');
     expect(result.status).toBe(JobStatus.Open);
+    expect(result.createdAt).toEqual(new Date('2026-10-01T12:00:00.000Z'));
+    expect(result.deadline).toEqual(new Date('2026-12-31T00:00:00.000Z'));
     expect(result.saved).toBe(true);
+  });
+
+  it.each([
+    ['png', 'image/png'],
+    ['jpg', 'image/jpeg'],
+    ['jpeg', 'image/jpeg'],
+    ['webp', 'image/webp'],
+    ['gif', 'image/gif'],
+    ['svg', 'image/svg+xml'],
+  ])(
+    'serves the saved %s logo only for an open job',
+    async (extension, mimeType) => {
+      const key = 'company-logos/company-1/logo.' + extension;
+      repository.findOpenById.mockResolvedValue({ companyLogoObjectKey: key });
+      storage.get.mockResolvedValue(Buffer.from('logo'));
+      const result = await service.getCompanyLogo(student, 'job-1');
+      expect(storage.get).toHaveBeenCalledWith(key);
+      expect(result).toEqual({ buffer: Buffer.from('logo'), mimeType });
+    },
+  );
+
+  it('rejects company access to the student logo endpoint before storage access', async () => {
+    await expect(
+      service.getCompanyLogo(company, 'job-1'),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(repository.findOpenById).not.toHaveBeenCalled();
+    expect(storage.get).not.toHaveBeenCalled();
+  });
+
+  it.each([null, { companyLogoObjectKey: null }])(
+    'hides missing/closed jobs or absent logos',
+    async (job) => {
+      repository.findOpenById.mockResolvedValue(job);
+      await expect(
+        service.getCompanyLogo(student, 'job-1'),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(storage.get).not.toHaveBeenCalled();
+    },
+  );
+
+  it('serves the company cover only for an open job', async () => {
+    const key = 'company-covers/company-1/cover.jpg';
+    repository.findOpenById.mockResolvedValue({ companyCoverObjectKey: key });
+    storage.get.mockResolvedValue(Buffer.from('cover'));
+    const result = await service.getCompanyCover(student, 'job-1');
+    expect(storage.get).toHaveBeenCalledWith(key);
+    expect(result).toEqual({ buffer: Buffer.from('cover'), mimeType: 'image/jpeg' });
+  });
+
+  it('rejects company access to the student cover endpoint before storage access', async () => {
+    await expect(
+      service.getCompanyCover(company, 'job-1'),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(repository.findOpenById).not.toHaveBeenCalled();
+    expect(storage.get).not.toHaveBeenCalled();
+  });
+
+  it.each([null, { companyCoverObjectKey: null }])(
+    'hides missing jobs or absent covers',
+    async (job) => {
+      repository.findOpenById.mockResolvedValue(job);
+      await expect(
+        service.getCompanyCover(student, 'job-1'),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(storage.get).not.toHaveBeenCalled();
+    },
+  );
+
+  it('returns not found when a stored logo is gone', async () => {
+    repository.findOpenById.mockResolvedValue({
+      companyLogoObjectKey: 'company-logos/company-1/logo.png',
+    });
+    storage.get.mockResolvedValue(null);
+    await expect(
+      service.getCompanyLogo(student, 'job-1'),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('returns empty company metadata for legacy profiles without inventing values', async () => {
+    repository.findOpenById.mockResolvedValue({
+      id: 'job-1',
+      companyName: 'Company',
+    });
+    repository.findStudentId.mockResolvedValue(null);
+    const result = await service.getOpen(student, 'job-1');
+    expect(result.companyWebsiteUrl).toBe('');
+    expect(result.companyContactLinks).toEqual([]);
+    expect(result.companySize).toBe('');
+    expect(result.companyLocation).toBe('');
+    expect(result.companyPerks).toEqual([]);
+    expect(result.companyLogoAvailable).toBe(false);
+    expect(result.companyCoverAvailable).toBe(false);
+    expect(result.deadline).toBeNull();
   });
 
   it('hides a missing or closed job from a student', async () => {
@@ -289,7 +503,7 @@ describe('JobsService', () => {
           companyName: 'InternFinder',
           province: 'สงขลา',
           workMode: WorkMode.Hybrid,
-          category: 'IT',
+          category: 'IT & Software',
           hasAllowance: true,
           status: JobStatus.Open,
         },
@@ -342,6 +556,59 @@ describe('JobsService', () => {
     expect(result.items[0]?.applicantCount).toBe(0);
   });
 
+  it('returns an owned posting with applicant counts and deadline', async () => {
+    const deadline = new Date('2026-12-31T00:00:00.000Z');
+    repository.findCompanyId.mockResolvedValue('company-1');
+    repository.findById.mockResolvedValue({
+      id: 'job-1',
+      companyId: 'company-1',
+      title: 'Flutter Intern',
+      description: 'ช่วยพัฒนาแอป',
+      province: 'สงขลา',
+      workMode: WorkMode.Hybrid,
+      category: 'IT & Software',
+      hasAllowance: true,
+      requirements: 'ใช้ Flutter ได้',
+      skills: ['Flutter'],
+      status: JobStatus.Closed,
+      version: 3,
+      deadline,
+    });
+    repository.countApplicants.mockResolvedValue({
+      applicantCount: 4,
+      pendingApplicantCount: 2,
+    });
+
+    const result = await service.getMine(company, 'job-1');
+
+    expect(repository.countApplicants).toHaveBeenCalledWith('job-1');
+    expect(result.applicantCount).toBe(4);
+    expect(result.pendingApplicantCount).toBe(2);
+    expect(result.deadline).toEqual(deadline);
+    expect(result.status).toBe(JobStatus.Closed);
+    expect(result.skills).toEqual(['Flutter']);
+  });
+
+  it('does not count applicants for a posting the company does not own', async () => {
+    repository.findCompanyId.mockResolvedValue('company-1');
+    repository.findById.mockResolvedValue({
+      id: 'job-1',
+      companyId: 'company-2',
+    });
+
+    await expect(service.getMine(company, 'job-1')).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+    expect(repository.countApplicants).not.toHaveBeenCalled();
+  });
+
+  it('rejects a student reading one company posting', async () => {
+    await expect(service.getMine(student, 'job-1')).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+    expect(repository.countApplicants).not.toHaveBeenCalled();
+  });
+
   it('rejects a student reading the company job list', async () => {
     await expect(service.listMine(student)).rejects.toBeInstanceOf(
       ForbiddenException,
@@ -361,7 +628,7 @@ describe('JobsService', () => {
       description: 'ช่วยพัฒนาแอป',
       province: 'สงขลา',
       workMode: WorkMode.Remote,
-      category: 'IT',
+      category: 'IT & Software',
       hasAllowance: false,
       requirements: 'ใช้ Flutter ได้',
       status: JobStatus.Open,
@@ -372,7 +639,8 @@ describe('JobsService', () => {
     dto.description = ' ช่วยพัฒนาแอป ';
     dto.province = ' สงขลา ';
     dto.workMode = WorkMode.Remote;
-    dto.category = ' IT ';
+    dto.interviewMode = InterviewMode.OnSite;
+    dto.category = ' IT & Software ';
     dto.hasAllowance = false;
     dto.requirements = ' ใช้ Flutter ได้ ';
     dto.version = 1;
@@ -380,6 +648,7 @@ describe('JobsService', () => {
     const result = await service.update(company, 'job-1', dto);
 
     expect(repository.updateOwned).toHaveBeenCalledWith({
+      openings: null,
       id: 'job-1',
       companyId: 'company-1',
       version: 1,
@@ -387,8 +656,10 @@ describe('JobsService', () => {
       description: 'ช่วยพัฒนาแอป',
       province: 'สงขลา',
       workMode: WorkMode.Remote,
-      category: 'IT',
+      interviewMode: InterviewMode.OnSite,
+      category: 'IT & Software',
       hasAllowance: false,
+      allowanceAmount: null,
       requirements: 'ใช้ Flutter ได้',
       skills: [],
     });
@@ -407,7 +678,7 @@ describe('JobsService', () => {
     dto.description = 'รายละเอียด';
     dto.province = 'สงขลา';
     dto.workMode = WorkMode.Hybrid;
-    dto.category = 'IT';
+    dto.category = 'IT & Software';
     dto.hasAllowance = false;
     dto.requirements = 'คุณสมบัติ';
     dto.version = 1;
@@ -428,7 +699,7 @@ describe('JobsService', () => {
     dto.description = 'รายละเอียด';
     dto.province = 'สงขลา';
     dto.workMode = WorkMode.Hybrid;
-    dto.category = 'IT';
+    dto.category = 'IT & Software';
     dto.hasAllowance = false;
     dto.requirements = 'คุณสมบัติ';
     dto.version = 1;
@@ -475,7 +746,7 @@ describe('JobsService', () => {
         description: 'คำอธิบาย',
         province: 'สงขลา',
         workMode: WorkMode.Hybrid,
-        category: 'IT',
+        category: 'IT & Software',
         hasAllowance: true,
         requirements: 'คุณสมบัติ',
         status: JobStatus.Closed,
@@ -508,7 +779,7 @@ describe('JobsService', () => {
         description: 'คำอธิบาย',
         province: 'สงขลา',
         workMode: WorkMode.Hybrid,
-        category: 'IT',
+        category: 'IT & Software',
         hasAllowance: true,
         requirements: 'คุณสมบัติ',
         status: JobStatus.Open,

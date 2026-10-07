@@ -6,6 +6,11 @@ import 'package:client/features/applications/domain/entities/job_application.dar
 import 'package:client/features/applications/domain/repositories/application_repository.dart';
 import 'package:client/features/applications/presentation/providers/applications_controller.dart';
 import 'package:client/features/applications/presentation/screens/my_applications_screen.dart';
+import 'package:client/features/student_profile/domain/entities/student_profile.dart';
+import 'package:client/features/student_profile/domain/entities/major.dart';
+import 'package:client/features/student_profile/domain/entities/university.dart';
+import 'package:client/features/student_profile/domain/repositories/student_profile_repository.dart';
+import 'package:client/features/student_profile/presentation/providers/student_profile_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -39,6 +44,9 @@ void main() {
       ProviderScope(
         overrides: [
           tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+          studentProfileRepositoryProvider.overrideWithValue(
+            _EmptyStudentProfileRepository(),
+          ),
           applicationRepositoryProvider.overrideWithValue(
             _FakeApplicationRepository(applications: const []),
           ),
@@ -111,6 +119,9 @@ void main() {
         ProviderScope(
           overrides: [
             tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+            studentProfileRepositoryProvider.overrideWithValue(
+              _EmptyStudentProfileRepository(),
+            ),
             applicationRepositoryProvider.overrideWithValue(
               _FakeApplicationRepository(applications: apps),
             ),
@@ -183,6 +194,9 @@ void main() {
       ProviderScope(
         overrides: [
           tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+          studentProfileRepositoryProvider.overrideWithValue(
+            _EmptyStudentProfileRepository(),
+          ),
           applicationRepositoryProvider.overrideWithValue(repo),
         ],
         child: MaterialApp.router(
@@ -216,6 +230,36 @@ void main() {
   });
 }
 
+class _EmptyStudentProfileRepository implements StudentProfileRepository {
+  @override
+  Future<StudentProfile> fetchMe() async => const StudentProfile(
+    fullName: '',
+    university: '',
+    major: '',
+    skills: [],
+    portfolioUrl: null,
+  );
+
+  @override
+  Future<List<University>> searchUniversities(String query) async => const [];
+
+  @override
+  Future<List<Major>> searchMajors(String query) async => const [];
+
+  @override
+  Future<StudentProfile> update(StudentProfile profile) async => profile;
+
+  @override
+  Future<StudentProfile> deleteAvatar() => throw UnimplementedError();
+
+  @override
+  Future<StudentProfile> uploadAvatar({
+    required String filePath,
+    required String fileName,
+    List<int>? bytes,
+  }) => throw UnimplementedError();
+}
+
 class _FakeApplicationRepository implements ApplicationRepository {
   _FakeApplicationRepository({this.applications = const [], this.error});
 
@@ -237,9 +281,13 @@ class _FakeApplicationRepository implements ApplicationRepository {
 
   @override
   Future<JobApplication> apply({
+    List<String> documentIds = const [],
     required String jobId,
     required String coverLetter,
   }) async {
     throw UnimplementedError();
   }
+
+  @override
+  Future<void> completeExam(String applicationId) async {}
 }
