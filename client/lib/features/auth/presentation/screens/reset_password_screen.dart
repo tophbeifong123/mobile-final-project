@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,10 +8,12 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/error/app_exception.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../domain/entities/password_recovery_exception.dart';
+import '../../domain/entities/registration_password_policy.dart';
 import '../providers/password_recovery_controller.dart';
 import '../widgets/auth_text_field.dart';
 import '../widgets/neo_submit_button.dart';
 import '../widgets/password_recovery_layout.dart';
+import '../widgets/registration_password_checklist.dart';
 
 class ResetPasswordScreen extends ConsumerStatefulWidget {
   const ResetPasswordScreen({super.key, required this.token});
@@ -31,8 +32,14 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmation = true;
   bool _complete = false;
+  bool _attemptedSubmit = false;
   Timer? _cooldownTimer;
   int _cooldownSeconds = 0;
+
+  RegistrationPasswordPolicy get _passwordPolicy => RegistrationPasswordPolicy(
+    _passwordController.text,
+    _confirmationController.text,
+  );
 
   bool get _validToken =>
       RegExp(r'^[a-f0-9]{64}$').hasMatch(widget.token ?? '');
@@ -46,6 +53,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
   }
 
   Future<void> _submit() async {
+    setState(() => _attemptedSubmit = true);
     if (_cooldownSeconds > 0 ||
         !_validToken ||
         !_formKey.currentState!.validate()) {
@@ -144,6 +152,9 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
             )
           : Form(
               key: _formKey,
+              autovalidateMode: _attemptedSubmit
+                  ? AutovalidateMode.always
+                  : AutovalidateMode.disabled,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -160,17 +171,11 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                       () =>
                           setState(() => _obscurePassword = !_obscurePassword),
                     ),
-                    validator: (value) {
-                      final password = value ?? '';
-                      if (password.runes.length < 8) {
-                        return 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร';
-                      }
-                      if (utf8.encode(password).length > 72) {
-                        return 'รหัสผ่านยาวเกินไป กรุณาใช้รหัสผ่านที่สั้นลง';
-                      }
-                      return null;
-                    },
+                    onChanged: (_) => setState(() {}),
+                    validator: (_) => _passwordPolicy.passwordError,
                   ),
+                  const Gap(8),
+                  RegistrationPasswordChecklist(policy: _passwordPolicy),
                   const Gap(18),
                   AuthTextField(
                     controller: _confirmationController,
@@ -186,15 +191,13 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                         () => _obscureConfirmation = !_obscureConfirmation,
                       ),
                     ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'กรุณายืนยันรหัสผ่าน';
-                      }
-                      if (value != _passwordController.text) {
-                        return 'รหัสผ่านทั้งสองช่องไม่ตรงกัน';
-                      }
-                      return null;
-                    },
+                    onChanged: (_) => setState(() {}),
+                    autovalidateMode: AutovalidateMode.always,
+                    validator: (_) =>
+                        _confirmationController.text.isEmpty &&
+                            !_attemptedSubmit
+                        ? null
+                        : _passwordPolicy.confirmationError,
                   ),
                   const Gap(20),
                   if (request.hasError) ...[

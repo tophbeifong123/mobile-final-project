@@ -7,7 +7,7 @@ export class ResetPasswordDto {
   @Matches(/^[a-f0-9]{64}$/)
   token: string;
 
-  @ApiProperty({ minLength: 8, description: 'New password, at most 72 UTF-8 bytes' })
+  @ApiProperty({ minLength: 8, description: 'New password: at least 8 Unicode characters, at most 72 UTF-8 bytes, with A-Z, a-z, 0-9 and an ASCII special character; must differ from the current password' })
   @IsString()
   @MinLength(8)
   @IsByteLength(8, 72)
