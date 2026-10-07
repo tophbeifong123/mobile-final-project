@@ -164,8 +164,16 @@ class _StudentDocumentsDialogState
                           ? null
                           : () => Navigator.of(context).pop(),
                       style: IconButton.styleFrom(
+                        fixedSize: const Size.square(29),
+                        minimumSize: const Size.square(29),
+                        padding: const EdgeInsets.all(4),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        foregroundColor: NeoColors.inkSolid,
                         backgroundColor: NeoColors.paperCanvas,
-                        side: const BorderSide(color: NeoColors.inkSolid),
+                        side: const BorderSide(
+                          color: NeoColors.inkSolid,
+                          width: 1.5,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),

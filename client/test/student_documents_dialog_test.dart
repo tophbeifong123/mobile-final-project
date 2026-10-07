@@ -78,6 +78,11 @@ void main() {
       await tester.tap(find.text('เลือก PDF เพื่อแทนที่'));
       await tester.pumpAndSettle();
       expect(picks, 1);
+      final close = find.byTooltip('ปิดหน้าต่างเอกสาร');
+      expect(tester.getSize(close), const Size.square(29));
+      await tester.tap(close);
+      await tester.pumpAndSettle();
+      expect(find.byType(StudentDocumentsDialog), findsNothing);
       expect(tester.takeException(), isNull);
     });
   }
