@@ -1,8 +1,14 @@
-import { Module } from '@nestjs/common';
+import { type MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { APP_FILTER } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller.js';
 import { AppService } from './app.service.js';
+import { postgresSslConfig } from './database/postgres-ssl.js';
+import { HealthController } from './health/health.controller.js';
+import { AllExceptionsFilter } from './observability/all-exceptions.filter.js';
+import { SlowQueryLogger } from './observability/slow-query.logger.js';
+import { TraceMiddleware } from './observability/trace.js';
 import { ApplicationsModule } from './applications/applications.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { CompaniesModule } from './companies/companies.module.js';
@@ -28,8 +34,11 @@ import { MajorsModule } from './majors/majors.module.js';
         username: config.get<string>('DATABASE_USER', 'postgres'),
         password: config.get<string>('DATABASE_PASSWORD', 'postgres'),
         database: config.get<string>('DATABASE_NAME', 'mobile_project_db'),
+        ssl: postgresSslConfig(),
         autoLoadEntities: true,
         synchronize: false,
+        maxQueryExecutionTime: 500,
+        logger: new SlowQueryLogger(),
       }),
     }),
     StorageModule,
@@ -43,7 +52,14 @@ import { MajorsModule } from './majors/majors.module.js';
     UniversitiesModule,
     CompaniesModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [AppController, HealthController],
+  providers: [
+    AppService,
+    { provide: APP_FILTER, useClass: AllExceptionsFilter },
+  ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(TraceMiddleware).forRoutes('*');
+  }
+}

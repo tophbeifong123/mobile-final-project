@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { AzureBlobStorageDriver } from './drivers/azure-blob-storage.driver.js';
 import { LocalStorageDriver } from './drivers/local-storage.driver.js';
 import { S3StorageDriver } from './drivers/s3-storage.driver.js';
 import { STORAGE_DRIVER } from './storage-driver.interface.js';
@@ -14,6 +15,13 @@ import { StorageService } from './storage.service.js';
         const driverType = config
           .get<string>('STORAGE_DRIVER', 'local')
           .toLowerCase();
+
+        if (driverType === 'azure') {
+          return new AzureBlobStorageDriver(
+            config.get<string>('AZURE_STORAGE_ACCOUNT', ''),
+            config.get<string>('AZURE_STORAGE_CONTAINER', 'internfinder'),
+          );
+        }
 
         if (driverType === 's3' || driverType === 'minio') {
           return new S3StorageDriver({

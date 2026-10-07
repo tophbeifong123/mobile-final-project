@@ -233,10 +233,10 @@ POST /api/jobs/:id/applications รับ coverLetter และ documentIds (UUI
 
 | Method | Path | ความหมาย |
 |---|---|---|
-| GET | /api/health/live | โปรเซสยังทำงาน |
-| GET | /api/health/ready | ต่อ PostgreSQL และ Redis ได้ |
+| GET | /api/health | Liveness โปรเซสยังทำงาน Container App ใช้เป็น liveness probe |
+| GET | /api/health/ready | Readiness เปิดคำสั่ง `SELECT 1` ไปที่ PostgreSQL ได้ |
 
-ใช้ `@nestjs/terminus` Nginx ใช้ readiness ก่อนส่งทราฟฟิก
+ไม่มี Redis ในเส้นทางนี้เพราะโปรเซสที่รันจริงไม่ได้ต่อ Redis
 
 ## 6. Redis และคิว
 
@@ -361,9 +361,15 @@ Dio ใน `auth_interceptor.dart` ใส่ access token และเมื่�
 
 ## 9. การสังเกตระบบและอิมเมจ
 
-`server/Dockerfile` คงสองสเตจจาก `node:22-alpine` แล้วรันด้วย user ที่ไม่ใช่ root คอนเทนเนอร์เริ่มที่ `docker-entrypoint.sh` ซึ่งรัน migration ที่ค้างก่อน แล้วจึง `exec` โปรเซส API ถ้า migration ล้มเหลวคอนเทนเนอร์จบและไม่เปิดรับคำขอ
+`server/Dockerfile` คงสองสเตจจาก `node:22-alpine` แล้วรันด้วย user ที่ไม่ใช่ root คอนเทนเนอร์เริ่มที่ `docker-entrypoint.sh` ซึ่งรัน migration ที่ค้างก่อน แล้วจึง `exec` โปรเซส API ถ้า migration ล้มเหลวคอนเทนเนอร์จบและไม่เปิดรับคำขอ อิมเมจมี healthcheck ที่ `GET /api/health`
 
-Log ใน request path เป็น JSON และมี request id ไม่ใช้ `console.log` เป็น log ของธุรกิจ
+เมื่อ `LOG_FORMAT=json` ทุกบรรทัด log เป็น JSON มี `timestamp`, `level`, `context`, `message` และ `traceId` ค่า `traceId` มาจากหัว `x-trace-id` หรือถูกสร้างใหม่ต่อคำขอ ไม่ใช้ `console.log` เป็น log ของธุรกิจ
+
+`SENTRY_DSN` ที่ไม่ว่างและไม่ใช่ `disabled` ทำให้ Nest เริ่ม `@sentry/nestjs` พร้อม `nestIntegration` และพยายามเปิด `@sentry/profiling-node` ถ้าอิมเมจ Alpine ไม่มีไบนารีของโปรไฟเลอร์ การดักข้อผิดพลาดยังทำงาน Filter ส่งเฉพาะ HTTP 500 ขึ้นไป พร้อม method, path และ trace id ไม่ส่งหัว Authorization หรือพารามิเตอร์ของ query TypeORM ส่ง query ที่ช้ากว่า 500 มิลลิวินาทีเข้า Sentry เป็น breadcrumb โดยเก็บเฉพาะข้อความคำสั่งที่ตัดแล้ว
+
+แอป Flutter ส่ง crash และ breadcrumb ของการนำทางเมื่อ build ด้วย `--dart-define=SENTRY_DSN=...` ข้อผิดพลาดของ Dio บันทึกเฉพาะ method, path และรหัสสถานะ
+
+สภาพผลิตบน Azure ใช้ Log Analytics ที่เก็บ 30 วันและจำกัด 0.5 GB ต่อวัน Azure Monitor แจ้ง Discord เมื่อ CPU หรือหน่วยความจำของแอปเกิน 85 เปอร์เซ็นต์ของโควตาที่จัดไว้ต่อเนื่อง 5 นาที เมื่อคอนเทนเนอร์รีสตาร์ทเกินสองครั้งใน 5 นาที เมื่อ latency เฉลี่ยเกิน 2 วินาที เมื่อมี HTTP 5xx และเมื่อ PostgreSQL ใช้ CPU, หน่วยความจำ หรือพื้นที่เกิน 85 เปอร์เซ็นต์ หรือมีการเชื่อมต่อล้มเหลว ตัวตรวจภายนอกยิง readiness ทุก 1 นาทีโดยไม่รันบน Azure รายละเอียดคำสั่งอยู่ใน [DEPLOYMENT.md](DEPLOYMENT.md) และ [OPERATIONS.md](OPERATIONS.md)
 
 CORS เปิดให้แอปมือถือเรียกได้ตามที่มีใน `main.ts`
 

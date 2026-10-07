@@ -1,12 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 
+import 'core/observability/sentry_config.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 
-void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-  runApp(const ProviderScope(child: MyApp()));
+Future<void> main() async {
+  if (!sentryEnabled) {
+    WidgetsFlutterBinding.ensureInitialized();
+    runApp(const ProviderScope(child: MyApp()));
+    return;
+  }
+
+  await SentryFlutter.init((options) {
+    options.dsn = sentryDsn;
+    options.tracesSampleRate = 0.1;
+  }, appRunner: () {
+    WidgetsFlutterBinding.ensureInitialized();
+    runApp(const ProviderScope(child: MyApp()));
+  });
 }
 
 class MyApp extends ConsumerWidget {

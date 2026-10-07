@@ -43,6 +43,7 @@ import { CreateSavedJobsTable1758700000000 } from './migrations/1758700000000-cr
 import { AddPasswordRecovery1791072000000 } from './migrations/1791072000000-add-password-recovery.js';
 import { AddStudentUniversityMaster1791244800000 } from './migrations/1791244800000-add-student-university-master.js';
 import { AddStudentMajorMaster1791331200000 } from './migrations/1791331200000-add-student-major-master.js';
+import { postgresSslConfig } from './postgres-ssl.js';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -51,6 +52,7 @@ export const AppDataSource = new DataSource({
   username: process.env.DATABASE_USER ?? 'postgres',
   password: process.env.DATABASE_PASSWORD ?? 'postgres',
   database: process.env.DATABASE_NAME ?? 'mobile_project_db',
+  ssl: postgresSslConfig(),
   synchronize: false,
   entities: [
     User,
