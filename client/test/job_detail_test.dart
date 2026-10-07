@@ -164,7 +164,7 @@ void main() {
       businessType: 'Software',
       companyDescription: 'Saved description',
       companyWebsiteUrl: 'https://example.com',
-      companyContactLinks: const [
+      companyContactLinks: [
         ContactLink(platform: 'phone', label: 'ฝ่ายบุคคล', value: '0812345678'),
         ContactLink(platform: 'email', value: 'hr@example.com'),
       ],
