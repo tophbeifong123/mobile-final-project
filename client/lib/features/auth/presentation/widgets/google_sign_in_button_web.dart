@@ -1,12 +1,14 @@
 import 'dart:async';
+import 'dart:js_interop';
 
 import 'package:flutter/material.dart';
 import 'package:google_identity_services_web/id.dart' as gis;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:web/web.dart' as web;
 
-import '../../../../core/theme/app_tokens.dart';
+import 'auth_social_button.dart';
 import 'google_sign_in_button_types.dart';
+import 'social_icons.dart';
 
 Widget buildWebGoogleSignInButton({
   required GoogleIdTokenCallback onIdToken,
@@ -39,14 +41,19 @@ class _GoogleSignInWebButton extends StatefulWidget {
   State<_GoogleSignInWebButton> createState() => _GoogleSignInWebButtonState();
 }
 
+/// Draws the Neo button in Flutter and lays Google's rendered button over it
+/// at zero opacity. GIS only issues ID tokens from its own iframe button, so
+/// the iframe must stay on top to receive the click.
 class _GoogleSignInWebButtonState extends State<_GoogleSignInWebButton> {
   static Future<void>? _initialization;
+  static const double _maxGisWidth = 400;
+
   StreamSubscription<GoogleSignInAuthenticationEvent>? _events;
   Widget? _host;
-  double? _outerWidth;
-  double? _buttonWidth;
-  bool _ready = false;
-  bool _rendered = false;
+  web.HTMLElement? _hostElement;
+  double? _gisWidth;
+  bool _hovered = false;
+  bool _busy = false;
 
   Future<void> _initialize() {
     final clientId = const String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
@@ -58,26 +65,35 @@ class _GoogleSignInWebButtonState extends State<_GoogleSignInWebButton> {
   @override
   void initState() {
     super.initState();
-    _events = GoogleSignIn.instance.authenticationEvents.listen((event) async {
-      if (event is! GoogleSignInAuthenticationEventSignIn) return;
-      final idToken = event.user.authentication.idToken;
-      if (idToken == null || idToken.isEmpty) {
-        widget.onError('Google ไม่ได้ส่ง ID token กลับมา');
-        return;
-      }
+    _events = GoogleSignIn.instance.authenticationEvents.listen(
+      _onAuthEvent,
+      onError: (_) => widget.onError('เข้าสู่ระบบด้วย Google ไม่สำเร็จ'),
+    );
+  }
+
+  Future<void> _onAuthEvent(GoogleSignInAuthenticationEvent event) async {
+    if (event is! GoogleSignInAuthenticationEventSignIn || _busy) return;
+    final idToken = event.user.authentication.idToken;
+    if (idToken == null || idToken.isEmpty) {
+      widget.onError('Google ไม่ได้ส่ง ID token กลับมา');
+      return;
+    }
+    _setBusy(true);
+    try {
       await widget.onIdToken(idToken);
-    }, onError: (_) => widget.onError('เข้าสู่ระบบด้วย Google ไม่สำเร็จ'));
-    _initialize()
-        .then((_) {
-          if (mounted) setState(() => _ready = true);
-        })
-        .catchError((Object _) {
-          if (mounted) {
-            widget.onError(
-              'ตั้งค่า Google Sign-In ไม่ครบ ตรวจสอบ OAuth Client ID',
-            );
-          }
-        });
+    } finally {
+      _setBusy(false);
+    }
+  }
+
+  void _setBusy(bool value) {
+    _hostElement?.style.pointerEvents = value ? 'none' : 'auto';
+    if (mounted) {
+      setState(() {
+        _busy = value;
+        if (value) _hovered = false;
+      });
+    }
   }
 
   @override
@@ -86,17 +102,39 @@ class _GoogleSignInWebButtonState extends State<_GoogleSignInWebButton> {
     super.dispose();
   }
 
-  void _renderHost(Object element) {
-    if (_rendered) return;
-    _rendered = true;
+  void _setHovered(bool value) {
+    if (mounted && _hovered != value) setState(() => _hovered = value);
+  }
+
+  Future<void> _renderHost(Object element) async {
     final host = element as web.HTMLElement;
+    _hostElement = host;
     host.style
       ..width = '100%'
       ..height = '100%'
       ..overflow = 'hidden'
       ..display = 'flex'
       ..alignItems = 'center'
-      ..justifyContent = 'center';
+      ..justifyContent = 'center'
+      ..opacity = '0';
+    host.addEventListener(
+      'mouseenter',
+      ((web.Event _) => _setHovered(true)).toJS,
+    );
+    host.addEventListener(
+      'mouseleave',
+      ((web.Event _) => _setHovered(false)).toJS,
+    );
+
+    try {
+      await _initialize();
+    } catch (_) {
+      if (mounted) {
+        widget.onError('ตั้งค่า Google Sign-In ไม่ครบ ตรวจสอบ OAuth Client ID');
+      }
+      return;
+    }
+    if (!mounted) return;
     gis.id.renderButton(
       host,
       gis.GsiButtonConfiguration(
@@ -108,7 +146,7 @@ class _GoogleSignInWebButtonState extends State<_GoogleSignInWebButton> {
             : gis.ButtonText.signin_with,
         shape: gis.ButtonShape.rectangular,
         logo_alignment: gis.ButtonLogoAlignment.center,
-        width: _buttonWidth,
+        width: _gisWidth,
         locale: 'th',
       ),
     );
@@ -116,40 +154,35 @@ class _GoogleSignInWebButtonState extends State<_GoogleSignInWebButton> {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: widget.label,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final maxWidth = constraints.maxWidth;
-          if (_outerWidth == null && maxWidth.isFinite && maxWidth >= 80) {
-            _outerWidth = maxWidth.clamp(80.0, 400.0).toDouble();
-          }
-          final outer = _outerWidth ?? 320.0;
-          _buttonWidth ??= (outer - 8).clamp(80.0, 392.0).roundToDouble();
-          return Container(
-            width: outer,
-            height: 50,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: NeoColors.pureWhite,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: NeoColors.inkSolid, width: 2.2),
-              boxShadow: NeoShadows.elevation3,
-            ),
-            child: _ready
-                ? SizedBox(
-                    width: _buttonWidth,
-                    height: 44,
-                    child: _host ??= HtmlElementView.fromTagName(
-                      tagName: 'div',
-                      onElementCreated: _renderHost,
-                    ),
-                  )
-                : const SizedBox(height: 44),
-          );
-        },
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final maxWidth = constraints.maxWidth;
+        _gisWidth ??= (maxWidth.isFinite ? maxWidth : 320.0)
+            .clamp(80.0, _maxGisWidth)
+            .roundToDouble();
+        return SizedBox(
+          height: 50,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: AuthSocialButton(
+                  label: _busy ? 'กำลังเชื่อมต่อ…' : widget.label,
+                  icon: const GoogleGIcon(),
+                  onTap: null,
+                  highlighted: _hovered,
+                  busy: _busy,
+                ),
+              ),
+              Positioned.fill(
+                child: _host ??= HtmlElementView.fromTagName(
+                  tagName: 'div',
+                  onElementCreated: _renderHost,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

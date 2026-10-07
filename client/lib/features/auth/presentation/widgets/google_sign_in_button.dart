@@ -75,21 +75,16 @@ class _GoogleSignInButtonState extends State<GoogleSignInButton> {
       return google_web.buildWebGoogleSignInButton(
         onIdToken: widget.onIdToken,
         onError: widget.onError,
-        label: _busy ? 'กำลังเชื่อมต่อ…' : widget.label,
+        label: widget.label,
         signUp: widget.signUp,
       );
     }
 
-    return Opacity(
-      opacity: _busy ? 0.6 : 1,
-      child: IgnorePointer(
-        ignoring: _busy,
-        child: AuthSocialButton(
-          label: _busy ? 'กำลังเชื่อมต่อ…' : widget.label,
-          icon: const GoogleGIcon(),
-          onTap: _signInAndroid,
-        ),
-      ),
+    return AuthSocialButton(
+      label: _busy ? 'กำลังเชื่อมต่อ…' : widget.label,
+      icon: const GoogleGIcon(),
+      busy: _busy,
+      onTap: _signInAndroid,
     );
   }
 }
