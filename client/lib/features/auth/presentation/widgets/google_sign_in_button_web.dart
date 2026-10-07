@@ -5,7 +5,7 @@ import 'package:google_identity_services_web/id.dart' as gis;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:web/web.dart' as web;
 
-import '../../../../core/theme/app_tokens.dart';
+import 'google_sign_in_button_frame.dart';
 import 'google_sign_in_button_types.dart';
 
 Widget buildWebGoogleSignInButton({
@@ -42,11 +42,8 @@ class _GoogleSignInWebButton extends StatefulWidget {
 class _GoogleSignInWebButtonState extends State<_GoogleSignInWebButton> {
   static Future<void>? _initialization;
   StreamSubscription<GoogleSignInAuthenticationEvent>? _events;
-  Widget? _host;
-  double? _outerWidth;
-  double? _buttonWidth;
   bool _ready = false;
-  bool _rendered = false;
+  Widget? _host;
 
   Future<void> _initialize() {
     final clientId = const String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
@@ -86,14 +83,12 @@ class _GoogleSignInWebButtonState extends State<_GoogleSignInWebButton> {
     super.dispose();
   }
 
-  void _renderHost(Object element) {
-    if (_rendered) return;
-    _rendered = true;
+  void _renderHost(Object element, double width) {
     final host = element as web.HTMLElement;
     host.style
       ..width = '100%'
       ..height = '100%'
-      ..overflow = 'hidden'
+      ..overflow = 'visible'
       ..display = 'flex'
       ..alignItems = 'center'
       ..justifyContent = 'center';
@@ -108,7 +103,7 @@ class _GoogleSignInWebButtonState extends State<_GoogleSignInWebButton> {
             : gis.ButtonText.signin_with,
         shape: gis.ButtonShape.rectangular,
         logo_alignment: gis.ButtonLogoAlignment.center,
-        width: _buttonWidth,
+        width: width,
         locale: 'th',
       ),
     );
@@ -119,36 +114,13 @@ class _GoogleSignInWebButtonState extends State<_GoogleSignInWebButton> {
     return Semantics(
       button: true,
       label: widget.label,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final maxWidth = constraints.maxWidth;
-          if (_outerWidth == null && maxWidth.isFinite && maxWidth >= 80) {
-            _outerWidth = maxWidth.clamp(80.0, 400.0).toDouble();
-          }
-          final outer = _outerWidth ?? 320.0;
-          _buttonWidth ??= (outer - 8).clamp(80.0, 392.0).roundToDouble();
-          return Container(
-            width: outer,
-            height: 50,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: NeoColors.pureWhite,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: NeoColors.inkSolid, width: 2.2),
-              boxShadow: NeoShadows.elevation3,
-            ),
-            child: _ready
-                ? SizedBox(
-                    width: _buttonWidth,
-                    height: 44,
-                    child: _host ??= HtmlElementView.fromTagName(
-                      tagName: 'div',
-                      onElementCreated: _renderHost,
-                    ),
-                  )
-                : const SizedBox(height: 44),
-          );
-        },
+      child: GoogleSignInButtonFrame(
+        builder: (width) => _ready
+            ? _host ??= HtmlElementView.fromTagName(
+                tagName: 'div',
+                onElementCreated: (element) => _renderHost(element, width),
+              )
+            : const SizedBox.shrink(),
       ),
     );
   }
