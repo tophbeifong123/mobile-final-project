@@ -288,7 +288,7 @@ void main() {
         expect(find.byType(StudentJobCard), findsWidgets);
         expect(find.bySemanticsLabel('โลโก้บริษัท Company'), findsWidgets);
         final card = tester.widget<JobCard>(find.byType(JobCard).first);
-        expect(card.details, ['IT', 'Online']);
+        expect(card.details, ['IT', 'Online', 'สัมภาษณ์ออนไลน์']);
         expect(card.createdAt, isNotNull);
         expect(card.hasAllowance, false);
         expect(find.text('ใหม่'), findsNothing);
