@@ -15,6 +15,10 @@ PostgreSQL Flexible Server รุ่น Burstable `B1ms` เป็นค่า�
 
 `infra/main.bicep` สร้าง Log Analytics, Container Apps Environment, registry รุ่น Basic, Storage พร้อม container `internfinder`, PostgreSQL 16, Key Vault, user-assigned managed identity และ Container App
 
+Environment ของ Azure for Students เป็นแบบ Express ซึ่งดึงอิมเมจจาก registry ด้วย managed identity ไม่ได้ bootstrap จึงสร้าง token `internfinder-api-pull` ที่อ่านได้เฉพาะ repository `internfinder-api` แล้วใส่รหัสเป็น secret ของ Container App ส่วน Blob ยังใช้ managed identity
+
+ถ้า revision แรกยังเป็น placeholder ที่ probe ไม่ผ่าน Express จะไม่สลับ replica ไปอิมเมจใหม่ ให้ลบ Container App แล้วรัน bootstrap หรือสร้างใหม่ด้วยอิมเมจจริงจาก registry
+
 Log Analytics เก็บ 30 วันและหยุดรับ log เมื่อถึง 0.5 GB ในวันนั้น
 
 ```bicep
@@ -54,7 +58,7 @@ az account set --subscription "<subscription-id>"
 - `AZURE_RESOURCE_GROUP`
 - `AZURE_CONTAINER_APP_NAME`
 
-สร้าง GitHub Environment ชื่อ `production` แล้วใส่ secret ชุดนี้ OIDC ถูกผูกกับสาขา `main` และ environment `production` ไม่มี client secret
+สร้าง GitHub Environment ชื่อ `production` แล้วใส่ secret ชุดนี้ OIDC ถูกผูกกับสาขา `main` และ environment `production` ทั้งแบบชื่อ repo และแบบที่มี owner id กับ repository id ตาม subject ที่ GitHub ส่งจริง ไม่มี client secret
 
 ถ้าจะให้ Azure Monitor ยิง Discord ให้ตั้ง `DISCORD_WEBHOOK_URL` ก่อนรัน bootstrap `SENTRY_DSN` และ `SMTP_PASSWORD` ตั้งเป็นตัวแปรสภาพแวดล้อมของเครื่องก่อนรันได้ ถ้าไม่ตั้ง สคริปต์เก็บค่า `disabled` ซึ่งแอปจะไม่ส่ง Sentry และจะไม่พยายามเข้า SMTP จนกว่าจะมี `SMTP_USER`
 
