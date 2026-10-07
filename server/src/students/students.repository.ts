@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { DataSource, type EntityManager } from 'typeorm';
 import { StudentProfile } from '../auth/entities/student-profile.entity.js';
 import { Major } from '../majors/major.entity.js';
@@ -90,6 +90,7 @@ export class StudentsRepository {
   }
 
   async saveDocument(input: {
+    replacingId?: string;
     studentId: string;
     type: StudentDocumentType;
     objectKey: string;
@@ -101,20 +102,27 @@ export class StudentsRepository {
     return this.dataSource.transaction(async (manager) => {
       await this.lockStudent(manager, input.studentId);
       const documents = manager.getRepository(StudentDocument);
-      if (input.type === StudentDocumentType.Other) {
+      let replacedDocument: StudentDocument | null = null;
+      if (input.replacingId) {
+        replacedDocument = await documents.findOne({
+          where: { id: input.replacingId, studentId: input.studentId, type: input.type },
+        });
+        if (!replacedDocument) throw new NotFoundException('ไม่พบเอกสารที่ต้องการแทนที่');
+      }
+      if (input.type === StudentDocumentType.Other && !replacedDocument) {
         const count = await documents.count({
           where: { studentId: input.studentId, type: input.type },
         });
         if (count >= 3) throw new TooManyOtherDocumentsError();
       }
-      let replacedDocument: StudentDocument | null = null;
       if (input.type !== StudentDocumentType.Other) {
         replacedDocument = await documents.findOne({
           where: { studentId: input.studentId, type: input.type },
         });
-        if (replacedDocument) await documents.remove(replacedDocument);
       }
-      const document = await documents.save(documents.create(input));
+      if (replacedDocument) await documents.remove(replacedDocument);
+      const { replacingId: _replacingId, ...record } = input;
+      const document = await documents.save(documents.create(record));
       if (input.type === StudentDocumentType.Cv) {
         await manager.update(
           StudentProfile,

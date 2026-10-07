@@ -560,6 +560,7 @@ class _FakeAuthRepository implements AuthRepository {
 
   @override
   Future<AuthSession> register({
+    required String fullName,
     required String email,
     required String password,
     required UserRole role,

@@ -84,6 +84,7 @@ export interface JobApplicantRecord {
   fullName: string;
   university: string;
   major: string;
+  avatarObjectKey: string | null;
   status: ApplicationStatus;
   coverLetter: string;
   createdAt: Date;
@@ -380,6 +381,7 @@ export class ApplicationsRepository {
         'university',
       )
       .addSelect(`COALESCE(student.customMajorName, major.nameTh, '')`, 'major')
+      .addSelect('student.avatarObjectKey', 'avatarObjectKey')
       .addSelect('app.status', 'status')
       .addSelect('app.coverLetter', 'coverLetter')
       .addSelect('app.createdAt', 'createdAt')
@@ -391,6 +393,7 @@ export class ApplicationsRepository {
       fullName: (row.fullName as string) ?? '',
       university: (row.university as string) ?? '',
       major: (row.major as string) ?? '',
+      avatarObjectKey: (row.avatarObjectKey as string) ?? null,
       status: row.status as ApplicationStatus,
       coverLetter: (row.coverLetter as string) ?? '',
       createdAt: new Date(row.createdAt as string | Date),

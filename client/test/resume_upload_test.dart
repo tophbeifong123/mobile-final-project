@@ -45,9 +45,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Resume'), findsOneWidget);
+    expect(find.text('CV'), findsOneWidget);
     expect(find.text('my_resume.pdf'), findsOneWidget);
-    expect(find.text('แก้ไข'), findsOneWidget);
+    expect(find.text('+ เพิ่ม'), findsOneWidget);
   });
 
   testWidgets(
@@ -79,9 +79,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Resume'), findsOneWidget);
-      expect(find.text('ยังไม่มี Resume ในระบบ'), findsOneWidget);
-      expect(find.text('แก้ไข'), findsOneWidget);
+      expect(find.text('ยังไม่มี CV ในระบบ'), findsOneWidget);
+      expect(find.text('+ เพิ่ม'), findsOneWidget);
     },
   );
 
@@ -119,10 +118,12 @@ void main() {
 
       expect(find.text('เอกสารของฉัน'), findsOneWidget);
       expect(find.text('Transcript'), findsOneWidget);
-      expect(find.text('Resume ในระบบ'), findsOneWidget);
-      expect(find.text('current_resume.pdf'), findsOneWidget);
-      expect(find.text('เลือกไฟล์ PDF จากเครื่อง'), findsOneWidget);
-      expect(find.text('แก้ไข CV'), findsOneWidget);
+      expect(find.text('จำเป็นต่อการสมัครงาน'), findsOneWidget);
+      expect(find.text('เพิ่ม CV'), findsOneWidget);
+      expect(find.text('เพิ่ม Transcript'), findsOneWidget);
+      await tester.drag(find.byType(ListView), const Offset(0, -300));
+      await tester.pumpAndSettle();
+      expect(find.text('เพิ่มไฟล์'), findsOneWidget);
     },
   );
 }
@@ -189,6 +190,7 @@ class _FakeResumeRepository implements ResumeRepository {
 
   @override
   Future<StudentDocument> uploadDocument({
+    String? replacingId,
     required String kind,
     required String filePath,
     required String fileName,
