@@ -79,7 +79,17 @@ void main() {
           find.byKey(const ValueKey('document-dialog-border-inset')),
         );
         expect(popupSize.width, lessThanOrEqualTo(320));
-        expect(popupSize.height, lessThanOrEqualTo(410));
+        expect(popupSize.height, lessThanOrEqualTo(900 - 48));
+        // Content-sized dialog keeps the upload action visible, rather than
+        // imposing a fixed height that clips actions in the edit form.
+        expect(find.text('เลือก PDF').hitTestable(), findsOneWidget);
+        expect(
+          tester
+              .state<ScrollableState>(find.byType(Scrollable).first)
+              .position
+              .maxScrollExtent,
+          0,
+        );
         final borderInset = tester.widget<Padding>(
           find.byKey(const ValueKey('document-dialog-border-inset')),
         );

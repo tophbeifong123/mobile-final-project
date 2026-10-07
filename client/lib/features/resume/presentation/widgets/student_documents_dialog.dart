@@ -140,7 +140,7 @@ class _StudentDocumentsDialogState
       canPop: !_busy,
       child: _DocumentSurface(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: Form(
             key: _formKey,
             child: Column(
@@ -164,8 +164,16 @@ class _StudentDocumentsDialogState
                           ? null
                           : () => Navigator.of(context).pop(),
                       style: IconButton.styleFrom(
+                        fixedSize: const Size.square(29),
+                        minimumSize: const Size.square(29),
+                        padding: const EdgeInsets.all(4),
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        foregroundColor: NeoColors.inkSolid,
                         backgroundColor: NeoColors.paperCanvas,
-                        side: const BorderSide(color: NeoColors.inkSolid),
+                        side: const BorderSide(
+                          color: NeoColors.inkSolid,
+                          width: 1.5,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -174,12 +182,12 @@ class _StudentDocumentsDialogState
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 const Text(
                   'ประเภทเอกสาร',
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 DropdownButtonFormField<String>(
                   initialValue: _kind,
                   isExpanded: true,
@@ -201,12 +209,12 @@ class _StudentDocumentsDialogState
                           _uploadedName = null;
                         }),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
                 const Text(
                   'ชื่อเอกสาร *',
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 TextFormField(
                   controller: _name,
                   enabled: !_busy && _uploadedName == null,
@@ -262,7 +270,7 @@ class _StudentDocumentsDialogState
                       style: const TextStyle(color: NeoColors.subtleInk),
                     ),
                   ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 if (widget.existing != null && _uploadedName == null) ...[
                   NeoButton(
                     onPressed: _busy ? null : () => _upload(keepFile: true),
@@ -297,6 +305,7 @@ class _StudentDocumentsDialogState
   }
 
   InputDecoration _decoration({String? hint}) => InputDecoration(
+    isDense: true,
     hintText: hint,
     filled: true,
     fillColor: NeoColors.paperCanvas,
@@ -326,7 +335,10 @@ class _DocumentSurface extends StatelessWidget {
     ),
     clipBehavior: Clip.antiAlias,
     child: ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 320, maxHeight: 410),
+      // Let the editor fit both actions instead of clipping at a fixed 410px.
+      // Dialog still constrains to the available screen/keyboard height, where
+      // the inner scroll view remains an accessibility fallback.
+      constraints: const BoxConstraints(maxWidth: 320),
       // Keep the white Scaffold inside the stroke instead of painting over it.
       child: Padding(
         key: ValueKey('document-dialog-border-inset'),
