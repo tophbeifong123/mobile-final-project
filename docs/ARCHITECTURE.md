@@ -373,6 +373,16 @@ Dio ใน `auth_interceptor.dart` ใส่ access token และเมื่�
 
 CORS เปิดให้แอปมือถือเรียกได้ตามที่มีใน `main.ts`
 
+API ไม่เก็บสถานะในโปรเซส จึงเพิ่ม replica ได้ Container App scale 1 ถึง 3 replica เมื่อมี request พร้อมกันเกิน 50 ต่อ replica
+
+- session คือ JWT ส่วน refresh token กับ token รีเซ็ตรหัสผ่านอยู่ใน PostgreSQL
+- ไฟล์อยู่ใน Blob ไม่อยู่บนดิสก์ของคอนเทนเนอร์
+- ตัวนับ rate limit ของ Google login และลืมรหัสผ่านอยู่ในตาราง `rate_limit_buckets` ทุก replica นับรวมกัน
+- `TRUST_PROXY_HOPS=1` ให้ Express อ่าน IP จริงจาก `X-Forwarded-For` ของ ingress ค่านี้ไม่ตั้งบนเครื่องพัฒนา เพราะไม่มี proxy และ client จะปลอม header ได้
+- migration ถือ PostgreSQL advisory lock replica ที่เริ่มพร้อมกันจึงรอกันแทนที่จะรันซ้ำ
+- pool ต่อ replica ไม่เกิน 10 connection (`DATABASE_POOL_MAX`) เพราะ Burstable B1ms รับได้ 50
+- `enableShutdownHooks` ให้ Nest ปิด connection เมื่อได้ SIGTERM ตอน scale ลง
+
 ## 10. นอกแบบนี้
 
 ไม่ทำแชท, ระบบข้อสอบหรือปฏิทินในแอป, ยืนยัน email, login ด้วย social provider อื่นนอกจาก Google, ถอนใบสมัคร, หน้าโปรไฟล์บริษัทแยก, Admin, push notification นอกแอป หรือการเปลี่ยน role หลังสมัคร. ระหว่างกำลังพิจารณา บริษัทส่งลิงก์ข้อสอบก่อน นักศึกษาแจ้งว่าทำแล้ว บริษัทตรวจว่าผ่านจึงเรียกสัมภาษณ์ตามรูปแบบของประกาศ และตอบรับได้หลังมีนัดแล้ว. Google Login รองรับ Android และ Web สำหรับทดสอบ; iOS ยังไม่อยู่ในขอบเขตนี้.

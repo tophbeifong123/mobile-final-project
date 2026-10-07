@@ -30,6 +30,7 @@ import { UniqueGoogleIdentityPerUser1791940000000 } from './migrations/179194000
 import { AddApplicationSelectionLinks1792000000000 } from './migrations/1792000000000-add-application-selection-links.js';
 import { AddJobInterviewMode1792100000000 } from './migrations/1792100000000-add-job-interview-mode.js';
 import { AddExamPassedAt1792200000000 } from './migrations/1792200000000-add-exam-passed-at.js';
+import { CreateRateLimitBuckets1792300000000 } from './migrations/1792300000000-create-rate-limit-buckets.js';
 import { AddGoogleAuthIdentities1759300000000 } from './migrations/1759300000000-add-google-auth-identities.js';
 import { AddBioContactsPortfoliosToStudentProfiles1759100000000 } from './migrations/1759100000000-add-bio-contacts-portfolios-to-student-profiles.js';
 import { AddDetailsAndCoverToCompanyProfiles1759300000000 } from './migrations/1759300000000-add-details-and-cover-to-company-profiles.js';
@@ -100,5 +101,6 @@ export const AppDataSource = new DataSource({
     AddApplicationSelectionLinks1792000000000,
     AddJobInterviewMode1792100000000,
     AddExamPassedAt1792200000000,
+    CreateRateLimitBuckets1792300000000,
   ],
 });
