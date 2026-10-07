@@ -103,7 +103,7 @@ export class ApplicationsController {
   @ApiResponse({
     status: 400,
     description:
-      'ไม่ได้ระบุ Cover Letter, ยังไม่มี Resume หรือประกาศงานปิดรับแล้ว',
+      'ไม่ได้ระบุ Cover Letter, ยังไม่มี CV, เอกสารที่เลือกไม่มีอยู่หรือไม่ใช่ของตัวเอง หรือประกาศงานปิดรับแล้ว',
   })
   @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
   @ApiResponse({ status: 403, description: 'เฉพาะนักศึกษา' })
@@ -261,9 +261,27 @@ export class ApplicationsController {
     res.send(buffer);
   }
 
-  @Get('company/jobs/:id/applications/:applicationId/documents/:documentId/file')
-  @ApiOperation({ summary: 'เปิด PDF เอกสารของผู้สมัคร' })
-  @ApiResponse({ status: 200, description: 'ไฟล์ PDF สำหรับบริษัทเจ้าของประกาศเท่านั้น' })
+  @Get(
+    'company/jobs/:id/applications/:applicationId/documents/:documentId/file',
+  )
+  @ApiOperation({
+    summary: 'เปิด PDF สำเนาเอกสารที่แนบตอนสมัคร ไม่อ่านไฟล์ในคลังปัจจุบัน',
+  })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiParam({ name: 'applicationId', format: 'uuid' })
+  @ApiParam({
+    name: 'documentId',
+    description: 'รหัสสำเนาเอกสารจากรายละเอียดผู้สมัคร',
+  })
+  @ApiProduces('application/pdf')
+  @ApiResponse({ status: 401, description: 'ต้องเข้าสู่ระบบ' })
+  @ApiResponse({ status: 403, description: 'เฉพาะบริษัทเจ้าของประกาศ' })
+  @ApiResponse({ status: 404, description: 'ไม่พบเอกสารที่แนบกับใบสมัครนี้' })
+  @ApiResponse({ status: 503, description: 'บริการไฟล์ไม่พร้อมใช้งาน' })
+  @ApiResponse({
+    status: 200,
+    description: 'ไฟล์ PDF สำหรับบริษัทเจ้าของประกาศเท่านั้น',
+  })
   async getApplicantDocument(
     @CurrentUser() user: AuthUser,
     @Param('id', new ParseUUIDPipe()) jobId: string,
@@ -271,9 +289,55 @@ export class ApplicationsController {
     @Param('documentId') documentId: string,
     @Res() res: Response,
   ): Promise<void> {
-    const { buffer, fileName } = await this.applicationsService.getApplicantDocument(user, jobId, applicationId, documentId);
+    const { buffer, fileName } =
+      await this.applicationsService.getApplicantDocument(
+        user,
+        jobId,
+        applicationId,
+        documentId,
+      );
     res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(fileName)}"`);
+    res.setHeader(
+      'Content-Disposition',
+      `inline; filename="${encodeURIComponent(fileName)}"`,
+    );
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.send(buffer);
+  }
+
+  @Get('applications/:id/documents/:documentId/file')
+  @ApiOperation({ summary: 'นักศึกษาเปิด PDF สำเนาเอกสารในใบสมัครของตัวเอง' })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiParam({ name: 'documentId', format: 'uuid' })
+  @ApiProduces('application/pdf')
+  @ApiResponse({ status: 200, description: 'PDF ที่แนบ ณ เวลาสมัคร' })
+  @ApiResponse({ status: 401, description: 'ต้องเข้าสู่ระบบ' })
+  @ApiResponse({ status: 403, description: 'เฉพาะนักศึกษา' })
+  @ApiResponse({
+    status: 404,
+    description: 'ไม่พบใบสมัครของตัวเองหรือเอกสารที่แนบ',
+  })
+  @ApiResponse({ status: 503, description: 'บริการไฟล์ไม่พร้อมใช้งาน' })
+  async getStudentApplicationDocument(
+    @CurrentUser() user: AuthUser,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Param('documentId', new ParseUUIDPipe()) documentId: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    const { buffer, fileName } =
+      await this.applicationsService.getStudentApplicationDocument(
+        user,
+        id,
+        documentId,
+      );
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader(
+      'Content-Disposition',
+      `inline; filename="${encodeURIComponent(fileName)}"`,
+    );
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
     res.send(buffer);
   }
 

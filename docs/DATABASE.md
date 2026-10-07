@@ -153,7 +153,7 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 
 Partial unique index จำกัด CV และ transcript อย่างละหนึ่งไฟล์ต่อนักศึกษา. จำนวน `other` สูงสุด 3 ถูกบังคับใน service ภายใต้ transaction ที่ล็อกแถว student profile. Migration backfill CV เดิมโดยคง object key เดิม.
 
-การลบ metadata ทำภายใต้ transaction ที่ล็อกแถว student profile. เมื่อลบ CV ให้ล้าง Resume ปัจจุบันของโปรไฟล์ด้วย แต่จะลบ object จาก storage ก็ต่อเมื่อไม่มีใบสมัครอ้างถึงอยู่ เพื่อเก็บ CV snapshot ของใบสมัครเดิม.
+การลบ metadata ทำภายใต้ transaction ที่ล็อกแถว student profile. เมื่อลบ CV ให้ล้าง Resume ปัจจุบันของโปรไฟล์ด้วย แต่จะลบ object จาก storage ก็ต่อเมื่อไม่มี applications.resume_object_key หรือ application_documents.object_key อ้างถึงอยู่ เพื่อเก็บ snapshot ทุกชนิดของใบสมัครเดิม.
 
 Migration `CreateStudentDocuments1759400000000` จะ rollback ไม่ได้เมื่อยังมี transcript/other metadata เพราะ schema เดิมไม่มีที่เก็บข้อมูลเหล่านี้; `down` ปฏิเสธอย่างชัดเจนในกรณีนั้น และคืน CV ปัจจุบันไปยังคอลัมน์เดิมก่อนลบตารางเมื่อทำได้. ไฟล์ storage ไม่ถูกลบจาก migration.
 
@@ -254,6 +254,23 @@ Unique ที่ `(student_id, job_id)` บันทึกงานหนึ่�
 
 Unique ที่ `(student_id, job_id)` คือตัวกันสมัครซ้ำ แม้ request สองตัวชนกันพร้อมกัน
 
+### application_documents
+
+| คอลัมน์ | ชนิด | หมายเหตุ |
+|---|---|---|
+| id | uuid | PK; ใช้เปิดไฟล์ snapshot ไม่ใช่ ID ของไฟล์ในคลัง |
+| application_id | uuid | FK → applications.id, ON DELETE CASCADE |
+| type | varchar(16) | CHECK: `cv`, `transcript`, `other` |
+| file_name | varchar(255) | ชื่อไฟล์ ณ เวลาสมัคร |
+| object_key | varchar(1024) | คีย์ไฟล์ ณ เวลาสมัคร |
+| created_at | timestamptz | |
+
+Partial unique index จำกัด CV และ Transcript ชนิดละหนึ่งไฟล์ต่อใบสมัคร; มี index ที่ application_id และ object_key. ไม่มี FK ไป student_documents เพื่อให้ลบหรือแทนที่คลังได้โดย snapshot ไม่เปลี่ยน.
+
+Service เลือก CV เสมอและเลือกเอกสารเพิ่มเติมตาม documentIds เท่านั้น (ค่าเริ่มต้นไม่แนบ). Transaction ล็อก student profile แล้วตรวจไฟล์ที่เลือกอีกครั้งก่อนล็อกงานและสร้างใบสมัคร, snapshot และ status event พร้อมกัน; ID ที่ไม่มีอยู่หรือไม่ใช่ของนักศึกษานี้ทำให้ทั้ง transaction ถูกปฏิเสธ. เก็บ CV ในคอลัมน์เดิมของ applications ด้วยเพื่อรองรับเส้นทาง Resume เดิม.
+
+Migration CreateApplicationDocuments1791950000000 backfill เฉพาะ CV จากใบสมัครเดิม ไม่ดึง Transcript/เอกสารอื่นเวอร์ชันปัจจุบันมาแนบย้อนหลัง. down คืน CV ไปคอลัมน์เดิมก่อนลบตาราง และปฏิเสธ rollback หากมี snapshot ชนิดอื่นเพื่อไม่ให้ข้อมูลหาย; ไม่ลบไฟล์ storage.
+
 ### application_status_events
 
 Timeline ที่แก้หรือลบไม่ได้ แต่ละแถวคือหนึ่งครั้งที่สถานะเปลี่ยน
@@ -328,7 +345,7 @@ Google signup ทำใน transaction เดียวกัน: สร้าง
 ใช้ pessimistic lock ที่แถว `jobs` ด้วย `SELECT ... FOR UPDATE` ใน transaction เดียวกัน
 
 - ตอนสมัคร: ล็อกแถวงาน ตรวจว่ายัง `open` ตรวจว่ามี Resume แล้วแทรก `applications` พร้อม event `submitted`
-- CV ปัจจุบันอยู่ใน `student_documents`; ตอนสมัครคัดลอก object key และชื่อไฟล์ไป `applications.resume_object_key` / `resume_file_name`. การแทนที่ CV ไม่เปลี่ยนใบสมัครเก่า และไฟล์ที่ใบสมัครอ้างถึงจะไม่ถูกลบ
+- ไฟล์ปัจจุบันอยู่ใน `student_documents`; ตอนสมัครคัดลอกชนิด ชื่อไฟล์ และ object key ของ CV และเฉพาะเอกสารเพิ่มเติมที่เลือกไป `application_documents` พร้อมคง CV ใน `applications.resume_object_key` / `resume_file_name`. การแทนที่หรือลบคลังไม่เปลี่ยนใบสมัครเก่า และไฟล์ทุกชนิดที่ใบสมัครอ้างถึงจะไม่ถูกลบ
 - ตอนปิดหรือเปิดรับ: ล็อกแถวงานแล้วค่อยเปลี่ยน `status`
 
 กันกรณีนักศึกษาสมัครงานที่กำลังถูกปิด และกันการปิดงานขณะกำลังสร้างใบสมัคร ไม่ใช้ optimistic lock ตรงนี้ เพราะการสมัครไม่ได้แก้แถวใบสมัครเดิม

@@ -56,6 +56,7 @@ class JobApplicationModel {
     this.interviewUrl,
     this.interviewStartsAt,
     this.interviewMode,
+    this.documents = const [],
   });
 
   factory JobApplicationModel.fromJson(Map<String, dynamic> json) {
@@ -101,6 +102,15 @@ class JobApplicationModel {
       examPassedAt: _parseDate(json['examPassedAt']),
       interviewUrl: json['interviewUrl'] as String?,
       interviewStartsAt: _parseDate(json['interviewStartsAt']),
+      documents: (json['documents'] as List<dynamic>? ?? [])
+          .map(
+            (item) => AttachedDocument(
+              id: (item as Map<String, dynamic>)['id'] as String,
+              type: item['type'] as String,
+              fileName: item['fileName'] as String,
+            ),
+          )
+          .toList(),
     );
   }
 
@@ -124,6 +134,7 @@ class JobApplicationModel {
   final DateTime? examPassedAt;
   final String? interviewUrl;
   final DateTime? interviewStartsAt;
+  final List<AttachedDocument> documents;
 
   JobApplication toEntity() {
     return JobApplication(
@@ -147,6 +158,7 @@ class JobApplicationModel {
       examPassedAt: examPassedAt,
       interviewUrl: interviewUrl,
       interviewStartsAt: interviewStartsAt,
+      documents: documents,
     );
   }
 }

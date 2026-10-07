@@ -1,5 +1,14 @@
 enum ApplicationStatus { submitted, reviewing, accepted, rejected }
 
+class AttachedDocument {
+  const AttachedDocument({
+    required this.id,
+    required this.type,
+    required this.fileName,
+  });
+  final String id, type, fileName;
+}
+
 extension ApplicationStatusX on ApplicationStatus {
   String get labelTh {
     switch (this) {
@@ -64,6 +73,7 @@ class JobApplication {
     this.interviewUrl,
     this.interviewStartsAt,
     this.interviewMode,
+    this.documents = const [],
   });
 
   final String id;
@@ -86,4 +96,5 @@ class JobApplication {
   final String? interviewUrl;
   final DateTime? interviewStartsAt;
   final String? interviewMode;
+  final List<AttachedDocument> documents;
 }

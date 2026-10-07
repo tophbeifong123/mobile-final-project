@@ -317,20 +317,14 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
                   applicationId: widget.applicationId,
                   resumeFileName: applicant.resumeFileName,
                   resumeObjectKey: applicant.resumeObjectKey,
-                  onOpen:
-                      applicant.resumeObjectKey != null &&
-                          applicant.resumeObjectKey!.isNotEmpty
+                  onOpen: applicant.documents.any((d) => d.type == 'cv')
                       ? () => _openApplicantDocument(
-                          const ApplicantDocument(
-                            id: 'application-cv',
-                            type: 'cv',
-                            fileName: 'Resume',
-                          ),
+                          applicant.documents.firstWhere((d) => d.type == 'cv'),
                         )
                       : null,
                 ),
                 for (final document in applicant.documents.where(
-                  (d) => d.id != 'application-cv',
+                  (d) => d.type != 'cv',
                 ))
                   Padding(
                     padding: const EdgeInsets.only(top: 8),

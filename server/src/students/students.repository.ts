@@ -3,7 +3,10 @@ import { DataSource, type EntityManager } from 'typeorm';
 import { StudentProfile } from '../auth/entities/student-profile.entity.js';
 import { Major } from '../majors/major.entity.js';
 import { University } from '../universities/university.entity.js';
-import { StudentDocument, StudentDocumentType } from './student-document.entity.js';
+import {
+  StudentDocument,
+  StudentDocumentType,
+} from './student-document.entity.js';
 
 export interface ContactLinkRecord {
   id?: string;
@@ -77,8 +80,13 @@ export class StudentsRepository {
     });
   }
 
-  findCvOrType(studentId: string, type: StudentDocumentType): Promise<StudentDocument | null> {
-    return this.dataSource.getRepository(StudentDocument).findOne({ where: { studentId, type } });
+  findCvOrType(
+    studentId: string,
+    type: StudentDocumentType,
+  ): Promise<StudentDocument | null> {
+    return this.dataSource
+      .getRepository(StudentDocument)
+      .findOne({ where: { studentId, type } });
   }
 
   async saveDocument(input: {
@@ -87,7 +95,10 @@ export class StudentsRepository {
     type: StudentDocumentType;
     objectKey: string;
     fileName: string;
-  }): Promise<{ document: StudentDocument; replacedDocument: StudentDocument | null }> {
+  }): Promise<{
+    document: StudentDocument;
+    replacedDocument: StudentDocument | null;
+  }> {
     return this.dataSource.transaction(async (manager) => {
       await this.lockStudent(manager, input.studentId);
       const documents = manager.getRepository(StudentDocument);
@@ -123,7 +134,10 @@ export class StudentsRepository {
     });
   }
 
-  async deleteDocument(studentId: string, id: string): Promise<StudentDocument | null> {
+  async deleteDocument(
+    studentId: string,
+    id: string,
+  ): Promise<StudentDocument | null> {
     return this.dataSource.transaction(async (manager) => {
       await this.lockStudent(manager, studentId);
       const documents = manager.getRepository(StudentDocument);
@@ -146,13 +160,16 @@ export class StudentsRepository {
 
   async isObjectReferencedByApplication(objectKey: string): Promise<boolean> {
     const rows = await this.dataSource.query(
-      'SELECT 1 FROM applications WHERE resume_object_key = $1 LIMIT 1',
+      'SELECT 1 FROM applications WHERE resume_object_key = $1 UNION ALL SELECT 1 FROM application_documents WHERE object_key = $1 LIMIT 1',
       [objectKey],
     );
     return rows.length > 0;
   }
 
-  private async lockStudent(manager: EntityManager, studentId: string): Promise<void> {
+  private async lockStudent(
+    manager: EntityManager,
+    studentId: string,
+  ): Promise<void> {
     await manager
       .createQueryBuilder(StudentProfile, 'student')
       .setLock('pessimistic_write')
@@ -171,7 +188,10 @@ export class StudentsRepository {
     }
 
     profile.fullName = input.fullName;
-    if (input.universityId !== undefined || input.customUniversityName !== undefined) {
+    if (
+      input.universityId !== undefined ||
+      input.customUniversityName !== undefined
+    ) {
       profile.universityId = input.universityId ?? null;
       profile.customUniversityName = input.customUniversityName ?? null;
     }
@@ -227,4 +247,3 @@ export class StudentsRepository {
 }
 
 export class TooManyOtherDocumentsError extends Error {}
-

@@ -32,6 +32,18 @@ void main() {
         portfolioUrl: 'https://github.com/somchai',
         resumeFileName: 'somchai-resume.pdf',
         resumeObjectKey: 'resumes/somchai.pdf',
+        documents: const [
+          ApplicantDocument(
+            id: 'snapshot-cv-uuid',
+            type: 'cv',
+            fileName: 'somchai-resume.pdf',
+          ),
+          ApplicantDocument(
+            id: 'snapshot-transcript-uuid',
+            type: 'transcript',
+            fileName: 'attached-transcript.pdf',
+          ),
+        ],
         createdAt: DateTime(2026, 9, 23, 14, 0),
       );
 
@@ -99,6 +111,14 @@ void main() {
         find.text('สำเนา Resume ในระบบ ณ วันที่ยื่นใบสมัคร'),
         findsOneWidget,
       );
+
+      await tester.scrollUntilVisible(
+        find.text('attached-transcript.pdf'),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('attached-transcript.pdf'), findsOneWidget);
+      expect(find.text('เอกสารอื่น'), findsNothing);
 
       await tester.scrollUntilVisible(
         find.text('Cover Letter'),
