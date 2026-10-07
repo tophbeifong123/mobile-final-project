@@ -209,11 +209,13 @@ Flutter โหลดรายละเอียดใหม่เมื่อก
 | PATCH | /api/company/jobs/:id/status | เปิดหรือปิดรับสมัคร |
 | GET | /api/company/jobs/:id/applications | Applicants List |
 | GET | /api/company/jobs/:id/applications/:applicationId | Applicant Detail |
-| GET | /api/company/jobs/:id/applications/:applicationId/documents/:documentId/file | เปิด CV snapshot หรือเอกสารปัจจุบัน |
+| GET | /api/company/jobs/:id/applications/:applicationId/documents/:documentId/file | เปิดเฉพาะ PDF snapshot ที่แนบกับใบสมัครของประกาศตัวเอง |
 | GET | /api/company/jobs/:id/applications/:applicationId/resume | เปิด PDF สำเนาของใบสมัครในแอป เฉพาะบริษัทเจ้าของประกาศ |
 | PATCH | /api/company/jobs/:id/applications/:applicationId/status | เปลี่ยนสถานะผู้สมัคร |
 
 บริษัทเรียกได้เฉพาะประกาศและผู้สมัครของบริษัทตัวเอง ไม่เช่นนั้นตอบ 403
+
+POST /api/jobs/:id/apply รับ coverLetter และ documentIds (UUID ของเอกสารในคลังตัวเอง, ไม่เกิน 5, ห้ามซ้ำ). ApplicationsService บังคับ CV เสมอและเอกสารเพิ่มเติมเริ่มต้นไม่แนบ; repository ตรวจชุดที่เลือกซ้ำภายใต้ student profile lock และบันทึก application_documents ใน transaction เดียวกับใบสมัคร. รายละเอียดใบสมัครทั้งสองฝั่งส่ง documents เป็น ID/type/fileName ของ snapshot เท่านั้น ไม่มี object key ของเอกสารในคลังที่ไม่ได้เลือก. GET /api/applications/:id/documents/:documentId/file ให้นักศึกษาเปิด snapshot ของใบสมัครตัวเอง และเส้นทางบริษัทตรวจ role/เจ้าของประกาศ/คู่ใบสมัคร/สมาชิก snapshot ก่อนอ่าน storage. ทั้งสองส่ง PDF แบบ inline พร้อม private, no-store และ nosniff; ไม่มีไฟล์ตอบ 404, storage ล้มเหลวตอบ 503.
 
 เส้นทาง Resume ตรวจ role บริษัท เจ้าของประกาศ และคู่ job/application ใน ApplicationsService ก่อนอ่าน storage จากคีย์ของใบสมัคร ไม่อ่าน Resume ล่าสุดจาก Student Profile ส่ง application/pdf แบบ inline พร้อม private, no-store และ nosniff; ไม่มีไฟล์ตอบ 404 และ storage ล้มเหลวตอบ 503 โดยไม่เปิดเผยรายละเอียดภายใน Flutter เปิด modal PDF อ่านอย่างเดียวโดยใช้ Dio พร้อม token ไม่เรียกเส้นทาง Resume ของนักศึกษา และยังอยู่หน้ารายละเอียดหลังปิดหรือโหลดล้มเหลว
 

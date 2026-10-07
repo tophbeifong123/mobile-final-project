@@ -1,10 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { ApplicationDocumentDto } from './application-document.dto.js';
 import { ContactLinkDto } from '../../students/dto/contact-link.dto.js';
 import { PortfolioLinkDto } from '../../students/dto/portfolio-link.dto.js';
 import { ApplicationStatus } from '../application-status.js';
 
 export class ApplicantDetailDto {
-  @ApiProperty({ type: 'array', description: 'เอกสารที่ผู้สมัครให้บริษัทตรวจดูได้', items: { type: 'object' } })
+  @ApiProperty({
+    type: [ApplicationDocumentDto],
+    description: 'เฉพาะเอกสารที่เลือกแนบ ณ เวลาสมัคร ไม่อ่านคลังปัจจุบัน',
+  })
   documents: Array<{ id: string; type: string; fileName: string }>;
 
   @ApiProperty({
@@ -47,7 +51,8 @@ export class ApplicantDetailDto {
   skills: string[];
 
   @ApiProperty({
-    example: 'นักศึกษาชั้นปีที่ 4 มุ่งมั่นหาประสบการณ์ฝึกงานด้าน Flutter & Node.js',
+    example:
+      'นักศึกษาชั้นปีที่ 4 มุ่งมั่นหาประสบการณ์ฝึกงานด้าน Flutter & Node.js',
     description: 'เกี่ยวกับฉัน (Bio)',
   })
   bio: string;

@@ -1,4 +1,6 @@
 import 'reflect-metadata';
+import { ApplicationDocument } from '../applications/entities/application-document.entity.js';
+import { CreateApplicationDocuments1791950000000 } from './migrations/1791950000000-create-application-documents.js';
 import { AddJobOpeningsAllowance1791840000000 } from './migrations/1791840000000-add-job-openings-allowance.js';
 import { DataSource } from 'typeorm';
 import { ApplicationStatusEvent } from '../applications/entities/application-status-event.entity.js';
@@ -56,6 +58,7 @@ export const AppDataSource = new DataSource({
     Job,
     SavedJob,
     Application,
+    ApplicationDocument,
     ApplicationStatusEvent,
     Notification,
     StudentDocument,
@@ -86,5 +89,6 @@ export const AppDataSource = new DataSource({
     AddJobOpeningsAllowance1791840000000,
     NormalizeAllowanceAmount1791850000000,
     UniqueGoogleIdentityPerUser1791940000000,
+    CreateApplicationDocuments1791950000000,
   ],
 });

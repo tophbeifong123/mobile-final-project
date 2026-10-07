@@ -22,8 +22,13 @@ class ApplicationRepositoryImpl implements ApplicationRepository {
   Future<JobApplication> apply({
     required String jobId,
     required String coverLetter,
+    List<String> documentIds = const [],
   }) async {
-    final model = await _remote.apply(jobId: jobId, coverLetter: coverLetter);
+    final model = await _remote.apply(
+      jobId: jobId,
+      coverLetter: coverLetter,
+      documentIds: documentIds,
+    );
     return model.toEntity();
   }
 }

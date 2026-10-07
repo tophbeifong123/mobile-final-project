@@ -17,7 +17,6 @@ import {
   JOB_NOT_FOUND,
   NOT_YOUR_JOB,
   PROFILE_NOT_FOUND,
-  RESUME_REQUIRED,
   STUDENT_ONLY,
 } from './applications.constants.js';
 import {
@@ -33,6 +32,7 @@ import { JobApplicantItemDto } from './dto/job-applicant-item.dto.js';
 import { MyApplicationItemDto } from './dto/my-application-item.dto.js';
 import { UpdateApplicationStatusDto } from './dto/update-application-status.dto.js';
 import { Application } from './entities/application.entity.js';
+import { selectApplicationDocuments } from './application-document-selection.js';
 
 @Injectable()
 export class ApplicationsService {
@@ -84,6 +84,7 @@ export class ApplicationsService {
         toStatus: event.toStatus,
         createdAt: event.createdAt.toISOString(),
       })),
+      documents: application.documents ?? [],
     };
   }
 
@@ -130,19 +131,18 @@ export class ApplicationsService {
       throw new NotFoundException(PROFILE_NOT_FOUND);
     }
 
-    const currentCv = await this.applicationsRepository.findStudentCv(profile.id);
-    const cvObjectKey = currentCv?.objectKey ?? profile.resumeObjectKey;
-    const cvFileName = currentCv?.fileName ?? profile.resumeFileName;
-    if (!cvObjectKey) {
-      throw new BadRequestException(RESUME_REQUIRED);
-    }
+    const documents = await this.applicationsRepository.findStudentDocuments(
+      profile.id,
+    );
+    const [cv] = selectApplicationDocuments(documents, dto.documentIds);
 
     const application = await this.applicationsRepository.applyJob({
       studentId: profile.id,
       jobId,
       coverLetter,
-      resumeObjectKey: cvObjectKey,
-      resumeFileName: cvFileName,
+      resumeObjectKey: cv.objectKey,
+      resumeFileName: cv.fileName,
+      documentIds: dto.documentIds ?? [],
       actorUserId: user.userId,
     });
 
@@ -268,15 +268,53 @@ export class ApplicationsService {
     return { buffer, mimeType };
   }
 
-  async getApplicantDocument(user: AuthUser, jobId: string, applicationId: string, documentId: string) {
+  async getApplicantDocument(
+    user: AuthUser,
+    jobId: string,
+    applicationId: string,
+    documentId: string,
+  ) {
     this.assertCompany(user);
     const detail = await this.getApplicantDetail(user, jobId, applicationId);
     const doc = detail.documents.find((item) => item.id === documentId);
     if (!doc) throw new NotFoundException('ไม่พบเอกสารผู้สมัคร');
-    const stored = await this.applicationsRepository.findApplicantDocument(jobId, applicationId, documentId);
+    const stored = await this.applicationsRepository.findApplicantDocument(
+      jobId,
+      applicationId,
+      documentId,
+    );
     if (!stored) throw new NotFoundException('ไม่พบไฟล์เอกสารผู้สมัคร');
-    const buffer = await this.storageService.get(stored.objectKey);
-    if (!buffer) throw new NotFoundException('ไม่พบไฟล์เอกสารผู้สมัคร');
+    return this.readDocumentPdf(stored);
+  }
+
+  async getStudentApplicationDocument(
+    user: AuthUser,
+    applicationId: string,
+    documentId: string,
+  ) {
+    const detail = await this.getDetail(user, applicationId);
+    if (!detail.documents.some((doc) => doc.id === documentId))
+      throw new NotFoundException('ไม่พบเอกสารใบสมัคร');
+    const stored = await this.applicationsRepository.findApplicantDocument(
+      detail.jobId,
+      applicationId,
+      documentId,
+    );
+    if (!stored) throw new NotFoundException('ไม่พบเอกสารใบสมัคร');
+    return this.readDocumentPdf(stored);
+  }
+
+  private async readDocumentPdf(stored: {
+    objectKey: string;
+    fileName: string;
+  }) {
+    let buffer: Buffer | null;
+    try {
+      buffer = await this.storageService.get(stored.objectKey);
+    } catch {
+      throw new ServiceUnavailableException('เปิดไฟล์ไม่สำเร็จ กรุณาลองใหม่');
+    }
+    if (!buffer) throw new NotFoundException('ไม่พบไฟล์เอกสาร');
     return { buffer, fileName: stored.fileName };
   }
 
