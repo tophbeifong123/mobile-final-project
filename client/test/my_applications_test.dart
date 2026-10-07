@@ -287,4 +287,7 @@ class _FakeApplicationRepository implements ApplicationRepository {
   }) async {
     throw UnimplementedError();
   }
+
+  @override
+  Future<void> completeExam(String applicationId) async {}
 }

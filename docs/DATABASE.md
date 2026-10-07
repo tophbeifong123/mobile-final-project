@@ -39,6 +39,7 @@ applications ||--o{ outbox_messages : "enqueue on status change"
 |---|---|
 | user_role | `student`, `company` |
 | work_mode | `on_site`, `hybrid`, `remote` |
+| interview_mode | `online`, `on_site` |
 | job_status | `open`, `closed` |
 | application_status | `submitted`, `reviewing`, `accepted`, `rejected` |
 | outbox_status | `pending`, `processing`, `sent`, `dead` |
@@ -203,6 +204,7 @@ Migration `CreateStudentDocuments1759400000000` จะ rollback ไม่ได�
 | description | text | |
 | province | varchar | ชื่อจังหวัดมาตรฐานตรงกับ `provinces.name_th`; ใช้กรองจังหวัด งานเดิมที่เป็นชื่อเรียกถูกปรับใน migration |
 | work_mode | work_mode | |
+| interview_mode | interview_mode | รูปแบบสัมภาษณ์ของประกาศ บังคับทุกแถว งานเดิมที่ทำงานออนไซต์ถูกตั้งเป็น `on_site` นอกนั้นเป็น `online` |
 | category | varchar | หมวดงานจากรายการเดียวกันทั้งบริษัทและนักศึกษา: IT & Software, Design & UX/UI, Marketing, Data |
 | has_allowance | boolean | มีเบี้ยเลี้ยงหรือไม่ |
 | openings | integer | null ได้; เมื่อระบุต้องเป็นจำนวนเต็มบวก |
@@ -243,6 +245,12 @@ Unique ที่ `(student_id, job_id)` บันทึกงานหนึ่�
 | version | int | optimistic lock, เริ่มที่ 1 |
 | created_at | timestamptz | |
 | updated_at | timestamptz | |
+| exam_url | varchar(2048) | null ได้ ลิงก์ข้อสอบภายนอก ต้องคู่กับ exam_deadline |
+| exam_deadline | timestamptz | null ได้ กำหนดเวลาที่นักศึกษาทำข้อสอบได้ |
+| exam_completed_at | timestamptz | null ได้ เวลาที่นักศึกษาแจ้งว่าทำแล้ว ไม่ใช่คะแนน |
+| exam_passed_at | timestamptz | null ได้ เวลาที่บริษัทตรวจว่าข้อสอบผ่าน ตั้งได้เมื่อมี exam_completed_at แล้ว |
+| interview_url | varchar(2048) | null ได้ ลิงก์นัดออนไลน์ สัมภาษณ์ออนไซต์เว้นว่าง |
+| interview_starts_at | timestamptz | null ได้เมื่อยังไม่นัด เมื่อมีนัดต้องมีค่านี้ ลิงก์ต้องมีคู่กับเวลานี้เฉพาะนัดออนไลน์ |
 
 Unique ที่ `(student_id, job_id)` คือตัวกันสมัครซ้ำ แม้ request สองตัวชนกันพร้อมกัน
 

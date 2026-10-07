@@ -24,7 +24,7 @@ import { toPaginatedResult } from '../common/dto/paginated-result.js';
 import { UpdateJobDto } from './dto/update-job.dto.js';
 import { UpdateJobStatusDto } from './dto/update-job-status.dto.js';
 import { isJobCategory } from './job-categories.js';
-import { JobStatus, WorkMode } from './job-enums.js';
+import { InterviewMode, JobStatus, WorkMode } from './job-enums.js';
 import { JobsRepository, JobVersionConflictError } from './jobs.repository.js';
 
 function categoryOf(value: string): string {
@@ -91,6 +91,7 @@ export class JobsService {
       description: dto.description.trim(),
       province,
       workMode: dto.workMode,
+      interviewMode: dto.interviewMode,
       category: categoryOf(dto.category),
       hasAllowance: dto.hasAllowance,
       allowanceAmount: allowanceAmountOf(dto),
@@ -260,6 +261,7 @@ export class JobsService {
         description: dto.description.trim(),
         province,
         workMode: dto.workMode,
+        interviewMode: dto.interviewMode,
         category: categoryOf(dto.category),
         hasAllowance: dto.hasAllowance,
         allowanceAmount: allowanceAmountOf(dto),
@@ -345,6 +347,7 @@ function toDto(job: {
   description: string;
   province: string;
   workMode: JobDto['workMode'];
+  interviewMode: JobDto['interviewMode'];
   category: string;
   hasAllowance: boolean;
   openings?: number | null;
@@ -360,6 +363,7 @@ function toDto(job: {
   dto.description = job.description;
   dto.province = job.province;
   dto.workMode = job.workMode;
+  dto.interviewMode = job.interviewMode;
   dto.category = job.category;
   dto.hasAllowance = job.hasAllowance;
   dto.openings = job.openings ?? null;
@@ -400,6 +404,7 @@ function toDetail(
     description: string;
     province: string;
     workMode: JobDetailDto['workMode'];
+    interviewMode: JobDetailDto['interviewMode'];
     category: string;
     hasAllowance: boolean;
     openings?: number | null;
@@ -428,6 +433,7 @@ function toDetail(
   dto.description = job.description;
   dto.province = job.province;
   dto.workMode = job.workMode;
+  dto.interviewMode = job.interviewMode;
   dto.category = job.category;
   dto.hasAllowance = job.hasAllowance;
   dto.openings = job.openings ?? null;
@@ -458,6 +464,7 @@ function toOwnedDto(
     description: string;
     province: string;
     workMode: CompanyOwnedJobDto['workMode'];
+    interviewMode: CompanyOwnedJobDto['interviewMode'];
     category: string;
     hasAllowance: boolean;
     openings?: number | null;
@@ -476,6 +483,7 @@ function toOwnedDto(
   dto.description = job.description;
   dto.province = job.province;
   dto.workMode = job.workMode;
+  dto.interviewMode = job.interviewMode;
   dto.category = job.category;
   dto.hasAllowance = job.hasAllowance;
   dto.openings = job.openings ?? null;
@@ -495,6 +503,7 @@ function toCompanyItem(job: {
   title: string;
   status: JobStatus;
   workMode: WorkMode;
+  interviewMode: InterviewMode;
   applicantCount: number;
   pendingApplicantCount: number;
   deadline: Date | null;
@@ -504,6 +513,7 @@ function toCompanyItem(job: {
   dto.title = job.title;
   dto.status = job.status;
   dto.workMode = job.workMode;
+  dto.interviewMode = job.interviewMode;
   dto.applicantCount = job.applicantCount;
   dto.pendingApplicantCount = job.pendingApplicantCount;
   dto.deadline = job.deadline;
@@ -546,6 +556,7 @@ function toFeedItem(job: {
   companyName: string;
   province: string;
   workMode: JobFeedItemDto['workMode'];
+  interviewMode: JobFeedItemDto['interviewMode'];
   category: string;
   hasAllowance: boolean;
   openings?: number | null;
@@ -563,6 +574,7 @@ function toFeedItem(job: {
   dto.companyLogoAvailable = Boolean(job.companyLogoObjectKey);
   dto.province = job.province;
   dto.workMode = job.workMode;
+  dto.interviewMode = job.interviewMode;
   dto.category = job.category;
   dto.hasAllowance = job.hasAllowance;
   dto.openings = job.openings ?? null;

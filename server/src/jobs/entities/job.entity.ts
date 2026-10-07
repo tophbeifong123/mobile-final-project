@@ -6,7 +6,7 @@ import {
   UpdateDateColumn,
   VersionColumn,
 } from 'typeorm';
-import { JobStatus, WorkMode } from '../job-enums.js';
+import { InterviewMode, JobStatus, WorkMode } from '../job-enums.js';
 
 @Entity('jobs')
 export class Job {
@@ -32,6 +32,14 @@ export class Job {
     enumName: 'work_mode',
   })
   workMode: WorkMode;
+
+  @Column({
+    name: 'interview_mode',
+    type: 'enum',
+    enum: InterviewMode,
+    enumName: 'interview_mode',
+  })
+  interviewMode: InterviewMode;
 
   @Column({ type: 'varchar', length: 255 })
   category: string;

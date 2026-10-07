@@ -231,6 +231,8 @@ Color detailChipColor(String detail) {
     'Online' => NeoColors.skyBlue,
     'Hybrid' => NeoColors.freshMint,
     'On-site' => NeoColors.pastelCoral,
+    'สัมภาษณ์ออนไลน์' => NeoColors.skyBlue,
+    'สัมภาษณ์ออนไซต์' => NeoColors.pastelCoral,
     _ when detail.startsWith('รับ ') => NeoColors.surfaceCream,
     _ => NeoColors.softLilac,
   };

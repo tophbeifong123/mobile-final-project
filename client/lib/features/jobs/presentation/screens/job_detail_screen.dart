@@ -243,6 +243,7 @@ class _FactsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mode = workModeLabel(job.workMode);
+    final interview = interviewModeLabel(job.interviewMode);
     final rows = <(String, String)>[
       ('เบี้ยเลี้ยง', allowanceLabel(job.hasAllowance, job.allowanceAmount)),
       if (job.openings != null) ('จำนวนรับ', 'รับ ${job.openings} คน'),
@@ -271,6 +272,11 @@ class _FactsCard extends StatelessWidget {
                 icon: LucideIcons.monitor,
                 label: mode,
                 fill: detailChipColor(mode),
+              ),
+              _MetaChip(
+                icon: LucideIcons.calendarCheck,
+                label: interview,
+                fill: detailChipColor(interview),
               ),
               _MetaChip(icon: LucideIcons.tag, label: job.category),
             ],

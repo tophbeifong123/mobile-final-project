@@ -14,7 +14,7 @@ import {
   MinLength,
 } from 'class-validator';
 import { JOB_CATEGORIES } from '../job-categories.js';
-import { WorkMode } from '../job-enums.js';
+import { InterviewMode, WorkMode } from '../job-enums.js';
 
 function trimString({ value }: { value: unknown }): unknown {
   return typeof value === 'string' ? value.trim() : value;
@@ -49,6 +49,14 @@ export class CreateJobDto {
   @ApiProperty({ enum: WorkMode, example: WorkMode.Hybrid })
   @IsEnum(WorkMode)
   workMode: WorkMode;
+
+  @ApiProperty({
+    enum: InterviewMode,
+    example: InterviewMode.Online,
+    description: 'รูปแบบสัมภาษณ์ของประกาศนี้ ออนไลน์ใช้ลิงก์นัด ออนไซต์นัดที่สำนักงาน',
+  })
+  @IsEnum(InterviewMode)
+  interviewMode: InterviewMode;
 
   @ApiProperty({ example: 'IT & Software', enum: JOB_CATEGORIES })
   @Transform(trimString)

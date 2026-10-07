@@ -9,7 +9,25 @@ import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../jobs/presentation/job_labels.dart';
 import '../../domain/entities/job_application.dart';
+import '../widgets/student_selection_cards.dart';
+import '../../../../core/navigation/open_external_link.dart';
 import '../providers/applications_controller.dart';
+
+Future<void> _completeExam(
+  BuildContext context,
+  WidgetRef ref,
+  String applicationId,
+) async {
+  try {
+    await ref.read(applicationRepositoryProvider).completeExam(applicationId);
+    ref.invalidate(applicationDetailProvider(applicationId));
+  } catch (error) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(userVisibleError(error))));
+  }
+}
 
 class ApplicationDetailScreen extends ConsumerWidget {
   const ApplicationDetailScreen({super.key, required this.applicationId});
@@ -124,6 +142,12 @@ class ApplicationDetailScreen extends ConsumerWidget {
                     padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                     children: [
                       _JobSummaryCard(application: app),
+                      StudentSelectionCards(
+                        application: app,
+                        onOpenLink: openExternalLink,
+                        onCompleteExam: () =>
+                            _completeExam(context, ref, app.id),
+                      ),
                       const Gap(24),
                       _TimelineHeading(application: app),
                       const Gap(12),
@@ -314,6 +338,7 @@ class _JobSummaryCard extends StatelessWidget {
     final hasMetadata =
         application.province?.isNotEmpty == true ||
         application.workMode?.isNotEmpty == true ||
+        application.interviewMode?.isNotEmpty == true ||
         application.category?.isNotEmpty == true ||
         application.hasAllowance != null;
 
@@ -459,6 +484,12 @@ class _JobSummaryCard extends StatelessWidget {
                   _MetaTag(
                     label: workModeLabelFromApi(application.workMode!),
                     icon: Icons.devices_outlined,
+                  ),
+                if (application.interviewMode != null &&
+                    application.interviewMode!.isNotEmpty)
+                  _MetaTag(
+                    label: interviewModeLabelFromApi(application.interviewMode!),
+                    icon: Icons.event_outlined,
                   ),
                 if (application.category != null &&
                     application.category!.isNotEmpty)
@@ -695,9 +726,7 @@ class _StatusTimelineCard extends StatelessWidget {
               const Gap(20),
               _TimelineStepItem(
                 title: 'กำลังพิจารณา',
-                description: reviewStarted
-                    ? 'บริษัทกำลังตรวจประวัติและ Resume'
-                    : 'รอการตรวจสอบจากบริษัท',
+                description: _reviewDescription(application),
                 date: _eventDate(ApplicationStatus.reviewing),
                 state: decided
                     ? _StepState.completed
@@ -1119,6 +1148,33 @@ String _statusHeadline(ApplicationStatus status) {
     ApplicationStatus.accepted => 'ยินดีด้วย! คุณผ่านการคัดเลือก',
     ApplicationStatus.rejected => 'บริษัทแจ้งผลการคัดเลือกแล้ว',
   };
+}
+
+String _reviewDescription(JobApplication application) {
+  final hasInterview =
+      (application.interviewUrl?.isNotEmpty ?? false) ||
+      application.interviewStartsAt != null;
+  if (hasInterview) {
+    return application.interviewMode == 'on_site'
+        ? 'บริษัทเรียกสัมภาษณ์ที่สำนักงานแล้ว'
+        : 'บริษัทเรียกสัมภาษณ์ออนไลน์แล้ว';
+  }
+  if (application.examPassedAt != null) {
+    return 'ข้อสอบผ่านแล้ว รอบริษัทนัดสัมภาษณ์';
+  }
+  if (application.examCompletedAt != null) {
+    return 'ทำข้อสอบแล้ว รอผลตรวจจากบริษัท';
+  }
+  if (application.examUrl?.isNotEmpty == true) {
+    return 'บริษัทส่งข้อสอบแล้ว ทำก่อนถึงกำหนด';
+  }
+  final reviewing =
+      application.status == ApplicationStatus.reviewing ||
+      application.status == ApplicationStatus.accepted ||
+      application.status == ApplicationStatus.rejected;
+  return reviewing
+      ? 'บริษัทกำลังตรวจประวัติและ Resume'
+      : 'รอการตรวจสอบจากบริษัท';
 }
 
 String _statusMessage(ApplicationStatus status) {

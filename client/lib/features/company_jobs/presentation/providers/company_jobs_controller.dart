@@ -136,6 +136,60 @@ class CompanyJobsController extends Notifier<void> {
     ref.invalidate(companyJobApplicantsProvider(jobId));
   }
 
+  Future<void> setExamLink({
+    required String jobId,
+    required String applicationId,
+    required String url,
+    required DateTime deadline,
+  }) async {
+    await ref
+        .read(companyJobRepositoryProvider)
+        .setExamLink(
+          jobId: jobId,
+          applicationId: applicationId,
+          url: url,
+          deadline: deadline,
+        );
+    _refreshApplicant(jobId, applicationId);
+  }
+
+  Future<void> passExam({
+    required String jobId,
+    required String applicationId,
+  }) async {
+    await ref
+        .read(companyJobRepositoryProvider)
+        .passExam(jobId: jobId, applicationId: applicationId);
+    _refreshApplicant(jobId, applicationId);
+  }
+
+  Future<void> setInterviewLink({
+    required String jobId,
+    required String applicationId,
+    required String url,
+    required DateTime startsAt,
+  }) async {
+    await ref
+        .read(companyJobRepositoryProvider)
+        .setInterviewLink(
+          jobId: jobId,
+          applicationId: applicationId,
+          url: url,
+          startsAt: startsAt,
+        );
+    _refreshApplicant(jobId, applicationId);
+  }
+
+  void _refreshApplicant(String jobId, String applicationId) {
+    ref.invalidate(
+      companyApplicantDetailProvider((
+        jobId: jobId,
+        applicationId: applicationId,
+      )),
+    );
+    ref.invalidate(companyJobApplicantsProvider(jobId));
+  }
+
   Future<List<int>> downloadApplicantDocument({
     required String jobId,
     required String applicationId,

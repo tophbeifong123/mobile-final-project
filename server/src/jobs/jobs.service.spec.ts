@@ -12,7 +12,7 @@ import { CreateJobDto } from './dto/create-job.dto.js';
 import { JobFeedQueryDto } from './dto/job-feed-query.dto.js';
 import { UpdateJobDto } from './dto/update-job.dto.js';
 import { UpdateJobStatusDto } from './dto/update-job-status.dto.js';
-import { JobStatus, WorkMode } from './job-enums.js';
+import { InterviewMode, JobStatus, WorkMode } from './job-enums.js';
 import { JobsRepository, JobVersionConflictError } from './jobs.repository.js';
 import { JobsService } from './jobs.service.js';
 
@@ -100,6 +100,7 @@ describe('JobsService', () => {
     dto.description = ' ช่วยพัฒนาแอป ';
     dto.province = ' สงขลา ';
     dto.workMode = WorkMode.Hybrid;
+    dto.interviewMode = InterviewMode.Online;
     dto.category = ' IT & Software ';
     dto.hasAllowance = true;
     dto.allowanceAmount = 8000;
@@ -114,6 +115,7 @@ describe('JobsService', () => {
       description: 'ช่วยพัฒนาแอป',
       province: 'สงขลา',
       workMode: WorkMode.Hybrid,
+      interviewMode: InterviewMode.Online,
       category: 'IT & Software',
       hasAllowance: true,
       allowanceAmount: 8000,
@@ -637,6 +639,7 @@ describe('JobsService', () => {
     dto.description = ' ช่วยพัฒนาแอป ';
     dto.province = ' สงขลา ';
     dto.workMode = WorkMode.Remote;
+    dto.interviewMode = InterviewMode.OnSite;
     dto.category = ' IT & Software ';
     dto.hasAllowance = false;
     dto.requirements = ' ใช้ Flutter ได้ ';
@@ -653,6 +656,7 @@ describe('JobsService', () => {
       description: 'ช่วยพัฒนาแอป',
       province: 'สงขลา',
       workMode: WorkMode.Remote,
+      interviewMode: InterviewMode.OnSite,
       category: 'IT & Software',
       hasAllowance: false,
       allowanceAmount: null,

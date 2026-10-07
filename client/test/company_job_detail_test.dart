@@ -309,4 +309,26 @@ class _Jobs implements CompanyJobRepository {
     required String applicationId,
     required String status,
   }) async {}
+
+  @override
+  Future<void> setExamLink({
+    required String jobId,
+    required String applicationId,
+    required String url,
+    required DateTime deadline,
+  }) async {}
+
+  @override
+  Future<void> passExam({
+    required String jobId,
+    required String applicationId,
+  }) async {}
+
+  @override
+  Future<void> setInterviewLink({
+    required String jobId,
+    required String applicationId,
+    required String url,
+    required DateTime startsAt,
+  }) async {}
 }

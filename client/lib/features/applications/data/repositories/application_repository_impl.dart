@@ -31,4 +31,9 @@ class ApplicationRepositoryImpl implements ApplicationRepository {
     );
     return model.toEntity();
   }
+
+  @override
+  Future<void> completeExam(String applicationId) {
+    return _remote.completeExam(applicationId);
+  }
 }

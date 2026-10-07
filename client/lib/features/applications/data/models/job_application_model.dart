@@ -49,6 +49,13 @@ class JobApplicationModel {
     this.resumeObjectKey,
     this.createdAt,
     this.timeline = const [],
+    this.examUrl,
+    this.examDeadline,
+    this.examCompletedAt,
+    this.examPassedAt,
+    this.interviewUrl,
+    this.interviewStartsAt,
+    this.interviewMode,
     this.documents = const [],
   });
 
@@ -79,6 +86,7 @@ class JobApplicationModel {
       companyName: companyName,
       province: jobObj?['province'] as String?,
       workMode: jobObj?['workMode'] as String?,
+      interviewMode: jobObj?['interviewMode'] as String?,
       category: jobObj?['category'] as String?,
       hasAllowance: jobObj?['hasAllowance'] as bool?,
       status: ApplicationStatus.values.byName(json['status'] as String),
@@ -88,10 +96,16 @@ class JobApplicationModel {
           ? DateTime.tryParse(json['createdAt'] as String)
           : null,
       timeline: timeline,
+      examUrl: json['examUrl'] as String?,
+      examDeadline: _parseDate(json['examDeadline']),
+      examCompletedAt: _parseDate(json['examCompletedAt']),
+      examPassedAt: _parseDate(json['examPassedAt']),
+      interviewUrl: json['interviewUrl'] as String?,
+      interviewStartsAt: _parseDate(json['interviewStartsAt']),
       documents: (json['documents'] as List<dynamic>? ?? [])
           .map(
             (item) => AttachedDocument(
-              id: item['id'] as String,
+              id: (item as Map<String, dynamic>)['id'] as String,
               type: item['type'] as String,
               fileName: item['fileName'] as String,
             ),
@@ -106,6 +120,7 @@ class JobApplicationModel {
   final String companyName;
   final String? province;
   final String? workMode;
+  final String? interviewMode;
   final String? category;
   final bool? hasAllowance;
   final ApplicationStatus status;
@@ -113,6 +128,12 @@ class JobApplicationModel {
   final String? resumeObjectKey;
   final DateTime? createdAt;
   final List<TimelineEvent> timeline;
+  final String? examUrl;
+  final DateTime? examDeadline;
+  final DateTime? examCompletedAt;
+  final DateTime? examPassedAt;
+  final String? interviewUrl;
+  final DateTime? interviewStartsAt;
   final List<AttachedDocument> documents;
 
   JobApplication toEntity() {
@@ -123,6 +144,7 @@ class JobApplicationModel {
       companyName: companyName,
       province: province,
       workMode: workMode,
+      interviewMode: interviewMode,
       category: category,
       hasAllowance: hasAllowance,
       status: status,
@@ -130,7 +152,18 @@ class JobApplicationModel {
       resumeObjectKey: resumeObjectKey,
       createdAt: createdAt,
       timeline: timeline,
+      examUrl: examUrl,
+      examDeadline: examDeadline,
+      examCompletedAt: examCompletedAt,
+      examPassedAt: examPassedAt,
+      interviewUrl: interviewUrl,
+      interviewStartsAt: interviewStartsAt,
       documents: documents,
     );
   }
+}
+
+DateTime? _parseDate(Object? value) {
+  if (value is! String || value.isEmpty) return null;
+  return DateTime.tryParse(value);
 }
