@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-import 'package:pdfx/pdfx.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +10,7 @@ import '../../../../core/theme/app_colors_extension.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../widgets/company_applicant_widgets.dart';
 import '../../../../core/widgets/neo_button.dart';
+import '../../../../core/widgets/app_card.dart';
 import '../../../student_profile/presentation/widgets/resume_preview_modal.dart';
 import '../../../../core/widgets/company_top_bar.dart';
 import '../../../../core/widgets/empty_state.dart';
@@ -20,6 +20,90 @@ import '../../domain/entities/company_job.dart';
 import 'package:client/features/student_profile/domain/entities/student_profile.dart';
 import '../providers/company_jobs_controller.dart';
 import '../widgets/company_selection_section.dart';
+
+class _ApplicationDocumentsCard extends StatelessWidget {
+  const _ApplicationDocumentsCard({
+    required this.documents,
+    required this.onOpen,
+  });
+  final List<ApplicantDocument> documents;
+  final Future<void> Function(ApplicantDocument) onOpen;
+
+  @override
+  Widget build(BuildContext context) => CompanyApplicantCard(
+    key: const ValueKey('company-application-documents'),
+    padding: const EdgeInsets.all(12),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Row(
+          children: [
+            Icon(
+              Icons.folder_copy_outlined,
+              size: 20,
+              color: AppColors.primary,
+            ),
+            Gap(8),
+            Expanded(
+              child: Text(
+                'เอกสารที่แนบตอนสมัคร',
+                style: TextStyle(
+                  color: NeoColors.inkSolid,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const Text(
+          'ไฟล์ชุดนี้ไม่เปลี่ยนเมื่อแก้ไขคลังเอกสาร',
+          style: TextStyle(color: NeoColors.subtleInk),
+        ),
+        for (final document in documents)
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
+            child: AppCard(
+              key: ValueKey('company-attached-document-${document.id}'),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              backgroundColor: NeoColors.paperCanvas,
+              borderColor: NeoColors.inkSolid,
+              borderWidth: 2,
+              shadows: NeoShadows.elevation1,
+              child: ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  document.fileName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: NeoColors.inkSolid,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                subtitle: Text(
+                  document.type == 'cv'
+                      ? 'CV'
+                      : document.type == 'transcript'
+                      ? 'Transcript'
+                      : 'เอกสารอื่นๆ',
+                ),
+                trailing: IconButton(
+                  tooltip: 'เปิดดู ${document.fileName}',
+                  icon: const Icon(
+                    Icons.visibility_outlined,
+                    color: NeoColors.inkSolid,
+                  ),
+                  onPressed: document.fileName.trim().isEmpty
+                      ? null
+                      : () => onOpen(document),
+                ),
+              ),
+            ),
+          ),
+      ],
+    ),
+  );
+}
 
 class ApplicantDetailScreen extends ConsumerStatefulWidget {
   const ApplicantDetailScreen({
@@ -40,36 +124,23 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
   bool _isUpdating = false;
 
   Future<void> _openApplicantDocument(ApplicantDocument document) async {
-    try {
-      final bytes = await ref
-          .read(companyJobsControllerProvider.notifier)
-          .downloadApplicantDocument(
-            jobId: widget.jobId,
-            applicationId: widget.applicationId,
-            documentId: document.id,
-          );
-      if (bytes.isEmpty || !mounted) return;
-      final controller = PdfControllerPinch(
-        document: PdfDocument.openData(Uint8List.fromList(bytes)),
-      );
-      await showDialog<void>(
-        context: context,
-        builder: (context) => Dialog(
-          child: SizedBox(
-            width: MediaQuery.sizeOf(context).width * .92,
-            height: MediaQuery.sizeOf(context).height * .84,
-            child: PdfViewPinch(controller: controller),
-          ),
+    final provider = applicantDocumentBytesProvider((
+      jobId: widget.jobId,
+      applicationId: widget.applicationId,
+      documentId: document.id,
+    ));
+    await showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.6),
+      builder: (_) => Consumer(
+        builder: (context, ref, _) => ResumePreviewModal(
+          fileName: document.fileName,
+          readOnly: true,
+          pdfBytes: ref.watch(provider),
+          onRetry: () => ref.invalidate(provider),
         ),
-      );
-      controller.dispose();
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(userVisibleError(error))));
-      }
-    }
+      ),
+    );
   }
 
   Future<void> _updateStatusToReviewing(Applicant applicant) async {
@@ -312,47 +383,17 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
                   _PortfolioCard(url: applicant.portfolioUrl!.trim()),
                 ],
                 const SizedBox(height: 16),
-                _ResumeCard(
-                  jobId: widget.jobId,
-                  applicationId: widget.applicationId,
-                  resumeFileName: applicant.resumeFileName,
-                  resumeObjectKey: applicant.resumeObjectKey,
-                  onOpen: applicant.documents.any((d) => d.type == 'cv')
-                      ? () => _openApplicantDocument(
-                          applicant.documents.firstWhere((d) => d.type == 'cv'),
-                        )
-                      : null,
-                ),
-                for (final document in applicant.documents.where(
-                  (d) => d.type != 'cv',
-                ))
-                  Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: CompanyApplicantCard(
-                      child: ListTile(
-                        leading: const Icon(
-                          Icons.picture_as_pdf_outlined,
-                          color: AppColors.primary,
-                        ),
-                        title: Text(
-                          document.type == 'transcript'
-                              ? 'Transcript'
-                              : 'เอกสารอื่น',
-                        ),
-                        subtitle: Text(
-                          document.fileName,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        trailing: IconButton(
-                          tooltip: 'เปิดไฟล์ PDF',
-                          onPressed: document.fileName.trim().isEmpty
-                              ? null
-                              : () => _openApplicantDocument(document),
-                          icon: const Icon(Icons.open_in_new),
-                        ),
-                      ),
-                    ),
+                if (applicant.documents.isNotEmpty)
+                  _ApplicationDocumentsCard(
+                    documents: applicant.documents,
+                    onOpen: _openApplicantDocument,
+                  )
+                else
+                  _ResumeCard(
+                    jobId: widget.jobId,
+                    applicationId: widget.applicationId,
+                    resumeFileName: applicant.resumeFileName,
+                    resumeObjectKey: applicant.resumeObjectKey,
                   ),
                 const SizedBox(height: 16),
                 CompanySelectionSection(
@@ -1014,7 +1055,6 @@ class _ResumeCard extends ConsumerWidget {
     required this.applicationId,
     this.resumeFileName,
     this.resumeObjectKey,
-    this.onOpen,
   });
 
   final String jobId;
@@ -1022,7 +1062,6 @@ class _ResumeCard extends ConsumerWidget {
 
   final String? resumeFileName;
   final String? resumeObjectKey;
-  final VoidCallback? onOpen;
 
   void _openPreview(BuildContext context) {
     final provider = applicantResumeBytesProvider((
@@ -1046,11 +1085,9 @@ class _ResumeCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
     final colors = context.colors;
-    final openResume =
-        onOpen ??
-        (resumeObjectKey != null && resumeObjectKey!.isNotEmpty
-            ? () => _openPreview(context)
-            : null);
+    final openResume = resumeObjectKey != null && resumeObjectKey!.isNotEmpty
+        ? () => _openPreview(context)
+        : null;
 
     return CompanyApplicantCard(
       onTap: openResume,

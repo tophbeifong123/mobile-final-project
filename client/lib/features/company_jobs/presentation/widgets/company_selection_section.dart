@@ -60,20 +60,26 @@ class CompanySelectionSection extends StatelessWidget {
         : 'กำหนดส่ง ${formatSelectionWhen(applicant.examDeadline!)}';
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         CompanyApplicantCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'ข้อสอบ',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+              const _SelectionHeading(
+                title: 'ข้อสอบ',
+                icon: Icons.quiz_outlined,
               ),
               const Gap(6),
-              Text(examBody),
+              Text(examBody, style: const TextStyle(color: NeoColors.inkSolid)),
               if (hasExam) ...[
                 const Gap(4),
-                Text(examUrl, maxLines: 2, overflow: TextOverflow.ellipsis),
+                Text(
+                  examUrl,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: NeoColors.inkSolid),
+                ),
               ],
               if (reviewing && !completed) ...[
                 const Gap(12),
@@ -100,12 +106,11 @@ class CompanySelectionSection extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                onSite ? 'นัดสัมภาษณ์ออนไซต์' : 'นัดสัมภาษณ์ออนไลน์',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                ),
+              _SelectionHeading(
+                title: onSite ? 'นัดสัมภาษณ์ออนไซต์' : 'นัดสัมภาษณ์ออนไลน์',
+                icon: onSite
+                    ? Icons.apartment_rounded
+                    : Icons.videocam_outlined,
               ),
               const Gap(6),
               Text(
@@ -122,6 +127,7 @@ class CompanySelectionSection extends StatelessWidget {
                     : onSite
                     ? 'ยังไม่ได้นัดที่สำนักงาน'
                     : 'ยังไม่ได้ส่งลิงก์นัด',
+                style: const TextStyle(color: NeoColors.inkSolid),
               ),
               if (hasInterview && !onSite && interviewUrl != null) ...[
                 const Gap(4),
@@ -129,6 +135,7 @@ class CompanySelectionSection extends StatelessWidget {
                   interviewUrl,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: NeoColors.inkSolid),
                 ),
               ],
               if (reviewing && passed) ...[
@@ -148,6 +155,30 @@ class CompanySelectionSection extends StatelessWidget {
       ],
     );
   }
+}
+
+class _SelectionHeading extends StatelessWidget {
+  const _SelectionHeading({required this.title, required this.icon});
+  final String title;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Icon(icon, size: 20, color: AppColors.primary),
+      const Gap(8),
+      Expanded(
+        child: Text(
+          title,
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w900,
+            color: NeoColors.inkSolid,
+          ),
+        ),
+      ),
+    ],
+  );
 }
 
 class SelectionLinkDialog extends StatefulWidget {
@@ -255,6 +286,8 @@ class _SelectionLinkDialogState extends State<SelectionLinkDialog> {
           },
         ),
       ],
+      actionsAlignment: MainAxisAlignment.center,
+      actionsOverflowAlignment: OverflowBarAlignment.center,
     );
   }
 }

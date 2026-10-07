@@ -2,11 +2,14 @@ import 'package:client/core/error/app_exception.dart';
 import 'package:client/core/network/dio_client.dart';
 import 'package:client/core/storage/token_storage.dart';
 import 'package:client/core/theme/app_theme.dart';
+import 'package:client/core/theme/app_tokens.dart';
+import 'package:client/core/widgets/app_card.dart';
 import 'package:client/features/company_jobs/domain/entities/company_job.dart';
 import 'package:client/features/company_jobs/domain/repositories/company_job_repository.dart';
 import 'package:client/features/student_profile/domain/entities/student_profile.dart';
 import 'package:client/features/company_jobs/presentation/providers/company_jobs_controller.dart';
 import 'package:client/features/company_jobs/presentation/screens/applicant_detail_screen.dart';
+import 'package:client/features/student_profile/presentation/widgets/resume_preview_modal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -48,6 +51,12 @@ void main() {
       );
 
       final fakeRepo = _FakeCompanyJobRepository(applicant: applicant);
+      var documentRequests = 0;
+      final documentProvider = applicantDocumentBytesProvider((
+        jobId: 'job-1',
+        applicationId: 'app-1',
+        documentId: 'snapshot-transcript-uuid',
+      ));
 
       final router = GoRouter(
         initialLocation: '/company/jobs/job-1/applicants/app-1',
@@ -65,9 +74,14 @@ void main() {
 
       await tester.pumpWidget(
         ProviderScope(
+          retry: (count, error) => null,
           overrides: [
             tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
             companyJobRepositoryProvider.overrideWithValue(fakeRepo),
+            documentProvider.overrideWith((ref) async {
+              documentRequests++;
+              throw const AppException('เปิดเอกสารไม่สำเร็จ');
+            }),
           ],
           child: MaterialApp.router(
             theme: AppTheme.lightTheme,
@@ -105,10 +119,18 @@ void main() {
       expect(find.text('Portfolio / ผลงาน'), findsOneWidget);
       expect(find.text('https://github.com/somchai'), findsOneWidget);
 
-      expect(find.text('Resume ที่ใช้สมัคร'), findsOneWidget);
+      expect(find.text('เอกสารที่แนบตอนสมัคร'), findsOneWidget);
+      final documentsIcon = tester.widget<Icon>(
+        find.descendant(
+          of: find.byKey(const ValueKey('company-application-documents')),
+          matching: find.byIcon(Icons.folder_copy_outlined),
+        ),
+      );
+      expect(documentsIcon.color, AppColors.primary);
+      expect(documentsIcon.size, 20);
       expect(find.text('somchai-resume.pdf'), findsOneWidget);
       expect(
-        find.text('สำเนา Resume ในระบบ ณ วันที่ยื่นใบสมัคร'),
+        find.text('ไฟล์ชุดนี้ไม่เปลี่ยนเมื่อแก้ไขคลังเอกสาร'),
         findsOneWidget,
       );
 
@@ -118,7 +140,41 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
       expect(find.text('attached-transcript.pdf'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('company-application-documents')),
+        findsOneWidget,
+      );
+      for (final id in ['snapshot-cv-uuid', 'snapshot-transcript-uuid']) {
+        final card = tester.widget<AppCard>(
+          find.byKey(ValueKey('company-attached-document-$id')),
+        );
+        expect(card.borderColor, NeoColors.inkSolid);
+        expect(card.borderWidth, 2);
+        expect(card.backgroundColor, NeoColors.paperCanvas);
+      }
+      expect(find.byTooltip('เปิดดู attached-transcript.pdf'), findsOneWidget);
+      expect(find.text('เปิด Resume (PDF)'), findsNothing);
       expect(find.text('เอกสารอื่น'), findsNothing);
+
+      await tester.drag(find.byType(ListView).first, const Offset(0, -200));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('เปิดดู attached-transcript.pdf'));
+      await tester.pumpAndSettle();
+      final preview = tester.widget<ResumePreviewModal>(
+        find.byType(ResumePreviewModal),
+      );
+      expect(preview.fileName, 'attached-transcript.pdf');
+      expect(preview.readOnly, isTrue);
+      expect(find.text('ปิด'), findsOneWidget);
+      expect(find.text('เปลี่ยนไฟล์'), findsNothing);
+      expect(find.text('เปิดเอกสารไม่สำเร็จ'), findsOneWidget);
+      expect(documentRequests, 1);
+      await tester.tap(find.text('ลองอีกครั้ง'));
+      await tester.pumpAndSettle();
+      expect(documentRequests, 2);
+      await tester.tap(find.text('ปิด'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ResumePreviewModal), findsNothing);
 
       await tester.scrollUntilVisible(
         find.text('Cover Letter'),
