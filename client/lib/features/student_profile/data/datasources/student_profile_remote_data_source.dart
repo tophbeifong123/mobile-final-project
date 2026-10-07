@@ -3,6 +3,8 @@ import 'package:dio/dio.dart';
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/error/app_exception.dart';
 import '../models/student_profile_model.dart';
+import '../../domain/entities/university.dart';
+import '../../domain/entities/major.dart';
 
 class StudentProfileRemoteDataSource {
   StudentProfileRemoteDataSource(this._dio);
@@ -13,6 +15,50 @@ class StudentProfileRemoteDataSource {
     return _read(() {
       return _dio.get<Map<String, dynamic>>(ApiConstants.studentProfile);
     });
+  }
+
+  Future<List<University>> searchUniversities(String query) async {
+    try {
+      final response = await _dio.get<List<dynamic>>(
+        ApiConstants.universities,
+        queryParameters: {'q': query},
+      );
+      final items = response.data;
+      if (items == null) {
+        throw const AppException('ข้อมูลรายชื่อมหาวิทยาลัยไม่ถูกต้อง');
+      }
+      return items
+          .map((item) {
+            final json = item as Map<String, dynamic>;
+            return University(
+              id: json['id'] as String,
+              nameTh: json['nameTh'] as String,
+            );
+          })
+          .toList(growable: false);
+    } on DioException catch (error) {
+      throw mapStudentProfileError(error);
+    }
+  }
+
+  Future<List<Major>> searchMajors(String query) async {
+    try {
+      final response = await _dio.get<List<dynamic>>(
+        '/majors',
+        queryParameters: {'q': query},
+      );
+      return (response.data ?? const [])
+          .map((item) {
+            final json = item as Map<String, dynamic>;
+            return Major(
+              id: json['id'] as String,
+              nameTh: json['nameTh'] as String,
+            );
+          })
+          .toList(growable: false);
+    } on DioException catch (error) {
+      throw mapStudentProfileError(error);
+    }
   }
 
   Future<StudentProfileModel> update(StudentProfileModel profile) {

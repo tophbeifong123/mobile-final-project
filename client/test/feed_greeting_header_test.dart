@@ -9,7 +9,9 @@ import 'package:client/features/jobs/presentation/providers/jobs_controller.dart
 import 'package:client/features/jobs/presentation/screens/job_feed_screen.dart';
 import 'package:client/features/jobs/presentation/widgets/feed_greeting_header.dart';
 import 'package:client/features/saved_jobs/presentation/providers/saved_jobs_controller.dart';
+import 'package:client/features/student_profile/domain/entities/major.dart';
 import 'package:client/features/student_profile/domain/entities/student_profile.dart';
+import 'package:client/features/student_profile/domain/entities/university.dart';
 import 'package:client/features/student_profile/domain/repositories/student_profile_repository.dart';
 import 'package:client/features/student_profile/presentation/providers/student_profile_controller.dart';
 import 'package:flutter/material.dart';
@@ -206,6 +208,12 @@ class _ProfileRepository implements StudentProfileRepository {
     fetchCount++;
     return pending ?? value;
   }
+
+  @override
+  Future<List<University>> searchUniversities(String query) async => const [];
+
+  @override
+  Future<List<Major>> searchMajors(String query) async => const [];
 
   @override
   Future<StudentProfile> update(StudentProfile profile) async =>

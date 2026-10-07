@@ -25,4 +25,27 @@ class ResumeRepositoryImpl implements ResumeRepository {
   Future<List<int>> downloadResumePdf() {
     return _remote.downloadResumePdf();
   }
+
+  @override
+  Future<List<int>> downloadDocumentPdf(String id) =>
+      _remote.downloadDocumentPdf(id);
+
+  @override
+  Future<List<StudentDocument>> listDocuments() => _remote.listDocuments();
+
+  @override
+  Future<StudentDocument> uploadDocument({
+    required String kind,
+    required String filePath,
+    required String fileName,
+    List<int>? bytes,
+  }) => _remote.uploadDocument(
+    kind: kind,
+    filePath: filePath,
+    fileName: fileName,
+    bytes: bytes,
+  );
+
+  @override
+  Future<void> deleteDocument(String id) => _remote.deleteDocument(id);
 }

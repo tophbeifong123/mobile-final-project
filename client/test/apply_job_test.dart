@@ -9,6 +9,8 @@ import 'package:client/features/jobs/domain/entities/job.dart';
 import 'package:client/features/jobs/domain/repositories/job_repository.dart';
 import 'package:client/features/jobs/presentation/providers/jobs_controller.dart';
 import 'package:client/features/student_profile/domain/entities/student_profile.dart';
+import 'package:client/features/student_profile/domain/entities/university.dart';
+import 'package:client/features/student_profile/domain/entities/major.dart';
 import 'package:client/features/student_profile/domain/repositories/student_profile_repository.dart';
 import 'package:client/features/student_profile/presentation/providers/student_profile_controller.dart';
 import 'package:flutter/material.dart';
@@ -172,6 +174,11 @@ void main() {
 class _FakeStudentProfileRepository implements StudentProfileRepository {
   _FakeStudentProfileRepository(this.profile);
   final StudentProfile profile;
+
+  @override
+  Future<List<University>> searchUniversities(String query) async => const [];
+  @override
+  Future<List<Major>> searchMajors(String query) async => const [];
 
   @override
   Future<StudentProfile> fetchMe() async => profile;

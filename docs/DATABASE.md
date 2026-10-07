@@ -25,6 +25,8 @@ jobs ||--o{ applications : receives
 applications ||--o{ application_status_events : timeline
 applications ||--o{ notifications : notifies
 student_profiles ||--o{ notifications : receives
+universities ||--o{ student_profiles : selected_university
+student_profiles ||--o{ student_documents : owns
 
 applications ||--o{ outbox_messages : "enqueue on status change"
 ```
@@ -103,8 +105,10 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | id | uuid | PK |
 | user_id | uuid | unique, FK → users.id |
 | full_name | varchar | |
-| university | varchar | |
-| major | varchar | สาขา |
+| university_id | uuid | null ได้, FK → universities.id |
+| custom_university_name | varchar(255) | null ได้; ใช้เมื่อไม่ได้เลือกจากมาสเตอร์ |
+| major_id | uuid | null ได้, FK → majors.id |
+| custom_major_name | varchar(255) | null ได้; ใช้เมื่อไม่ได้เลือกจากมาสเตอร์ |
 | skills | text[] | ทักษะ |
 | bio | text | ข้อมูลเกี่ยวกับฉัน / แนะนำตัว |
 | contact_links | jsonb | รายการช่องทางติดต่อ (phone, line, linkedin ฯลฯ) |
@@ -114,6 +118,43 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | resume_file_name | varchar | ชื่อไฟล์ที่ผู้ใช้เลือก |
 | created_at | timestamptz | |
 | updated_at | timestamptz | |
+
+`university_id` และ `custom_university_name` มี CHECK constraint `university_id IS NULL OR custom_university_name IS NULL`; ทั้งคู่ null หมายถึงยังไม่ได้ระบุ. Migration `1791244800000-add-student-university-master` สร้างมาสเตอร์และ backfill ชื่อเดิมโดย normalize whitespace/periods แล้ว match แบบ exact กับชื่อหรือ alias; ชื่อ unmatched/ambiguous เก็บเป็น custom โดยไม่เดา. Rollback คืนชื่อที่แสดงปัจจุบันลงคอลัมน์เดิมก่อนถอด FK/คอลัมน์ใหม่และตารางมาสเตอร์.
+
+ตาราง `majors` เก็บชื่อสาขาแนะนำ. `major_id` และ `custom_major_name` อยู่ภายใต้ CHECK ที่ห้ามมีค่าพร้อมกัน; migration เพิ่ม unique master, backfill ชื่อที่ตรงแบบ exact และเก็บชื่ออื่นเป็น custom. Rollback รวมชื่อที่แสดงกลับลงคอลัมน์ `major` เดิมก่อนลบ schema ใหม่.
+
+| majors column | type | notes |
+|---|---|---|
+| id | uuid | PK, deterministic จากชื่อมาตรฐาน |
+| name_th | varchar(255) | unique, ชื่อสำหรับแสดง |
+
+ค้นหาคำแนะนำผ่าน `GET /api/majors?q=...`; รายการเป็นคำแนะนำ ไม่ใช่ allowlist สำหรับค่าที่โปรไฟล์บันทึกได้.
+
+มาสเตอร์ seed จาก [MHESI Open Data: รายชื่อสถาบันอุดมศึกษา](https://data.mhesi.go.th/dataset/univ_uni_11_03) (academic year 2563; metadata ระบุข้อมูลล่าสุด 1 มีนาคม 2564 และปรับปรุงชุดข้อมูล 24 สิงหาคม 2568). Migration ฝัง snapshot ไม่เรียก network. ชื่อวิทยาเขตที่ระบุชัดถูกรวมที่สถาบันต้นสังกัด และเพิ่ม aliases สำหรับคำย่อที่ค้นหาบ่อย เช่น `ม.อ.` และ `PSU`. เนื่องจาก metadata ของแหล่งข้อมูลระบุปีการศึกษา 2563 ให้ผู้ตรวจยืนยันว่าขอบเขต snapshot นี้เพียงพอก่อน release.
+
+| คอลัมน์ | ชนิด | หมายเหตุ |
+|---|---|---|
+| id | uuid | PK, deterministic จากชื่อมาตรฐาน |
+| name_th | varchar(255) | unique, ชื่อสำหรับแสดง |
+| aliases | text[] | ชื่อเรียกอื่นและคำย่อสำหรับค้นหา |
+### student_documents
+
+เก็บ metadata ของ PDF ที่อยู่ใน storage; ไฟล์จริงไม่อยู่ใน PostgreSQL
+
+| คอลัมน์ | ชนิด | หมายเหตุ |
+|---|---|---|
+| id | uuid | PK |
+| student_id | uuid | FK → student_profiles.id |
+| type | varchar(16) | `cv`, `transcript`, `other` |
+| object_key | varchar(1024) | storage key |
+| file_name | varchar(255) | ชื่อไฟล์สำหรับแสดง |
+| created_at / updated_at | timestamptz | |
+
+Partial unique index จำกัด CV และ transcript อย่างละหนึ่งไฟล์ต่อนักศึกษา. จำนวน `other` สูงสุด 3 ถูกบังคับใน service ภายใต้ transaction ที่ล็อกแถว student profile. Migration backfill CV เดิมโดยคง object key เดิม.
+
+การลบ metadata ทำภายใต้ transaction ที่ล็อกแถว student profile. เมื่อลบ CV ให้ล้าง Resume ปัจจุบันของโปรไฟล์ด้วย แต่จะลบ object จาก storage ก็ต่อเมื่อไม่มีใบสมัครอ้างถึงอยู่ เพื่อเก็บ CV snapshot ของใบสมัครเดิม.
+
+Migration `CreateStudentDocuments1759400000000` จะ rollback ไม่ได้เมื่อยังมี transcript/other metadata เพราะ schema เดิมไม่มีที่เก็บข้อมูลเหล่านี้; `down` ปฏิเสธอย่างชัดเจนในกรณีนั้น และคืน CV ปัจจุบันไปยังคอลัมน์เดิมก่อนลบตารางเมื่อทำได้. ไฟล์ storage ไม่ถูกลบจาก migration.
 
 ### company_profiles
 
@@ -197,6 +238,7 @@ Unique ที่ `(student_id, job_id)` บันทึกงานหนึ่�
 | job_id | uuid | FK → jobs.id |
 | cover_letter | text | บังคับมีตอนสมัคร |
 | resume_object_key | varchar | สำเนาคีย์ Resume ตอนสมัคร ไม่ตามไฟล์ที่อัปโหลดใหม่ทีหลัง |
+| resume_file_name | varchar | ชื่อ CV ณ เวลาสมัคร; null ได้สำหรับใบสมัครเก่าก่อน migration |
 | status | application_status | ค่าเริ่มต้น `submitted` |
 | version | int | optimistic lock, เริ่มที่ 1 |
 | created_at | timestamptz | |
@@ -260,6 +302,7 @@ Worker ที่สำเร็จแล้วตั้ง `sent` เกิน�
 | notifications | student_id, created_at | หน้ารายการแจ้งเตือน |
 | outbox_messages | status, available_at | worker ดึงงานที่ถึงเวลา |
 | refresh_tokens | user_id | logout ของ user นั้น |
+| student_profiles | university_id | join ชื่อมหาวิทยาลัยใน applicant list |
 | company_profiles | province_id | FK และการอ่านโปรไฟล์พร้อมจังหวัด |
 
 ## 5. Transaction และ lock
@@ -277,6 +320,7 @@ Google signup ทำใน transaction เดียวกัน: สร้าง
 ใช้ pessimistic lock ที่แถว `jobs` ด้วย `SELECT ... FOR UPDATE` ใน transaction เดียวกัน
 
 - ตอนสมัคร: ล็อกแถวงาน ตรวจว่ายัง `open` ตรวจว่ามี Resume แล้วแทรก `applications` พร้อม event `submitted`
+- CV ปัจจุบันอยู่ใน `student_documents`; ตอนสมัครคัดลอก object key และชื่อไฟล์ไป `applications.resume_object_key` / `resume_file_name`. การแทนที่ CV ไม่เปลี่ยนใบสมัครเก่า และไฟล์ที่ใบสมัครอ้างถึงจะไม่ถูกลบ
 - ตอนปิดหรือเปิดรับ: ล็อกแถวงานแล้วค่อยเปลี่ยน `status`
 
 กันกรณีนักศึกษาสมัครงานที่กำลังถูกปิด และกันการปิดงานขณะกำลังสร้างใบสมัคร ไม่ใช้ optimistic lock ตรงนี้ เพราะการสมัครไม่ได้แก้แถวใบสมัครเดิม

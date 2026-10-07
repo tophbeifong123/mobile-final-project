@@ -684,6 +684,13 @@ class _FakeCompanyJobRepository implements CompanyJobRepository {
   Future<List<Applicant>> fetchApplicants(String jobId) async => [];
 
   @override
+  Future<List<int>> downloadApplicantDocument({
+    required String jobId,
+    required String applicationId,
+    required String documentId,
+  }) async => throw UnimplementedError();
+
+  @override
   Future<List<CompanyJob>> fetchMine() async => [];
 
   @override

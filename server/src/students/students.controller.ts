@@ -5,6 +5,7 @@ import {
   Get,
   Patch,
   Post,
+  Param,
   Res,
   UploadedFile,
   UseGuards,
@@ -28,6 +29,7 @@ import { ResumeResponseDto } from './dto/resume-response.dto.js';
 import { StudentProfileDto } from './dto/student-profile.dto.js';
 import { UpdateStudentProfileDto } from './dto/update-student-profile.dto.js';
 import { StudentsService } from './students.service.js';
+import { StudentDocumentType } from './student-document.entity.js';
 
 @ApiTags('Students')
 @ApiBearerAuth()
@@ -92,7 +94,7 @@ export class StudentsController {
   @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
   @ApiResponse({ status: 403, description: 'เฉพาะนักศึกษา' })
   @ApiResponse({ status: 404, description: 'ไม่พบโปรไฟล์' })
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }))
   uploadResume(
     @CurrentUser() user: AuthUser,
     @UploadedFile() file: UploadedFilePayload | undefined,
@@ -116,6 +118,60 @@ export class StudentsController {
       'Content-Disposition',
       `inline; filename="${encodeURIComponent(fileName)}"`,
     );
+    res.send(buffer);
+  }
+
+  @Get('me/documents')
+  @ApiOperation({ summary: 'รายการเอกสารของนักศึกษา' })
+  @ApiResponse({ status: 200, description: 'CV, transcript และเอกสารอื่น' })
+  listDocuments(@CurrentUser() user: AuthUser) {
+    return this.studentsService.listDocuments(user);
+  }
+
+  @Post('me/documents/cv')
+  @ApiOperation({ summary: 'อัปโหลดหรือแทนที่ CV เป็น PDF' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } }, required: ['file'] } })
+  @ApiResponse({ status: 201, description: 'บันทึก CV สำเร็จ' })
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }))
+  uploadCv(@CurrentUser() user: AuthUser, @UploadedFile() file: UploadedFilePayload | undefined) {
+    return this.studentsService.uploadDocument(user, StudentDocumentType.Cv, file);
+  }
+
+  @Post('me/documents/transcript')
+  @ApiOperation({ summary: 'อัปโหลดหรือแทนที่ Transcript เป็น PDF' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } }, required: ['file'] } })
+  @ApiResponse({ status: 201, description: 'บันทึก Transcript สำเร็จ' })
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }))
+  uploadTranscript(@CurrentUser() user: AuthUser, @UploadedFile() file: UploadedFilePayload | undefined) {
+    return this.studentsService.uploadDocument(user, StudentDocumentType.Transcript, file);
+  }
+
+  @Post('me/documents/other')
+  @ApiOperation({ summary: 'เพิ่มเอกสารอื่นเป็น PDF (สูงสุด 3 ไฟล์)' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } }, required: ['file'] } })
+  @ApiResponse({ status: 201, description: 'เพิ่มเอกสารสำเร็จ' })
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }))
+  uploadOther(@CurrentUser() user: AuthUser, @UploadedFile() file: UploadedFilePayload | undefined) {
+    return this.studentsService.uploadDocument(user, StudentDocumentType.Other, file);
+  }
+
+  @Delete('me/documents/:id')
+  @ApiOperation({ summary: 'ลบ CV, transcript หรือเอกสารอื่น' })
+  @ApiResponse({ status: 200, description: 'ลบเอกสารสำเร็จ' })
+  deleteDocument(@CurrentUser() user: AuthUser, @Param('id') id: string) {
+    return this.studentsService.deleteDocument(user, id);
+  }
+
+  @Get('me/documents/:id/file')
+  @ApiOperation({ summary: 'เปิดไฟล์เอกสาร PDF ของนักศึกษา' })
+  @ApiResponse({ status: 200, description: 'ไฟล์ PDF' })
+  async getDocument(@CurrentUser() user: AuthUser, @Param('id') id: string, @Res() res: Response) {
+    const { buffer, fileName } = await this.studentsService.getStudentDocument(user, id);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(fileName)}"`);
     res.send(buffer);
   }
 

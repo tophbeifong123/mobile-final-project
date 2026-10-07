@@ -7,6 +7,8 @@ import '../../data/datasources/student_profile_remote_data_source.dart';
 import '../../data/repositories/student_profile_repository_impl.dart';
 import '../../domain/entities/student_profile.dart';
 import '../../domain/repositories/student_profile_repository.dart';
+import '../../domain/entities/university.dart';
+import '../../domain/entities/major.dart';
 
 final studentProfileRepositoryProvider = Provider<StudentProfileRepository>((
   ref,
@@ -54,6 +56,19 @@ class StudentProfileController extends AsyncNotifier<StudentProfile> {
 final studentProfileControllerProvider =
     AsyncNotifierProvider<StudentProfileController, StudentProfile>(
       StudentProfileController.new,
+    );
+
+final universitiesSearchProvider = FutureProvider.autoDispose
+    .family<List<University>, String>((ref, query) {
+      return ref
+          .watch(studentProfileRepositoryProvider)
+          .searchUniversities(query);
+    });
+
+final majorsSearchProvider = FutureProvider.autoDispose
+    .family<List<Major>, String>(
+      (ref, query) =>
+          ref.watch(studentProfileRepositoryProvider).searchMajors(query),
     );
 
 final studentAvatarBytesProvider = FutureProvider.family<List<int>?, String?>((

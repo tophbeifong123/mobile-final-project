@@ -9,8 +9,10 @@ import { CompaniesModule } from './companies/companies.module.js';
 import { JobsModule } from './jobs/jobs.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
 import { ProvincesModule } from './provinces/provinces.module.js';
+import { UniversitiesModule } from './universities/universities.module.js';
 import { StorageModule } from './storage/storage.module.js';
 import { StudentsModule } from './students/students.module.js';
+import { MajorsModule } from './majors/majors.module.js';
 
 @Module({
   imports: [
@@ -33,10 +35,12 @@ import { StudentsModule } from './students/students.module.js';
     StorageModule,
     AuthModule,
     StudentsModule,
+    MajorsModule,
     JobsModule,
     ApplicationsModule,
     NotificationsModule,
     ProvincesModule,
+    UniversitiesModule,
     CompaniesModule,
   ],
   controllers: [AppController],

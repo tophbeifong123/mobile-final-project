@@ -7,6 +7,9 @@ import {
 import { DataSource, QueryFailedError } from 'typeorm';
 import { CompanyProfile } from '../auth/entities/company-profile.entity.js';
 import { StudentProfile } from '../auth/entities/student-profile.entity.js';
+import { Major } from '../majors/major.entity.js';
+import { StudentDocument, StudentDocumentType } from '../students/student-document.entity.js';
+import { University } from '../universities/university.entity.js';
 import { Job } from '../jobs/entities/job.entity.js';
 import { JobStatus, WorkMode } from '../jobs/job-enums.js';
 import { Notification } from '../notifications/entities/notification.entity.js';
@@ -29,6 +32,7 @@ export interface ApplyJobParams {
   jobId: string;
   coverLetter: string;
   resumeObjectKey: string;
+  resumeFileName: string | null;
   actorUserId: string;
 }
 
@@ -108,11 +112,18 @@ export interface CompanyApplicantDetailRecord {
   resumeObjectKey: string;
   createdAt: Date;
   updatedAt: Date;
+  documents: Array<{ id: string; type: string; fileName: string }>;
 }
 
 @Injectable()
 export class ApplicationsRepository {
   constructor(private readonly dataSource: DataSource) {}
+
+  findStudentCv(studentId: string): Promise<StudentDocument | null> {
+    return this.dataSource.getRepository(StudentDocument).findOne({
+      where: { studentId, type: StudentDocumentType.Cv },
+    });
+  }
 
   async listStudentApplications(
     studentId: string,
@@ -235,10 +246,22 @@ export class ApplicationsRepository {
     jobId: string;
     coverLetter: string;
     resumeObjectKey: string;
+    resumeFileName: string | null;
     actorUserId: string;
   }): Promise<Application> {
     try {
       return await this.dataSource.transaction(async (manager) => {
+        await manager
+          .createQueryBuilder(StudentProfile, 'student')
+          .setLock('pessimistic_write')
+          .where('student.id = :studentId', { studentId: params.studentId })
+          .getOne();
+        const currentCv = await manager.findOne(StudentDocument, {
+          where: { studentId: params.studentId, type: StudentDocumentType.Cv },
+        });
+        const resumeObjectKey = currentCv?.objectKey ?? params.resumeObjectKey;
+        const resumeFileName = currentCv?.fileName ?? params.resumeFileName;
+        if (!resumeObjectKey) throw new BadRequestException('ต้องอัปโหลด CV ก่อนสมัครงาน');
         const job = await manager
           .createQueryBuilder(Job, 'job')
           .setLock('pessimistic_write')
@@ -264,7 +287,8 @@ export class ApplicationsRepository {
           studentId: params.studentId,
           jobId: params.jobId,
           coverLetter: params.coverLetter,
-          resumeObjectKey: params.resumeObjectKey,
+          resumeObjectKey,
+          resumeFileName,
           status: ApplicationStatus.Submitted,
           version: 1,
         });
@@ -310,11 +334,13 @@ export class ApplicationsRepository {
       .getRepository(Application)
       .createQueryBuilder('app')
       .innerJoin(StudentProfile, 'student', 'student.id = app.studentId')
+      .leftJoin(University, 'university', 'university.id = student.universityId')
+      .leftJoin(Major, 'major', 'major.id = student.majorId')
       .where('app.jobId = :jobId', { jobId })
       .select('app.id', 'applicationId')
       .addSelect('student.fullName', 'fullName')
-      .addSelect('student.university', 'university')
-      .addSelect('student.major', 'major')
+      .addSelect(`COALESCE(student.customUniversityName, university.nameTh, '')`, 'university')
+      .addSelect(`COALESCE(student.customMajorName, major.nameTh, '')`, 'major')
       .addSelect('app.status', 'status')
       .addSelect('app.coverLetter', 'coverLetter')
       .addSelect('app.createdAt', 'createdAt')
@@ -350,14 +376,22 @@ export class ApplicationsRepository {
       .findOne({
         where: { id: application.studentId },
       });
+    const university = student?.universityId
+      ? await this.dataSource.getRepository(University).findOne({ where: { id: student.universityId } })
+      : null;
+    const major = student?.majorId
+      ? await this.dataSource.getRepository(Major).findOne({ where: { id: student.majorId } })
+      : null;
+    const documents = await this.listApplicantDocuments(jobId, applicationId);
+    const appliedCvName = documents.find((doc) => doc.id === 'application-cv')?.fileName ?? null;
 
     return {
       applicationId: application.id,
       jobId: application.jobId,
       studentId: application.studentId,
       fullName: student?.fullName ?? '',
-      university: student?.university ?? '',
-      major: student?.major ?? '',
+      university: student?.customUniversityName ?? university?.nameTh ?? '',
+      major: student?.customMajorName ?? major?.nameTh ?? '',
       skills: Array.isArray(student?.skills) ? student.skills : [],
       bio: student?.bio ?? '',
       contactLinks: Array.isArray(student?.contactLinks)
@@ -367,17 +401,39 @@ export class ApplicationsRepository {
         ? student.portfolioLinks
         : [],
       portfolioUrl: student?.portfolioUrl ?? null,
-      resumeFileName:
-        student?.resumeObjectKey === application.resumeObjectKey
-          ? (student.resumeFileName ?? null)
-          : 'Resume ที่ใช้สมัคร.pdf',
+      resumeFileName: appliedCvName,
       avatarObjectKey: student?.avatarObjectKey ?? null,
       status: application.status,
       coverLetter: application.coverLetter,
       resumeObjectKey: application.resumeObjectKey,
       createdAt: application.createdAt,
       updatedAt: application.updatedAt,
+      documents,
     };
+  }
+
+  async listApplicantDocuments(jobId: string, applicationId: string) {
+    const application = await this.dataSource.getRepository(Application).findOne({ where: { id: applicationId, jobId } });
+    if (!application) return [];
+    const docs = await this.dataSource.getRepository(StudentDocument).find({
+      where: { studentId: application.studentId }, order: { createdAt: 'ASC' },
+    });
+    const cv = docs.find((doc) => doc.objectKey === application.resumeObjectKey);
+    return [
+      { id: 'application-cv', type: StudentDocumentType.Cv, fileName: application.resumeFileName ?? cv?.fileName ?? 'CV used for application.pdf', available: true },
+      ...docs.filter((doc) => doc.type !== StudentDocumentType.Cv).map((doc) => ({ id: doc.id, type: doc.type, fileName: doc.fileName, available: true })),
+    ];
+  }
+
+  async findApplicantDocument(jobId: string, applicationId: string, documentId: string) {
+    const application = await this.dataSource.getRepository(Application).findOne({ where: { id: applicationId, jobId } });
+    if (!application) return null;
+    if (documentId === 'application-cv') {
+      const cv = await this.dataSource.getRepository(StudentDocument).findOne({ where: { studentId: application.studentId, objectKey: application.resumeObjectKey } });
+      return { objectKey: application.resumeObjectKey, fileName: application.resumeFileName ?? cv?.fileName ?? 'CV used for application.pdf' };
+    }
+    const document = await this.dataSource.getRepository(StudentDocument).findOne({ where: { id: documentId, studentId: application.studentId } });
+    return document ? { objectKey: document.objectKey, fileName: document.fileName } : null;
   }
 
   async updateApplicationStatus(params: {

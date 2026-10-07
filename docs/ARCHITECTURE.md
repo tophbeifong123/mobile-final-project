@@ -66,6 +66,8 @@ Prefix ของ API คือ `/api` ตาม `app.setGlobalPrefix('api')` ใ
 | StudentsModule | โปรไฟล์นักศึกษาและ Resume |
 | CompaniesModule | โปรไฟล์บริษัท, logo, จังหวัดและที่อยู่สั้น, ตัวเลขแดชบอร์ด |
 | ProvincesModule | มาสเตอร์จังหวัด 77 จังหวัดและชื่อเรียก |
+| UniversitiesModule | ค้นหามาสเตอร์สถาบันอุดมศึกษาไทยด้วยชื่อเต็มและ aliases |
+| MajorsModule | ค้นหามาสเตอร์สาขายอดนิยมเพื่อใช้เป็นคำแนะนำ |
 | JobsModule | ประกาศ, feed, บันทึกงาน, เปิดหรือปิดรับสมัคร |
 | ApplicationsModule | สมัครงาน, timeline, เปลี่ยนสถานะ |
 | NotificationsModule | แจ้งเตือนในแอปและ BullMQ worker |
@@ -125,6 +127,14 @@ Filter ของหน้า Home เป็น query ของ `GET /jobs` ไ�
 
 ผลลัพธ์มีรหัสจังหวัด ชื่อมาตรฐาน และชื่อเรียกที่ค้นหาได้ ไม่เรียกบริการค้นหาที่อยู่ภายนอก
 
+### มหาวิทยาลัย
+
+| Method | Path | ใช้กับหน้า |
+|---|---|---|
+| GET | /api/universities?q=... | Student Profile |
+
+`q` ไม่บังคับ ยาวได้ไม่เกิน 100 ตัวอักษร; ค่าว่างคืนรายชื่อทั้งหมดเรียงชื่อไทย ค้นได้ทั้งชื่อและ aliases แบบไม่แยกตัวพิมพ์ใหญ่เล็กและละช่องว่าง/จุดเพื่อรองรับตัวย่อ เช่น `ม.อ.` และ `PSU`. ผลเป็น array ของ `{ id, nameTh }` และเปิดดู schema ได้ใน Swagger `/api/docs`.
+
 ### Auth
 
 | Method | Path | ใครเรียก |
@@ -154,6 +164,12 @@ Password recovery รองรับอีเมลที่ใช้สมั�
 | GET, PATCH | /api/students/me | Student Profile |
 | POST | /api/students/me/resume | Resume Upload |
 | GET | /api/students/me/resume/file | Resume Preview / Download |
+| GET | /api/students/me/documents | รายการเอกสาร |
+| POST | /api/students/me/documents/cv | อัปโหลด/แทนที่ CV (multipart/form-data, PDF, 10 MiB max) |
+| POST | /api/students/me/documents/transcript | อัปโหลด/แทนที่ transcript (multipart/form-data, PDF, 10 MiB max) |
+| POST | /api/students/me/documents/other | เพิ่มเอกสารอื่น (multipart/form-data, PDF, สูงสุด 3, 10 MiB max) |
+| DELETE | /api/students/me/documents/:id | ลบ CV, transcript หรือเอกสารอื่น; CV ที่ถูกใช้สมัครงานแล้วจะคงไฟล์ snapshot ของใบสมัครไว้ |
+| GET | /api/students/me/documents/:id/file | เปิดเอกสารของตัวเอง |
 | GET | /api/jobs | Home / Job Feed |
 | GET | /api/jobs/:id | Job Detail |
 | GET | /api/jobs/:id/company-logo | โลโก้บริษัทบนฟีด รายละเอียดงาน และ Saved Jobs เฉพาะประกาศที่เปิดรับและนักศึกษาที่ login แล้ว |
@@ -167,6 +183,10 @@ Password recovery รองรับอีเมลที่ใช้สมั�
 | GET | /api/notifications/stream | ช่อง SSE ของแจ้งเตือน |
 
 `GET /api/jobs` รับ `search`, `province`, `workMode`, `category` จากรายการเดียวกันกับตอนสร้างประกาศ, `hasAllowance`, `skills` (กรองด้วย PostgreSQL array overlap operator) และคืนเฉพาะงานสถานะ `open` ถ้าประกาศมีเบี้ยเลี้ยงต้องมี `allowanceAmount` เป็นบาท
+
+`PATCH /api/students/me` รับ `universityId` หรือ `customUniversityName` อย่างใดอย่างหนึ่ง. ละสองฟิลด์ไว้เพื่อคงเดิม, ส่งทั้งคู่ `null` เพื่อล้างค่า; response คืนสองฟิลด์นี้และ `university` ที่ derive เป็นชื่อเต็มสำหรับแสดง.
+
+สาขาใช้รูปแบบเดียวกัน: `GET /api/majors?q=...` คืนคำแนะนำ และ PATCH รับ `majorId` หรือ `customMajorName`; ส่งทั้งคู่ `null` เพื่อล้างค่า. response คง `major` เป็นชื่อสำหรับแสดงผล.
 
 ค่า `province` และชื่อจังหวัดที่บันทึกในประกาศถูกแปลงเป็นชื่อมาตรฐานเดียวกันก่อนกรอง เพื่อรองรับชื่อเรียกอย่าง `กทม.` และข้อมูลเก่าอย่าง `กรุงเทพฯ`
 
@@ -188,6 +208,7 @@ Flutter โหลดรายละเอียดใหม่เมื่อก
 | PATCH | /api/company/jobs/:id/status | เปิดหรือปิดรับสมัคร |
 | GET | /api/company/jobs/:id/applications | Applicants List |
 | GET | /api/company/jobs/:id/applications/:applicationId | Applicant Detail |
+| GET | /api/company/jobs/:id/applications/:applicationId/documents/:documentId/file | เปิด CV snapshot หรือเอกสารปัจจุบัน |
 | GET | /api/company/jobs/:id/applications/:applicationId/resume | เปิด PDF สำเนาของใบสมัครในแอป เฉพาะบริษัทเจ้าของประกาศ |
 | PATCH | /api/company/jobs/:id/applications/:applicationId/status | เปลี่ยนสถานะผู้สมัคร |
 
@@ -259,6 +280,9 @@ submitted → reviewing → accepted
 `accepted` และ `rejected` เปลี่ยนต่อไม่ได้ ทุกครั้งที่บริษัทเปลี่ยนสถานะ นักศึกษาได้แจ้งเตือนหนึ่งรายการ
 
 รายละเอียด lock และ transaction อยู่ใน [DATABASE.md](DATABASE.md)
+
+Profile update ตรวจว่าเลือก ID ที่มีอยู่จริงหรือชื่อ custom ที่ trim แล้วอย่างใดอย่างหนึ่ง; database บังคับ FK และ CHECK constraint ซ้ำอีกชั้น. Applicant list/detail คืนชื่อมหาวิทยาลัยปัจจุบันที่ resolve จาก master/custom.
+สาขาก็ตรวจ master ID/custom แบบ exclusive ที่ service และ database; Applicant list/detail resolve ชื่อจาก master หรือ custom เช่นเดียวกัน.
 
 ## 8. Flutter
 
@@ -339,4 +363,3 @@ CORS เปิดให้แอปมือถือเรียกได้ต
 ## 10. นอกแบบนี้
 
 ไม่ทำแชท, นัดสัมภาษณ์, ยืนยัน email, login ด้วย social provider อื่นนอกจาก Google, ถอนใบสมัคร, หน้าโปรไฟล์บริษัทแยก, Admin, push notification นอกแอป หรือการเปลี่ยน role หลังสมัคร. Google Login รองรับ Android และ Web สำหรับทดสอบ; iOS ยังไม่อยู่ในขอบเขตนี้.
-

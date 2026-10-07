@@ -6,6 +6,8 @@ import 'package:client/features/resume/domain/repositories/resume_repository.dar
 import 'package:client/features/resume/presentation/providers/resume_controller.dart';
 import 'package:client/features/resume/presentation/screens/resume_upload_screen.dart';
 import 'package:client/features/student_profile/domain/entities/student_profile.dart';
+import 'package:client/features/student_profile/domain/entities/university.dart';
+import 'package:client/features/student_profile/domain/entities/major.dart';
 import 'package:client/features/student_profile/domain/repositories/student_profile_repository.dart';
 import 'package:client/features/student_profile/presentation/providers/student_profile_controller.dart';
 import 'package:client/features/student_profile/presentation/screens/student_profile_screen.dart';
@@ -45,7 +47,7 @@ void main() {
 
     expect(find.text('Resume'), findsOneWidget);
     expect(find.text('my_resume.pdf'), findsOneWidget);
-    expect(find.text('เปลี่ยน'), findsOneWidget);
+    expect(find.text('แก้ไข'), findsOneWidget);
   });
 
   testWidgets(
@@ -79,7 +81,7 @@ void main() {
 
       expect(find.text('Resume'), findsOneWidget);
       expect(find.text('ยังไม่มี Resume ในระบบ'), findsOneWidget);
-      expect(find.text('อัปโหลด'), findsOneWidget);
+      expect(find.text('แก้ไข'), findsOneWidget);
     },
   );
 
@@ -115,11 +117,12 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('อัปโหลด Resume'), findsWidgets);
+      expect(find.text('เอกสารของฉัน'), findsOneWidget);
+      expect(find.text('Transcript'), findsOneWidget);
       expect(find.text('Resume ในระบบ'), findsOneWidget);
       expect(find.text('current_resume.pdf'), findsOneWidget);
       expect(find.text('เลือกไฟล์ PDF จากเครื่อง'), findsOneWidget);
-      expect(find.text('เลือกไฟล์'), findsOneWidget);
+      expect(find.text('แก้ไข CV'), findsOneWidget);
     },
   );
 }
@@ -128,6 +131,11 @@ class _FakeStudentProfileRepository implements StudentProfileRepository {
   _FakeStudentProfileRepository(this.profile);
 
   StudentProfile profile;
+
+  @override
+  Future<List<University>> searchUniversities(String query) async => const [];
+  @override
+  Future<List<Major>> searchMajors(String query) async => const [];
 
   @override
   Future<StudentProfile> fetchMe() async => profile;
@@ -170,4 +178,23 @@ class _FakeResumeRepository implements ResumeRepository {
   Future<List<int>> downloadResumePdf() async {
     return [0x25, 0x50, 0x44, 0x46];
   }
+
+  @override
+  Future<List<int>> downloadDocumentPdf(String id) async {
+    return [0x25, 0x50, 0x44, 0x46];
+  }
+
+  @override
+  Future<List<StudentDocument>> listDocuments() async => const [];
+
+  @override
+  Future<StudentDocument> uploadDocument({
+    required String kind,
+    required String filePath,
+    required String fileName,
+    List<int>? bytes,
+  }) async => StudentDocument(id: 'doc', type: kind, fileName: fileName);
+
+  @override
+  Future<void> deleteDocument(String id) async {}
 }

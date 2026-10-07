@@ -8,15 +8,24 @@ import { UserRole } from '../auth/user-role.js';
 import { StorageService } from '../storage/storage.service.js';
 import { type UploadedFilePayload } from '../storage/uploaded-file.interface.js';
 import { UpdateStudentProfileDto } from './dto/update-student-profile.dto.js';
-import { StudentsRepository } from './students.repository.js';
+import { StudentsRepository, TooManyOtherDocumentsError } from './students.repository.js';
 import { StudentsService } from './students.service.js';
+import { UniversitiesService } from '../universities/universities.service.js';
+import { MajorsService } from '../majors/majors.service.js';
 
 describe('StudentsService', () => {
   const repository = {
     findByUserId: vi.fn(),
     updateByUserId: vi.fn(),
-    updateResume: vi.fn(),
     updateAvatar: vi.fn(),
+    resolveDisplayUniversity: vi.fn(),
+    resolveDisplayMajor: vi.fn(),
+    findCv: vi.fn(),
+    saveDocument: vi.fn(),
+    isObjectReferencedByApplication: vi.fn(),
+    listDocuments: vi.fn(),
+    deleteDocument: vi.fn(),
+    findDocument: vi.fn(),
   };
 
   const storage = {
@@ -24,6 +33,8 @@ describe('StudentsService', () => {
     get: vi.fn(),
     delete: vi.fn(),
   };
+  const universities = { requireById: vi.fn() };
+  const majors = { requireById: vi.fn() };
 
   let service: StudentsService;
 
@@ -31,8 +42,10 @@ describe('StudentsService', () => {
   const company = { userId: 'user-2', role: UserRole.Company };
   const stored = {
     fullName: 'มีนา',
-    university: 'PSU',
-    major: 'IT',
+    universityId: null,
+    customUniversityName: 'PSU',
+    majorId: null,
+    customMajorName: 'IT',
     skills: ['Flutter'],
     portfolioUrl: null,
     resumeFileName: 'resume.pdf',
@@ -41,11 +54,20 @@ describe('StudentsService', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    repository.resolveDisplayUniversity.mockImplementation(async (profile) =>
+      profile.customUniversityName ?? (profile.universityId ? 'มหาวิทยาลัยสงขลานครินทร์' : ''),
+    );
+    repository.resolveDisplayMajor.mockImplementation(async (profile) => profile.customMajorName ?? '');
+    universities.requireById.mockResolvedValue({ id: 'uni-psu', nameTh: 'มหาวิทยาลัยสงขลานครินทร์' });
+    repository.findCv.mockResolvedValue(null);
+    storage.delete.mockResolvedValue(undefined);
     const module = await Test.createTestingModule({
       providers: [
         StudentsService,
         { provide: StudentsRepository, useValue: repository },
         { provide: StorageService, useValue: storage },
+        { provide: UniversitiesService, useValue: universities },
+        { provide: MajorsService, useValue: majors },
       ],
     }).compile();
     service = module.get(StudentsService);
@@ -68,7 +90,12 @@ describe('StudentsService', () => {
     ['  ', '\t', '', ''],
     ['', 'มหาวิทยาลัยสงขลานครินทร์', '', 'มหาวิทยาลัยสงขลานครินทร์'],
   ])('returns saved identity without invented defaults (%s / %s)', async (fullName, university, expectedName, expectedUniversity) => {
-    repository.findByUserId.mockResolvedValue({ ...stored, fullName, university });
+    repository.findByUserId.mockResolvedValue({
+      ...stored,
+      fullName,
+      universityId: null,
+      customUniversityName: university,
+    });
     const result = await service.getMine(student);
     expect(repository.findByUserId).toHaveBeenCalledWith(student.userId);
     expect(result.fullName).toBe(expectedName);
@@ -90,18 +117,19 @@ describe('StudentsService', () => {
     );
   });
 
-  it('saves trimmed profile fields and clears a blank portfolio', async () => {
+  it('saves other profile fields without changing a blank university and clears a blank portfolio', async () => {
     repository.updateByUserId.mockResolvedValue({
       fullName: 'มีนา',
-      university: 'PSU',
-      major: 'IT',
+      universityId: null,
+      customUniversityName: 'PSU',
+      majorId: null,
+      customMajorName: 'IT',
       skills: ['Flutter', 'SQL'],
       portfolioUrl: null,
     });
     const dto = new UpdateStudentProfileDto();
     dto.fullName = '  มีนา  ';
-    dto.university = ' PSU ';
-    dto.major = ' IT ';
+    dto.customMajorName = ' IT ';
     dto.skills = [' Flutter ', '', 'SQL'];
     dto.portfolioUrl = '   ';
 
@@ -109,8 +137,10 @@ describe('StudentsService', () => {
 
     expect(repository.updateByUserId).toHaveBeenCalledWith('user-1', {
       fullName: 'มีนา',
-      university: 'PSU',
-      major: 'IT',
+      universityId: undefined,
+      customUniversityName: undefined,
+      majorId: null,
+      customMajorName: 'IT',
       skills: ['Flutter', 'SQL'],
       portfolioUrl: null,
     });
@@ -121,14 +151,64 @@ describe('StudentsService', () => {
   it('rejects a company updating a student profile', async () => {
     const dto = new UpdateStudentProfileDto();
     dto.fullName = 'บริษัท';
-    dto.university = 'PSU';
-    dto.major = 'IT';
     dto.skills = [];
 
     await expect(service.updateMine(company, dto)).rejects.toBeInstanceOf(
       ForbiddenException,
     );
     expect(repository.updateByUserId).not.toHaveBeenCalled();
+  });
+
+  it('selects a master university and clears a previous custom value', async () => {
+    repository.updateByUserId.mockResolvedValue({
+      fullName: 'มีนา', universityId: 'uni-psu', customUniversityName: null,
+      majorId: null, customMajorName: 'IT', skills: [], portfolioUrl: null,
+    });
+    const dto = new UpdateStudentProfileDto();
+    dto.fullName = 'มีนา'; dto.universityId = 'uni-psu'; dto.customMajorName = 'IT'; dto.skills = [];
+
+    const result = await service.updateMine(student, dto);
+
+    expect(universities.requireById).toHaveBeenCalledWith('uni-psu');
+    expect(repository.updateByUserId).toHaveBeenCalledWith('user-1', expect.objectContaining({
+      universityId: 'uni-psu', customUniversityName: null,
+    }));
+    expect(result.university).toBe('มหาวิทยาลัยสงขลานครินทร์');
+  });
+
+  it('rejects both master and custom university values before writing', async () => {
+    const dto = new UpdateStudentProfileDto();
+    dto.fullName = 'มีนา'; dto.universityId = 'uni-psu';
+    dto.customUniversityName = 'ชื่อที่พิมพ์เอง'; dto.customMajorName = 'IT'; dto.skills = [];
+
+    await expect(service.updateMine(student, dto)).rejects.toBeInstanceOf(BadRequestException);
+    expect(repository.updateByUserId).not.toHaveBeenCalled();
+  });
+
+  it('selects a master major and clears a previous custom value', async () => {
+    majors.requireById.mockResolvedValue({ id: 'major-cs', nameTh: 'วิทยาการคอมพิวเตอร์' });
+    repository.updateByUserId.mockResolvedValue({ ...stored, majorId: 'major-cs', customMajorName: null });
+    const dto = new UpdateStudentProfileDto();
+    dto.fullName = 'มีนา'; dto.majorId = 'major-cs'; dto.skills = [];
+    const result = await service.updateMine(student, dto);
+    expect(majors.requireById).toHaveBeenCalledWith('major-cs');
+    expect(repository.updateByUserId).toHaveBeenCalledWith('user-1', expect.objectContaining({ majorId: 'major-cs', customMajorName: null }));
+    expect(result.majorId).toBe('major-cs');
+  });
+
+  it('rejects both master and custom major values before writing', async () => {
+    const dto = new UpdateStudentProfileDto();
+    dto.fullName = 'มีนา'; dto.majorId = 'major-cs'; dto.customMajorName = 'สาขาเอง'; dto.skills = [];
+    await expect(service.updateMine(student, dto)).rejects.toBeInstanceOf(BadRequestException);
+    expect(repository.updateByUserId).not.toHaveBeenCalled();
+  });
+
+  it('clears both major choices when both values are null', async () => {
+    const dto = new UpdateStudentProfileDto();
+    dto.fullName = 'มีนา'; dto.majorId = null; dto.customMajorName = null; dto.skills = [];
+    repository.updateByUserId.mockResolvedValue({ ...stored, majorId: null, customMajorName: null });
+    await service.updateMine(student, dto);
+    expect(repository.updateByUserId).toHaveBeenCalledWith('user-1', expect.objectContaining({ majorId: null, customMajorName: null }));
   });
 
   describe('uploadResume', () => {
@@ -141,30 +221,29 @@ describe('StudentsService', () => {
       buffer: Buffer.from('%PDF-1.4 test resume content'),
     };
 
-    it('uploads a valid PDF resume and updates the student profile', async () => {
-      repository.findByUserId.mockResolvedValue(stored);
+    it('uploads a valid PDF resume to the student documents store', async () => {
+      repository.findByUserId.mockResolvedValue({ ...stored, id: 'student-profile-1' });
       storage.put.mockResolvedValue('resumes/user-1/generated-key.pdf');
-      repository.updateResume.mockResolvedValue({
-        ...stored,
-        resumeFileName: 'my-resume.pdf',
-        resumeObjectKey: 'resumes/user-1/generated-key.pdf',
-      });
+      repository.saveDocument.mockImplementation(async (input) => ({
+        document: { id: 'doc-1', ...input },
+        replacedDocument: null,
+      }));
 
       const result = await service.uploadResume(student, validPdfFile);
 
       expect(storage.put).toHaveBeenCalledWith(
-        expect.stringMatching(/^resumes\/user-1\/.+\.pdf$/),
+        expect.stringMatching(/^student-documents\/user-1\/cv\/.+\.pdf$/),
         validPdfFile.buffer,
         'application/pdf',
       );
-      expect(repository.updateResume).toHaveBeenCalledWith(
-        'user-1',
-        expect.stringMatching(/^resumes\/user-1\/.+\.pdf$/),
-        'my-resume.pdf',
-      );
+      expect(repository.saveDocument).toHaveBeenCalledWith(expect.objectContaining({
+        studentId: 'student-profile-1',
+        type: 'cv',
+        fileName: 'my-resume.pdf',
+      }));
       expect(result).toEqual({
         fileName: 'my-resume.pdf',
-        objectKey: 'resumes/user-1/generated-key.pdf',
+        objectKey: expect.stringMatching(/^student-documents\/user-1\/cv\/.+\.pdf$/),
       });
     });
 
@@ -245,6 +324,55 @@ describe('StudentsService', () => {
     it('rejects a company attempting to get student resume', async () => {
       await expect(service.getResumeFile(company)).rejects.toBeInstanceOf(
         ForbiddenException,
+      );
+    });
+  });
+
+  describe('student documents', () => {
+    it('rejects a renamed non-PDF before writing to storage', async () => {
+      repository.findByUserId.mockResolvedValue(stored);
+      const fakePdf: UploadedFilePayload = { fieldname: 'file', originalname: 'fake.pdf', encoding: '7bit', mimetype: 'application/pdf', size: 12, buffer: Buffer.from('not a pdf') };
+      await expect(service.uploadDocument(student, 'other' as never, fakePdf)).rejects.toBeInstanceOf(BadRequestException);
+      expect(storage.put).not.toHaveBeenCalled();
+    });
+
+    it('rejects a fourth other document and cleans up its uploaded object', async () => {
+      repository.findByUserId.mockResolvedValue(stored);
+      repository.saveDocument.mockRejectedValue(new TooManyOtherDocumentsError());
+      storage.delete.mockResolvedValue(undefined);
+      const pdf: UploadedFilePayload = { fieldname: 'file', originalname: 'file.pdf', encoding: '7bit', mimetype: 'application/pdf', size: 15, buffer: Buffer.from('%PDF-1.4 valid') };
+      await expect(service.uploadDocument(student, 'other' as never, pdf)).rejects.toBeInstanceOf(BadRequestException);
+      expect(storage.put).toHaveBeenCalledOnce();
+      expect(storage.delete).toHaveBeenCalledOnce();
+    });
+
+    it('deletes a CV and keeps an application snapshot', async () => {
+      repository.findByUserId.mockResolvedValue({ ...stored, id: 'student-profile-1' });
+      repository.deleteDocument.mockResolvedValue({
+        id: 'cv-1',
+        type: 'cv',
+        objectKey: 'student-documents/user-1/cv/current.pdf',
+      });
+      repository.isObjectReferencedByApplication.mockResolvedValue(true);
+
+      await service.deleteDocument(student, 'cv-1');
+
+      expect(storage.delete).not.toHaveBeenCalled();
+    });
+
+    it('deletes an unreferenced transcript object from storage', async () => {
+      repository.findByUserId.mockResolvedValue({ ...stored, id: 'student-profile-1' });
+      repository.deleteDocument.mockResolvedValue({
+        id: 'transcript-1',
+        type: 'transcript',
+        objectKey: 'student-documents/user-1/transcript/current.pdf',
+      });
+      repository.isObjectReferencedByApplication.mockResolvedValue(false);
+
+      await service.deleteDocument(student, 'transcript-1');
+
+      expect(storage.delete).toHaveBeenCalledWith(
+        'student-documents/user-1/transcript/current.pdf',
       );
     });
   });

@@ -9,13 +9,25 @@ export class StudentProfileDto {
   })
   fullName: string;
 
+  @ApiProperty({ nullable: true, required: false })
+  universityId: string | null;
+
+  @ApiProperty({ nullable: true, required: false })
+  customUniversityName: string | null;
+
   @ApiProperty({
     example: 'มหาวิทยาลัยสงขลานครินทร์',
-    description: 'มหาวิทยาลัยที่นักศึกษาบันทึก ตัดช่องว่างหัวท้าย; ยังไม่กรอกคืนค่าว่าง ไม่มีมหาวิทยาลัยสมมติ',
+    description: 'ชื่อมหาวิทยาลัยจากมาสเตอร์หรือชื่อที่กรอกเอง ตัดช่องว่างหัวท้าย; ยังไม่กรอกคืนค่าว่าง ไม่มีมหาวิทยาลัยสมมติ',
   })
   university: string;
 
-  @ApiProperty({ example: 'วิทยาการคอมพิวเตอร์' })
+  @ApiProperty({ nullable: true, required: false })
+  majorId: string | null;
+
+  @ApiProperty({ nullable: true, required: false })
+  customMajorName: string | null;
+
+  @ApiProperty({ example: 'วิทยาการคอมพิวเตอร์', description: 'ชื่อสำหรับแสดงผลจากมาสเตอร์หรือชื่อที่กรอกเอง' })
   major: string;
 
   @ApiProperty({ type: [String], example: ['Flutter', 'SQL'] })

@@ -31,8 +31,22 @@ class ApiConstants {
   static const String jobs = '/jobs';
   static const String savedJobs = '/jobs/saved';
   static const String studentProfile = '/students/me';
+  static const String universities = '/universities';
   static const String studentResume = '/students/me/resume';
   static const String studentResumeFile = '/students/me/resume/file';
+  static const String studentDocuments = '/students/me/documents';
+  static String studentDocumentUpload(String kind) =>
+      '/students/me/documents/$kind';
+  static String studentDocumentFile(String id) =>
+      '/students/me/documents/$id/file';
+  static String studentDocumentDelete(String id) =>
+      '/students/me/documents/$id';
+  static String applicantDocumentFile(
+    String jobId,
+    String applicationId,
+    String documentId,
+  ) =>
+      '/company/jobs/$jobId/applications/$applicationId/documents/$documentId/file';
   static const String studentAvatar = '/students/me/avatar';
   static String applicantAvatar(String jobId, String applicationId) =>
       '/applications/company/jobs/$jobId/applications/$applicationId/avatar';

@@ -4,6 +4,9 @@ import { PortfolioLinkDto } from '../../students/dto/portfolio-link.dto.js';
 import { ApplicationStatus } from '../application-status.js';
 
 export class ApplicantDetailDto {
+  @ApiProperty({ type: 'array', description: 'เอกสารที่ผู้สมัครให้บริษัทตรวจดูได้', items: { type: 'object' } })
+  documents: Array<{ id: string; type: string; fileName: string }>;
+
   @ApiProperty({
     format: 'uuid',
     example: '11111111-1111-1111-1111-111111111111',

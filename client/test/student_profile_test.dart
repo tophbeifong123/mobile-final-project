@@ -3,6 +3,8 @@ import 'package:client/core/storage/token_storage.dart';
 import 'package:client/core/theme/app_theme.dart';
 import 'package:client/features/student_profile/data/models/student_profile_model.dart';
 import 'package:client/features/student_profile/domain/entities/student_profile.dart';
+import 'package:client/features/student_profile/domain/entities/university.dart';
+import 'package:client/features/student_profile/domain/entities/major.dart';
 import 'package:client/features/student_profile/domain/repositories/student_profile_repository.dart';
 import 'package:client/features/student_profile/presentation/providers/student_profile_controller.dart';
 import 'package:client/features/student_profile/presentation/screens/student_profile_screen.dart';
@@ -13,6 +15,11 @@ import 'package:flutter_test/flutter_test.dart';
 class _FakeStudentProfileRepository implements StudentProfileRepository {
   StudentProfile? profile;
   StudentProfile? lastSaved;
+
+  @override
+  Future<List<University>> searchUniversities(String query) async => const [];
+  @override
+  Future<List<Major>> searchMajors(String query) async => const [];
 
   @override
   Future<StudentProfile> fetchMe() async {
@@ -86,6 +93,66 @@ class _FakeStudentProfileRepository implements StudentProfileRepository {
 }
 
 void main() {
+  test(
+    'serializes master/custom university and major identifiers without display text',
+    () {
+      const master = StudentProfile(
+        fullName: 'Student',
+        university: 'มหาวิทยาลัยสงขลานครินทร์',
+        universityId: 'psu-id',
+        majorId: 'major-id',
+        major: 'IT',
+        skills: [],
+        portfolioUrl: null,
+      );
+      final masterJson = StudentProfileModel.fromEntity(master).toJson();
+      expect(masterJson['universityId'], 'psu-id');
+      expect(masterJson['customUniversityName'], isNull);
+      expect(masterJson.containsKey('university'), isFalse);
+      expect(masterJson['majorId'], 'major-id');
+      expect(masterJson['customMajorName'], isNull);
+      expect(masterJson.containsKey('major'), isFalse);
+
+      final custom = master.copyWith(
+        university: 'My institute',
+        universityId: null,
+        customUniversityName: 'My institute',
+      );
+      final customJson = StudentProfileModel.fromEntity(custom).toJson();
+      expect(customJson['universityId'], isNull);
+      expect(customJson['customUniversityName'], 'My institute');
+      final customMajor = custom.copyWith(
+        major: 'สาขาของฉัน',
+        majorId: null,
+        customMajorName: 'สาขาของฉัน',
+      );
+      final customMajorJson = StudentProfileModel.fromEntity(
+        customMajor,
+      ).toJson();
+      expect(customMajorJson['majorId'], isNull);
+      expect(customMajorJson['customMajorName'], 'สาขาของฉัน');
+
+      final cleared = custom.copyWith(
+        university: '',
+        universityId: null,
+        customUniversityName: null,
+      );
+      final clearJson = StudentProfileModel.fromEntity(cleared).toJson();
+      expect(clearJson['universityId'], isNull);
+      expect(clearJson['customUniversityName'], isNull);
+      final clearMajor = customMajor.copyWith(
+        major: '',
+        majorId: null,
+        customMajorName: null,
+      );
+      final clearMajorJson = StudentProfileModel.fromEntity(
+        clearMajor,
+      ).toJson();
+      expect(clearMajorJson['majorId'], isNull);
+      expect(clearMajorJson['customMajorName'], isNull);
+    },
+  );
+
   group('StudentProfileModel and Entities', () {
     test(
       'serializes and deserializes bio, contactLinks, portfolioLinks correctly',
@@ -209,6 +276,7 @@ void main() {
           ),
         ),
       );
+
       await tester.pumpAndSettle();
 
       // Find the "+ เพิ่ม" button in Links Card

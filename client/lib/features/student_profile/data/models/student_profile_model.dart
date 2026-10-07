@@ -109,13 +109,21 @@ class StudentProfileModel {
     this.resumeFileName,
     this.resumeObjectKey,
     this.avatarObjectKey,
+    this.universityId,
+    this.customUniversityName,
+    this.majorId,
+    this.customMajorName,
   });
 
   factory StudentProfileModel.fromJson(Map<String, dynamic> json) {
     return StudentProfileModel(
       fullName: json['fullName'] as String? ?? '',
       university: json['university'] as String? ?? '',
+      universityId: json['universityId'] as String?,
+      customUniversityName: json['customUniversityName'] as String?,
       major: json['major'] as String? ?? '',
+      majorId: json['majorId'] as String?,
+      customMajorName: json['customMajorName'] as String?,
       skills: (json['skills'] as List<dynamic>? ?? const [])
           .map((skill) => skill as String)
           .toList(),
@@ -154,11 +162,19 @@ class StudentProfileModel {
       resumeFileName: entity.resumeFileName,
       resumeObjectKey: entity.resumeObjectKey,
       avatarObjectKey: entity.avatarObjectKey,
+      universityId: entity.universityId,
+      customUniversityName: entity.customUniversityName,
+      majorId: entity.majorId,
+      customMajorName: entity.customMajorName,
     );
   }
 
   final String fullName;
   final String university;
+  final String? universityId;
+  final String? customUniversityName;
+  final String? majorId;
+  final String? customMajorName;
   final String major;
   final List<String> skills;
   final String bio;
@@ -172,8 +188,10 @@ class StudentProfileModel {
   Map<String, dynamic> toJson() {
     return {
       'fullName': fullName,
-      'university': university,
-      'major': major,
+      'universityId': universityId,
+      'customUniversityName': customUniversityName,
+      'majorId': majorId,
+      'customMajorName': customMajorName,
       'skills': skills,
       'bio': bio,
       'contactLinks': contactLinks.map((c) => c.toJson()).toList(),
@@ -196,6 +214,10 @@ class StudentProfileModel {
       resumeFileName: resumeFileName,
       resumeObjectKey: resumeObjectKey,
       avatarObjectKey: avatarObjectKey,
+      universityId: universityId,
+      customUniversityName: customUniversityName,
+      majorId: majorId,
+      customMajorName: customMajorName,
     );
   }
 }
