@@ -23,6 +23,8 @@ import {
 import { PasswordResetMailer } from './password-reset-mailer.js';
 import { PasswordRecoveryService } from './password-recovery.service.js';
 import { PasswordRecoveryRateLimitGuard } from './password-recovery-rate-limit.guard.js';
+import { RateLimitModule } from '../rate-limit/rate-limit.module.js';
+import { RateLimitService } from '../rate-limit/rate-limit.service.js';
 
 @Module({
   imports: [
@@ -34,7 +36,15 @@ import { PasswordRecoveryRateLimitGuard } from './password-recovery-rate-limit.g
       StudentProfile,
       CompanyProfile,
     ]),
-    ThrottlerModule.forRoot([{ ttl: 60_000, limit: 10 }]),
+    RateLimitModule,
+    ThrottlerModule.forRootAsync({
+      imports: [RateLimitModule],
+      inject: [RateLimitService],
+      useFactory: (storage: RateLimitService) => ({
+        throttlers: [{ ttl: 60_000, limit: 10 }],
+        storage,
+      }),
+    }),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       inject: [ConfigService],

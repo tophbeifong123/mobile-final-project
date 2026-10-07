@@ -314,6 +314,16 @@ Timeline ที่แก้หรือลบไม่ได้ แต่ละ�
 
 Worker ที่สำเร็จแล้วตั้ง `sent` เกินจำนวน retry แล้วตั้ง `dead` ซึ่งเป็น dead letter ในตารางนี้
 
+### rate_limit_buckets
+
+| คอลัมน์ | ชนิด | หมายเหตุ |
+|---|---|---|
+| key | varchar(255) | PK เช่น `throttler:default:<ip>` หรือ `recovery:forgotPassword:<ip>` |
+| hits | integer | จำนวนครั้งในหน้าต่างปัจจุบัน |
+| expires_at | timestamptz | สิ้นสุดหน้าต่าง หลังจากนี้นับใหม่ที่ 1 |
+
+ตัวนับ rate limit ที่ทุก replica ใช้ร่วมกัน เพิ่มค่าด้วย `INSERT ... ON CONFLICT DO UPDATE` คำสั่งเดียว จึงไม่ต้องใช้ lock แถวที่หมดอายุถูกลบประมาณหนึ่งครั้งต่อร้อย request
+
 ## 4. Index
 
 นอกจาก primary key และ unique ที่ระบุข้างต้น
@@ -329,6 +339,7 @@ Worker ที่สำเร็จแล้วตั้ง `sent` เกิน�
 | refresh_tokens | user_id | logout ของ user นั้น |
 | student_profiles | university_id | join ชื่อมหาวิทยาลัยใน applicant list |
 | company_profiles | province_id | FK และการอ่านโปรไฟล์พร้อมจังหวัด |
+| rate_limit_buckets | expires_at | ลบตัวนับที่หมดอายุ |
 
 ## 5. Transaction และ lock
 

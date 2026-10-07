@@ -37,6 +37,8 @@ import { MajorsModule } from './majors/majors.module.js';
         ssl: postgresSslConfig(),
         autoLoadEntities: true,
         synchronize: false,
+        // Burstable B1ms allows 50 connections, so three replicas stay at or below 30.
+        extra: { max: Number(config.get<string>('DATABASE_POOL_MAX', '10')) },
         maxQueryExecutionTime: 500,
         logger: new SlowQueryLogger(),
       }),

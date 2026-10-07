@@ -350,6 +350,7 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = if (includeApp)
             { name: 'PORT', value: '3000' }
             { name: 'NODE_ENV', value: 'production' }
             { name: 'LOG_FORMAT', value: 'json' }
+            { name: 'TRUST_PROXY_HOPS', value: '1' }
             { name: 'DATABASE_HOST', value: postgres.properties.fullyQualifiedDomainName }
             { name: 'DATABASE_PORT', value: '5432' }
             { name: 'DATABASE_USER', value: 'internfinder' }
@@ -387,7 +388,16 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = if (includeApp)
           ]
         }
       ]
-      scale: { minReplicas: 1, maxReplicas: 1 }
+      scale: {
+        minReplicas: 1
+        maxReplicas: 3
+        rules: [
+          {
+            name: 'http-concurrency'
+            http: { metadata: { concurrentRequests: '50' } }
+          }
+        ]
+      }
     }
   }
   dependsOn: [vaultRole, pullRole, blobRole, postgresDatabase]

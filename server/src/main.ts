@@ -12,6 +12,7 @@ async function bootstrap() {
     process.env.LOG_FORMAT === 'json' ? { logger: new JsonLogger() } : {},
   );
   configureApp(app);
+  app.enableShutdownHooks();
 
   const config = new DocumentBuilder()
     .setTitle('InternFinder API')

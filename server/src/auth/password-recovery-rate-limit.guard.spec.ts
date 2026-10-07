@@ -1,9 +1,34 @@
 import { type ExecutionContext, HttpException } from '@nestjs/common';
+import { type RateLimitService } from '../rate-limit/rate-limit.service.js';
 import { PasswordRecoveryRateLimitGuard } from './password-recovery-rate-limit.guard.js';
 
+class SharedBuckets {
+  private readonly buckets = new Map<string, { hits: number; until: number }>();
+  now = Date.parse('2026-10-04T12:00:00Z');
+
+  hit(key: string, windowMs: number) {
+    const bucket = this.buckets.get(key);
+    const next =
+      !bucket || bucket.until <= this.now
+        ? { hits: 1, until: this.now + windowMs }
+        : { hits: bucket.hits + 1, until: bucket.until };
+    this.buckets.set(key, next);
+    return Promise.resolve({
+      hits: next.hits,
+      secondsLeft: Math.max(1, Math.ceil((next.until - this.now) / 1000)),
+    });
+  }
+}
+
 describe('PasswordRecoveryRateLimitGuard', () => {
-  let guard: PasswordRecoveryRateLimitGuard;
+  let buckets: SharedBuckets;
   const response = { setHeader: vi.fn() };
+
+  function guard() {
+    return new PasswordRecoveryRateLimitGuard(
+      buckets as unknown as RateLimitService,
+    );
+  }
 
   function context(ip = '127.0.0.1', handler = function forgotPassword() {}) {
     return {
@@ -17,55 +42,49 @@ describe('PasswordRecoveryRateLimitGuard', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-10-04T12:00:00Z'));
-    guard = new PasswordRecoveryRateLimitGuard();
+    buckets = new SharedBuckets();
   });
 
-  afterEach(() => vi.useRealTimers());
-
-  it('allows ten requests and rejects the eleventh with HTTP 429', () => {
+  it('allows ten requests and rejects the eleventh with HTTP 429', async () => {
+    const subject = guard();
     for (let count = 0; count < 10; count++)
-      expect(guard.canActivate(context())).toBe(true);
+      await expect(subject.canActivate(context())).resolves.toBe(true);
     expect(response.setHeader).not.toHaveBeenCalled();
 
-    try {
-      guard.canActivate(context());
-      throw new Error('Expected rate limit rejection');
-    } catch (error) {
-      expect(error).toBeInstanceOf(HttpException);
-      expect((error as HttpException).getStatus()).toBe(429);
-    }
+    const error = await subject.canActivate(context()).catch((e) => e);
+    expect(error).toBeInstanceOf(HttpException);
+    expect((error as HttpException).getStatus()).toBe(429);
     expect(response.setHeader).toHaveBeenCalledWith('Retry-After', 300);
   });
 
-  it('allows requests again when the fixed five-minute window expires', () => {
-    for (let count = 0; count < 10; count++) guard.canActivate(context());
-    vi.advanceTimersByTime(5 * 60_000 - 1);
-    expect(() => guard.canActivate(context())).toThrow(HttpException);
+  it('allows requests again when the fixed five-minute window expires', async () => {
+    const subject = guard();
+    for (let count = 0; count < 10; count++) await subject.canActivate(context());
+    buckets.now += 5 * 60_000 - 1;
+    await expect(subject.canActivate(context())).rejects.toThrow(HttpException);
     expect(response.setHeader).toHaveBeenCalledWith('Retry-After', 1);
-    vi.advanceTimersByTime(1);
+    buckets.now += 1;
 
-    expect(guard.canActivate(context())).toBe(true);
+    await expect(subject.canActivate(context())).resolves.toBe(true);
   });
 
-  it('keeps separate budgets for each IP and recovery endpoint', () => {
-    for (let count = 0; count < 10; count++) guard.canActivate(context());
+  it('keeps separate budgets for each IP and recovery endpoint', async () => {
+    const subject = guard();
+    for (let count = 0; count < 10; count++) await subject.canActivate(context());
 
-    expect(guard.canActivate(context('127.0.0.2'))).toBe(true);
-    expect(
-      guard.canActivate(context('127.0.0.1', function resetPassword() {})),
-    ).toBe(true);
+    await expect(subject.canActivate(context('127.0.0.2'))).resolves.toBe(true);
+    await expect(
+      subject.canActivate(context('127.0.0.1', function resetPassword() {})),
+    ).resolves.toBe(true);
   });
 
-  it('rejects new buckets after its memory limit and recovers after expiration', () => {
-    for (let count = 0; count < 10_000; count++)
-      guard.canActivate(context(`ip-${count}`));
+  it('shares one budget across replicas that use the same store', async () => {
+    const first = guard();
+    const second = guard();
+    for (let count = 0; count < 5; count++) await first.canActivate(context());
+    for (let count = 0; count < 5; count++) await second.canActivate(context());
 
-    expect(() => guard.canActivate(context('new-ip'))).toThrow(HttpException);
-    expect(response.setHeader).toHaveBeenCalledWith('Retry-After', 300);
-    expect(guard.canActivate(context('ip-0'))).toBe(true);
-    vi.advanceTimersByTime(5 * 60_000);
-    expect(guard.canActivate(context('new-ip'))).toBe(true);
+    await expect(first.canActivate(context())).rejects.toThrow(HttpException);
+    await expect(second.canActivate(context())).rejects.toThrow(HttpException);
   });
 });
