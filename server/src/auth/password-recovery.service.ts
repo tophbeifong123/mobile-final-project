@@ -7,6 +7,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto.js';
 import { PASSWORD_HASHER, type PasswordHasher } from './password-hasher.js';
 import { PasswordResetMailer } from './password-reset-mailer.js';
 import { isPasswordRecoveryEmailValid, PASSWORD_RECOVERY_EMAIL_MESSAGE } from './password-recovery-email.js';
+import { validateRegistrationPassword } from './registration-password-policy.js';
 
 export const PASSWORD_RESET_REQUEST_MESSAGE = 'หากอีเมลนี้มีบัญชีอยู่ ระบบจะส่งลิงก์รีเซ็ตรหัสผ่านให้คุณ';
 const INVALID_RESET = 'ลิงก์รีเซ็ตรหัสผ่านไม่ถูกต้องหรือหมดอายุ กรุณาขอลิงก์ใหม่';
@@ -64,6 +65,8 @@ export class PasswordRecoveryService {
     if (!user) {
       throw new BadRequestException(INVALID_RESET);
     }
+    // Reject weak passwords before hashing or consuming the one-use token.
+    validateRegistrationPassword(dto.password);
     const passwordHash = await this.passwords.hash(dto.password);
     const result = await this.repository.consumePasswordResetToken(
       tokenHash,

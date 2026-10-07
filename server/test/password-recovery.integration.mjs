@@ -136,18 +136,18 @@ test('password recovery across API, SMTP and PostgreSQL', { timeout: 60_000 }, a
     assertStatus(await post('reset-password', { token, password: 'not-used-password' }), 400);
     token = replacementToken;
     assertStatus(await post('reset-password', { token, password: 'short' }), 400);
-    assertStatus(await post('reset-password', { token: '0'.repeat(64), password: 'new-password-123' }), 400);
+    assertStatus(await post('reset-password', { token: '0'.repeat(64), password: 'New-password-123' }), 400);
     const reused = await post('reset-password', { token, password: 'Original-password-123' });
     assertStatus(reused, 409);
     assert.equal(reused.body.code, 'PASSWORD_REUSE');
     const afterReuse = await db.query('SELECT token_hash FROM password_reset_tokens p JOIN users u ON u.id = p.user_id WHERE u.email = $1', [email]);
     assert.equal(afterReuse[0]?.token_hash, createHash('sha256').update(token).digest('hex'), 'the reset link remains usable after trying the existing password');
     const resets = await Promise.all([
-      post('reset-password', { token, password: 'new-password-123' }),
-      post('reset-password', { token, password: 'other-password-123' }),
+      post('reset-password', { token, password: 'New-password-123' }),
+      post('reset-password', { token, password: 'Other-password-123' }),
     ]);
     assert.deepEqual(resets.map((response) => response.status).sort(), [200, 400], 'concurrent reset is single-use');
-    const password = resets[0].status === 200 ? 'new-password-123' : 'other-password-123';
+    const password = resets[0].status === 200 ? 'New-password-123' : 'Other-password-123';
     assertStatus(await post('reset-password', { token, password }), 400);
     assertStatus(await post('login', { email, password: 'Original-password-123' }), 401);
     assertStatus(await post('login', { email, password }), 200);
@@ -168,8 +168,8 @@ test('password recovery across API, SMTP and PostgreSQL', { timeout: 60_000 }, a
     const companyMail = await waitForMail(companyEmail);
     const companyToken = /token=([a-f0-9]{64})/.exec(companyMail)?.[1];
     assert.ok(companyToken);
-    assertStatus(await post('reset-password', { token: companyToken, password: 'new-company-password' }), 200);
-    const companyLogin = await post('login', { email: companyEmail, password: 'new-company-password' });
+    assertStatus(await post('reset-password', { token: companyToken, password: 'New-company-password-1' }), 200);
+    const companyLogin = await post('login', { email: companyEmail, password: 'New-company-password-1' });
     assertStatus(companyLogin, 200);
     assert.equal(companyLogin.body.role, 'company');
     assertStatus(await post('login', { email: companyEmail, password: 'company-password-123' }), 401);
@@ -181,9 +181,9 @@ test('password recovery across API, SMTP and PostgreSQL', { timeout: 60_000 }, a
     const legacyToken = 'd'.repeat(64);
     const legacyHash = createHash('sha256').update(legacyToken).digest('hex');
     assert.equal(await repository.replacePasswordResetToken({ userId: externalUser.id, tokenHash: legacyHash, expiresAt: new Date(Date.now() + 10 * 60_000) }), true);
-    assertStatus(await post('reset-password', { token: legacyToken, password: 'new-external-password' }), 200);
+    assertStatus(await post('reset-password', { token: legacyToken, password: 'New-external-password-1' }), 200);
     assertStatus(await post('login', { email: externalEmail, password: 'external-password-123' }), 401);
-    assertStatus(await post('login', { email: externalEmail, password: 'new-external-password' }), 200);
+    assertStatus(await post('login', { email: externalEmail, password: 'New-external-password-1' }), 200);
     let limited;
     for (let attempt = 0; attempt < 11; attempt++) {
       limited = await post('forgot-password', { email: `unknown-${id}@email.psu.ac.th` });

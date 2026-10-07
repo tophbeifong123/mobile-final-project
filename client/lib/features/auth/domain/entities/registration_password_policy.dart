@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-/// Registration feedback only; recovery uses its existing validation.
+/// Shared new-password rules for registration and password recovery.
 class RegistrationPasswordPolicy {
   const RegistrationPasswordPolicy(this.password, this.confirmation);
 

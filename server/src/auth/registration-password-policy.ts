@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 
-/** Signup only: existing accounts can still log in with their current password. */
+/** New passwords at signup/reset; existing login passwords are unaffected. */
 export function validateRegistrationPassword(password: string): void {
   const conditions: [boolean, string][] = [
     [Array.from(password).length >= 8, 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร'],

@@ -248,6 +248,50 @@ void main() {
     expect(find.text('รหัสผ่านใหม่'), findsOneWidget);
   });
 
+  for (final password in [
+    'lowercase1!',
+    'UPPERCASE1!',
+    'NoNumbers!',
+    'NoSymbols123',
+    'NoSymbols123🔐',
+  ]) {
+    testWidgets(
+      'reset shows compact requirements and rejects missing composition: $password',
+      (tester) async {
+        final repository = _FakeRecoveryRepository();
+        await openApp(
+          tester,
+          location: '/reset-password?token=$_token',
+          recovery: repository,
+        );
+        expect(
+          find.text('อย่างน้อย 8 ตัว มี A–Z, a–z, ตัวเลข และสัญลักษณ์'),
+          findsOneWidget,
+        );
+        expect(find.textContaining('เพิ่มอีก:'), findsNothing);
+        final fields = find.byType(TextFormField);
+        await tester.enterText(fields.first, password);
+        await tester.pump();
+        expect(find.textContaining('เพิ่มอีก:'), findsOneWidget);
+        await tester.enterText(fields.last, password);
+        await tester.tap(find.text('บันทึกรหัสผ่านใหม่'));
+        await tester.pumpAndSettle();
+        expect(repository.resetCalls, 0);
+        await tester.enterText(fields.first, 'Aa1!abcd');
+        await tester.pump();
+        expect(find.textContaining('เพิ่มอีก:'), findsNothing);
+        expect(find.text('รหัสผ่านทั้งสองช่องไม่ตรงกัน'), findsOneWidget);
+        await tester.enterText(fields.last, 'Aa1!abcd');
+        await tester.pump();
+        expect(find.text('รหัสผ่านทั้งสองช่องไม่ตรงกัน'), findsNothing);
+        await tester.tap(find.text('บันทึกรหัสผ่านใหม่'));
+        await tester.pumpAndSettle();
+        expect(repository.resetCalls, 1);
+        expect(repository.lastPassword, 'Aa1!abcd');
+      },
+    );
+  }
+
   testWidgets('password length, UTF-8 limit and confirmation guard API', (
     tester,
   ) async {
@@ -269,10 +313,7 @@ void main() {
     await tester.enterText(fields.last, tooLong);
     await tester.tap(find.text('บันทึกรหัสผ่านใหม่'));
     await tester.pumpAndSettle();
-    expect(
-      find.text('รหัสผ่านยาวเกินไป กรุณาใช้รหัสผ่านที่สั้นลง'),
-      findsOneWidget,
-    );
+    expect(find.text('รหัสผ่านต้องไม่เกิน 72 ไบต์'), findsOneWidget);
     expect(repository.resetCalls, 0);
     final passwordInput = find.descendant(
       of: fields.first,
@@ -294,7 +335,7 @@ void main() {
       recovery: repository,
     );
     final fields = find.byType(TextFormField);
-    final fourEmojis = List.filled(4, '🔐').join();
+    final fourEmojis = 'Aa1!${List.filled(3, '🔐').join()}';
     await tester.enterText(fields.first, fourEmojis);
     await tester.enterText(fields.last, fourEmojis);
     await tester.tap(find.text('บันทึกรหัสผ่านใหม่'));
@@ -302,7 +343,7 @@ void main() {
     expect(find.text('รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร'), findsOneWidget);
     expect(repository.resetCalls, 0);
 
-    final eightEmojis = List.filled(8, '🔐').join();
+    final eightEmojis = 'Aa1!${List.filled(4, '🔐').join()}';
     await tester.enterText(fields.first, eightEmojis);
     await tester.enterText(fields.last, eightEmojis);
     await tester.tap(find.text('บันทึกรหัสผ่านใหม่'));
@@ -345,8 +386,8 @@ void main() {
       location: '/reset-password?token=$_token',
       recovery: repository,
     );
-    await tester.enterText(find.byType(TextFormField).first, 'new-secret-123');
-    await tester.enterText(find.byType(TextFormField).last, 'new-secret-123');
+    await tester.enterText(find.byType(TextFormField).first, 'New-secret-123');
+    await tester.enterText(find.byType(TextFormField).last, 'New-secret-123');
     await tester.tap(find.text('บันทึกรหัสผ่านใหม่'));
     await tester.pumpAndSettle();
     expect(find.byType(TextFormField), findsNothing);
@@ -369,8 +410,8 @@ void main() {
       );
       expect(find.textContaining('ต้องไม่ซ้ำกับรหัสผ่านเดิม'), findsOneWidget);
       final fields = find.byType(TextFormField);
-      await tester.enterText(fields.first, 'old-secret-123');
-      await tester.enterText(fields.last, 'old-secret-123');
+      await tester.enterText(fields.first, 'Old-secret-123');
+      await tester.enterText(fields.last, 'Old-secret-123');
       await tester.tap(find.text('บันทึกรหัสผ่านใหม่'));
       await tester.pumpAndSettle();
       expect(
@@ -389,16 +430,16 @@ void main() {
       );
       expect(
         tester.widget<TextFormField>(fields.first).controller!.text,
-        'old-secret-123',
+        'Old-secret-123',
       );
       repository.failure = null;
-      await tester.enterText(fields.first, 'different-secret-123');
-      await tester.enterText(fields.last, 'different-secret-123');
+      await tester.enterText(fields.first, 'Different-secret-123');
+      await tester.enterText(fields.last, 'Different-secret-123');
       await tester.tap(find.text('บันทึกรหัสผ่านใหม่'));
       await tester.pumpAndSettle();
       expect(repository.resetCalls, 2);
       expect(repository.lastToken, _token);
-      expect(repository.lastPassword, 'different-secret-123');
+      expect(repository.lastPassword, 'Different-secret-123');
       expect(find.text('เรียบร้อยแล้ว!'), findsOneWidget);
     },
   );
@@ -417,13 +458,13 @@ void main() {
       storage: storage,
     );
     expect(container.read(authControllerProvider).value, _session);
-    await tester.enterText(find.byType(TextFormField).first, 'new-secret-123');
-    await tester.enterText(find.byType(TextFormField).last, 'new-secret-123');
+    await tester.enterText(find.byType(TextFormField).first, 'New-secret-123');
+    await tester.enterText(find.byType(TextFormField).last, 'New-secret-123');
     await tester.tap(find.text('บันทึกรหัสผ่านใหม่'));
     await tester.pumpAndSettle();
     expect(repository.resetCalls, 1);
     expect(repository.lastToken, _token);
-    expect(repository.lastPassword, 'new-secret-123');
+    expect(repository.lastPassword, 'New-secret-123');
     expect(storage.accessToken, isNull);
     expect(storage.refreshToken, isNull);
     expect(container.read(authControllerProvider).value, isNull);
@@ -458,8 +499,8 @@ void main() {
       auth: _FakeAuthRepository(restoreCompleter: restore),
       storage: storage,
     );
-    await tester.enterText(find.byType(TextFormField).first, 'new-secret-123');
-    await tester.enterText(find.byType(TextFormField).last, 'new-secret-123');
+    await tester.enterText(find.byType(TextFormField).first, 'New-secret-123');
+    await tester.enterText(find.byType(TextFormField).last, 'New-secret-123');
     await tester.tap(find.text('บันทึกรหัสผ่านใหม่'));
     await tester.pump();
     restore.complete(_session);
