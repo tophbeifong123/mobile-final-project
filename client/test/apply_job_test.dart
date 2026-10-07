@@ -45,64 +45,63 @@ void main() {
   );
 
   for (final width in [320.0, 390.0, 768.0]) {
-    testWidgets(
-      'shows themed application screen and submits at width $width',
-      (tester) async {
-        tester.view.physicalSize = Size(width, 740);
-        tester.view.devicePixelRatio = 1;
-        addTearDown(tester.view.resetPhysicalSize);
-        addTearDown(tester.view.resetDevicePixelRatio);
+    testWidgets('shows themed application screen and submits at width $width', (
+      tester,
+    ) async {
+      tester.view.physicalSize = Size(width, 740);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-        final appRepository = _FakeApplicationRepository();
+      final appRepository = _FakeApplicationRepository();
 
-        await _mount(
-          tester,
-          documents: const [cvDocument],
-          appRepository: appRepository,
-        );
+      await _mount(
+        tester,
+        documents: const [cvDocument],
+        appRepository: appRepository,
+      );
 
-        expect(find.text('Flutter Developer Intern'), findsOneWidget);
-        expect(find.text('Tech Co'), findsOneWidget);
-        expect(find.text('เอกสารที่เลือกแนบ'), findsOneWidget);
-        expect(find.text('my_resume.pdf'), findsOneWidget);
+      expect(find.text('Flutter Developer Intern'), findsOneWidget);
+      expect(find.text('Tech Co'), findsOneWidget);
+      expect(find.text('เอกสารที่เลือกแนบ'), findsOneWidget);
+      expect(find.text('my_resume.pdf'), findsOneWidget);
 
-        expect(
-          tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
-          NeoColors.paperCanvas,
-        );
+      expect(
+        tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
+        NeoColors.paperCanvas,
+      );
 
-        final appBar = tester.widget<AppBar>(find.byType(AppBar));
-        expect(appBar.backgroundColor, NeoColors.paperCanvas);
-        expect(appBar.foregroundColor, NeoColors.inkSolid);
+      final appBar = tester.widget<AppBar>(find.byType(AppBar));
+      expect(appBar.backgroundColor, NeoColors.paperCanvas);
+      expect(appBar.foregroundColor, NeoColors.inkSolid);
 
-        for (final card in tester.widgetList<AppCard>(find.byType(AppCard))) {
-          expect(card.borderColor, NeoColors.inkSolid);
-          expect(card.borderWidth, 2);
-          expect(card.shadows, isNotEmpty);
-        }
+      for (final card in tester.widgetList<AppCard>(find.byType(AppCard))) {
+        expect(card.borderColor, NeoColors.inkSolid);
+        expect(card.borderWidth, 2);
+        expect(card.shadows, isNotEmpty);
+      }
 
-        final field = tester.widget<TextFormField>(find.byType(TextFormField));
-        expect(field.enabled, isTrue);
+      final field = tester.widget<TextFormField>(find.byType(TextFormField));
+      expect(field.enabled, isTrue);
 
-        final submitButton = tester.widget<NeoButton>(
-          find.byKey(const Key('apply-submit')),
-        );
-        expect(submitButton.onPressed, isNotNull);
+      final submitButton = tester.widget<NeoButton>(
+        find.byKey(const Key('apply-submit')),
+      );
+      expect(submitButton.onPressed, isNotNull);
 
-        await tester.enterText(
-          find.byKey(const Key('apply-cover-letter')),
-          'สนใจฝึกงานกับ Tech Co',
-        );
-        await tester.tap(find.byKey(const Key('apply-submit')));
-        await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('apply-cover-letter')),
+        'สนใจฝึกงานกับ Tech Co',
+      );
+      await tester.tap(find.byKey(const Key('apply-submit')));
+      await tester.pumpAndSettle();
 
-        expect(appRepository.applyCalls, 1);
-        expect(appRepository.appliedJobId, 'job-123');
-        expect(appRepository.appliedCoverLetter, 'สนใจฝึกงานกับ Tech Co');
-        expect(appRepository.appliedDocumentIds, const ['cv-123']);
-        expect(find.text('Submitted'), findsOneWidget);
-      },
-    );
+      expect(appRepository.applyCalls, 1);
+      expect(appRepository.appliedJobId, 'job-123');
+      expect(appRepository.appliedCoverLetter, 'สนใจฝึกงานกับ Tech Co');
+      expect(appRepository.appliedDocumentIds, const ['cv-123']);
+      expect(find.text('Submitted'), findsOneWidget);
+    });
   }
 
   testWidgets('without a CV, submit is disabled and upload route works', (
@@ -110,11 +109,7 @@ void main() {
   ) async {
     final appRepository = _FakeApplicationRepository();
 
-    await _mount(
-      tester,
-      documents: const [],
-      appRepository: appRepository,
-    );
+    await _mount(tester, documents: const [], appRepository: appRepository);
 
     expect(find.text('ยังไม่มี CV ในระบบ'), findsOneWidget);
 
@@ -244,10 +239,7 @@ void main() {
     await tester.tap(find.byKey(const Key('apply-submit')));
     await tester.pumpAndSettle();
 
-    expect(
-      appRepository.appliedDocumentIds,
-      const ['cv-123', 'portfolio-456'],
-    );
+    expect(appRepository.appliedDocumentIds, const ['cv-123', 'portfolio-456']);
   });
 
   testWidgets('narrow screen and long job details do not overflow', (

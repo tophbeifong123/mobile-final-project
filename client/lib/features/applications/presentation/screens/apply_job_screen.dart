@@ -234,9 +234,9 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
                                 : () async {
                                     final selected =
                                         await ApplicationDocumentsDialog.show(
-                                      context,
-                                      selectedIds: _documentIds,
-                                    );
+                                          context,
+                                          selectedIds: _documentIds,
+                                        );
                                     if (mounted && selected != null) {
                                       setState(() => _documentIds = selected);
                                     }
@@ -382,9 +382,7 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: NeoColors.paperCanvas,
-          border: Border(
-            top: BorderSide(color: NeoColors.inkSolid, width: 2),
-          ),
+          border: Border(top: BorderSide(color: NeoColors.inkSolid, width: 2)),
         ),
         child: SafeArea(
           child: Padding(
@@ -416,8 +414,7 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final documents =
-        ref.read(studentDocumentsProvider).asData?.value ?? [];
+    final documents = ref.read(studentDocumentsProvider).asData?.value ?? [];
     final cv = documents.where((document) => document.type == 'cv').firstOrNull;
 
     if (cv == null) {
@@ -431,14 +428,13 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
     });
 
     try {
-      await ref.read(applicationRepositoryProvider).apply(
-        jobId: widget.jobId,
-        coverLetter: _coverLetterController.text.trim(),
-        documentIds: [
-          cv.id,
-          ..._documentIds.where((id) => id != cv.id),
-        ],
-      );
+      await ref
+          .read(applicationRepositoryProvider)
+          .apply(
+            jobId: widget.jobId,
+            coverLetter: _coverLetterController.text.trim(),
+            documentIds: [cv.id, ..._documentIds.where((id) => id != cv.id)],
+          );
       ref.invalidate(applicationsControllerProvider);
       ref.invalidate(myApplicationsProvider);
 
