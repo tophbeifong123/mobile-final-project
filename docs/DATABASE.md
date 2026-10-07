@@ -169,6 +169,7 @@ Migration `CreateStudentDocuments1759400000000` จะ rollback ไม่ได�
 | province_id | smallint | null ได้, FK → provinces.id; รหัสจังหวัดตามกรมการปกครอง |
 | location | text | คอลัมน์เดิม; ที่อยู่สั้นแยกจากจังหวัด จำกัดข้อมูลใหม่ 255 ตัวอักษรใน service ไม่ตัดข้อมูลเก่า |
 | website_url | varchar(1024) | เว็บไซต์ HTTP/HTTPS หรือค่าว่าง |
+| contact_links | jsonb | ช่องทางติดต่อที่บริษัทบันทึกเอง ไม่เกิน 8 รายการ ค่าเริ่มต้น `[]` ไม่ใช่อีเมลเข้าสู่ระบบ |
 | company_size | varchar(100) | ขนาดองค์กร หรือค่าว่าง |
 | perks | text[] | สวัสดิการที่บริษัทระบุ |
 | cover_object_key | varchar(1024) | คีย์รูปหน้าปกบริษัท, null ได้ |
@@ -177,7 +178,7 @@ Migration `CreateStudentDocuments1759400000000` จะ rollback ไม่ได�
 
 ตัวเลขแดชบอร์ดไม่เก็บเป็นคอลัมน์ นับจาก `jobs` กับ `applications` แล้วเขียนทับค่าใน Redis ถ้า Redis หายให้นับจากตารางนี้ใหม่
 
-เว็บไซต์ ขนาดองค์กร สวัสดิการ ที่อยู่ และรูปหน้าปกมาจาก migration `1759300000000-add-details-and-cover-to-company-profiles` ที่มี up/down; IFND-141 อ่านข้อมูลล่าสุดผ่าน join ไม่เก็บสำเนาใน jobs. Migration `1791158400000-add-company-office-location` เพิ่มมาสเตอร์จังหวัดและ `province_id` โดยไม่เพิ่มหรือลบคอลัมน์ `location` เดิม. Migration `1791744000000-drop-office-pin` ลบ `latitude`/`longitude` ของโปรไฟล์และจุดกึ่งกลางจังหวัด เพราะไม่มีหน้าไหนแสดงแผนที่.
+เว็บไซต์ ขนาดองค์กร สวัสดิการ ที่อยู่ และรูปหน้าปกมาจาก migration `1759300000000-add-details-and-cover-to-company-profiles` ที่มี up/down. ช่องทางติดต่อของบริษัทมาจาก migration `1791860000000-add-company-contact-links` รูปแบบเดียวกับ `student_profiles.contact_links` แต่จำกัด 8 รายการใน service. IFND-141 อ่านข้อมูลล่าสุดผ่าน join ไม่เก็บสำเนาใน jobs. Migration `1791158400000-add-company-office-location` เพิ่มมาสเตอร์จังหวัดและ `province_id` โดยไม่เพิ่มหรือลบคอลัมน์ `location` เดิม. Migration `1791744000000-drop-office-pin` ลบ `latitude`/`longitude` ของโปรไฟล์และจุดกึ่งกลางจังหวัด เพราะไม่มีหน้าไหนแสดงแผนที่.
 
 ### provinces
 

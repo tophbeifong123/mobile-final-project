@@ -11,6 +11,7 @@ import { ProvincesService } from '../provinces/provinces.service.js';
 import { StorageService } from '../storage/storage.service.js';
 import { CompanyJobItemDto } from './dto/company-job-item.dto.js';
 import { CreateJobDto } from './dto/create-job.dto.js';
+import { ContactLinkDto } from '../students/dto/contact-link.dto.js';
 import { JobDetailDto } from './dto/job-detail.dto.js';
 import { CompanyOwnedJobDto } from './dto/company-owned-job.dto.js';
 import { JobDto } from './dto/job.dto.js';
@@ -157,18 +158,23 @@ export class JobsService {
     if (!key) throw new NotFoundException('ไม่พบโลโก้บริษัท');
     const buffer = await this.storageService.get(key);
     if (!buffer) throw new NotFoundException('ไม่พบโลโก้บริษัท');
-    const extension = key.split('.').pop()?.toLowerCase();
-    const mimeType =
-      extension === 'svg'
-        ? 'image/svg+xml'
-        : extension === 'jpg' || extension === 'jpeg'
-          ? 'image/jpeg'
-          : extension === 'webp'
-            ? 'image/webp'
-            : extension === 'gif'
-              ? 'image/gif'
-              : 'image/png';
-    return { buffer, mimeType };
+    return { buffer, mimeType: imageMimeType(key) };
+  }
+
+  async getCompanyCover(
+    user: AuthUser,
+    jobId: string,
+  ): Promise<{ buffer: Buffer; mimeType: string }> {
+    if (user.role !== UserRole.Student) {
+      throw new ForbiddenException(STUDENT_ONLY);
+    }
+    const job = await this.jobsRepository.findOpenById(jobId);
+    if (!job) throw new NotFoundException(JOB_NOT_FOUND);
+    const key = job.companyCoverObjectKey;
+    if (!key) throw new NotFoundException('ไม่พบรูปหน้าปกบริษัท');
+    const buffer = await this.storageService.get(key);
+    if (!buffer) throw new NotFoundException('ไม่พบรูปหน้าปกบริษัท');
+    return { buffer, mimeType: imageMimeType(key) };
   }
 
   async save(user: AuthUser, jobId: string): Promise<void> {
@@ -365,6 +371,28 @@ function toDto(job: {
   return dto;
 }
 
+function publicContactLinks(links: unknown): ContactLinkDto[] {
+  if (!Array.isArray(links)) return [];
+  return links.flatMap((item) => {
+    if (!item || typeof item !== 'object') return [];
+    const record = item as Record<string, unknown>;
+    const platform =
+      typeof record.platform === 'string' ? record.platform.trim() : '';
+    const value = typeof record.value === 'string' ? record.value.trim() : '';
+    if (!platform || !value) return [];
+    const dto = new ContactLinkDto();
+    if (typeof record.id === 'string' && record.id.trim()) {
+      dto.id = record.id.trim();
+    }
+    dto.platform = platform;
+    if (typeof record.label === 'string' && record.label.trim()) {
+      dto.label = record.label.trim();
+    }
+    dto.value = value;
+    return [dto];
+  });
+}
+
 function toDetail(
   job: {
     id: string;
@@ -379,14 +407,18 @@ function toDetail(
     requirements: string;
     skills?: string[];
     status: JobStatus;
+    createdAt: Date;
+    deadline?: Date | null;
     companyName: string;
     businessType: string;
     companyDescription: string;
     companyWebsiteUrl?: string;
+    companyContactLinks?: unknown;
     companySize?: string;
     companyPerks?: string[];
     companyLocation?: string;
     companyLogoObjectKey?: string | null;
+    companyCoverObjectKey?: string | null;
   },
   saved: boolean,
 ): JobDetailDto {
@@ -403,14 +435,18 @@ function toDetail(
   dto.requirements = job.requirements;
   dto.skills = job.skills ?? [];
   dto.status = job.status;
+  dto.createdAt = job.createdAt;
+  dto.deadline = job.deadline ?? null;
   dto.companyName = job.companyName;
   dto.businessType = job.businessType;
   dto.companyDescription = job.companyDescription;
   dto.companyWebsiteUrl = job.companyWebsiteUrl ?? '';
+  dto.companyContactLinks = publicContactLinks(job.companyContactLinks);
   dto.companySize = job.companySize ?? '';
   dto.companyPerks = job.companyPerks ?? [];
   dto.companyLocation = job.companyLocation ?? '';
   dto.companyLogoAvailable = Boolean(job.companyLogoObjectKey);
+  dto.companyCoverAvailable = Boolean(job.companyCoverObjectKey);
   dto.saved = saved;
   return dto;
 }
@@ -485,6 +521,23 @@ function openingsOf(value: number | null | undefined): number | null {
     );
   }
   return openings;
+}
+
+function imageMimeType(key: string): string {
+  const extension = key.split('.').pop()?.toLowerCase();
+  switch (extension) {
+    case 'svg':
+      return 'image/svg+xml';
+    case 'jpg':
+    case 'jpeg':
+      return 'image/jpeg';
+    case 'webp':
+      return 'image/webp';
+    case 'gif':
+      return 'image/gif';
+    default:
+      return 'image/png';
+  }
 }
 
 function toFeedItem(job: {

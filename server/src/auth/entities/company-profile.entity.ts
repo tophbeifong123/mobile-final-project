@@ -47,6 +47,18 @@ export class CompanyProfile {
   @Column({ name: 'website_url', type: 'varchar', length: 1024, default: '' })
   websiteUrl: string;
 
+  @Column({
+    name: 'contact_links',
+    type: 'jsonb',
+    default: () => "'[]'::jsonb",
+  })
+  contactLinks: Array<{
+    id?: string;
+    platform: string;
+    label?: string;
+    value: string;
+  }>;
+
   @Column({ name: 'company_size', type: 'varchar', length: 100, default: '' })
   companySize: string;
 

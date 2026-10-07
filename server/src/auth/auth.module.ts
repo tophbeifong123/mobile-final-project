@@ -5,6 +5,7 @@ import { PassportModule } from '@nestjs/passport';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthController } from './auth.controller.js';
+import { ResetPasswordPageController } from './reset-password-page.controller.js';
 import { AuthIdentity } from './entities/auth-identity.entity.js';
 import { AuthRepository } from './auth.repository.js';
 import { AuthService } from './auth.service.js';
@@ -54,7 +55,7 @@ import { PasswordRecoveryRateLimitGuard } from './password-recovery-rate-limit.g
       },
     }),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, ResetPasswordPageController],
   exports: [PassportModule, JwtStrategy],
   providers: [
     AuthService,

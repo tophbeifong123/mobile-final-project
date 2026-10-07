@@ -307,14 +307,20 @@ describe('JobsService', () => {
       hasAllowance: true,
       requirements: 'ใช้ Flutter ได้',
       status: JobStatus.Open,
+      createdAt: new Date('2026-10-01T12:00:00.000Z'),
+      deadline: new Date('2026-12-31T00:00:00.000Z'),
       companyName: 'InternFinder',
       businessType: 'ซอฟต์แวร์',
       companyDescription: 'แพลตฟอร์มฝึกงาน',
       companyWebsiteUrl: 'https://example.com',
+      companyContactLinks: [
+        { id: 'c1', platform: 'phone', label: 'ฝ่ายบุคคล', value: '0812345678' },
+      ],
       companySize: '51-200',
       companyPerks: ['MacBook', 'Free Lunch'],
       companyLocation: 'อาคาร A ถนนนิพัทธ์อุทิศ',
       companyLogoObjectKey: 'company-logos/company-1/logo.png',
+      companyCoverObjectKey: 'company-covers/company-1/cover.jpg',
     });
     repository.findStudentId.mockResolvedValue('student-1');
     repository.isSaved.mockResolvedValue(true);
@@ -326,13 +332,20 @@ describe('JobsService', () => {
     expect(result.businessType).toBe('ซอฟต์แวร์');
     expect(result.companyDescription).toBe('แพลตฟอร์มฝึกงาน');
     expect(result.companyWebsiteUrl).toBe('https://example.com');
+    expect(result.companyContactLinks).toEqual([
+      { id: 'c1', platform: 'phone', label: 'ฝ่ายบุคคล', value: '0812345678' },
+    ]);
     expect(result.companySize).toBe('51-200');
     expect(result.companyPerks).toEqual(['MacBook', 'Free Lunch']);
     expect(result.companyLocation).toBe('อาคาร A ถนนนิพัทธ์อุทิศ');
     expect(result.companyLogoAvailable).toBe(true);
+    expect(result.companyCoverAvailable).toBe(true);
     expect(result).not.toHaveProperty('companyLogoObjectKey');
+    expect(result).not.toHaveProperty('companyCoverObjectKey');
     expect(result.description).toBe('ช่วยพัฒนาแอป');
     expect(result.status).toBe(JobStatus.Open);
+    expect(result.createdAt).toEqual(new Date('2026-10-01T12:00:00.000Z'));
+    expect(result.deadline).toEqual(new Date('2026-12-31T00:00:00.000Z'));
     expect(result.saved).toBe(true);
   });
 
@@ -374,6 +387,34 @@ describe('JobsService', () => {
     },
   );
 
+  it('serves the company cover only for an open job', async () => {
+    const key = 'company-covers/company-1/cover.jpg';
+    repository.findOpenById.mockResolvedValue({ companyCoverObjectKey: key });
+    storage.get.mockResolvedValue(Buffer.from('cover'));
+    const result = await service.getCompanyCover(student, 'job-1');
+    expect(storage.get).toHaveBeenCalledWith(key);
+    expect(result).toEqual({ buffer: Buffer.from('cover'), mimeType: 'image/jpeg' });
+  });
+
+  it('rejects company access to the student cover endpoint before storage access', async () => {
+    await expect(
+      service.getCompanyCover(company, 'job-1'),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(repository.findOpenById).not.toHaveBeenCalled();
+    expect(storage.get).not.toHaveBeenCalled();
+  });
+
+  it.each([null, { companyCoverObjectKey: null }])(
+    'hides missing jobs or absent covers',
+    async (job) => {
+      repository.findOpenById.mockResolvedValue(job);
+      await expect(
+        service.getCompanyCover(student, 'job-1'),
+      ).rejects.toBeInstanceOf(NotFoundException);
+      expect(storage.get).not.toHaveBeenCalled();
+    },
+  );
+
   it('returns not found when a stored logo is gone', async () => {
     repository.findOpenById.mockResolvedValue({
       companyLogoObjectKey: 'company-logos/company-1/logo.png',
@@ -392,10 +433,13 @@ describe('JobsService', () => {
     repository.findStudentId.mockResolvedValue(null);
     const result = await service.getOpen(student, 'job-1');
     expect(result.companyWebsiteUrl).toBe('');
+    expect(result.companyContactLinks).toEqual([]);
     expect(result.companySize).toBe('');
     expect(result.companyLocation).toBe('');
     expect(result.companyPerks).toEqual([]);
     expect(result.companyLogoAvailable).toBe(false);
+    expect(result.companyCoverAvailable).toBe(false);
+    expect(result.deadline).toBeNull();
   });
 
   it('hides a missing or closed job from a student', async () => {

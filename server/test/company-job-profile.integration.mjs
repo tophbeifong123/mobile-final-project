@@ -84,6 +84,7 @@ test('persisted company profile reaches job detail, logo and Swagger', async () 
       name: 'Saved Company', businessType: 'Software', description: 'Saved culture',
       websiteUrl: 'https://example.com/careers', companySize: '201-500',
       perks: ['MacBook', 'Free Lunch'], location: 'อาคาร A ถนนนิพัทธ์อุทิศ',
+      contactLinks: [{ id: 'c1', platform: 'phone', label: 'ฝ่ายบุคคล', value: '0812345678' }],
     };
     const saved = await http.patch('/api/companies/me').set('x-test-role', 'company').send(fields).expect(200);
     const reopened = await http.get('/api/companies/me').set('x-test-role', 'company').expect(200);
@@ -100,15 +101,21 @@ test('persisted company profile reaches job detail, logo and Swagger', async () 
     assert.equal(detail.body.companyName, fields.name);
     assert.equal(detail.body.businessType, fields.businessType);
     assert.equal(detail.body.companyDescription, fields.description);
+    assert.deepEqual(detail.body.companyContactLinks, fields.contactLinks);
     assert.equal(detail.body.companyWebsiteUrl, fields.websiteUrl);
     assert.equal(detail.body.companySize, fields.companySize);
     assert.deepEqual(detail.body.companyPerks, fields.perks);
     assert.equal(detail.body.companyLocation, fields.location);
     assert.equal(detail.body.companyLogoAvailable, true);
+    assert.equal(detail.body.companyCoverAvailable, false);
+    assert.ok(Number.isFinite(Date.parse(detail.body.createdAt)));
+    assert.equal(detail.body.deadline, null);
     assert.ok(!Object.hasOwn(detail.body, 'companyLogoObjectKey'));
+    assert.ok(!Object.hasOwn(detail.body, 'companyCoverObjectKey'));
     // Subsequent profile edits appear in the job without rewriting the job.
     await http.patch('/api/companies/me').set('x-test-role', 'company').send({ ...fields, websiteUrl: '', perks: [], location: 'อาคาร B' }).expect(200);
     const latest = await http.get('/api/jobs/' + jobId).set('x-test-role', 'student').expect(200);
+    assert.deepEqual(latest.body.companyContactLinks, fields.contactLinks);
     assert.equal(latest.body.companyWebsiteUrl, '');
     assert.deepEqual(latest.body.companyPerks, []);
     assert.equal(latest.body.companyLocation, 'อาคาร B');
@@ -184,10 +191,13 @@ test('persisted company profile reaches job detail, logo and Swagger', async () 
     await http.get('/api/jobs/' + jobId + '/company-logo').set('x-test-role', 'student').expect(404);
     const doc = SwaggerModule.createDocument(app, new DocumentBuilder().setTitle('Test').addBearerAuth().build());
     assert.ok(doc.paths['/api/jobs/{id}/company-logo'].get);
-    for (const field of ['companyWebsiteUrl', 'companySize', 'companyLocation', 'companyPerks', 'companyLogoAvailable'])
+    assert.ok(doc.paths['/api/jobs/{id}/company-cover'].get);
+    for (const field of ['companyWebsiteUrl', 'companyContactLinks', 'companySize', 'companyLocation', 'companyPerks', 'companyLogoAvailable', 'companyCoverAvailable'])
       assert.ok(doc.components.schemas.JobDetailDto.properties[field]);
     assert.equal(doc.components.schemas.JobDetailDto.properties.companyPerks.type, 'array');
     assert.equal(doc.components.schemas.JobDetailDto.properties.companyLogoAvailable.type, 'boolean');
+    assert.equal(doc.components.schemas.JobDetailDto.properties.createdAt.format, 'date-time');
+    assert.equal(doc.components.schemas.JobDetailDto.properties.deadline.nullable, true);
     assert.equal(doc.components.schemas.JobFeedItemDto.properties.createdAt.format, 'date-time');
     assert.equal(doc.components.schemas.JobFeedItemDto.properties.companyLogoAvailable.type, 'boolean');
     assert.ok(doc.components.schemas.PaginatedJobsDto.properties.totalPages);
@@ -198,10 +208,11 @@ test('persisted company profile reaches job detail, logo and Swagger', async () 
     }
     const beforeDown = await dataSource.query('SELECT count(*)::int AS total FROM jobs');
     await dataSource.undoLastMigration();
-    const removed = await dataSource.query("SELECT column_name FROM information_schema.columns WHERE table_name='jobs' AND column_name IN ('openings', 'allowance_amount')");
+    const removed = await dataSource.query("SELECT column_name FROM information_schema.columns WHERE table_name='company_profiles' AND column_name='contact_links'");
     assert.equal(removed.length, 0);
     assert.deepEqual(await dataSource.query('SELECT count(*)::int AS total FROM jobs'), beforeDown);
     await dataSource.runMigrations();
+    assert.equal((await dataSource.query("SELECT column_name FROM information_schema.columns WHERE table_name='company_profiles' AND column_name='contact_links'")).length, 1);
     assert.equal((await dataSource.query('SELECT openings FROM jobs WHERE id=$1', [jobId]))[0].openings, null);
     assert.ok(!Object.keys(doc.paths).some(path => /companies\/[^/]+\/profile/.test(path)));
   } finally {

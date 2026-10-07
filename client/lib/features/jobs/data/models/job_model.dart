@@ -1,3 +1,4 @@
+import '../../../student_profile/data/models/student_profile_model.dart';
 import '../../domain/entities/job.dart';
 
 class JobModel {
@@ -90,11 +91,15 @@ class JobDetailModel {
     required this.companyDescription,
     required this.saved,
     this.companyWebsiteUrl = '',
+    this.companyContactLinks = const [],
     this.companySize = '',
     this.companyLocation = '',
     this.companyPerks = const [],
     this.companyLogoAvailable = false,
+    this.companyCoverAvailable = false,
     this.skills = const [],
+    this.createdAt,
+    this.deadline,
   });
 
   factory JobDetailModel.fromJson(Map<String, dynamic> json) {
@@ -114,6 +119,13 @@ class JobDetailModel {
       businessType: json['businessType'] as String? ?? '',
       companyDescription: json['companyDescription'] as String? ?? '',
       companyWebsiteUrl: json['companyWebsiteUrl'] as String? ?? '',
+      companyContactLinks:
+          (json['companyContactLinks'] as List<dynamic>? ?? const [])
+              .map(
+                (item) =>
+                    ContactLinkModel.fromJson(item as Map<String, dynamic>),
+              )
+              .toList(),
       companySize: json['companySize'] as String? ?? '',
       companyLocation: json['companyLocation'] as String? ?? '',
       companyPerks:
@@ -122,12 +134,15 @@ class JobDetailModel {
               .toList() ??
           const [],
       companyLogoAvailable: json['companyLogoAvailable'] as bool? ?? false,
+      companyCoverAvailable: json['companyCoverAvailable'] as bool? ?? false,
       saved: json['saved'] as bool? ?? false,
       skills:
           (json['skills'] as List<dynamic>?)
               ?.map((e) => e.toString())
               .toList() ??
           const [],
+      createdAt: _dateOrNull(json['createdAt']),
+      deadline: _dateOrNull(json['deadline']),
     );
   }
 
@@ -146,12 +161,16 @@ class JobDetailModel {
   final String businessType;
   final String companyDescription;
   final String companyWebsiteUrl;
+  final List<ContactLinkModel> companyContactLinks;
   final String companySize;
   final String companyLocation;
   final List<String> companyPerks;
   final bool companyLogoAvailable;
+  final bool companyCoverAvailable;
   final bool saved;
   final List<String> skills;
+  final DateTime? createdAt;
+  final DateTime? deadline;
 
   JobDetail toEntity() {
     return JobDetail(
@@ -170,12 +189,23 @@ class JobDetailModel {
       businessType: businessType,
       companyDescription: companyDescription,
       companyWebsiteUrl: companyWebsiteUrl,
+      companyContactLinks: companyContactLinks
+          .map((link) => link.toEntity())
+          .toList(),
       companySize: companySize,
       companyLocation: companyLocation,
       companyPerks: companyPerks,
       companyLogoAvailable: companyLogoAvailable,
+      companyCoverAvailable: companyCoverAvailable,
       saved: saved,
       skills: skills,
+      createdAt: createdAt,
+      deadline: deadline,
     );
   }
+}
+
+DateTime? _dateOrNull(Object? value) {
+  if (value is! String || value.isEmpty) return null;
+  return DateTime.tryParse(value);
 }
