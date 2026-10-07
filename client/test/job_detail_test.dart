@@ -1,4 +1,9 @@
 import 'dart:convert';
+import 'package:flutter/gestures.dart';
+import 'package:client/core/widgets/neo_button.dart';
+import 'package:client/core/theme/app_tokens.dart';
+import 'package:client/features/applications/presentation/providers/applications_controller.dart';
+import 'package:client/features/applications/domain/entities/job_application.dart';
 
 import 'package:client/features/jobs/data/models/job_model.dart';
 import 'package:client/features/jobs/domain/entities/company_logo.dart';
@@ -49,6 +54,29 @@ void main() {
             retry: (retryCount, error) => null,
             overrides: [
               jobDetailProvider('job-1').overrideWith((ref) async => detail),
+              myApplicationsProvider.overrideWith(
+                (ref) async => fails
+                    ? [
+                        const JobApplication(
+                          id: 'existing',
+                          jobId: 'job-1',
+                          jobTitle: 'Job',
+                          companyName: 'Company',
+                          status: ApplicationStatus.rejected,
+                          coverLetter: 'Hello',
+                        ),
+                      ]
+                    : [
+                        const JobApplication(
+                          id: 'another',
+                          jobId: 'other-job',
+                          jobTitle: 'Other',
+                          companyName: 'Company',
+                          status: ApplicationStatus.submitted,
+                          coverLetter: 'Hello',
+                        ),
+                      ],
+              ),
               studentDocumentsProvider.overrideWith(
                 (ref) async => [
                   const StudentDocument(
@@ -81,13 +109,34 @@ void main() {
         );
         await tester.pumpAndSettle();
         expect(find.text('Company description'), findsOneWidget);
-        expect(find.text('สมัครงาน'), findsOneWidget);
+        expect(find.text(fails ? 'สมัครแล้ว' : 'สมัครงาน'), findsOneWidget);
         if (fails) {
           expect(find.text('C'), findsOneWidget);
         } else {
           expect(find.byType(Image), findsOneWidget);
         }
         expect(tester.takeException(), isNull);
+        if (fails) {
+          final button = tester.widget<NeoButton>(
+            find.widgetWithText(NeoButton, 'สมัครแล้ว'),
+          );
+          expect(button.onPressed, isNull);
+          expect(button.foregroundColor, NeoColors.mutedInk);
+          expect((button.icon as Icon).icon, Icons.check_rounded);
+          final mouse = await tester.createGesture(
+            kind: PointerDeviceKind.mouse,
+          );
+          await mouse.addPointer(location: Offset.zero);
+          await mouse.moveTo(tester.getCenter(find.text('สมัครแล้ว')));
+          await tester.pump(const Duration(seconds: 1));
+          expect(find.text('คุณสมัครงานนี้ไปแล้ว'), findsNothing);
+          expect(find.text('สมัครงาน'), findsNothing);
+          await tester.tap(find.text('สมัครแล้ว'));
+          await tester.pumpAndSettle();
+          expect(find.byType(ApplicationDocumentsDialog), findsNothing);
+          await mouse.removePointer();
+          return;
+        }
         await tester.tap(find.text('สมัครงาน'));
         await tester.pumpAndSettle();
         expect(find.byType(ApplicationDocumentsDialog), findsOneWidget);

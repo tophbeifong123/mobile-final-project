@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:client/core/error/app_exception.dart';
 import 'package:client/core/theme/app_theme.dart';
 import 'package:client/core/widgets/neo_button.dart';
+import 'package:client/core/widgets/app_card.dart';
+import 'package:client/core/theme/app_tokens.dart';
 import 'package:client/features/applications/domain/entities/job_application.dart';
 import 'package:client/features/applications/domain/repositories/application_repository.dart';
 import 'package:client/features/applications/data/models/job_application_model.dart';
@@ -123,6 +125,19 @@ void main() {
       );
       await tester.tap(find.text('ใช้เอกสารที่เลือก'));
       await tester.pumpAndSettle();
+      expect(find.text('เอกสารที่เลือกแนบ'), findsOneWidget);
+      for (final id in ['cv']) {
+        final card = tester.widget<AppCard>(
+          find.byKey(ValueKey('selected-document-$id')),
+        );
+        expect(card.borderColor, NeoColors.inkSolid);
+        expect(card.borderWidth, 2);
+        expect(card.backgroundColor, NeoColors.paperCanvas);
+      }
+      expect(
+        find.byKey(const ValueKey('selected-document-other2')),
+        findsNothing,
+      );
       await tester.enterText(find.byType(TextFormField), 'Hello');
       await tester.tap(find.text('ยืนยันสมัคร'));
       await tester.pumpAndSettle();
@@ -144,6 +159,18 @@ void main() {
       }
       await tester.tap(find.text('ใช้เอกสารที่เลือก'));
       await tester.pumpAndSettle();
+      for (final id in ['cv', 'transcript', 'other1']) {
+        final card = tester.widget<AppCard>(
+          find.byKey(ValueKey('selected-document-$id')),
+        );
+        expect(card.borderColor, NeoColors.inkSolid);
+        expect(card.borderWidth, 2);
+        expect(card.backgroundColor, NeoColors.paperCanvas);
+      }
+      expect(
+        find.byKey(const ValueKey('selected-document-other2')),
+        findsNothing,
+      );
       await tester.enterText(find.byType(TextFormField), 'Hello');
       await tester.tap(find.text('ยืนยันสมัคร'));
       await tester.pumpAndSettle();
@@ -276,6 +303,15 @@ void main() {
       await tester.pumpAndSettle();
       await tester.ensureVisible(find.byTooltip('เปิดดู original.pdf'));
       await tester.pumpAndSettle();
+      for (final key in [
+        'attached-documents-container',
+        'attached-document-snapshot',
+      ]) {
+        final card = tester.widget<AppCard>(find.byKey(ValueKey(key)));
+        expect(card.borderColor, NeoColors.inkSolid);
+        expect(card.borderWidth, 2);
+        expect(card.shadows, isNotEmpty);
+      }
       await tester.tap(find.byTooltip('เปิดดู original.pdf'));
       await tester.pump();
       expect(requested, 'app/snapshot');

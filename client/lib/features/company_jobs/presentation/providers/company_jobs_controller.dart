@@ -23,6 +23,20 @@ final applicantResumeBytesProvider = FutureProvider.autoDispose
       ).fetch(arg.jobId, arg.applicationId);
     });
 
+final applicantDocumentBytesProvider = FutureProvider.autoDispose
+    .family<
+      List<int>,
+      ({String jobId, String applicationId, String documentId})
+    >((ref, arg) {
+      return ref
+          .watch(companyJobRepositoryProvider)
+          .downloadApplicantDocument(
+            jobId: arg.jobId,
+            applicationId: arg.applicationId,
+            documentId: arg.documentId,
+          );
+    });
+
 final companyJobListProvider = FutureProvider<List<CompanyJob>>((ref) {
   ref.watch(signedInSessionProvider);
   return ref.watch(companyJobRepositoryProvider).fetchMine();

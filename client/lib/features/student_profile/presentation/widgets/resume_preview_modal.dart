@@ -324,6 +324,35 @@ class _PdfViewerCanvasState extends State<_PdfViewerCanvas> {
   late final Future<PdfDocument> _documentFuture;
   Object? _renderError;
   File? _tempFile;
+  bool _firstPageReady = false;
+
+  Future<PdfPageImage?> _renderPage(PdfPage page) async {
+    try {
+      final image = await page.render(
+        width: page.width * 2,
+        height: page.height * 2,
+        format: PdfPageImageFormat.jpeg,
+        backgroundColor: '#ffffff',
+      );
+      if (image == null) throw StateError('PDF page could not be rendered');
+      if (page.pageNumber == 1 && mounted) {
+        Object? decodeError;
+        await precacheImage(
+          MemoryImage(image.bytes),
+          context,
+          onError: (error, _) => decodeError = error,
+        );
+        if (decodeError != null) {
+          throw StateError('PDF page could not be decoded');
+        }
+        if (mounted) setState(() => _firstPageReady = true);
+      }
+      return image;
+    } catch (error) {
+      if (mounted) setState(() => _renderError = error);
+      rethrow;
+    }
+  }
 
   @override
   void initState() {
@@ -382,24 +411,17 @@ class _PdfViewerCanvasState extends State<_PdfViewerCanvas> {
         children: [
           PdfView(
             controller: _controller,
+            renderer: _renderPage,
             scrollDirection: Axis.vertical,
             backgroundDecoration: const BoxDecoration(
               color: NeoColors.surfaceCream,
             ),
             builders: PdfViewBuilders<DefaultBuilderOptions>(
-              options: const DefaultBuilderOptions(),
-              documentLoaderBuilder: (context) =>
-                  const _PdfLoadingView(message: 'กำลังจัดเตรียมเอกสาร PDF...'),
-              pageLoaderBuilder: (context) => const Center(
-                child: SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.2,
-                    color: NeoColors.inkSolid,
-                  ),
-                ),
+              options: const DefaultBuilderOptions(
+                loaderSwitchDuration: Duration.zero,
               ),
+              documentLoaderBuilder: (context) => const SizedBox.expand(),
+              pageLoaderBuilder: (context) => const _PdfPagePlaceholder(),
               errorBuilder: (context, error) {
                 return _buildFallbackInfo(error: error);
               },
@@ -412,6 +434,10 @@ class _PdfViewerCanvasState extends State<_PdfViewerCanvas> {
               }
             },
           ),
+          if (!_firstPageReady)
+            const Positioned.fill(
+              child: _PdfLoadingView(message: 'กำลังจัดเตรียมเอกสาร PDF...'),
+            ),
           // Floating Page Indicator Pill at bottom right
           Positioned(
             right: 12,
@@ -533,6 +559,35 @@ class _PdfViewerCanvasState extends State<_PdfViewerCanvas> {
       ),
     );
   }
+}
+
+class _PdfPagePlaceholder extends StatelessWidget {
+  const _PdfPagePlaceholder();
+
+  @override
+  Widget build(BuildContext context) => Center(
+    child: Container(
+      key: const ValueKey('pdf-page-placeholder'),
+      margin: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: NeoColors.paperCanvas,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: NeoColors.mutedInk),
+      ),
+      child: const Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.description_outlined, color: NeoColors.mutedInk, size: 40),
+          Gap(8),
+          Text(
+            'กำลังเตรียมหน้าเอกสาร',
+            style: TextStyle(color: NeoColors.subtleInk),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 /// Unified Neo-Brutalist Loading Indicator for both download and document preparation
