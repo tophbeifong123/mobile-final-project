@@ -455,24 +455,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                   const AuthDivider(text: 'หรือลงทะเบียนด้วย'),
                                   const Gap(16),
 
-                                  // Social Buttons
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: GoogleSignInButton(
-                                          label: 'Google',
-                                          onIdToken: _onGoogleIdToken,
-                                          onError: (message) {
-                                            if (mounted) {
-                                              setState(() {
-                                                _submitting = false;
-                                                _error = message;
-                                              });
-                                            }
-                                          },
-                                        ),
-                                      ),
-                                    ],
+                                  GoogleSignInButton(
+                                    label: 'ลงทะเบียนด้วย Google',
+                                    signUp: true,
+                                    onIdToken: _onGoogleIdToken,
+                                    onError: (message) {
+                                      if (mounted) {
+                                        setState(() {
+                                          _submitting = false;
+                                          _error = message;
+                                        });
+                                      }
+                                    },
                                   ),
                                   const Gap(22),
 

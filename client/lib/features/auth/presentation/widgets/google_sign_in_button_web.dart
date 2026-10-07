@@ -1,8 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:google_identity_services_web/id.dart' as gis;
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:google_sign_in_web/web_only.dart' as google_web;
+import 'package:web/web.dart' as web;
 
 import '../../../../core/theme/app_tokens.dart';
 import 'google_sign_in_button_types.dart';
@@ -10,18 +11,29 @@ import 'google_sign_in_button_types.dart';
 Widget buildWebGoogleSignInButton({
   required GoogleIdTokenCallback onIdToken,
   required GoogleSignInErrorCallback onError,
+  required String label,
+  required bool signUp,
 }) {
-  return _GoogleSignInWebButton(onIdToken: onIdToken, onError: onError);
+  return _GoogleSignInWebButton(
+    onIdToken: onIdToken,
+    onError: onError,
+    label: label,
+    signUp: signUp,
+  );
 }
 
 class _GoogleSignInWebButton extends StatefulWidget {
   const _GoogleSignInWebButton({
     required this.onIdToken,
     required this.onError,
+    required this.label,
+    required this.signUp,
   });
 
   final GoogleIdTokenCallback onIdToken;
   final GoogleSignInErrorCallback onError;
+  final String label;
+  final bool signUp;
 
   @override
   State<_GoogleSignInWebButton> createState() => _GoogleSignInWebButtonState();
@@ -30,6 +42,11 @@ class _GoogleSignInWebButton extends StatefulWidget {
 class _GoogleSignInWebButtonState extends State<_GoogleSignInWebButton> {
   static Future<void>? _initialization;
   StreamSubscription<GoogleSignInAuthenticationEvent>? _events;
+  Widget? _host;
+  double? _outerWidth;
+  double? _buttonWidth;
+  bool _ready = false;
+  bool _rendered = false;
 
   Future<void> _initialize() {
     final clientId = const String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
@@ -50,8 +67,12 @@ class _GoogleSignInWebButtonState extends State<_GoogleSignInWebButton> {
       }
       await widget.onIdToken(idToken);
     }, onError: (_) => widget.onError('เข้าสู่ระบบด้วย Google ไม่สำเร็จ'));
-    _initialize().catchError((Object _) {
-      widget.onError('ตั้งค่า Google Sign-In ไม่ครบ ตรวจสอบ OAuth Client ID');
+    _initialize().then((_) {
+      if (mounted) setState(() => _ready = true);
+    }).catchError((Object _) {
+      if (mounted) {
+        widget.onError('ตั้งค่า Google Sign-In ไม่ครบ ตรวจสอบ OAuth Client ID');
+      }
     });
   }
 
@@ -61,54 +82,70 @@ class _GoogleSignInWebButtonState extends State<_GoogleSignInWebButton> {
     super.dispose();
   }
 
+  void _renderHost(Object element) {
+    if (_rendered) return;
+    _rendered = true;
+    final host = element as web.HTMLElement;
+    host.style
+      ..width = '100%'
+      ..height = '100%'
+      ..overflow = 'hidden'
+      ..display = 'flex'
+      ..alignItems = 'center'
+      ..justifyContent = 'center';
+    gis.id.renderButton(
+      host,
+      gis.GsiButtonConfiguration(
+        type: gis.ButtonType.standard,
+        theme: gis.ButtonTheme.outline,
+        size: gis.ButtonSize.large,
+        text: widget.signUp
+            ? gis.ButtonText.signup_with
+            : gis.ButtonText.signin_with,
+        shape: gis.ButtonShape.rectangular,
+        logo_alignment: gis.ButtonLogoAlignment.center,
+        width: _buttonWidth,
+        locale: 'th',
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<void>(
-      future: _initialization,
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return const SizedBox(
-            height: 46,
-            child: Center(
-              child: Text(
-                'ตั้งค่า Web Client ID ก่อน',
-                style: TextStyle(fontSize: 11, color: NeoColors.errorText),
-              ),
+    return Semantics(
+      button: true,
+      label: widget.label,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final maxWidth = constraints.maxWidth;
+          if (_outerWidth == null && maxWidth.isFinite && maxWidth >= 80) {
+            _outerWidth = maxWidth.clamp(80.0, 400.0).toDouble();
+          }
+          final outer = _outerWidth ?? 320.0;
+          _buttonWidth ??= (outer - 8).clamp(80.0, 392.0).roundToDouble();
+          return Container(
+            width: outer,
+            height: 50,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: NeoColors.pureWhite,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: NeoColors.inkSolid, width: 2.2),
+              boxShadow: NeoShadows.elevation3,
             ),
+            child: _ready
+                ? SizedBox(
+                    width: _buttonWidth,
+                    height: 44,
+                    child: _host ??= HtmlElementView.fromTagName(
+                      tagName: 'div',
+                      onElementCreated: _renderHost,
+                    ),
+                  )
+                : const SizedBox(height: 44),
           );
-        }
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const SizedBox(
-            height: 46,
-            child: Center(child: CircularProgressIndicator()),
-          );
-        }
-        return LayoutBuilder(
-          builder: (context, constraints) {
-            // GSI renders an HTML button, so it cannot inherit Flutter's
-            // Expanded width unless we pass the measured width explicitly.
-            final buttonWidth = constraints.maxWidth.isFinite
-                ? constraints.maxWidth.clamp(1.0, 400.0).toDouble()
-                : 150.0;
-
-            return SizedBox(
-              height: 46,
-              width: buttonWidth,
-              child: google_web.renderButton(
-                configuration: google_web.GSIButtonConfiguration(
-                  type: google_web.GSIButtonType.standard,
-                  theme: google_web.GSIButtonTheme.outline,
-                  size: google_web.GSIButtonSize.large,
-                  text: google_web.GSIButtonText.continueWith,
-                  shape: google_web.GSIButtonShape.rectangular,
-                  minimumWidth: buttonWidth,
-                  locale: 'th',
-                ),
-              ),
-            );
-          },
-        );
-      },
+        },
+      ),
     );
   }
 }

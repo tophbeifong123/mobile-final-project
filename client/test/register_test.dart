@@ -77,7 +77,7 @@ void main() {
       expect(find.text('หรือลงทะเบียนด้วย'), findsOneWidget);
 
       // Social buttons
-      expect(find.text('Google'), findsOneWidget);
+      expect(find.text('ลงทะเบียนด้วย Google'), findsOneWidget);
       expect(find.text('SSO มหาวิทยาลัย'), findsNothing);
 
       // Footer

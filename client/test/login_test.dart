@@ -61,8 +61,8 @@ void main() {
       expect(find.text('หรือเข้าสู่ระบบด้วย'), findsOneWidget);
 
       // Social buttons
-      expect(find.text('Google'), findsOneWidget);
-      expect(find.text('GitHub'), findsOneWidget);
+      expect(find.text('เข้าสู่ระบบด้วย Google'), findsOneWidget);
+      expect(find.text('GitHub'), findsNothing);
 
       // Bottom prompt & partner badge
       expect(find.text('ยังไม่มีบัญชีผู้ใช้?'), findsOneWidget);

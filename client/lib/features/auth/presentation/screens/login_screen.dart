@@ -4,7 +4,6 @@ import 'package:gap/gap.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_tokens.dart';
-import '../../../../core/widgets/app_toast.dart';
 import '../../domain/entities/auth_session.dart';
 import '../providers/auth_controller.dart';
 import '../widgets/widgets.dart';
@@ -56,10 +55,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _submitting = false;
       _error = error;
     });
-  }
-
-  void _showNotice(String message) {
-    AppToast.info(context, message);
   }
 
   Widget _roleChoiceButton(
@@ -432,33 +427,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                         ),
                                         const Gap(14),
 
-                                        // Social Buttons
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: GoogleSignInButton(
-                                                onIdToken: _onGoogleIdToken,
-                                                onError: (message) {
-                                                  if (mounted) {
-                                                    setState(() {
-                                                      _submitting = false;
-                                                      _error = message;
-                                                    });
-                                                  }
-                                                },
-                                              ),
-                                            ),
-                                            const Gap(12),
-                                            Expanded(
-                                              child: AuthSocialButton(
-                                                label: 'GitHub',
-                                                icon: const GitHubIcon(),
-                                                onTap: () => _showNotice(
-                                                  'ระบบเข้าสู่ระบบด้วย GitHub จะเปิดให้บริการในเร็วๆ นี้',
-                                                ),
-                                              ),
-                                            ),
-                                          ],
+                                        GoogleSignInButton(
+                                          label: 'เข้าสู่ระบบด้วย Google',
+                                          onIdToken: _onGoogleIdToken,
+                                          onError: (message) {
+                                            if (mounted) {
+                                              setState(() {
+                                                _submitting = false;
+                                                _error = message;
+                                              });
+                                            }
+                                          },
                                         ),
                                       ],
                                     ),
