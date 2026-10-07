@@ -21,23 +21,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
-void main() {
-  const sampleJob = JobDetail(
-    id: 'job-123',
-    title: 'Flutter Developer Intern',
-    companyName: 'Tech Co',
-    province: 'กรุงเทพมหานคร',
-    workMode: WorkMode.onSite,
-    category: 'Software Engineering',
-    hasAllowance: true,
-    description: 'พัฒนาแอปมือถือ',
-    requirements: 'ใช้ Flutter ได้',
-    status: JobStatus.open,
-    businessType: 'Tech',
-    companyDescription: 'Software house',
-    saved: false,
-  );
+const sampleJob = JobDetail(
+  id: 'job-123',
+  title: 'Flutter Developer Intern',
+  companyName: 'Tech Co',
+  province: 'กรุงเทพมหานคร',
+  workMode: WorkMode.onSite,
+  category: 'Software Engineering',
+  hasAllowance: true,
+  description: 'พัฒนาแอปมือถือ',
+  requirements: 'ใช้ Flutter ได้',
+  status: JobStatus.open,
+  businessType: 'Tech',
+  companyDescription: 'Software house',
+  saved: false,
+);
 
+void main() {
   const cvDocument = StudentDocument(
     id: 'cv-123',
     type: 'cv',
@@ -297,11 +297,11 @@ Future<void> _mount(
       ),
       GoRoute(
         path: '/student/resume',
-        builder: (_, __) => const Scaffold(body: Text('อัปโหลด Resume')),
+        builder: (_, _) => const Scaffold(body: Text('อัปโหลด Resume')),
       ),
       GoRoute(
         path: '/student/applications',
-        builder: (_, __) => const Scaffold(body: Text('Submitted')),
+        builder: (_, _) => const Scaffold(body: Text('Submitted')),
       ),
     ],
   );
@@ -311,7 +311,7 @@ Future<void> _mount(
     ProviderScope(
       overrides: [
         tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
-        studentDocumentsProvider.overrideWith((ref) async => documents),
+        studentDocumentsProvider.overrideWith((_) async => documents),
         jobRepositoryProvider.overrideWithValue(_FakeJobRepository(job)),
         applicationRepositoryProvider.overrideWithValue(appRepository),
       ],
