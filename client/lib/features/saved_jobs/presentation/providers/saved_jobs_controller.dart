@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/dio_client.dart';
+import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../data/datasources/saved_job_remote_data_source.dart';
 import '../../data/repositories/saved_job_repository_impl.dart';
 import '../../domain/entities/saved_job.dart';
@@ -13,6 +14,7 @@ final savedJobRepositoryProvider = Provider<SavedJobRepository>((ref) {
 });
 
 final savedJobsProvider = FutureProvider<List<SavedJob>>((ref) {
+  ref.watch(signedInSessionProvider);
   return ref.watch(savedJobRepositoryProvider).fetchSaved();
 });
 

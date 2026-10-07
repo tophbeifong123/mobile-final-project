@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/dio_client.dart';
+import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../data/datasources/job_remote_data_source.dart';
 import '../../data/repositories/job_repository_impl.dart';
 import '../../domain/entities/job.dart';
@@ -14,6 +15,7 @@ final jobRepositoryProvider = Provider<JobRepository>((ref) {
 class JobsController extends Notifier<JobFilter> {
   @override
   JobFilter build() {
+    ref.watch(signedInSessionProvider);
     ref.watch(jobRepositoryProvider);
     return const JobFilter();
   }
@@ -29,6 +31,7 @@ final jobsControllerProvider = NotifierProvider<JobsController, JobFilter>(
 );
 
 final jobFeedProvider = FutureProvider<JobPage>((ref) {
+  ref.watch(signedInSessionProvider);
   final filter = ref.watch(jobsControllerProvider);
   return ref.watch(jobRepositoryProvider).fetchFeed(filter);
 });

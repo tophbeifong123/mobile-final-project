@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/api_constants.dart';
 import '../../../../core/network/dio_client.dart';
+import '../../../auth/presentation/providers/auth_controller.dart';
 import '../../data/datasources/company_job_remote_data_source.dart';
 import '../../data/datasources/applicant_resume_remote_data_source.dart';
 import '../../data/repositories/company_job_repository_impl.dart';
@@ -23,6 +24,7 @@ final applicantResumeBytesProvider = FutureProvider.autoDispose
     });
 
 final companyJobListProvider = FutureProvider<List<CompanyJob>>((ref) {
+  ref.watch(signedInSessionProvider);
   return ref.watch(companyJobRepositoryProvider).fetchMine();
 });
 
@@ -30,6 +32,7 @@ final companyJobDetailProvider = FutureProvider.family<EditableJob, String>((
   ref,
   jobId,
 ) {
+  ref.watch(signedInSessionProvider);
   return ref.watch(companyJobRepositoryProvider).fetchOne(jobId);
 });
 
@@ -37,11 +40,13 @@ final companyOwnedJobProvider = FutureProvider.family<CompanyOwnedJob, String>((
   ref,
   jobId,
 ) {
+  ref.watch(signedInSessionProvider);
   return ref.watch(companyJobRepositoryProvider).fetchOwned(jobId);
 });
 
 final companyJobApplicantsProvider =
     FutureProvider.family<List<Applicant>, String>((ref, jobId) {
+      ref.watch(signedInSessionProvider);
       return ref.watch(companyJobRepositoryProvider).fetchApplicants(jobId);
     });
 
@@ -50,6 +55,7 @@ final companyApplicantDetailProvider =
       ref,
       arg,
     ) {
+      ref.watch(signedInSessionProvider);
       return ref
           .watch(companyJobRepositoryProvider)
           .fetchApplicant(jobId: arg.jobId, applicationId: arg.applicationId);
