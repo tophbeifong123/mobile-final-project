@@ -15,6 +15,7 @@ import '../../../../core/widgets/job_card.dart';
 import '../../../../core/widgets/loading_view.dart';
 import '../../../../core/widgets/neo_button.dart';
 import '../../../company_profile/domain/entities/company_contact_policy.dart';
+import '../../../applications/presentation/widgets/application_documents_dialog.dart';
 import '../../../saved_jobs/presentation/providers/saved_jobs_controller.dart';
 import '../../../student_profile/domain/entities/student_profile.dart';
 import '../../domain/entities/company_logo.dart';
@@ -87,7 +88,11 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
           saving: _saving,
           saved: job.saved,
           onSave: () => _toggleSave(job),
-          onApply: () => context.push('/student/jobs/${job.id}/apply'),
+          onApply: () async {
+            final selected = await ApplicationDocumentsDialog.show(context);
+            if (!context.mounted || selected == null) return;
+            context.push('/student/jobs/${job.id}/apply', extra: selected);
+          },
         ),
         orElse: () => null,
       ),

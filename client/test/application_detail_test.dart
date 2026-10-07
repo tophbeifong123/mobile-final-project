@@ -273,6 +273,7 @@ class _FakeApplicationRepository implements ApplicationRepository {
 
   @override
   Future<JobApplication> apply({
+    List<String> documentIds = const [],
     required String jobId,
     required String coverLetter,
   }) async {

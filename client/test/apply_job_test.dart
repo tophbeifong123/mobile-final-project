@@ -4,6 +4,8 @@ import 'package:client/core/theme/app_theme.dart';
 import 'package:client/core/theme/app_tokens.dart';
 import 'package:client/core/widgets/app_card.dart';
 import 'package:client/core/widgets/neo_button.dart';
+import 'package:client/features/resume/domain/entities/resume_file.dart';
+import 'package:client/features/resume/presentation/providers/resume_controller.dart';
 import 'package:client/features/applications/domain/entities/job_application.dart';
 import 'package:client/features/applications/domain/repositories/application_repository.dart';
 import 'package:client/features/applications/presentation/providers/applications_controller.dart';
@@ -67,6 +69,7 @@ void main() {
             studentProfileRepositoryProvider.overrideWithValue(
               _FakeStudentProfileRepository(profileWithoutResume),
             ),
+            studentDocumentsProvider.overrideWith((ref) async => []),
             jobRepositoryProvider.overrideWithValue(
               _FakeJobRepository(sampleJob),
             ),
@@ -108,6 +111,15 @@ void main() {
               tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
               studentProfileRepositoryProvider.overrideWithValue(
                 _FakeStudentProfileRepository(profileWithResume),
+              ),
+              studentDocumentsProvider.overrideWith(
+                (ref) async => [
+                  const StudentDocument(
+                    id: 'cv',
+                    type: 'cv',
+                    fileName: 'my_resume.pdf',
+                  ),
+                ],
               ),
               jobRepositoryProvider.overrideWithValue(
                 _FakeJobRepository(sampleJob),
@@ -173,6 +185,15 @@ void main() {
           tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
           studentProfileRepositoryProvider.overrideWithValue(
             _FakeStudentProfileRepository(profileWithResume),
+          ),
+          studentDocumentsProvider.overrideWith(
+            (ref) async => [
+              const StudentDocument(
+                id: 'cv',
+                type: 'cv',
+                fileName: 'my_resume.pdf',
+              ),
+            ],
           ),
           jobRepositoryProvider.overrideWithValue(
             _FakeJobRepository(sampleJob),
@@ -253,6 +274,7 @@ class _FakeApplicationRepository implements ApplicationRepository {
   Future<JobApplication> apply({
     required String jobId,
     required String coverLetter,
+    List<String> documentIds = const [],
   }) async {
     appliedJobId = jobId;
     appliedCoverLetter = coverLetter;

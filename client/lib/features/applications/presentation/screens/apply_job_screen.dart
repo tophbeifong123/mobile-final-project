@@ -10,13 +10,19 @@ import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/neo_button.dart';
 import '../../../jobs/presentation/providers/jobs_controller.dart';
-import '../../../student_profile/presentation/providers/student_profile_controller.dart';
+import '../../../resume/presentation/providers/resume_controller.dart';
+import '../widgets/application_documents_dialog.dart';
 import '../providers/applications_controller.dart';
 
 class ApplyJobScreen extends ConsumerStatefulWidget {
-  const ApplyJobScreen({super.key, required this.jobId});
+  const ApplyJobScreen({
+    super.key,
+    required this.jobId,
+    this.documentIds = const [],
+  });
 
   final String jobId;
+  final List<String> documentIds;
 
   @override
   ConsumerState<ApplyJobScreen> createState() => _ApplyJobScreenState();
@@ -27,6 +33,7 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
   final _coverLetterController = TextEditingController();
   String? _error;
   bool _submitting = false;
+  late List<String> _documentIds = List.of(widget.documentIds);
 
   @override
   void dispose() {
@@ -39,13 +46,10 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
     final textTheme = Theme.of(context).textTheme;
     final colors = context.colors;
 
-    final profileAsync = ref.watch(studentProfileControllerProvider);
-    final profile = profileAsync.asData?.value;
-    final hasResume =
-        (profile?.resumeFileName != null &&
-            profile!.resumeFileName!.isNotEmpty) ||
-        (profile?.resumeObjectKey != null &&
-            profile!.resumeObjectKey!.isNotEmpty);
+    final library = ref.watch(studentDocumentsProvider);
+    final documents = library.asData?.value ?? [];
+    final cv = documents.where((d) => d.type == 'cv').firstOrNull;
+    final hasResume = cv != null;
 
     final jobAsync = ref.watch(jobDetailProvider(widget.jobId));
     final job = jobAsync.asData?.value;
@@ -74,6 +78,21 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  if (library.isLoading)
+                    const Center(child: CircularProgressIndicator()),
+                  if (library.hasError)
+                    _ApplicationCard(
+                      child: Column(
+                        children: [
+                          Text(userVisibleError(library.error!)),
+                          TextButton(
+                            onPressed: () =>
+                                ref.invalidate(studentDocumentsProvider),
+                            child: const Text('ลองใหม่'),
+                          ),
+                        ],
+                      ),
+                    ),
                   _ApplicationCard(
                     backgroundColor: NeoColors.butterYellow,
                     child: Column(
@@ -196,7 +215,7 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
                                 ),
                                 const Gap(2),
                                 Text(
-                                  profile.resumeFileName ?? 'resume.pdf',
+                                  cv.fileName,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: textTheme.titleSmall,
@@ -205,9 +224,43 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
                             ),
                           ),
                           TextButton(
-                            onPressed: () => context.push('/student/resume'),
-                            child: const Text('เปลี่ยน'),
+                            onPressed: _submitting
+                                ? null
+                                : () async {
+                                    final selected =
+                                        await ApplicationDocumentsDialog.show(
+                                          context,
+                                          selectedIds: _documentIds,
+                                        );
+                                    if (mounted && selected != null) {
+                                      setState(() => _documentIds = selected);
+                                    }
+                                  },
+                            child: const Text('เลือกเอกสาร'),
                           ),
+                        ],
+                      ),
+                    ),
+                    const Gap(16),
+                  ],
+                  if (hasResume && _documentIds.any((id) => id != cv.id)) ...[
+                    _ApplicationCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'เอกสารเพิ่มเติมที่เลือก',
+                            style: TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                          for (final document in documents.where(
+                            (d) =>
+                                d.type != 'cv' && _documentIds.contains(d.id),
+                          ))
+                            Text(
+                              document.fileName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                         ],
                       ),
                     ),
@@ -330,6 +383,16 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
           .apply(
             jobId: widget.jobId,
             coverLetter: _coverLetterController.text.trim(),
+            documentIds: [
+              ..._documentIds,
+              if (_documentIds.isEmpty)
+                ...ref
+                    .read(studentDocumentsProvider)
+                    .asData!
+                    .value
+                    .where((d) => d.type == 'cv')
+                    .map((d) => d.id),
+            ],
           );
       ref.invalidate(applicationsControllerProvider);
       ref.invalidate(myApplicationsProvider);

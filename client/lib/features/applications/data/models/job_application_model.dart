@@ -49,6 +49,7 @@ class JobApplicationModel {
     this.resumeObjectKey,
     this.createdAt,
     this.timeline = const [],
+    this.documents = const [],
   });
 
   factory JobApplicationModel.fromJson(Map<String, dynamic> json) {
@@ -87,6 +88,15 @@ class JobApplicationModel {
           ? DateTime.tryParse(json['createdAt'] as String)
           : null,
       timeline: timeline,
+      documents: (json['documents'] as List<dynamic>? ?? [])
+          .map(
+            (item) => AttachedDocument(
+              id: item['id'] as String,
+              type: item['type'] as String,
+              fileName: item['fileName'] as String,
+            ),
+          )
+          .toList(),
     );
   }
 
@@ -103,6 +113,7 @@ class JobApplicationModel {
   final String? resumeObjectKey;
   final DateTime? createdAt;
   final List<TimelineEvent> timeline;
+  final List<AttachedDocument> documents;
 
   JobApplication toEntity() {
     return JobApplication(
@@ -119,6 +130,7 @@ class JobApplicationModel {
       resumeObjectKey: resumeObjectKey,
       createdAt: createdAt,
       timeline: timeline,
+      documents: documents,
     );
   }
 }
