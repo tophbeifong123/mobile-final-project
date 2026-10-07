@@ -455,6 +455,10 @@ class _CompanyJobCardState extends ConsumerState<_CompanyJobCard> {
                             icon: LucideIcons.monitor,
                             label: workModeLabelFromApi(job.workMode),
                           ),
+                          _MetaTag(
+                            icon: LucideIcons.calendarCheck,
+                            label: interviewModeLabelFromApi(job.interviewMode),
+                          ),
                           if (job.deadline != null)
                             _MetaTag(
                               icon: LucideIcons.calendarDays,

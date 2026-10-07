@@ -57,6 +57,13 @@ class JobApplication {
     this.resumeObjectKey,
     this.createdAt,
     this.timeline = const [],
+    this.examUrl,
+    this.examDeadline,
+    this.examCompletedAt,
+    this.examPassedAt,
+    this.interviewUrl,
+    this.interviewStartsAt,
+    this.interviewMode,
   });
 
   final String id;
@@ -72,4 +79,11 @@ class JobApplication {
   final String? resumeObjectKey;
   final DateTime? createdAt;
   final List<TimelineEvent> timeline;
+  final String? examUrl;
+  final DateTime? examDeadline;
+  final DateTime? examCompletedAt;
+  final DateTime? examPassedAt;
+  final String? interviewUrl;
+  final DateTime? interviewStartsAt;
+  final String? interviewMode;
 }

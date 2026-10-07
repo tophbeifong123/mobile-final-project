@@ -188,6 +188,34 @@ class _CompanyJobs implements CompanyJobRepository {
   }) {
     throw UnimplementedError();
   }
+
+  @override
+  Future<void> setExamLink({
+    required String jobId,
+    required String applicationId,
+    required String url,
+    required DateTime deadline,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> passExam({
+    required String jobId,
+    required String applicationId,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> setInterviewLink({
+    required String jobId,
+    required String applicationId,
+    required String url,
+    required DateTime startsAt,
+  }) {
+    throw UnimplementedError();
+  }
 }
 
 class _FailingCompanyJobs extends _CompanyJobs {

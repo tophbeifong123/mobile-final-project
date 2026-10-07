@@ -212,6 +212,10 @@ Flutter โหลดรายละเอียดใหม่เมื่อก
 | GET | /api/company/jobs/:id/applications/:applicationId/documents/:documentId/file | เปิด CV snapshot หรือเอกสารปัจจุบัน |
 | GET | /api/company/jobs/:id/applications/:applicationId/resume | เปิด PDF สำเนาของใบสมัครในแอป เฉพาะบริษัทเจ้าของประกาศ |
 | PATCH | /api/company/jobs/:id/applications/:applicationId/status | เปลี่ยนสถานะผู้สมัคร |
+| PUT | /api/company/jobs/:id/applications/:applicationId/exam | ส่งหรือแก้ลิงก์ข้อสอบพร้อมกำหนดเวลา |
+| POST | /api/company/jobs/:id/applications/:applicationId/exam/pass | ตรวจว่าข้อสอบผ่าน หลังนักศึกษาแจ้งว่าทำแล้ว |
+| PUT | /api/company/jobs/:id/applications/:applicationId/interview | เรียกสัมภาษณ์หลังบริษัทตรวจว่าข้อสอบผ่าน ออนไลน์ส่งลิงก์กับวันเวลา ออนไซต์ส่งวันเวลา |
+| POST | /api/applications/:id/exam/complete | นักศึกษาแจ้งว่าทำข้อสอบแล้ว |
 
 บริษัทเรียกได้เฉพาะประกาศและผู้สมัครของบริษัทตัวเอง ไม่เช่นนั้นตอบ 403
 
@@ -363,4 +367,4 @@ CORS เปิดให้แอปมือถือเรียกได้ต
 
 ## 10. นอกแบบนี้
 
-ไม่ทำแชท, นัดสัมภาษณ์, ยืนยัน email, login ด้วย social provider อื่นนอกจาก Google, ถอนใบสมัคร, หน้าโปรไฟล์บริษัทแยก, Admin, push notification นอกแอป หรือการเปลี่ยน role หลังสมัคร. Google Login รองรับ Android และ Web สำหรับทดสอบ; iOS ยังไม่อยู่ในขอบเขตนี้.
+ไม่ทำแชท, ระบบข้อสอบหรือปฏิทินในแอป, ยืนยัน email, login ด้วย social provider อื่นนอกจาก Google, ถอนใบสมัคร, หน้าโปรไฟล์บริษัทแยก, Admin, push notification นอกแอป หรือการเปลี่ยน role หลังสมัคร. ระหว่างกำลังพิจารณา บริษัทส่งลิงก์ข้อสอบก่อน นักศึกษาแจ้งว่าทำแล้ว บริษัทตรวจว่าผ่านจึงเรียกสัมภาษณ์ตามรูปแบบของประกาศ และตอบรับได้หลังมีนัดแล้ว. Google Login รองรับ Android และ Web สำหรับทดสอบ; iOS ยังไม่อยู่ในขอบเขตนี้.

@@ -240,4 +240,7 @@ class _FakeApplicationRepository implements ApplicationRepository {
       coverLetter: coverLetter,
     );
   }
+
+  @override
+  Future<void> completeExam(String applicationId) async {}
 }

@@ -45,4 +45,22 @@ export class JobApplicantItemDto {
     description: 'วันเวลาที่ยื่นใบสมัคร',
   })
   createdAt: string;
+
+  @ApiProperty({ nullable: true, example: 'https://exam.example/quiz' })
+  examUrl: string | null;
+
+  @ApiProperty({ nullable: true, format: 'date-time' })
+  examDeadline: string | null;
+
+  @ApiProperty({ nullable: true, format: 'date-time' })
+  examCompletedAt: string | null;
+
+  @ApiProperty({ nullable: true, format: 'date-time' })
+  examPassedAt: string | null;
+
+  @ApiProperty({ nullable: true, example: 'https://meet.example/room' })
+  interviewUrl: string | null;
+
+  @ApiProperty({ nullable: true, format: 'date-time' })
+  interviewStartsAt: string | null;
 }

@@ -1,6 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ContactLinkDto } from '../../students/dto/contact-link.dto.js';
-import { JobStatus, WorkMode } from '../job-enums.js';
+import { InterviewMode, JobStatus, WorkMode } from '../job-enums.js';
 
 export class JobDetailDto {
   @ApiProperty()
@@ -17,6 +17,9 @@ export class JobDetailDto {
 
   @ApiProperty({ enum: WorkMode })
   workMode: WorkMode;
+
+  @ApiProperty({ enum: InterviewMode, example: InterviewMode.OnSite })
+  interviewMode: InterviewMode;
 
   @ApiProperty({ example: 'IT & Software' })
   category: string;

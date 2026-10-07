@@ -94,4 +94,42 @@ class CompanyJobRepositoryImpl implements CompanyJobRepository {
       status: status,
     );
   }
+
+  @override
+  Future<void> setExamLink({
+    required String jobId,
+    required String applicationId,
+    required String url,
+    required DateTime deadline,
+  }) {
+    return _remote.setExamLink(
+      jobId: jobId,
+      applicationId: applicationId,
+      url: url,
+      deadline: deadline,
+    );
+  }
+
+  @override
+  Future<void> passExam({
+    required String jobId,
+    required String applicationId,
+  }) {
+    return _remote.passExam(jobId: jobId, applicationId: applicationId);
+  }
+
+  @override
+  Future<void> setInterviewLink({
+    required String jobId,
+    required String applicationId,
+    required String url,
+    required DateTime startsAt,
+  }) {
+    return _remote.setInterviewLink(
+      jobId: jobId,
+      applicationId: applicationId,
+      url: url,
+      startsAt: startsAt,
+    );
+  }
 }

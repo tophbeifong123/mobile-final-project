@@ -108,6 +108,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Flutter Intern'), findsOneWidget);
+    expect(find.text('สัมภาษณ์ออนไลน์'), findsOneWidget);
     expect(find.text('UI/UX Designer Intern'), findsNothing);
     expect(find.text('Marketing Trainee'), findsNothing);
 

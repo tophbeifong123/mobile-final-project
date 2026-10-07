@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { JobStatus, WorkMode } from '../job-enums.js';
+import { InterviewMode, JobStatus, WorkMode } from '../job-enums.js';
 
 export class CompanyJobItemDto {
   @ApiProperty()
@@ -13,6 +13,9 @@ export class CompanyJobItemDto {
 
   @ApiProperty({ enum: WorkMode, example: WorkMode.Hybrid })
   workMode: WorkMode;
+
+  @ApiProperty({ enum: InterviewMode, example: InterviewMode.Online })
+  interviewMode: InterviewMode;
 
   @ApiProperty({ example: 0 })
   applicantCount: number;

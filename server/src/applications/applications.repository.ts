@@ -4,14 +4,14 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { DataSource, QueryFailedError } from 'typeorm';
+import { DataSource, EntityManager, QueryFailedError } from 'typeorm';
 import { CompanyProfile } from '../auth/entities/company-profile.entity.js';
 import { StudentProfile } from '../auth/entities/student-profile.entity.js';
 import { Major } from '../majors/major.entity.js';
 import { StudentDocument, StudentDocumentType } from '../students/student-document.entity.js';
 import { University } from '../universities/university.entity.js';
 import { Job } from '../jobs/entities/job.entity.js';
-import { JobStatus, WorkMode } from '../jobs/job-enums.js';
+import { InterviewMode, JobStatus, WorkMode } from '../jobs/job-enums.js';
 import { Notification } from '../notifications/entities/notification.entity.js';
 import { ApplicationStatus } from './application-status.js';
 import {
@@ -21,11 +21,18 @@ import {
   INVALID_STATUS_TRANSITION,
   JOB_CLOSED,
   JOB_NOT_FOUND,
+  ACCEPT_REQUIRES_INTERVIEW,
   MUST_BE_REVIEWING_BEFORE_DECISION,
   ONLY_SUBMITTED_CAN_BE_REVIEWING,
 } from './applications.constants.js';
 import { ApplicationStatusEvent } from './entities/application-status-event.entity.js';
 import { Application } from './entities/application.entity.js';
+import {
+  assertCanCompleteExam,
+  assertCanPassExam,
+  assertCanSetExam,
+  assertCanSetInterview,
+} from './selection-link.js';
 
 export interface ApplyJobParams {
   studentId: string;
@@ -44,6 +51,12 @@ export interface MyApplicationRecord {
   status: ApplicationStatus;
   coverLetter: string;
   resumeObjectKey: string;
+  examUrl: string | null;
+  examDeadline: Date | null;
+  examCompletedAt: Date | null;
+  examPassedAt: Date | null;
+  interviewUrl: string | null;
+  interviewStartsAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -54,6 +67,12 @@ export interface ApplicationDetailRecord {
   status: ApplicationStatus;
   coverLetter: string;
   resumeObjectKey: string;
+  examUrl: string | null;
+  examDeadline: Date | null;
+  examCompletedAt: Date | null;
+  examPassedAt: Date | null;
+  interviewUrl: string | null;
+  interviewStartsAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
   job: {
@@ -62,6 +81,7 @@ export interface ApplicationDetailRecord {
     companyName: string;
     province: string;
     workMode: WorkMode;
+    interviewMode: InterviewMode;
     category: string;
     hasAllowance: boolean;
   };
@@ -80,6 +100,12 @@ export interface JobApplicantRecord {
   major: string;
   status: ApplicationStatus;
   coverLetter: string;
+  examUrl: string | null;
+  examDeadline: Date | null;
+  examCompletedAt: Date | null;
+  examPassedAt: Date | null;
+  interviewUrl: string | null;
+  interviewStartsAt: Date | null;
   createdAt: Date;
 }
 
@@ -110,6 +136,13 @@ export interface CompanyApplicantDetailRecord {
   status: ApplicationStatus;
   coverLetter: string;
   resumeObjectKey: string;
+  examUrl: string | null;
+  examDeadline: Date | null;
+  examCompletedAt: Date | null;
+  examPassedAt: Date | null;
+  interviewUrl: string | null;
+  interviewStartsAt: Date | null;
+  interviewMode: InterviewMode;
   createdAt: Date;
   updatedAt: Date;
   documents: Array<{ id: string; type: string; fileName: string }>;
@@ -141,6 +174,12 @@ export class ApplicationsRepository {
       .addSelect('app.status', 'status')
       .addSelect('app.coverLetter', 'coverLetter')
       .addSelect('app.resumeObjectKey', 'resumeObjectKey')
+      .addSelect('app.examUrl', 'examUrl')
+      .addSelect('app.examDeadline', 'examDeadline')
+      .addSelect('app.examCompletedAt', 'examCompletedAt')
+      .addSelect('app.examPassedAt', 'examPassedAt')
+      .addSelect('app.interviewUrl', 'interviewUrl')
+      .addSelect('app.interviewStartsAt', 'interviewStartsAt')
       .addSelect('app.createdAt', 'createdAt')
       .addSelect('app.updatedAt', 'updatedAt')
       .orderBy('app.createdAt', 'DESC')
@@ -154,6 +193,7 @@ export class ApplicationsRepository {
       status: row.status as ApplicationStatus,
       coverLetter: row.coverLetter as string,
       resumeObjectKey: row.resumeObjectKey as string,
+      ...selectionFromRow(row),
       createdAt: new Date(row.createdAt as string | Date),
       updatedAt: new Date(row.updatedAt as string | Date),
     }));
@@ -177,11 +217,18 @@ export class ApplicationsRepository {
       .addSelect('app.status', 'status')
       .addSelect('app.coverLetter', 'coverLetter')
       .addSelect('app.resumeObjectKey', 'resumeObjectKey')
+      .addSelect('app.examUrl', 'examUrl')
+      .addSelect('app.examDeadline', 'examDeadline')
+      .addSelect('app.examCompletedAt', 'examCompletedAt')
+      .addSelect('app.examPassedAt', 'examPassedAt')
+      .addSelect('app.interviewUrl', 'interviewUrl')
+      .addSelect('app.interviewStartsAt', 'interviewStartsAt')
       .addSelect('app.createdAt', 'createdAt')
       .addSelect('app.updatedAt', 'updatedAt')
       .addSelect('job.title', 'jobTitle')
       .addSelect('job.province', 'province')
       .addSelect('job.workMode', 'workMode')
+      .addSelect('job.interviewMode', 'interviewMode')
       .addSelect('job.category', 'category')
       .addSelect('job.hasAllowance', 'hasAllowance')
       .addSelect('company.name', 'companyName')
@@ -204,6 +251,7 @@ export class ApplicationsRepository {
       status: row.status as ApplicationStatus,
       coverLetter: row.coverLetter as string,
       resumeObjectKey: row.resumeObjectKey as string,
+      ...selectionFromRow(row),
       createdAt: new Date(row.createdAt as string | Date),
       updatedAt: new Date(row.updatedAt as string | Date),
       job: {
@@ -212,6 +260,7 @@ export class ApplicationsRepository {
         companyName: row.companyName as string,
         province: row.province as string,
         workMode: row.workMode as WorkMode,
+        interviewMode: row.interviewMode as InterviewMode,
         category: row.category as string,
         hasAllowance: Boolean(row.hasAllowance),
       },
@@ -343,6 +392,12 @@ export class ApplicationsRepository {
       .addSelect(`COALESCE(student.customMajorName, major.nameTh, '')`, 'major')
       .addSelect('app.status', 'status')
       .addSelect('app.coverLetter', 'coverLetter')
+      .addSelect('app.examUrl', 'examUrl')
+      .addSelect('app.examDeadline', 'examDeadline')
+      .addSelect('app.examCompletedAt', 'examCompletedAt')
+      .addSelect('app.examPassedAt', 'examPassedAt')
+      .addSelect('app.interviewUrl', 'interviewUrl')
+      .addSelect('app.interviewStartsAt', 'interviewStartsAt')
       .addSelect('app.createdAt', 'createdAt')
       .orderBy('app.createdAt', 'DESC')
       .getRawMany();
@@ -354,6 +409,7 @@ export class ApplicationsRepository {
       major: (row.major as string) ?? '',
       status: row.status as ApplicationStatus,
       coverLetter: (row.coverLetter as string) ?? '',
+      ...selectionFromRow(row),
       createdAt: new Date(row.createdAt as string | Date),
     }));
   }
@@ -382,6 +438,9 @@ export class ApplicationsRepository {
     const major = student?.majorId
       ? await this.dataSource.getRepository(Major).findOne({ where: { id: student.majorId } })
       : null;
+    const job = await this.dataSource.getRepository(Job).findOne({
+      where: { id: jobId },
+    });
     const documents = await this.listApplicantDocuments(jobId, applicationId);
     const appliedCvName = documents.find((doc) => doc.id === 'application-cv')?.fileName ?? null;
 
@@ -406,6 +465,13 @@ export class ApplicationsRepository {
       status: application.status,
       coverLetter: application.coverLetter,
       resumeObjectKey: application.resumeObjectKey,
+      examUrl: application.examUrl,
+      examDeadline: application.examDeadline,
+      examCompletedAt: application.examCompletedAt,
+      examPassedAt: application.examPassedAt,
+      interviewUrl: application.interviewUrl,
+      interviewStartsAt: application.interviewStartsAt,
+      interviewMode: job?.interviewMode ?? InterviewMode.Online,
       createdAt: application.createdAt,
       updatedAt: application.updatedAt,
       documents,
@@ -475,6 +541,12 @@ export class ApplicationsRepository {
         if (application.status !== ApplicationStatus.Reviewing) {
           throw new BadRequestException(MUST_BE_REVIEWING_BEFORE_DECISION);
         }
+        if (
+          params.newStatus === ApplicationStatus.Accepted &&
+          !application.interviewStartsAt
+        ) {
+          throw new BadRequestException(ACCEPT_REQUIRES_INTERVIEW);
+        }
       } else {
         throw new BadRequestException(INVALID_STATUS_TRANSITION);
       }
@@ -523,4 +595,156 @@ export class ApplicationsRepository {
       newStatus: ApplicationStatus.Reviewing,
     });
   }
+
+  async setExamLink(params: {
+    jobId: string;
+    applicationId: string;
+    url: string;
+    deadline: Date;
+    jobTitle: string;
+  }): Promise<void> {
+    await this.dataSource.transaction(async (manager) => {
+      const application = await this.lockApplication(
+        manager,
+        params.jobId,
+        params.applicationId,
+      );
+      assertCanSetExam(application);
+      application.examUrl = params.url;
+      application.examDeadline = params.deadline;
+      await manager.save(Application, application);
+      await this.notifyStudent(
+        manager,
+        application,
+        `บริษัทส่งลิงก์ข้อสอบสำหรับงาน ${params.jobTitle}`,
+      );
+    });
+  }
+
+  async passExam(params: {
+    jobId: string;
+    applicationId: string;
+    jobTitle: string;
+  }): Promise<void> {
+    await this.dataSource.transaction(async (manager) => {
+      const application = await this.lockApplication(
+        manager,
+        params.jobId,
+        params.applicationId,
+      );
+      assertCanPassExam(application);
+      application.examPassedAt = new Date();
+      await manager.save(Application, application);
+      await this.notifyStudent(
+        manager,
+        application,
+        `บริษัทตรวจว่าข้อสอบผ่านแล้วสำหรับงาน ${params.jobTitle}`,
+      );
+    });
+  }
+
+  async setInterviewLink(params: {
+    jobId: string;
+    applicationId: string;
+    url: string | null;
+    startsAt: Date;
+    jobTitle: string;
+  }): Promise<void> {
+    await this.dataSource.transaction(async (manager) => {
+      const application = await this.lockApplication(
+        manager,
+        params.jobId,
+        params.applicationId,
+      );
+      assertCanSetInterview(application);
+      application.interviewUrl = params.url;
+      application.interviewStartsAt = params.startsAt;
+      await manager.save(Application, application);
+      await this.notifyStudent(
+        manager,
+        application,
+        params.url
+          ? `บริษัทส่งลิงก์นัดสัมภาษณ์สำหรับงาน ${params.jobTitle}`
+          : `บริษัทนัดสัมภาษณ์ที่สำนักงานสำหรับงาน ${params.jobTitle}`,
+      );
+    });
+  }
+
+  async completeExam(params: {
+    applicationId: string;
+    studentId: string;
+  }): Promise<void> {
+    await this.dataSource.transaction(async (manager) => {
+      const application = await manager
+        .createQueryBuilder(Application, 'app')
+        .setLock('pessimistic_write')
+        .where('app.id = :applicationId AND app.studentId = :studentId', params)
+        .getOne();
+      if (!application) {
+        throw new NotFoundException(APPLICATION_NOT_FOUND);
+      }
+      assertCanCompleteExam(application, new Date());
+      application.examCompletedAt = new Date();
+      await manager.save(Application, application);
+    });
+  }
+
+  private async lockApplication(
+    manager: EntityManager,
+    jobId: string,
+    applicationId: string,
+  ): Promise<Application> {
+    const application = await manager
+      .createQueryBuilder(Application, 'app')
+      .setLock('pessimistic_write')
+      .where('app.id = :applicationId AND app.jobId = :jobId', {
+        applicationId,
+        jobId,
+      })
+      .getOne();
+    if (!application) {
+      throw new NotFoundException(APPLICATION_NOT_FOUND);
+    }
+    return application;
+  }
+
+  private async notifyStudent(
+    manager: EntityManager,
+    application: Application,
+    message: string,
+  ): Promise<void> {
+    await manager.save(
+      Notification,
+      manager.create(Notification, {
+        studentId: application.studentId,
+        applicationId: application.id,
+        message,
+        readAt: null,
+      }),
+    );
+  }
+}
+
+function selectionFromRow(row: Record<string, unknown>): {
+  examUrl: string | null;
+  examDeadline: Date | null;
+  examCompletedAt: Date | null;
+  examPassedAt: Date | null;
+  interviewUrl: string | null;
+  interviewStartsAt: Date | null;
+} {
+  return {
+    examUrl: (row.examUrl as string | null) ?? null,
+    examDeadline: asDate(row.examDeadline),
+    examCompletedAt: asDate(row.examCompletedAt),
+    examPassedAt: asDate(row.examPassedAt),
+    interviewUrl: (row.interviewUrl as string | null) ?? null,
+    interviewStartsAt: asDate(row.interviewStartsAt),
+  };
+}
+
+function asDate(value: unknown): Date | null {
+  if (value == null || value === '') return null;
+  const date = value instanceof Date ? value : new Date(String(value));
+  return Number.isNaN(date.getTime()) ? null : date;
 }

@@ -36,6 +36,24 @@ export class Application {
   })
   status: ApplicationStatus;
 
+  @Column({ name: 'exam_url', type: 'varchar', length: 2048, nullable: true })
+  examUrl: string | null;
+
+  @Column({ name: 'exam_deadline', type: 'timestamptz', nullable: true })
+  examDeadline: Date | null;
+
+  @Column({ name: 'exam_completed_at', type: 'timestamptz', nullable: true })
+  examCompletedAt: Date | null;
+
+  @Column({ name: 'exam_passed_at', type: 'timestamptz', nullable: true })
+  examPassedAt: Date | null;
+
+  @Column({ name: 'interview_url', type: 'varchar', length: 2048, nullable: true })
+  interviewUrl: string | null;
+
+  @Column({ name: 'interview_starts_at', type: 'timestamptz', nullable: true })
+  interviewStartsAt: Date | null;
+
   @VersionColumn()
   version: number;
 

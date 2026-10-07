@@ -250,6 +250,56 @@ void main() {
 
     expect(find.text('Recovered Job'), findsOneWidget);
   });
+
+  testWidgets(
+    'application detail has no file button when the resume is missing',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 1200);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      final router = GoRouter(
+        initialLocation: '/student/applications/app-1',
+        routes: [
+          GoRoute(
+            path: '/student/applications/:applicationId',
+            builder: (context, state) => ApplicationDetailScreen(
+              applicationId: state.pathParameters['applicationId']!,
+            ),
+          ),
+        ],
+      );
+      addTearDown(router.dispose);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+            applicationRepositoryProvider.overrideWithValue(
+              _FakeApplicationRepository(
+                detail: const JobApplication(
+                  id: 'app-1',
+                  jobTitle: 'ฝึกงาน',
+                  companyName: 'Acme',
+                  status: ApplicationStatus.submitted,
+                  coverLetter: 'สวัสดี',
+                ),
+              ),
+            ),
+          ],
+          child: MaterialApp.router(
+            theme: AppTheme.lightTheme,
+            routerConfig: router,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('ยังไม่มี Resume ในใบสมัครนี้'), findsOneWidget);
+      expect(find.byTooltip('เปิด CV PDF'), findsNothing);
+    },
+  );
 }
 
 class _FakeApplicationRepository implements ApplicationRepository {
@@ -278,4 +328,7 @@ class _FakeApplicationRepository implements ApplicationRepository {
   }) async {
     throw UnimplementedError();
   }
+
+  @override
+  Future<void> completeExam(String applicationId) async {}
 }

@@ -9,4 +9,6 @@ abstract class ApplicationRepository {
     required String jobId,
     required String coverLetter,
   });
+
+  Future<void> completeExam(String applicationId);
 }

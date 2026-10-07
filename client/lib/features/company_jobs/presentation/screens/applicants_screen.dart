@@ -13,6 +13,7 @@ import '../widgets/company_applicant_widgets.dart';
 import '../../../../core/widgets/company_top_bar.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../domain/entities/company_job.dart';
+import '../../../applications/domain/selection_progress.dart';
 import '../providers/company_jobs_controller.dart';
 
 class ApplicantsScreen extends ConsumerWidget {
@@ -128,6 +129,14 @@ class _ApplicantCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final colors = context.colors;
+    final progress = selectionProgressLabel(
+      examUrl: applicant.examUrl,
+      examDeadline: applicant.examDeadline,
+      examCompletedAt: applicant.examCompletedAt,
+      examPassedAt: applicant.examPassedAt,
+      interviewUrl: applicant.interviewUrl,
+      interviewStartsAt: applicant.interviewStartsAt,
+    );
 
     return CompanyApplicantCard(
       onTap: onTap,
@@ -202,6 +211,17 @@ class _ApplicantCard extends StatelessWidget {
                 ],
                 const Gap(10),
                 CompanyApplicantStatusChip(status: applicant.status),
+                if (progress != null) ...[
+                  const Gap(6),
+                  Text(
+                    progress,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

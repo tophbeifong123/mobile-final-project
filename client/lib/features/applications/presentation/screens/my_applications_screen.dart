@@ -9,6 +9,7 @@ import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../jobs/presentation/widgets/feed_top_bar.dart';
 import '../../domain/entities/job_application.dart';
+import '../../domain/selection_progress.dart';
 import '../providers/applications_controller.dart';
 
 class MyApplicationsScreen extends ConsumerStatefulWidget {
@@ -400,6 +401,14 @@ class _ApplicationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final statusColor = _colorForStatus(application.status);
+    final progress = selectionProgressLabel(
+      examUrl: application.examUrl,
+      examDeadline: application.examDeadline,
+      examCompletedAt: application.examCompletedAt,
+      examPassedAt: application.examPassedAt,
+      interviewUrl: application.interviewUrl,
+      interviewStartsAt: application.interviewStartsAt,
+    );
 
     return AppCard(
       onTap: onTap,
@@ -443,6 +452,19 @@ class _ApplicationCard extends StatelessWidget {
                         color: NeoColors.subtleInk,
                       ),
                     ),
+                    if (progress != null) ...[
+                      const Gap(6),
+                      Text(
+                        progress,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: NeoColors.inkSolid,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

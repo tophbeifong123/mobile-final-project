@@ -33,6 +33,14 @@ import { JobApplicantItemDto } from './dto/job-applicant-item.dto.js';
 import { MyApplicationItemDto } from './dto/my-application-item.dto.js';
 import { UpdateApplicationStatusDto } from './dto/update-application-status.dto.js';
 import { Application } from './entities/application.entity.js';
+import { SetExamLinkDto } from './dto/set-exam-link.dto.js';
+import { InterviewMode } from '../jobs/job-enums.js';
+import { SetInterviewLinkDto } from './dto/set-interview-link.dto.js';
+import {
+  assertFutureInstant,
+  assertPublicHttpUrl,
+  interviewUrlForMode,
+} from './selection-link.js';
 
 @Injectable()
 export class ApplicationsService {
@@ -70,12 +78,14 @@ export class ApplicationsService {
         companyName: application.job.companyName,
         province: application.job.province,
         workMode: application.job.workMode,
+        interviewMode: application.job.interviewMode,
         category: application.job.category,
         hasAllowance: application.job.hasAllowance,
       },
       status: application.status,
       coverLetter: application.coverLetter,
       resumeObjectKey: application.resumeObjectKey,
+      ...selectionResponse(application),
       createdAt: application.createdAt.toISOString(),
       updatedAt: application.updatedAt.toISOString(),
       timeline: application.timeline.map((event) => ({
@@ -107,6 +117,7 @@ export class ApplicationsService {
       status: item.status,
       coverLetter: item.coverLetter,
       resumeObjectKey: item.resumeObjectKey,
+      ...selectionResponse(item),
       createdAt: item.createdAt.toISOString(),
       updatedAt: item.updatedAt.toISOString(),
     }));
@@ -180,6 +191,7 @@ export class ApplicationsService {
       major: app.major,
       status: app.status,
       coverLetter: app.coverLetter,
+      ...selectionResponse(app),
       createdAt: app.createdAt.toISOString(),
     }));
   }
@@ -330,6 +342,99 @@ export class ApplicationsService {
     return this.toApplicantDetailDto(detail);
   }
 
+  async setExamLink(
+    user: AuthUser,
+    jobId: string,
+    applicationId: string,
+    dto: SetExamLinkDto,
+  ): Promise<ApplicantDetailDto> {
+    const job = await this.requireOwnedJob(user, jobId);
+    await this.applicationsRepository.setExamLink({
+      jobId,
+      applicationId,
+      url: assertPublicHttpUrl(dto.url),
+      deadline: assertFutureInstant(new Date(dto.deadline)),
+      jobTitle: job.title,
+    });
+    return this.reloadApplicantDetail(jobId, applicationId);
+  }
+
+  async passExam(
+    user: AuthUser,
+    jobId: string,
+    applicationId: string,
+  ): Promise<ApplicantDetailDto> {
+    const job = await this.requireOwnedJob(user, jobId);
+    await this.applicationsRepository.passExam({
+      jobId,
+      applicationId,
+      jobTitle: job.title,
+    });
+    return this.reloadApplicantDetail(jobId, applicationId);
+  }
+
+  async setInterviewLink(
+    user: AuthUser,
+    jobId: string,
+    applicationId: string,
+    dto: SetInterviewLinkDto,
+  ): Promise<ApplicantDetailDto> {
+    const job = await this.requireOwnedJob(user, jobId);
+    await this.applicationsRepository.setInterviewLink({
+      jobId,
+      applicationId,
+      url: interviewUrlForMode(job.interviewMode, dto.url),
+      startsAt: assertFutureInstant(new Date(dto.startsAt)),
+      jobTitle: job.title,
+    });
+    return this.reloadApplicantDetail(jobId, applicationId);
+  }
+
+  async completeExam(
+    user: AuthUser,
+    applicationId: string,
+  ): Promise<ApplicationDetailDto> {
+    this.assertStudent(user);
+    const profile =
+      await this.applicationsRepository.findStudentProfileByUserId(user.userId);
+    if (!profile) {
+      throw new NotFoundException(PROFILE_NOT_FOUND);
+    }
+    await this.applicationsRepository.completeExam({
+      applicationId,
+      studentId: profile.id,
+    });
+    return this.getDetail(user, applicationId);
+  }
+
+  private async requireOwnedJob(user: AuthUser, jobId: string) {
+    this.assertCompany(user);
+    const companyProfile =
+      await this.applicationsRepository.findCompanyProfileByUserId(user.userId);
+    if (!companyProfile) {
+      throw new NotFoundException(COMPANY_PROFILE_NOT_FOUND);
+    }
+    const job = await this.applicationsRepository.findJobById(jobId);
+    if (!job) {
+      throw new NotFoundException(JOB_NOT_FOUND);
+    }
+    if (job.companyId !== companyProfile.id) {
+      throw new ForbiddenException(NOT_YOUR_JOB);
+    }
+    return job;
+  }
+
+  private async reloadApplicantDetail(jobId: string, applicationId: string) {
+    const detail = await this.applicationsRepository.findCompanyApplicantDetail(
+      jobId,
+      applicationId,
+    );
+    if (!detail) {
+      throw new NotFoundException(APPLICATION_NOT_FOUND);
+    }
+    return this.toApplicantDetailDto(detail);
+  }
+
   private toApplicantDetailDto(
     detail: CompanyApplicantDetailRecord,
   ): ApplicantDetailDto {
@@ -358,10 +463,12 @@ export class ApplicationsService {
       resumeFileName: detail.resumeFileName,
       avatarObjectKey: detail.avatarObjectKey,
       status: detail.status,
+      ...selectionResponse(detail),
       coverLetter: detail.coverLetter,
       createdAt: detail.createdAt.toISOString(),
       updatedAt: detail.updatedAt.toISOString(),
       documents: detail.documents,
+      interviewMode: detail.interviewMode ?? InterviewMode.Online,
     };
   }
 
@@ -389,4 +496,22 @@ export class ApplicationsService {
     dto.updatedAt = application.updatedAt.toISOString();
     return dto;
   }
+}
+
+function selectionResponse(source: {
+  examUrl: string | null;
+  examDeadline: Date | null;
+  examCompletedAt: Date | null;
+  examPassedAt: Date | null;
+  interviewUrl: string | null;
+  interviewStartsAt: Date | null;
+}) {
+  return {
+    examUrl: source.examUrl ?? null,
+    examDeadline: source.examDeadline?.toISOString() ?? null,
+    examCompletedAt: source.examCompletedAt?.toISOString() ?? null,
+    examPassedAt: source.examPassedAt?.toISOString() ?? null,
+    interviewUrl: source.interviewUrl ?? null,
+    interviewStartsAt: source.interviewStartsAt?.toISOString() ?? null,
+  };
 }

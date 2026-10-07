@@ -26,4 +26,9 @@ class ApplicationRepositoryImpl implements ApplicationRepository {
     final model = await _remote.apply(jobId: jobId, coverLetter: coverLetter);
     return model.toEntity();
   }
+
+  @override
+  Future<void> completeExam(String applicationId) {
+    return _remote.completeExam(applicationId);
+  }
 }
