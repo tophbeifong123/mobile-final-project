@@ -39,10 +39,7 @@ test('IFND-153 selection, immutable snapshots, file retention, authorization and
     const { AppDataSource } = await import('../dist/database/data-source.js');
     source = await AppDataSource.initialize();
     await source.runMigrations();
-    const { AddCompanyContactLinks1791860000000 } =
-      await import('../dist/database/migrations/1791860000000-add-company-contact-links.js');
     const runner = source.createQueryRunner();
-    await new AddCompanyContactLinks1791860000000().up(runner);
     const { CreateApplicationDocuments1791950000000 } =
       await import('../dist/database/migrations/1791950000000-create-application-documents.js');
     const migration = new CreateApplicationDocuments1791950000000();

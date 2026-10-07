@@ -191,6 +191,56 @@ describe('transactional snapshot persistence', () => {
 });
 
 describe('snapshot authorization and storage', () => {
+  it.each([null, Buffer.from('not a PDF')])(
+    'rejects missing or invalid snapshot PDF (%s)',
+    async (buffer) => {
+      const repo = {
+        findApplicantDocument: vi
+          .fn()
+          .mockResolvedValue({
+            objectKey: 'snapshot/key',
+            fileName: 'original.pdf',
+          }),
+      };
+      const storage = { get: vi.fn().mockResolvedValue(buffer) };
+      const service = new ApplicationsService(
+        repo as unknown as ApplicationsRepository,
+        storage as unknown as StorageService,
+      );
+      vi.spyOn(service, 'getDetail').mockResolvedValue({
+        jobId: 'job',
+        documents: [{ id: 'snapshot' }],
+      } as any);
+      await expect(
+        service.getStudentApplicationDocument(user, 'app', 'snapshot'),
+      ).rejects.toThrow(NotFoundException);
+      expect(storage.get).toHaveBeenCalledWith('snapshot/key');
+    },
+  );
+  it('storage errors do not expose internal details', async () => {
+    const repo = {
+      findApplicantDocument: vi
+        .fn()
+        .mockResolvedValue({
+          objectKey: 'snapshot/key',
+          fileName: 'original.pdf',
+        }),
+    };
+    const storage = {
+      get: vi.fn().mockRejectedValue(new Error('internal storage secret')),
+    };
+    const service = new ApplicationsService(
+      repo as unknown as ApplicationsRepository,
+      storage as unknown as StorageService,
+    );
+    vi.spyOn(service, 'getDetail').mockResolvedValue({
+      jobId: 'job',
+      documents: [{ id: 'snapshot' }],
+    } as any);
+    await expect(
+      service.getStudentApplicationDocument(user, 'app', 'snapshot'),
+    ).rejects.toThrow('เปิดไฟล์ไม่สำเร็จ กรุณาลองใหม่');
+  });
   it('student cannot read another application or unselected document', async () => {
     const repo = {
       findStudentProfileByUserId: vi.fn().mockResolvedValue({ id: 'student' }),
@@ -215,13 +265,11 @@ describe('snapshot authorization and storage', () => {
     const repo = {
       findCompanyProfileByUserId: vi.fn().mockResolvedValue({ id: 'company' }),
       findJobById: vi.fn().mockResolvedValue({ companyId: 'company' }),
-      findCompanyApplicantDetail: vi
-        .fn()
-        .mockResolvedValue({
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          documents: [],
-        }),
+      findCompanyApplicantDetail: vi.fn().mockResolvedValue({
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        documents: [],
+      }),
       findApplicantDocument: vi.fn(),
     };
     const storage = { get: vi.fn() };

@@ -315,7 +315,13 @@ export class ApplicationsService {
     } catch {
       throw new ServiceUnavailableException('เปิดไฟล์ไม่สำเร็จ กรุณาลองใหม่');
     }
-    if (!buffer) throw new NotFoundException('ไม่พบไฟล์เอกสาร');
+    if (
+      !buffer ||
+      buffer.length < 4 ||
+      buffer.subarray(0, 4).toString() !== '%PDF'
+    ) {
+      throw new NotFoundException('ไม่พบไฟล์เอกสาร PDF');
+    }
     return { buffer, fileName: stored.fileName };
   }
 

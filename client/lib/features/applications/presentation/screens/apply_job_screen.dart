@@ -143,7 +143,12 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
                       ),
                       const Gap(12),
                       OutlinedButton(
-                        onPressed: () => context.push('/student/resume'),
+                        onPressed: () async {
+                          await context.push('/student/resume');
+                          if (mounted) {
+                            ref.invalidate(studentDocumentsProvider);
+                          }
+                        },
                         style: OutlinedButton.styleFrom(
                           minimumSize: const Size.fromHeight(kMinTouchTarget),
                           foregroundColor: colors.destructive,
