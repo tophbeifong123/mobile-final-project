@@ -39,6 +39,12 @@ export interface ActiveSessionUser {
   tokenVersion: number;
 }
 
+export class GoogleSubjectTakenError extends Error {}
+
+export class UserAlreadyHasDifferentGoogleError extends Error {}
+
+export class GoogleLinkUserMissingError extends Error {}
+
 export type PasswordResetConsumption =
   { status: 'consumed'; email: string } | { status: 'reused' } | null;
 
@@ -61,6 +67,48 @@ export class AuthRepository {
         { provider: 'google', providerSubject },
       )
       .getOne();
+  }
+
+  async linkGoogleIdentity(
+    userId: string,
+    providerSubject: string,
+  ): Promise<'linked' | 'already_linked'> {
+    return this.dataSource.transaction(async (manager) => {
+      const user = await manager.findOne(User, {
+        where: { id: userId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!user) {
+        throw new GoogleLinkUserMissingError();
+      }
+
+      const identities = manager.getRepository(AuthIdentity);
+      const own = await identities.findOne({
+        where: { userId, provider: 'google' },
+      });
+      if (own) {
+        if (own.providerSubject === providerSubject) {
+          return 'already_linked';
+        }
+        throw new UserAlreadyHasDifferentGoogleError();
+      }
+
+      const taken = await identities.findOne({
+        where: { provider: 'google', providerSubject },
+      });
+      if (taken && taken.userId !== userId) {
+        throw new GoogleSubjectTakenError();
+      }
+
+      await identities.save(
+        identities.create({
+          userId,
+          provider: 'google',
+          providerSubject,
+        }),
+      );
+      return 'linked';
+    });
   }
 
   async createGoogleUserWithProfile(input: NewGoogleUser): Promise<User> {

@@ -23,6 +23,7 @@ import { AddCompanyOfficeLocation1791158400000 } from './migrations/179115840000
 import { DropOfficePin1791744000000 } from './migrations/1791744000000-drop-office-pin.js';
 import { AddAllowanceAmountAndJobCategories1791830400000 } from './migrations/1791830400000-add-allowance-amount-and-job-categories.js';
 import { NormalizeAllowanceAmount1791850000000 } from './migrations/1791850000000-normalize-allowance-amount.js';
+import { UniqueGoogleIdentityPerUser1791940000000 } from './migrations/1791940000000-unique-google-identity-per-user.js';
 import { AddGoogleAuthIdentities1759300000000 } from './migrations/1759300000000-add-google-auth-identities.js';
 import { AddBioContactsPortfoliosToStudentProfiles1759100000000 } from './migrations/1759100000000-add-bio-contacts-portfolios-to-student-profiles.js';
 import { AddDetailsAndCoverToCompanyProfiles1759300000000 } from './migrations/1759300000000-add-details-and-cover-to-company-profiles.js';
@@ -84,5 +85,6 @@ export const AppDataSource = new DataSource({
     AddAllowanceAmountAndJobCategories1791830400000,
     AddJobOpeningsAllowance1791840000000,
     NormalizeAllowanceAmount1791850000000,
+    UniqueGoogleIdentityPerUser1791940000000,
   ],
 });

@@ -18,6 +18,7 @@ import {
 import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service.js';
 import { GoogleAuthDto } from './dto/google-auth.dto.js';
+import { GoogleLinkDto } from './dto/google-link.dto.js';
 import { GoogleRoleRequiredDto } from './dto/google-role-required.dto.js';
 import { type AuthUser } from './auth-user.js';
 import { CurrentUser } from './current-user.decorator.js';
@@ -113,13 +114,33 @@ export class AuthController {
   })
   @ApiResponse({
     status: 409,
-    description: 'Email belongs to an existing password account',
+    description:
+      'Email belongs to an existing account. password_link_required means the user must prove the password before Google is linked.',
   })
   @ApiResponse({ status: 429, description: 'Too many Google login attempts' })
   google(
     @Body() dto: GoogleAuthDto,
   ): Promise<AuthSessionDto | GoogleRoleRequiredDto> {
     return this.authService.googleAuth(dto);
+  }
+
+  @Post('google/link')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @ApiOperation({
+    summary: 'ผูก Google เข้ากับบัญชีรหัสผ่านเดิมหลังตรวจรหัสผ่าน',
+  })
+  @ApiBody({ type: GoogleLinkDto })
+  @ApiResponse({ status: 200, type: AuthSessionDto })
+  @ApiResponse({ status: 401, description: 'รหัสผ่านไม่ถูกต้องหรือไม่พบบัญชีรหัสผ่าน' })
+  @ApiResponse({
+    status: 409,
+    description: 'Google นี้ถูกใช้แล้ว หรือบัญชีผูกกับ Google อื่นอยู่แล้ว',
+  })
+  @ApiResponse({ status: 429, description: 'Too many Google link attempts' })
+  linkGoogle(@Body() dto: GoogleLinkDto): Promise<AuthSessionDto> {
+    return this.authService.linkGooglePasswordAccount(dto);
   }
 
   @Post('refresh')

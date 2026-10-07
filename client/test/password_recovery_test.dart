@@ -531,5 +531,11 @@ class _FakeAuthRepository implements AuthRepository {
   }) async => throw UnimplementedError();
 
   @override
+  Future<AuthSession> linkGoogle({
+    required String idToken,
+    required String password,
+  }) async => throw UnimplementedError();
+
+  @override
   Future<void> logout() async {}
 }

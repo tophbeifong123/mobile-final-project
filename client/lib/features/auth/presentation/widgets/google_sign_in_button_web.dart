@@ -67,13 +67,17 @@ class _GoogleSignInWebButtonState extends State<_GoogleSignInWebButton> {
       }
       await widget.onIdToken(idToken);
     }, onError: (_) => widget.onError('เข้าสู่ระบบด้วย Google ไม่สำเร็จ'));
-    _initialize().then((_) {
-      if (mounted) setState(() => _ready = true);
-    }).catchError((Object _) {
-      if (mounted) {
-        widget.onError('ตั้งค่า Google Sign-In ไม่ครบ ตรวจสอบ OAuth Client ID');
-      }
-    });
+    _initialize()
+        .then((_) {
+          if (mounted) setState(() => _ready = true);
+        })
+        .catchError((Object _) {
+          if (mounted) {
+            widget.onError(
+              'ตั้งค่า Google Sign-In ไม่ครบ ตรวจสอบ OAuth Client ID',
+            );
+          }
+        });
   }
 
   @override

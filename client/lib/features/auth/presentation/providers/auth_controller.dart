@@ -55,10 +55,25 @@ class AuthController extends AsyncNotifier<AuthSession?> {
       }
       return GoogleAuthResult(roleRequired: roleRequired);
     } on AppException catch (error) {
-      return GoogleAuthResult(error: error.message);
+      return GoogleAuthResult(
+        error: error.message,
+        email: error.email,
+        passwordLinkRequired: error.code == 'password_link_required',
+      );
     } catch (_) {
       return const GoogleAuthResult(error: 'เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
     }
+  }
+
+  Future<String?> linkGoogle({
+    required String idToken,
+    required String password,
+  }) {
+    return _openSession(
+      () => ref
+          .read(authRepositoryProvider)
+          .linkGoogle(idToken: idToken, password: password),
+    );
   }
 
   Future<void> logout() async {

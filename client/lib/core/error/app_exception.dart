@@ -1,9 +1,11 @@
 import 'package:dio/dio.dart';
 
 class AppException implements Exception {
-  const AppException(this.message);
+  const AppException(this.message, {this.code, this.email});
 
   final String message;
+  final String? code;
+  final String? email;
 
   @override
   String toString() => message;

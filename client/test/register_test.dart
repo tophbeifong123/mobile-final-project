@@ -296,5 +296,13 @@ class _FakeAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<AuthSession> linkGoogle({
+    required String idToken,
+    required String password,
+  }) async {
+    throw const AppException('Not implemented in fake');
+  }
+
+  @override
   Future<void> logout() async {}
 }
