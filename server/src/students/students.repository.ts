@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, type EntityManager } from 'typeorm';
 import { StudentProfile } from '../auth/entities/student-profile.entity.js';
+import { University } from '../universities/university.entity.js';
 import { StudentDocument, StudentDocumentType } from './student-document.entity.js';
 
 export interface ContactLinkRecord {
@@ -19,7 +20,8 @@ export interface PortfolioLinkRecord {
 
 export interface StudentProfileUpdate {
   fullName: string;
-  university: string;
+  universityId?: string | null;
+  customUniversityName?: string | null;
   major: string;
   skills: string[];
   bio?: string;
@@ -36,6 +38,14 @@ export class StudentsRepository {
     return this.dataSource
       .getRepository(StudentProfile)
       .findOne({ where: { userId } });
+  }
+
+  async resolveDisplayUniversity(profile: StudentProfile): Promise<string> {
+    if (!profile.universityId) return profile.customUniversityName ?? '';
+    const university = await this.dataSource.getRepository(University).findOne({
+      where: { id: profile.universityId },
+    });
+    return university?.nameTh ?? '';
   }
 
   listDocuments(studentId: string): Promise<StudentDocument[]> {
@@ -143,7 +153,10 @@ export class StudentsRepository {
     }
 
     profile.fullName = input.fullName;
-    profile.university = input.university;
+    if (input.universityId !== undefined || input.customUniversityName !== undefined) {
+      profile.universityId = input.universityId ?? null;
+      profile.customUniversityName = input.customUniversityName ?? null;
+    }
     profile.major = input.major;
     profile.skills = input.skills;
     if (input.bio !== undefined) {

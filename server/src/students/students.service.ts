@@ -6,15 +6,19 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { type AuthUser } from '../auth/auth-user.js';
+import { type StudentProfile } from '../auth/entities/student-profile.entity.js';
 import { UserRole } from '../auth/user-role.js';
 import { StorageService } from '../storage/storage.service.js';
 import { type UploadedFilePayload } from '../storage/uploaded-file.interface.js';
+import { UniversitiesService } from '../universities/universities.service.js';
 import { ResumeResponseDto } from './dto/resume-response.dto.js';
 import { StudentProfileDto } from './dto/student-profile.dto.js';
 import { UpdateStudentProfileDto } from './dto/update-student-profile.dto.js';
-import { StudentsRepository } from './students.repository.js';
-import { TooManyOtherDocumentsError } from './students.repository.js';
 import { StudentDocumentType } from './student-document.entity.js';
+import {
+  StudentsRepository,
+  TooManyOtherDocumentsError,
+} from './students.repository.js';
 
 const STUDENT_ONLY = 'เฉพาะนักศึกษาเท่านั้น';
 const PROFILE_NOT_FOUND = 'ไม่พบโปรไฟล์';
@@ -26,7 +30,9 @@ const MAX_DOCUMENT_BYTES = 10 * 1024 * 1024;
 function sanitizePdfName(name?: string): string {
   const cleaned = (name ?? 'document.pdf').replace(/[\\/\r\n"]/g, '_').trim();
   const bounded = cleaned.slice(0, 250) || 'document';
-  return bounded.toLowerCase().endsWith('.pdf') ? bounded : bounded + '.pdf';
+  return bounded.toLowerCase().endsWith('.pdf')
+    ? bounded
+    : `${bounded}.pdf`;
 }
 
 @Injectable()
@@ -34,6 +40,7 @@ export class StudentsService {
   constructor(
     private readonly studentsRepository: StudentsRepository,
     private readonly storageService: StorageService,
+    private readonly universitiesService: UniversitiesService,
   ) {}
 
   async getMine(user: AuthUser): Promise<StudentProfileDto> {
@@ -50,6 +57,26 @@ export class StudentsService {
     dto: UpdateStudentProfileDto,
   ): Promise<StudentProfileDto> {
     this.assertStudent(user);
+
+    let universityId: string | null | undefined;
+    let customUniversityName: string | null | undefined;
+
+    if (
+      dto.universityId !== undefined ||
+      dto.customUniversityName !== undefined
+    ) {
+      const custom = dto.customUniversityName?.trim() || null;
+      if (dto.universityId != null && custom != null) {
+        throw new BadRequestException(
+          'เลือกมหาวิทยาลัยจากรายการหรือกรอกชื่อเองได้อย่างใดอย่างหนึ่ง',
+        );
+      }
+      universityId = dto.universityId ?? null;
+      customUniversityName = universityId ? null : custom;
+      if (universityId) {
+        await this.universitiesService.requireById(universityId);
+      }
+    }
 
     const contactLinks = dto.contactLinks
       ? dto.contactLinks.map((item) => ({
@@ -76,7 +103,8 @@ export class StudentsService {
 
     const saved = await this.studentsRepository.updateByUserId(user.userId, {
       fullName: dto.fullName.trim(),
-      university: dto.university.trim(),
+      universityId,
+      customUniversityName,
       major: dto.major.trim(),
       skills: dto.skills
         .map((skill) => skill.trim())
@@ -86,6 +114,7 @@ export class StudentsService {
       portfolioLinks,
       portfolioUrl,
     });
+
     if (!saved) {
       throw new NotFoundException(PROFILE_NOT_FOUND);
     }
@@ -96,9 +125,15 @@ export class StudentsService {
     user: AuthUser,
     file: UploadedFilePayload | undefined,
   ): Promise<ResumeResponseDto> {
-    const document = await this.uploadDocument(user, StudentDocumentType.Cv, file);
-    return { fileName: document.fileName, objectKey: document.objectKey };
-
+    const document = await this.uploadDocument(
+      user,
+      StudentDocumentType.Cv,
+      file,
+    );
+    return {
+      fileName: document.fileName,
+      objectKey: document.objectKey,
+    };
   }
 
   async getResumeFile(
@@ -109,19 +144,25 @@ export class StudentsService {
     if (!profile) {
       throw new NotFoundException(PROFILE_NOT_FOUND);
     }
+
     const cv = await this.studentsRepository.findCv(profile.id);
     if (cv) {
       const currentBuffer = await this.storageService.get(cv.objectKey);
-      if (!currentBuffer) throw new NotFoundException(RESUME_NOT_FOUND);
+      if (!currentBuffer) {
+        throw new NotFoundException(RESUME_NOT_FOUND);
+      }
       return { buffer: currentBuffer, fileName: cv.fileName };
     }
+
     if (!profile.resumeObjectKey) {
       throw new NotFoundException(RESUME_NOT_FOUND);
     }
+
     const buffer = await this.storageService.get(profile.resumeObjectKey);
     if (!buffer) {
       throw new NotFoundException(RESUME_NOT_FOUND);
     }
+
     return {
       buffer,
       fileName: profile.resumeFileName || 'resume.pdf',
@@ -131,30 +172,67 @@ export class StudentsService {
   async listDocuments(user: AuthUser) {
     this.assertStudent(user);
     const profile = await this.studentsRepository.findByUserId(user.userId);
-    if (!profile) throw new NotFoundException(PROFILE_NOT_FOUND);
+    if (!profile) {
+      throw new NotFoundException(PROFILE_NOT_FOUND);
+    }
     return this.studentsRepository.listDocuments(profile.id);
   }
 
-  async uploadDocument(user: AuthUser, type: StudentDocumentType, file?: UploadedFilePayload) {
+  async uploadDocument(
+    user: AuthUser,
+    type: StudentDocumentType,
+    file?: UploadedFilePayload,
+  ) {
     this.assertStudent(user);
-    if (!file) throw new BadRequestException(FILE_REQUIRED);
-    if (!file.buffer?.length || file.buffer.length > MAX_DOCUMENT_BYTES || file.buffer.subarray(0, 5).toString() !== '%PDF-') {
+
+    if (!file) {
+      throw new BadRequestException(FILE_REQUIRED);
+    }
+    if (
+      !file.buffer?.length ||
+      file.buffer.length > MAX_DOCUMENT_BYTES ||
+      file.buffer.subarray(0, 5).toString() !== '%PDF-'
+    ) {
       throw new BadRequestException(ONLY_PDF_ALLOWED);
     }
+
     const profile = await this.studentsRepository.findByUserId(user.userId);
-    if (!profile) throw new NotFoundException(PROFILE_NOT_FOUND);
+    if (!profile) {
+      throw new NotFoundException(PROFILE_NOT_FOUND);
+    }
+
     const fileName = sanitizePdfName(file.originalname);
-    const objectKey = 'student-documents/' + user.userId + '/' + type + '/' + randomUUID() + '.pdf';
+    const objectKey =
+      `student-documents/${user.userId}/${type}/${randomUUID()}.pdf`;
+
     await this.storageService.put(objectKey, file.buffer, 'application/pdf');
+
     try {
-      const { document, replacedDocument } = await this.studentsRepository.saveDocument({ studentId: profile.id, type, objectKey, fileName });
-      if (replacedDocument && !(await this.studentsRepository.isObjectReferencedByApplication(replacedDocument.objectKey))) {
-        await this.storageService.delete(replacedDocument.objectKey).catch(() => undefined);
+      const { document, replacedDocument } =
+        await this.studentsRepository.saveDocument({
+          studentId: profile.id,
+          type,
+          objectKey,
+          fileName,
+        });
+
+      if (
+        replacedDocument &&
+        !(await this.studentsRepository.isObjectReferencedByApplication(
+          replacedDocument.objectKey,
+        ))
+      ) {
+        await this.storageService
+          .delete(replacedDocument.objectKey)
+          .catch(() => undefined);
       }
+
       return document;
     } catch (error) {
       await this.storageService.delete(objectKey).catch(() => undefined);
-      if (error instanceof TooManyOtherDocumentsError) throw new BadRequestException('เพิ่มเอกสารอื่นได้ไม่เกิน 3 ไฟล์');
+      if (error instanceof TooManyOtherDocumentsError) {
+        throw new BadRequestException('เพิ่มเอกสารอื่นได้ไม่เกิน 3 ไฟล์');
+      }
       throw error;
     }
   }
@@ -162,22 +240,47 @@ export class StudentsService {
   async deleteDocument(user: AuthUser, id: string): Promise<void> {
     this.assertStudent(user);
     const profile = await this.studentsRepository.findByUserId(user.userId);
-    if (!profile) throw new NotFoundException(PROFILE_NOT_FOUND);
-    const document = await this.studentsRepository.deleteDocument(profile.id, id);
-    if (!document) throw new NotFoundException('ไม่พบเอกสาร');
-    if (!(await this.studentsRepository.isObjectReferencedByApplication(document.objectKey))) {
+    if (!profile) {
+      throw new NotFoundException(PROFILE_NOT_FOUND);
+    }
+
+    const document = await this.studentsRepository.deleteDocument(
+      profile.id,
+      id,
+    );
+    if (!document) {
+      throw new NotFoundException('ไม่พบเอกสาร');
+    }
+
+    if (
+      !(await this.studentsRepository.isObjectReferencedByApplication(
+        document.objectKey,
+      ))
+    ) {
       await this.storageService.delete(document.objectKey).catch(() => undefined);
     }
   }
 
-  async getStudentDocument(user: AuthUser, id: string): Promise<{ buffer: Buffer; fileName: string }> {
+  async getStudentDocument(
+    user: AuthUser,
+    id: string,
+  ): Promise<{ buffer: Buffer; fileName: string }> {
     this.assertStudent(user);
     const profile = await this.studentsRepository.findByUserId(user.userId);
-    if (!profile) throw new NotFoundException(PROFILE_NOT_FOUND);
+    if (!profile) {
+      throw new NotFoundException(PROFILE_NOT_FOUND);
+    }
+
     const document = await this.studentsRepository.findDocument(profile.id, id);
-    if (!document) throw new NotFoundException('ไม่พบเอกสาร');
+    if (!document) {
+      throw new NotFoundException('ไม่พบเอกสาร');
+    }
+
     const buffer = await this.storageService.get(document.objectKey);
-    if (!buffer) throw new NotFoundException('ไม่พบไฟล์เอกสาร');
+    if (!buffer) {
+      throw new NotFoundException('ไม่พบไฟล์เอกสาร');
+    }
+
     return { buffer, fileName: document.fileName };
   }
 
@@ -186,6 +289,7 @@ export class StudentsService {
     file: UploadedFilePayload | undefined,
   ): Promise<StudentProfileDto> {
     this.assertStudent(user);
+
     if (!file) {
       throw new BadRequestException('กรุณาเลือกไฟล์รูปภาพ');
     }
@@ -226,10 +330,17 @@ export class StudentsService {
       file.originalname?.toLowerCase().match(/\.(png|jpe?g|webp|svg|gif)$/),
     );
 
-    const isImage =
-      isPng || isJpeg || isWebp || isGif || isSvg || isImageMime || hasImageExt;
-
-    if (!isImage) {
+    if (
+      !(
+        isPng ||
+        isJpeg ||
+        isWebp ||
+        isGif ||
+        isSvg ||
+        isImageMime ||
+        hasImageExt
+      )
+    ) {
       throw new BadRequestException(
         'เลือกได้เฉพาะไฟล์รูปภาพเท่านั้น (PNG, JPG, WEBP, SVG)',
       );
@@ -237,6 +348,7 @@ export class StudentsService {
 
     let ext = 'png';
     let mimeType = 'image/png';
+
     if (isPng) {
       ext = 'png';
       mimeType = 'image/png';
@@ -252,7 +364,7 @@ export class StudentsService {
     } else if (isSvg) {
       ext = 'svg';
       mimeType = 'image/svg+xml';
-    } else if (file.mimetype && file.mimetype.startsWith('image/')) {
+    } else if (file.mimetype?.startsWith('image/')) {
       mimeType = file.mimetype;
       const sub = file.mimetype.split('/')[1];
       ext = sub === 'jpeg' ? 'jpg' : sub;
@@ -269,16 +381,17 @@ export class StudentsService {
       throw new NotFoundException(PROFILE_NOT_FOUND);
     }
 
-    // Clean up old avatar if exists
     if (profile.avatarObjectKey) {
       try {
         await this.storageService.delete(profile.avatarObjectKey);
       } catch {
-        // ignore storage delete errors
+        // Ignore old-avatar cleanup failures.
       }
     }
 
-    const objectKey = `student-avatars/${user.userId}/${Date.now()}-${randomUUID()}.${ext}`;
+    const objectKey =
+      `student-avatars/${user.userId}/${Date.now()}-${randomUUID()}.${ext}`;
+
     await this.storageService.put(objectKey, file.buffer, mimeType);
 
     const updated = await this.studentsRepository.updateAvatar(
@@ -288,7 +401,8 @@ export class StudentsService {
     if (!updated) {
       throw new NotFoundException(PROFILE_NOT_FOUND);
     }
-    return toDto(updated);
+
+    return this.toProfileDto(updated);
   }
 
   async getAvatarFile(
@@ -296,22 +410,31 @@ export class StudentsService {
   ): Promise<{ buffer: Buffer; mimeType: string }> {
     this.assertStudent(user);
     const profile = await this.studentsRepository.findByUserId(user.userId);
+
     if (!profile) {
       throw new NotFoundException(PROFILE_NOT_FOUND);
     }
     if (!profile.avatarObjectKey) {
       throw new NotFoundException('ไม่พบรูปโปรไฟล์');
     }
+
     const buffer = await this.storageService.get(profile.avatarObjectKey);
     if (!buffer) {
       throw new NotFoundException('ไม่พบรูปโปรไฟล์');
     }
+
     const ext = profile.avatarObjectKey.split('.').pop()?.toLowerCase();
     let mimeType = 'image/png';
-    if (ext === 'jpg' || ext === 'jpeg') mimeType = 'image/jpeg';
-    else if (ext === 'webp') mimeType = 'image/webp';
-    else if (ext === 'svg') mimeType = 'image/svg+xml';
-    else if (ext === 'gif') mimeType = 'image/gif';
+
+    if (ext === 'jpg' || ext === 'jpeg') {
+      mimeType = 'image/jpeg';
+    } else if (ext === 'webp') {
+      mimeType = 'image/webp';
+    } else if (ext === 'svg') {
+      mimeType = 'image/svg+xml';
+    } else if (ext === 'gif') {
+      mimeType = 'image/gif';
+    }
 
     return { buffer, mimeType };
   }
@@ -319,16 +442,19 @@ export class StudentsService {
   async deleteAvatar(user: AuthUser): Promise<StudentProfileDto> {
     this.assertStudent(user);
     const profile = await this.studentsRepository.findByUserId(user.userId);
+
     if (!profile) {
       throw new NotFoundException(PROFILE_NOT_FOUND);
     }
+
     if (profile.avatarObjectKey) {
       try {
         await this.storageService.delete(profile.avatarObjectKey);
       } catch {
-        // ignore storage delete errors
+        // Ignore old-avatar cleanup failures.
       }
     }
+
     const updated = await this.studentsRepository.updateAvatar(
       user.userId,
       null,
@@ -336,7 +462,8 @@ export class StudentsService {
     if (!updated) {
       throw new NotFoundException(PROFILE_NOT_FOUND);
     }
-    return toDto(updated);
+
+    return this.toProfileDto(updated);
   }
 
   private assertStudent(user: AuthUser): void {
@@ -345,62 +472,75 @@ export class StudentsService {
     }
   }
 
-  private async toProfileDto(profile: Parameters<typeof toDto>[0]): Promise<StudentProfileDto> {
-    const dto = toDto(profile);
-    const cv = profile.id ? await this.studentsRepository.findCv(profile.id) : null;
+  private async toProfileDto(
+    profile: StudentProfile,
+  ): Promise<StudentProfileDto> {
+    const dto = toDto(
+      profile,
+      await this.studentsRepository.resolveDisplayUniversity(profile),
+    );
+
+    const cv = await this.studentsRepository.findCv(profile.id);
     dto.resumeFileName = cv?.fileName ?? profile.resumeFileName ?? null;
     dto.resumeObjectKey = cv?.objectKey ?? profile.resumeObjectKey ?? null;
+
     return dto;
   }
 }
 
-function toDto(profile: {
-  id?: string;
-  fullName: string;
-  university: string;
-  major: string;
-  skills: string[];
-  bio?: string | null;
-  contactLinks?: Array<{
+function toDto(
+  profile: {
     id?: string;
-    platform: string;
-    label?: string;
-    value: string;
-  }> | null;
-  portfolioLinks?: Array<{
-    id?: string;
-    title: string;
-    url: string;
-    description?: string;
-  }> | null;
-  portfolioUrl: string | null;
-  resumeFileName?: string | null;
-  resumeObjectKey?: string | null;
-  avatarObjectKey?: string | null;
-}): StudentProfileDto {
+    universityId?: string | null;
+    customUniversityName?: string | null;
+    fullName: string;
+    major: string;
+    skills: string[];
+    bio?: string | null;
+    contactLinks?: Array<{
+      id?: string;
+      platform: string;
+      label?: string;
+      value: string;
+    }> | null;
+    portfolioLinks?: Array<{
+      id?: string;
+      title: string;
+      url: string;
+      description?: string;
+    }> | null;
+    portfolioUrl: string | null;
+    resumeFileName?: string | null;
+    resumeObjectKey?: string | null;
+    avatarObjectKey?: string | null;
+  },
+  university = '',
+): StudentProfileDto {
   const dto = new StudentProfileDto();
-  // Return only the student's own saved identity; blank values stay blank.
+
   dto.fullName = profile.fullName.trim();
-  dto.university = profile.university.trim();
+  dto.universityId = profile.universityId ?? null;
+  dto.customUniversityName = profile.customUniversityName ?? null;
+  dto.university = university.trim();
   dto.major = profile.major;
   dto.skills = profile.skills;
   dto.bio = profile.bio ?? '';
-  dto.contactLinks = (profile.contactLinks ?? []).map((c) => ({
-    id: c.id,
-    platform: c.platform,
-    label: c.label,
-    value: c.value,
+  dto.contactLinks = (profile.contactLinks ?? []).map((contact) => ({
+    id: contact.id,
+    platform: contact.platform,
+    label: contact.label,
+    value: contact.value,
   }));
-  dto.portfolioLinks = (profile.portfolioLinks ?? []).map((p) => ({
-    id: p.id,
-    title: p.title,
-    url: p.url,
-    description: p.description,
+  dto.portfolioLinks = (profile.portfolioLinks ?? []).map((portfolio) => ({
+    id: portfolio.id,
+    title: portfolio.title,
+    url: portfolio.url,
+    description: portfolio.description,
   }));
   dto.portfolioUrl = profile.portfolioUrl;
   dto.resumeFileName = profile.resumeFileName ?? null;
   dto.resumeObjectKey = profile.resumeObjectKey ?? null;
   dto.avatarObjectKey = profile.avatarObjectKey ?? null;
+
   return dto;
 }
-

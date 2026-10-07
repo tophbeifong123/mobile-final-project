@@ -66,6 +66,7 @@ Prefix ของ API คือ `/api` ตาม `app.setGlobalPrefix('api')` ใ
 | StudentsModule | โปรไฟล์นักศึกษาและ Resume |
 | CompaniesModule | โปรไฟล์บริษัท, logo, จังหวัดและที่อยู่สั้น, ตัวเลขแดชบอร์ด |
 | ProvincesModule | มาสเตอร์จังหวัด 77 จังหวัดและชื่อเรียก |
+| UniversitiesModule | ค้นหามาสเตอร์สถาบันอุดมศึกษาไทยด้วยชื่อเต็มและ aliases |
 | JobsModule | ประกาศ, feed, บันทึกงาน, เปิดหรือปิดรับสมัคร |
 | ApplicationsModule | สมัครงาน, timeline, เปลี่ยนสถานะ |
 | NotificationsModule | แจ้งเตือนในแอปและ BullMQ worker |
@@ -125,6 +126,14 @@ Filter ของหน้า Home เป็น query ของ `GET /jobs` ไ�
 
 ผลลัพธ์มีรหัสจังหวัด ชื่อมาตรฐาน และชื่อเรียกที่ค้นหาได้ ไม่เรียกบริการค้นหาที่อยู่ภายนอก
 
+### มหาวิทยาลัย
+
+| Method | Path | ใช้กับหน้า |
+|---|---|---|
+| GET | /api/universities?q=... | Student Profile |
+
+`q` ไม่บังคับ ยาวได้ไม่เกิน 100 ตัวอักษร; ค่าว่างคืนรายชื่อทั้งหมดเรียงชื่อไทย ค้นได้ทั้งชื่อและ aliases แบบไม่แยกตัวพิมพ์ใหญ่เล็กและละช่องว่าง/จุดเพื่อรองรับตัวย่อ เช่น `ม.อ.` และ `PSU`. ผลเป็น array ของ `{ id, nameTh }` และเปิดดู schema ได้ใน Swagger `/api/docs`.
+
 ### Auth
 
 | Method | Path | ใครเรียก |
@@ -172,6 +181,8 @@ Password recovery รองรับอีเมลที่ใช้สมั�
 | GET | /api/notifications/stream | ช่อง SSE ของแจ้งเตือน |
 
 `GET /api/jobs` รับ `search`, `province`, `workMode`, `category` จากรายการเดียวกันกับตอนสร้างประกาศ, `hasAllowance`, `skills` (กรองด้วย PostgreSQL array overlap operator) และคืนเฉพาะงานสถานะ `open` ถ้าประกาศมีเบี้ยเลี้ยงต้องมี `allowanceAmount` เป็นบาท
+
+`PATCH /api/students/me` รับ `universityId` หรือ `customUniversityName` อย่างใดอย่างหนึ่ง. ละสองฟิลด์ไว้เพื่อคงเดิม, ส่งทั้งคู่ `null` เพื่อล้างค่า; response คืนสองฟิลด์นี้และ `university` ที่ derive เป็นชื่อเต็มสำหรับแสดง.
 
 ค่า `province` และชื่อจังหวัดที่บันทึกในประกาศถูกแปลงเป็นชื่อมาตรฐานเดียวกันก่อนกรอง เพื่อรองรับชื่อเรียกอย่าง `กทม.` และข้อมูลเก่าอย่าง `กรุงเทพฯ`
 
@@ -266,6 +277,8 @@ submitted → reviewing → accepted
 
 รายละเอียด lock และ transaction อยู่ใน [DATABASE.md](DATABASE.md)
 
+Profile update ตรวจว่าเลือก ID ที่มีอยู่จริงหรือชื่อ custom ที่ trim แล้วอย่างใดอย่างหนึ่ง; database บังคับ FK และ CHECK constraint ซ้ำอีกชั้น. Applicant list/detail คืนชื่อมหาวิทยาลัยปัจจุบันที่ resolve จาก master/custom.
+
 ## 8. Flutter
 
 ใช้ Material 3 จาก [client/lib/core/theme/app_theme.dart](../client/lib/core/theme/app_theme.dart) ไม่ลง `shadcn_ui` เพราะชุดนั้นเป็นคนละ design system และทับธีมที่มีอยู่ หน้าลิสต์ ฟอร์ม Bottom Sheet และแถบนำทางใช้ widget ของ Material
@@ -345,4 +358,3 @@ CORS เปิดให้แอปมือถือเรียกได้ต
 ## 10. นอกแบบนี้
 
 ไม่ทำแชท, นัดสัมภาษณ์, ยืนยัน email, login ด้วย social provider อื่นนอกจาก Google, ถอนใบสมัคร, หน้าโปรไฟล์บริษัทแยก, Admin, push notification นอกแอป หรือการเปลี่ยน role หลังสมัคร. Google Login รองรับ Android และ Web สำหรับทดสอบ; iOS ยังไม่อยู่ในขอบเขตนี้.
-

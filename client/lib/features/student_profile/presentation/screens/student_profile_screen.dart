@@ -21,6 +21,7 @@ import '../widgets/student_profile_info_card.dart';
 import '../widgets/student_profile_links_card.dart';
 import '../widgets/student_profile_resume_card.dart';
 import '../widgets/student_profile_skills_card.dart';
+import '../widgets/university_picker.dart';
 
 class StudentProfileScreen extends ConsumerWidget {
   const StudentProfileScreen({super.key});
@@ -105,7 +106,9 @@ class _ProfileForm extends ConsumerStatefulWidget {
 class _ProfileFormState extends ConsumerState<_ProfileForm> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
-  late final TextEditingController _universityController;
+  late String _universityName;
+  String? _universityId;
+  String? _customUniversityName;
   late final TextEditingController _majorController;
   late final TextEditingController _bioController;
   late List<String> _skills;
@@ -118,7 +121,9 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
     super.initState();
     final profile = widget.profile;
     _nameController = TextEditingController(text: profile.fullName);
-    _universityController = TextEditingController(text: profile.university);
+    _universityName = profile.university;
+    _universityId = profile.universityId;
+    _customUniversityName = profile.customUniversityName;
     _majorController = TextEditingController(text: profile.major);
     _bioController = TextEditingController(text: profile.bio);
     _skills = List<String>.from(profile.skills);
@@ -154,7 +159,6 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
   @override
   void dispose() {
     _nameController.dispose();
-    _universityController.dispose();
     _majorController.dispose();
     _bioController.dispose();
     super.dispose();
@@ -186,7 +190,13 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
           // 3. ข้อมูลทั่วไป (General Information Card)
           StudentProfileInfoCard(
             nameController: _nameController,
-            universityController: _universityController,
+            universityName: _universityName,
+            onChooseUniversity: _chooseUniversity,
+            onClearUniversity: () => setState(() {
+              _universityId = null;
+              _customUniversityName = null;
+              _universityName = '';
+            }),
             majorController: _majorController,
             requiredValidator: _required,
           ),
@@ -645,6 +655,20 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
     return null;
   }
 
+  Future<void> _chooseUniversity() async {
+    final choice = await showUniversityPicker(
+      context,
+      selectedId: _universityId,
+      customName: _customUniversityName,
+    );
+    if (choice == null || !mounted) return;
+    setState(() {
+      _universityId = choice.id;
+      _customUniversityName = choice.customName;
+      _universityName = choice.name;
+    });
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -677,7 +701,9 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
 
     final profile = StudentProfile(
       fullName: _nameController.text.trim(),
-      university: _universityController.text.trim(),
+      university: _universityName,
+      universityId: _universityId,
+      customUniversityName: _customUniversityName,
       major: _majorController.text.trim(),
       skills: _skills,
       bio: _bioController.text.trim(),

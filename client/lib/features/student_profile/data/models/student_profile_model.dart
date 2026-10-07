@@ -109,12 +109,16 @@ class StudentProfileModel {
     this.resumeFileName,
     this.resumeObjectKey,
     this.avatarObjectKey,
+    this.universityId,
+    this.customUniversityName,
   });
 
   factory StudentProfileModel.fromJson(Map<String, dynamic> json) {
     return StudentProfileModel(
       fullName: json['fullName'] as String? ?? '',
       university: json['university'] as String? ?? '',
+      universityId: json['universityId'] as String?,
+      customUniversityName: json['customUniversityName'] as String?,
       major: json['major'] as String? ?? '',
       skills: (json['skills'] as List<dynamic>? ?? const [])
           .map((skill) => skill as String)
@@ -154,11 +158,15 @@ class StudentProfileModel {
       resumeFileName: entity.resumeFileName,
       resumeObjectKey: entity.resumeObjectKey,
       avatarObjectKey: entity.avatarObjectKey,
+      universityId: entity.universityId,
+      customUniversityName: entity.customUniversityName,
     );
   }
 
   final String fullName;
   final String university;
+  final String? universityId;
+  final String? customUniversityName;
   final String major;
   final List<String> skills;
   final String bio;
@@ -172,7 +180,8 @@ class StudentProfileModel {
   Map<String, dynamic> toJson() {
     return {
       'fullName': fullName,
-      'university': university,
+      'universityId': universityId,
+      'customUniversityName': customUniversityName,
       'major': major,
       'skills': skills,
       'bio': bio,
@@ -196,6 +205,8 @@ class StudentProfileModel {
       resumeFileName: resumeFileName,
       resumeObjectKey: resumeObjectKey,
       avatarObjectKey: avatarObjectKey,
+      universityId: universityId,
+      customUniversityName: customUniversityName,
     );
   }
 }

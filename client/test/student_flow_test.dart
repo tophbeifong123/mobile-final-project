@@ -16,6 +16,7 @@ import 'package:client/features/saved_jobs/domain/repositories/saved_job_reposit
 import 'package:client/features/saved_jobs/presentation/providers/saved_jobs_controller.dart';
 import 'package:client/features/saved_jobs/presentation/screens/saved_jobs_screen.dart';
 import 'package:client/features/student_profile/domain/entities/student_profile.dart';
+import 'package:client/features/student_profile/domain/entities/university.dart';
 import 'package:client/features/student_profile/domain/repositories/student_profile_repository.dart';
 import 'package:client/features/student_profile/presentation/providers/student_profile_controller.dart';
 import 'package:client/features/student_profile/presentation/screens/student_profile_screen.dart';
@@ -93,6 +94,10 @@ void main() {
   testWidgets('profile form loads and saves the student fields', (
     tester,
   ) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
     final repository = _FakeStudentProfileRepository();
     await tester.pumpWidget(
       ProviderScope(
@@ -108,29 +113,39 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    final universityField = find.widgetWithText(TextFormField, 'มหาวิทยาลัย');
+    final universityField = find.byKey(const Key('student-university-picker'));
     await tester.scrollUntilVisible(
       universityField,
-      100,
+      300,
       scrollable: find.byType(Scrollable).first,
     );
-    final university = tester.widget<TextFormField>(universityField);
-    expect(university.controller?.text, 'PSU');
-
+    await tester.ensureVisible(universityField);
+    await tester.pumpAndSettle();
+    expect(find.text('PSU'), findsOneWidget);
+    await tester.tap(universityField);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('อื่นๆ — พิมพ์ชื่อสถาบันเอง'));
+    await tester.pumpAndSettle();
     await tester.enterText(
-      find.widgetWithText(TextFormField, 'มหาวิทยาลัย'),
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is TextField &&
+            widget.decoration?.hintText == 'พิมพ์ชื่อสถาบันของคุณ',
+      ),
       'KMUTT',
     );
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    expect(find.text('เลือกมหาวิทยาลัย'), findsNothing);
     final saveButton = find.text('บันทึกโปรไฟล์');
-    await tester.scrollUntilVisible(
-      saveButton,
-      100,
-      scrollable: find.byType(Scrollable).first,
-    );
+    await tester.ensureVisible(saveButton);
+    await tester.pumpAndSettle();
     await tester.tap(saveButton);
     await tester.pumpAndSettle();
 
     expect(repository.lastSaved?.university, 'KMUTT');
+    expect(repository.lastSaved?.universityId, isNull);
+    expect(repository.lastSaved?.customUniversityName, 'KMUTT');
     expect(repository.lastSaved?.fullName, 'มีนา');
     expect(repository.lastSaved?.skills, ['Flutter']);
     expect(find.text('บันทึกโปรไฟล์แล้ว'), findsOneWidget);
@@ -141,10 +156,14 @@ class _FakeStudentProfileRepository implements StudentProfileRepository {
   StudentProfile? lastSaved;
 
   @override
+  Future<List<University>> searchUniversities(String query) async => const [];
+
+  @override
   Future<StudentProfile> fetchMe() async {
     return const StudentProfile(
       fullName: 'มีนา',
       university: 'PSU',
+      customUniversityName: 'PSU',
       major: 'IT',
       skills: ['Flutter'],
       portfolioUrl: null,

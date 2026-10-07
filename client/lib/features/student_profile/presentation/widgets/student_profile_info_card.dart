@@ -9,13 +9,17 @@ class StudentProfileInfoCard extends StatelessWidget {
   const StudentProfileInfoCard({
     super.key,
     required this.nameController,
-    required this.universityController,
+    required this.universityName,
+    required this.onChooseUniversity,
+    required this.onClearUniversity,
     required this.majorController,
     required this.requiredValidator,
   });
 
   final TextEditingController nameController;
-  final TextEditingController universityController;
+  final String universityName;
+  final VoidCallback onChooseUniversity;
+  final VoidCallback onClearUniversity;
   final TextEditingController majorController;
   final FormFieldValidator<String>? requiredValidator;
 
@@ -88,12 +92,39 @@ class StudentProfileInfoCard extends StatelessWidget {
           ),
           const Gap(12),
 
-          AppTextField(
-            controller: universityController,
-            textInputAction: TextInputAction.next,
-            label: 'มหาวิทยาลัย',
-            prefixIcon: const Icon(Icons.school_rounded, size: 18),
-            validator: requiredValidator,
+          InkWell(
+            key: const Key('student-university-picker'),
+            onTap: onChooseUniversity,
+            borderRadius: BorderRadius.circular(12),
+            child: InputDecorator(
+              decoration: InputDecoration(
+                labelText: 'มหาวิทยาลัย',
+                prefixIcon: const Icon(Icons.school_rounded, size: 18),
+                suffixIcon: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.search),
+                    if (universityName.isNotEmpty)
+                      IconButton(
+                        key: const Key('student-clear-university'),
+                        tooltip: 'ล้างมหาวิทยาลัย',
+                        onPressed: onClearUniversity,
+                        icon: const Icon(Icons.close),
+                      ),
+                  ],
+                ),
+                border: const OutlineInputBorder(),
+              ),
+              child: Text(
+                universityName.isEmpty ? 'เลือกมหาวิทยาลัย' : universityName,
+                style: TextStyle(
+                  color: universityName.isEmpty
+                      ? NeoColors.mutedInk
+                      : NeoColors.inkSolid,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
           ),
           const Gap(12),
 

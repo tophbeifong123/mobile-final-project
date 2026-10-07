@@ -17,6 +17,7 @@ import { AddAvatarToStudentProfiles1759200000000 } from './migrations/1759200000
 import { CreateStudentDocuments1759400000000 } from './migrations/1759400000000-create-student-documents.js';
 import { AddResumeFileNameToApplications1759450000000 } from './migrations/1759450000000-add-resume-file-name-to-applications.js';
 import { Province } from '../provinces/province.entity.js';
+import { University } from '../universities/university.entity.js';
 import { AddCompanyOfficeLocation1791158400000 } from './migrations/1791158400000-add-company-office-location.js';
 import { DropOfficePin1791744000000 } from './migrations/1791744000000-drop-office-pin.js';
 import { AddAllowanceAmountAndJobCategories1791830400000 } from './migrations/1791830400000-add-allowance-amount-and-job-categories.js';
@@ -32,6 +33,7 @@ import { CreateJobsTable1758600000000 } from './migrations/1758600000000-create-
 import { CreateNotificationsTable1758900000000 } from './migrations/1758900000000-create-notifications-table.js';
 import { CreateSavedJobsTable1758700000000 } from './migrations/1758700000000-create-saved-jobs.js';
 import { AddPasswordRecovery1791072000000 } from './migrations/1791072000000-add-password-recovery.js';
+import { AddStudentUniversityMaster1791244800000 } from './migrations/1791244800000-add-student-university-master.js';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -55,6 +57,7 @@ export const AppDataSource = new DataSource({
     Notification,
     StudentDocument,
     Province,
+    University,
   ],
   migrations: [
     CreateAuthTables1758556800000,
@@ -72,6 +75,7 @@ export const AppDataSource = new DataSource({
     AddDraftStatusAndDeadlineToJobs1759400000000,
     AddPasswordRecovery1791072000000,
     AddCompanyOfficeLocation1791158400000,
+    AddStudentUniversityMaster1791244800000,
     DropOfficePin1791744000000,
     AddAllowanceAmountAndJobCategories1791830400000,
     AddJobOpeningsAllowance1791840000000,

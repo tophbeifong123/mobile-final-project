@@ -265,7 +265,8 @@ export class AuthRepository {
         manager.create(StudentProfile, {
           userId,
           fullName: '',
-          university: '',
+          universityId: null,
+          customUniversityName: null,
           major: '',
           skills: [],
         }),
