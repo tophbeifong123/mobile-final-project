@@ -45,10 +45,7 @@ abstract class CompanyJobRepository {
     required DateTime deadline,
   });
 
-  Future<void> passExam({
-    required String jobId,
-    required String applicationId,
-  });
+  Future<void> passExam({required String jobId, required String applicationId});
 
   Future<void> setInterviewLink({
     required String jobId,

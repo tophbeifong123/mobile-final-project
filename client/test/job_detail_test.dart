@@ -6,6 +6,9 @@ import 'package:client/core/network/dio_client.dart';
 import 'package:client/core/error/app_exception.dart';
 import 'package:client/core/storage/token_storage.dart';
 import 'package:client/core/theme/app_theme.dart';
+import 'package:client/features/resume/domain/entities/resume_file.dart';
+import 'package:client/features/resume/presentation/providers/resume_controller.dart';
+import 'package:client/features/applications/presentation/widgets/application_documents_dialog.dart';
 import 'package:client/features/jobs/domain/entities/job.dart';
 import 'package:client/features/student_profile/domain/entities/student_profile.dart';
 import 'package:client/features/jobs/domain/repositories/job_repository.dart';
@@ -46,6 +49,20 @@ void main() {
             retry: (retryCount, error) => null,
             overrides: [
               jobDetailProvider('job-1').overrideWith((ref) async => detail),
+              studentDocumentsProvider.overrideWith(
+                (ref) async => [
+                  const StudentDocument(
+                    id: 'cv',
+                    type: 'cv',
+                    fileName: 'CV.pdf',
+                  ),
+                  const StudentDocument(
+                    id: 'transcript',
+                    type: 'transcript',
+                    fileName: 'Transcript.pdf',
+                  ),
+                ],
+              ),
               jobCompanyLogoProvider('job-1').overrideWith((ref) async {
                 if (fails) throw const AppException('Logo unavailable');
                 return CompanyLogo(
@@ -71,6 +88,27 @@ void main() {
           expect(find.byType(Image), findsOneWidget);
         }
         expect(tester.takeException(), isNull);
+        await tester.tap(find.text('สมัครงาน'));
+        await tester.pumpAndSettle();
+        expect(find.byType(ApplicationDocumentsDialog), findsOneWidget);
+        expect(find.text('เอกสารของฉัน'), findsOneWidget);
+        expect(find.text('CV.pdf'), findsOneWidget);
+        expect(find.text('Transcript.pdf'), findsOneWidget);
+        expect(
+          tester
+              .widget<Checkbox>(find.byKey(const ValueKey('attach-cv')))
+              .value,
+          isTrue,
+        );
+        expect(
+          tester
+              .widget<Checkbox>(find.byKey(const ValueKey('attach-transcript')))
+              .value,
+          isFalse,
+        );
+        await tester.tap(find.byTooltip('ปิด'));
+        await tester.pumpAndSettle();
+        expect(find.byType(JobDetailScreen), findsOneWidget);
       },
     );
   }

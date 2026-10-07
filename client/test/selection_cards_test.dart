@@ -106,7 +106,10 @@ void main() {
       expect(find.text('แก้ลิงก์ข้อสอบ'), findsNothing);
       expect(find.text('ข้อสอบผ่าน'), findsOneWidget);
       expect(find.text('ส่งลิงก์นัด'), findsNothing);
-      expect(find.text('เรียกสัมภาษณ์ได้หลังตรวจว่าข้อสอบผ่าน'), findsOneWidget);
+      expect(
+        find.text('เรียกสัมภาษณ์ได้หลังตรวจว่าข้อสอบผ่าน'),
+        findsOneWidget,
+      );
     },
   );
 
@@ -135,7 +138,10 @@ void main() {
       ),
     );
 
-    expect(find.text('เรียกสัมภาษณ์ได้หลังนักศึกษาทำข้อสอบแล้ว'), findsOneWidget);
+    expect(
+      find.text('เรียกสัมภาษณ์ได้หลังนักศึกษาทำข้อสอบแล้ว'),
+      findsOneWidget,
+    );
     expect(find.text('ข้อสอบผ่าน'), findsNothing);
     expect(find.text('ส่งลิงก์นัด'), findsNothing);
     expect(find.text('นัดที่สำนักงาน'), findsNothing);

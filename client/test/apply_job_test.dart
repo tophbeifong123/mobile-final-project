@@ -1,6 +1,11 @@
 import 'package:client/core/network/dio_client.dart';
 import 'package:client/core/storage/token_storage.dart';
 import 'package:client/core/theme/app_theme.dart';
+import 'package:client/core/theme/app_tokens.dart';
+import 'package:client/core/widgets/app_card.dart';
+import 'package:client/core/widgets/neo_button.dart';
+import 'package:client/features/resume/domain/entities/resume_file.dart';
+import 'package:client/features/resume/presentation/providers/resume_controller.dart';
 import 'package:client/features/applications/domain/entities/job_application.dart';
 import 'package:client/features/applications/domain/repositories/application_repository.dart';
 import 'package:client/features/applications/presentation/providers/applications_controller.dart';
@@ -14,8 +19,6 @@ import 'package:client/features/student_profile/domain/entities/major.dart';
 import 'package:client/features/student_profile/domain/repositories/student_profile_repository.dart';
 import 'package:client/features/student_profile/presentation/providers/student_profile_controller.dart';
 import 'package:flutter/material.dart';
-import 'package:client/features/resume/presentation/providers/resume_controller.dart';
-import 'package:client/features/resume/domain/entities/resume_file.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -63,10 +66,10 @@ void main() {
         ProviderScope(
           overrides: [
             tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
-            studentDocumentsProvider.overrideWith((ref) async => []),
             studentProfileRepositoryProvider.overrideWithValue(
               _FakeStudentProfileRepository(profileWithoutResume),
             ),
+            studentDocumentsProvider.overrideWith((ref) async => []),
             jobRepositoryProvider.overrideWithValue(
               _FakeJobRepository(sampleJob),
             ),
@@ -85,72 +88,93 @@ void main() {
       expect(find.text('ยังไม่มี Resume ในระบบ'), findsOneWidget);
       expect(find.text('อัปโหลด Resume'), findsOneWidget);
 
-      final submitButton = tester.widget<FilledButton>(
-        find.widgetWithText(FilledButton, 'ยืนยันสมัคร'),
+      final submitButton = tester.widget<NeoButton>(
+        find.widgetWithText(NeoButton, 'ยืนยันสมัคร'),
       );
       expect(submitButton.onPressed, isNull);
     },
   );
 
-  testWidgets(
-    'apply job screen shows resume ready and submits cover letter successfully',
-    (tester) async {
-      final fakeAppRepo = _FakeApplicationRepository();
+  for (final width in [320.0, 390.0, 768.0]) {
+    testWidgets(
+      'apply job theme and successful cover letter submission at width $width',
+      (tester) async {
+        tester.view.physicalSize = Size(width, 740);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        final fakeAppRepo = _FakeApplicationRepository();
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
-            studentDocumentsProvider.overrideWith(
-              (ref) async => const [
-                StudentDocument(
-                  id: 'cv',
-                  type: 'cv',
-                  fileName: 'my_resume.pdf',
-                ),
-              ],
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
+              studentProfileRepositoryProvider.overrideWithValue(
+                _FakeStudentProfileRepository(profileWithResume),
+              ),
+              studentDocumentsProvider.overrideWith(
+                (ref) async => [
+                  const StudentDocument(
+                    id: 'cv',
+                    type: 'cv',
+                    fileName: 'my_resume.pdf',
+                  ),
+                ],
+              ),
+              jobRepositoryProvider.overrideWithValue(
+                _FakeJobRepository(sampleJob),
+              ),
+              applicationRepositoryProvider.overrideWithValue(fakeAppRepo),
+            ],
+            child: MaterialApp(
+              theme: AppTheme.lightTheme,
+              home: const ApplyJobScreen(jobId: 'job-123'),
             ),
-            studentProfileRepositoryProvider.overrideWithValue(
-              _FakeStudentProfileRepository(profileWithResume),
-            ),
-            jobRepositoryProvider.overrideWithValue(
-              _FakeJobRepository(sampleJob),
-            ),
-            applicationRepositoryProvider.overrideWithValue(fakeAppRepo),
-          ],
-          child: MaterialApp(
-            theme: AppTheme.lightTheme,
-            home: const ApplyJobScreen(jobId: 'job-123'),
           ),
-        ),
-      );
-      await tester.pumpAndSettle();
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('Flutter Developer Intern'), findsOneWidget);
-      expect(find.text('Tech Co'), findsOneWidget);
-      expect(find.text('CV ที่จะแนบ (จำเป็น)'), findsOneWidget);
-      expect(find.text('my_resume.pdf'), findsOneWidget);
+        expect(find.text('Flutter Developer Intern'), findsOneWidget);
+        expect(find.text('Tech Co'), findsOneWidget);
+        expect(find.text('Resume ที่จะใช้'), findsOneWidget);
+        expect(find.text('my_resume.pdf'), findsOneWidget);
 
-      final submitButton = tester.widget<FilledButton>(
-        find.widgetWithText(FilledButton, 'ยืนยันสมัคร'),
-      );
-      expect(submitButton.onPressed, isNotNull);
+        expect(
+          tester.widget<Scaffold>(find.byType(Scaffold)).backgroundColor,
+          NeoColors.paperCanvas,
+        );
+        final appBar = tester.widget<AppBar>(find.byType(AppBar));
+        expect(appBar.backgroundColor, NeoColors.paperCanvas);
+        expect(appBar.foregroundColor, NeoColors.inkSolid);
+        for (final card in tester.widgetList<AppCard>(find.byType(AppCard))) {
+          expect(card.borderColor, NeoColors.inkSolid);
+          expect(card.borderWidth, 2);
+          expect(card.shadows?.single.offset, const Offset(3, 3));
+        }
+        final field = tester.widget<TextFormField>(find.byType(TextFormField));
+        expect(field.enabled, isTrue);
 
-      // Enter cover letter
-      await tester.enterText(
-        find.byType(TextFormField),
-        'ผมสนใจร่วมงานกับบริษัท Tech Co มากครับ',
-      );
-      await tester.tap(find.widgetWithText(FilledButton, 'ยืนยันสมัคร'));
-      await tester.pumpAndSettle();
+        final submitButton = tester.widget<NeoButton>(
+          find.widgetWithText(NeoButton, 'ยืนยันสมัคร'),
+        );
+        expect(submitButton.onPressed, isNotNull);
 
-      expect(fakeAppRepo.appliedJobId, 'job-123');
-      expect(
-        fakeAppRepo.appliedCoverLetter,
-        'ผมสนใจร่วมงานกับบริษัท Tech Co มากครับ',
-      );
-    },
-  );
+        // Enter cover letter
+        await tester.enterText(
+          find.byType(TextFormField),
+          'ผมสนใจร่วมงานกับบริษัท Tech Co มากครับ',
+        );
+        await tester.tap(find.widgetWithText(NeoButton, 'ยืนยันสมัคร'));
+        await tester.pumpAndSettle();
+
+        expect(fakeAppRepo.appliedJobId, 'job-123');
+        expect(
+          fakeAppRepo.appliedCoverLetter,
+          'ผมสนใจร่วมงานกับบริษัท Tech Co มากครับ',
+        );
+      },
+    );
+  }
 
   testWidgets('validates empty cover letter', (tester) async {
     final fakeAppRepo = _FakeApplicationRepository();
@@ -159,13 +183,17 @@ void main() {
       ProviderScope(
         overrides: [
           tokenStorageProvider.overrideWithValue(MemoryTokenStorage()),
-          studentDocumentsProvider.overrideWith(
-            (ref) async => const [
-              StudentDocument(id: 'cv', type: 'cv', fileName: 'my_resume.pdf'),
-            ],
-          ),
           studentProfileRepositoryProvider.overrideWithValue(
             _FakeStudentProfileRepository(profileWithResume),
+          ),
+          studentDocumentsProvider.overrideWith(
+            (ref) async => [
+              const StudentDocument(
+                id: 'cv',
+                type: 'cv',
+                fileName: 'my_resume.pdf',
+              ),
+            ],
           ),
           jobRepositoryProvider.overrideWithValue(
             _FakeJobRepository(sampleJob),
@@ -180,7 +208,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(FilledButton, 'ยืนยันสมัคร'));
+    await tester.tap(find.widgetWithText(NeoButton, 'ยืนยันสมัคร'));
     await tester.pumpAndSettle();
 
     expect(find.text('กรอก Cover Letter'), findsOneWidget);
@@ -234,7 +262,6 @@ class _FakeJobRepository implements JobRepository {
 class _FakeApplicationRepository implements ApplicationRepository {
   String? appliedJobId;
   String? appliedCoverLetter;
-  List<String>? attachedIds;
 
   @override
   Future<List<JobApplication>> fetchMine() async => [];
@@ -245,13 +272,12 @@ class _FakeApplicationRepository implements ApplicationRepository {
 
   @override
   Future<JobApplication> apply({
-    List<String> documentIds = const [],
     required String jobId,
     required String coverLetter,
+    List<String> documentIds = const [],
   }) async {
     appliedJobId = jobId;
     appliedCoverLetter = coverLetter;
-    attachedIds = documentIds;
     return JobApplication(
       id: 'app-999',
       jobTitle: 'Flutter Developer Intern',

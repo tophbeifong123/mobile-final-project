@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:client/core/error/app_exception.dart';
 import 'package:client/core/theme/app_theme.dart';
+import 'package:client/core/widgets/neo_button.dart';
 import 'package:client/features/applications/domain/entities/job_application.dart';
 import 'package:client/features/applications/domain/repositories/application_repository.dart';
 import 'package:client/features/applications/data/models/job_application_model.dart';
@@ -104,14 +105,24 @@ void main() {
     (tester) async {
       final repo = _Repo();
       await open(tester, repo);
-      expect(find.text('CV ที่จะแนบ (จำเป็น)'), findsOneWidget);
-      expect(find.byType(CheckboxListTile), findsNWidgets(4));
+      await tester.tap(find.text('เลือกเอกสาร'));
+      await tester.pumpAndSettle();
+      expect(find.text('CV (จำเป็น)'), findsOneWidget);
       expect(
         tester
-            .widgetList<CheckboxListTile>(find.byType(CheckboxListTile))
+            .widget<Checkbox>(find.byKey(const ValueKey('attach-cv')))
+            .onChanged,
+        isNull,
+      );
+      expect(
+        tester
+            .widgetList<Checkbox>(find.byType(Checkbox))
+            .where((w) => w.onChanged != null)
             .every((w) => w.value == false),
         isTrue,
       );
+      await tester.tap(find.text('ใช้เอกสารที่เลือก'));
+      await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextFormField), 'Hello');
       await tester.tap(find.text('ยืนยันสมัคร'));
       await tester.pumpAndSettle();
@@ -125,10 +136,14 @@ void main() {
     (tester) async {
       final repo = _Repo();
       await open(tester, repo);
+      await tester.tap(find.text('เลือกเอกสาร'));
+      await tester.pumpAndSettle();
       for (final id in ['transcript', 'other1', 'other2', 'other2']) {
         await tester.tap(find.byKey(ValueKey('attach-$id')));
         await tester.pumpAndSettle();
       }
+      await tester.tap(find.text('ใช้เอกสารที่เลือก'));
+      await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextFormField), 'Hello');
       await tester.tap(find.text('ยืนยันสมัคร'));
       await tester.pumpAndSettle();
@@ -143,9 +158,7 @@ void main() {
       await open(tester, repo, load: () async => library.sublist(1));
       expect(
         tester
-            .widget<FilledButton>(
-              find.widgetWithText(FilledButton, 'ยืนยันสมัคร'),
-            )
+            .widget<NeoButton>(find.widgetWithText(NeoButton, 'ยืนยันสมัคร'))
             .onPressed,
         isNull,
       );
@@ -169,9 +182,7 @@ void main() {
     );
     expect(
       tester
-          .widget<FilledButton>(
-            find.widgetWithText(FilledButton, 'ยืนยันสมัคร'),
-          )
+          .widget<NeoButton>(find.widgetWithText(NeoButton, 'ยืนยันสมัคร'))
           .onPressed,
       isNull,
     );
@@ -185,7 +196,11 @@ void main() {
     (tester) async {
       final repo = _Repo()..fail = true;
       await open(tester, repo);
+      await tester.tap(find.text('เลือกเอกสาร'));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('attach-transcript')));
+      await tester.tap(find.text('ใช้เอกสารที่เลือก'));
+      await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextFormField), 'Hello');
       await tester.tap(find.text('ยืนยันสมัคร'));
       await tester.pumpAndSettle();

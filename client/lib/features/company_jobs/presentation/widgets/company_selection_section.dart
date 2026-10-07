@@ -102,7 +102,10 @@ class CompanySelectionSection extends StatelessWidget {
             children: [
               Text(
                 onSite ? 'นัดสัมภาษณ์ออนไซต์' : 'นัดสัมภาษณ์ออนไลน์',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
               const Gap(6),
               Text(
@@ -245,7 +248,10 @@ class _SelectionLinkDialogState extends State<SelectionLinkDialog> {
                 !url.startsWith('https://')) {
               return;
             }
-            Navigator.pop(context, (url: widget.requireUrl ? url : '', when: _when));
+            Navigator.pop(context, (
+              url: widget.requireUrl ? url : '',
+              when: _when,
+            ));
           },
         ),
       ],
