@@ -6,9 +6,11 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../../core/error/app_exception.dart';
 import '../../../../core/theme/app_tokens.dart';
+import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/neo_button.dart';
 import '../../../jobs/presentation/providers/jobs_controller.dart';
 import '../../../resume/presentation/providers/resume_controller.dart';
+import '../../../student_profile/presentation/widgets/resume_preview_modal.dart';
 import '../providers/applications_controller.dart';
 import '../widgets/application_documents_dialog.dart';
 
@@ -42,7 +44,6 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
-
     final library = ref.watch(studentDocumentsProvider);
     final documents = library.asData?.value ?? [];
     final cv = documents.where((document) => document.type == 'cv').firstOrNull;
@@ -213,74 +214,109 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
               ] else ...[
                 _NeoPanel(
                   color: NeoColors.freshMint,
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(LucideIcons.fileCheck2, size: 22),
-                      const Gap(10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const _Eyebrow('CV ที่จะใช้'),
-                            const Gap(3),
-                            Text(
-                              cv.fileName,
-                              style: textTheme.bodyMedium?.copyWith(
+                      Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              'เอกสารที่เลือกแนบ',
+                              style: TextStyle(
+                                color: NeoColors.inkSolid,
                                 fontWeight: FontWeight.w800,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
                             ),
-                          ],
+                          ),
+                          TextButton(
+                            onPressed: _submitting
+                                ? null
+                                : () async {
+                                    final selected =
+                                        await ApplicationDocumentsDialog.show(
+                                      context,
+                                      selectedIds: _documentIds,
+                                    );
+                                    if (mounted && selected != null) {
+                                      setState(() => _documentIds = selected);
+                                    }
+                                  },
+                            child: const Text('เลือกเอกสาร'),
+                          ),
+                        ],
+                      ),
+                      const Text(
+                        'บริษัทจะเห็นเฉพาะไฟล์ชุดนี้เมื่อส่งใบสมัคร',
+                        style: TextStyle(color: NeoColors.subtleInk),
+                      ),
+                      for (final document in documents.where(
+                        (document) =>
+                            document.type == 'cv' ||
+                            _documentIds.contains(document.id),
+                      ))
+                        Padding(
+                          padding: const EdgeInsets.only(top: 12),
+                          child: AppCard(
+                            key: ValueKey('selected-document-${document.id}'),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 4,
+                            ),
+                            backgroundColor: NeoColors.paperCanvas,
+                            borderColor: NeoColors.inkSolid,
+                            borderWidth: 2,
+                            shadows: NeoShadows.elevation1,
+                            child: ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(
+                                document.fileName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: NeoColors.inkSolid,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              subtitle: Text(
+                                document.type == 'cv'
+                                    ? 'CV'
+                                    : document.type == 'transcript'
+                                    ? 'Transcript'
+                                    : 'เอกสารอื่นๆ',
+                              ),
+                              trailing: IconButton(
+                                tooltip: 'เปิดดู ${document.fileName}',
+                                icon: const Icon(
+                                  Icons.visibility_outlined,
+                                  color: NeoColors.inkSolid,
+                                ),
+                                onPressed: () => showDialog<void>(
+                                  context: context,
+                                  builder: (_) => Consumer(
+                                    builder: (context, ref, _) =>
+                                        ResumePreviewModal(
+                                          fileName: document.fileName,
+                                          readOnly: true,
+                                          pdfBytes: ref.watch(
+                                            studentDocumentPdfBytesProvider(
+                                              document.id,
+                                            ),
+                                          ),
+                                          onRetry: () => ref.invalidate(
+                                            studentDocumentPdfBytesProvider(
+                                              document.id,
+                                            ),
+                                          ),
+                                        ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                      const Gap(8),
-                      NeoButton(
-                        onPressed: _submitting
-                            ? null
-                            : () async {
-                                final selected =
-                                    await ApplicationDocumentsDialog.show(
-                                  context,
-                                  selectedIds: _documentIds,
-                                );
-                                if (mounted && selected != null) {
-                                  setState(() => _documentIds = selected);
-                                }
-                              },
-                        variant: NeoButtonVariant.outline,
-                        height: 44,
-                        text: 'เลือกเอกสาร',
-                      ),
                     ],
                   ),
                 ),
-                if (_documentIds.any((id) => id != cv.id)) ...[
-                  const Gap(12),
-                  _NeoPanel(
-                    color: NeoColors.pureWhite,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const _Eyebrow('เอกสารเพิ่มเติมที่เลือก'),
-                        const Gap(8),
-                        for (final document in documents.where(
-                          (document) =>
-                              document.type != 'cv' &&
-                              _documentIds.contains(document.id),
-                        ))
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 4),
-                            child: Text(
-                              document.fileName,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
                 const Gap(16),
               ],
               _NeoPanel(
