@@ -1,3 +1,4 @@
+import '../../../student_profile/data/models/student_profile_model.dart';
 import '../../domain/entities/company_profile.dart';
 
 class CompanyProfileModel {
@@ -10,6 +11,7 @@ class CompanyProfileModel {
     this.provinceName,
     this.location = '',
     this.websiteUrl = '',
+    this.contactLinks = const [],
     this.companySize = '',
     this.perks = const [],
     this.coverObjectKey,
@@ -25,6 +27,11 @@ class CompanyProfileModel {
       provinceName: json['provinceName'] as String?,
       location: json['location'] as String? ?? '',
       websiteUrl: json['websiteUrl'] as String? ?? '',
+      contactLinks: (json['contactLinks'] as List<dynamic>? ?? const [])
+          .map(
+            (item) => ContactLinkModel.fromJson(item as Map<String, dynamic>),
+          )
+          .toList(),
       companySize: json['companySize'] as String? ?? '',
       perks:
           (json['perks'] as List<dynamic>?)
@@ -42,6 +49,9 @@ class CompanyProfileModel {
       description: entity.description,
       logoObjectKey: entity.logoObjectKey,
       websiteUrl: entity.websiteUrl,
+      contactLinks: entity.contactLinks
+          .map(ContactLinkModel.fromEntity)
+          .toList(),
       location: entity.location,
       companySize: entity.companySize,
       perks: entity.perks,
@@ -59,6 +69,7 @@ class CompanyProfileModel {
   final String? provinceName;
   final String location;
   final String websiteUrl;
+  final List<ContactLinkModel> contactLinks;
   final String companySize;
   final List<String> perks;
   final String? coverObjectKey;
@@ -73,6 +84,7 @@ class CompanyProfileModel {
       provinceName: provinceName,
       location: location,
       websiteUrl: websiteUrl,
+      contactLinks: contactLinks.map((link) => link.toEntity()).toList(),
       companySize: companySize,
       perks: perks,
       coverObjectKey: coverObjectKey,
@@ -87,6 +99,7 @@ class CompanyProfileModel {
       'provinceId': provinceId,
       'location': location,
       'websiteUrl': websiteUrl,
+      'contactLinks': contactLinks.map((link) => link.toJson()).toList(),
       'companySize': companySize,
       'perks': perks,
     };

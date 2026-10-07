@@ -33,6 +33,25 @@ String allowanceLabel(bool hasAllowance, [int? amount]) {
   return 'มีเบี้ยเลี้ยง $grouped บาท';
 }
 
+String deadlineLabel(DateTime deadline) {
+  const months = [
+    'ม.ค.',
+    'ก.พ.',
+    'มี.ค.',
+    'เม.ย.',
+    'พ.ค.',
+    'มิ.ย.',
+    'ก.ค.',
+    'ส.ค.',
+    'ก.ย.',
+    'ต.ค.',
+    'พ.ย.',
+    'ธ.ค.',
+  ];
+  final local = deadline.toLocal();
+  return 'ถึง ${local.day} ${months[local.month - 1]} ${local.year + 543}';
+}
+
 String jobStatusLabel(JobStatus status) {
   return switch (status) {
     JobStatus.open => 'เปิดรับ',

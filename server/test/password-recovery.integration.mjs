@@ -47,18 +47,24 @@ test('password recovery across API, SMTP and PostgreSQL', { timeout: 60_000 }, a
     APP_WEB_URL: 'http://127.0.0.1:8085', NODE_ENV: 'test',
   });
   const { NestFactory } = await import('@nestjs/core');
-  const { ValidationPipe } = await import('@nestjs/common');
   const { SwaggerModule, DocumentBuilder } = await import('@nestjs/swagger');
+  const { configureApp } = await import('../dist/configure-app.js');
   // Compiled imports retain TypeScript constructor metadata used by Nest.
   const { AppModule } = await import('../dist/app.module.js');
   const { AuthRepository } = await import('../dist/auth/auth.repository.js');
   const { DataSource } = await import('typeorm');
   const { AddPasswordRecovery1791072000000 } = await import('../dist/database/migrations/1791072000000-add-password-recovery.js');
   const app = await NestFactory.create(AppModule, { logger: false });
-  app.enableCors({ exposedHeaders: ['Retry-After'] });
-  app.setGlobalPrefix('api');
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
+  configureApp(app);
   await app.listen(0, '127.0.0.1');
+  const page = await fetch(`${await app.getUrl()}/reset-password?token=not-in-the-page`);
+  assert.equal(page.status, 200);
+  const html = await page.text();
+  assert.match(html, /ตั้งรหัสผ่านใหม่/);
+  assert.equal(html.includes('not-in-the-page'), false);
+  assert.match(page.headers.get('content-security-policy') ?? '', /script-src 'nonce-/);
+  assert.equal(page.headers.get('referrer-policy'), 'no-referrer');
+  assert.equal((await fetch(`${await app.getUrl()}/api/reset-password`)).status, 404);
   const swagger = SwaggerModule.createDocument(app, new DocumentBuilder().setTitle('InternFinder API').setVersion('1.0').build());
   const forgotSchema = swagger.components.schemas.ForgotPasswordDto.properties.email;
   assert.equal(forgotSchema.format, 'email');
@@ -68,6 +74,7 @@ test('password recovery across API, SMTP and PostgreSQL', { timeout: 60_000 }, a
     swagger.paths['/api/auth/reset-password'],
     forgotSchema,
   ]), /psu/i, 'Swagger does not describe a PSU-only recovery policy');
+  assert.equal(swagger.paths['/reset-password'], undefined, 'the HTML reset page is not an API route');
   const origin = await app.getUrl();
   const db = app.get(DataSource);
   const repository = app.get(AuthRepository);
@@ -119,7 +126,7 @@ test('password recovery across API, SMTP and PostgreSQL', { timeout: 60_000 }, a
     const resetEmail = await waitForMail(email);
     let token = /token=([a-f0-9]{64})/.exec(resetEmail)?.[1];
     assert.ok(token, 'email contains a 256-bit URL token');
-    assert.ok(resetEmail.includes('http://127.0.0.1:8085/#/reset-password?token='));
+    assert.ok(resetEmail.includes('http://127.0.0.1:8085/reset-password#token='));
     const stored = await db.query('SELECT token_hash, expires_at FROM password_reset_tokens p JOIN users u ON u.id = p.user_id WHERE u.email = $1', [email]);
     assert.equal(stored.length, 1);
     assert.notEqual(stored[0].token_hash, token, 'only the hash is stored');

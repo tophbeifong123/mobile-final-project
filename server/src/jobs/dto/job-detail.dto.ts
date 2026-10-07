@@ -1,4 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ContactLinkDto } from '../../students/dto/contact-link.dto.js';
 import { JobStatus, WorkMode } from '../job-enums.js';
 
 export class JobDetailDto {
@@ -45,6 +46,21 @@ export class JobDetailDto {
   @ApiProperty({ enum: JobStatus, example: JobStatus.Open })
   status: JobStatus;
 
+  @ApiProperty({
+    type: String,
+    format: 'date-time',
+    description: 'วันเวลาสร้างประกาศ',
+  })
+  createdAt: Date;
+
+  @ApiPropertyOptional({
+    type: String,
+    format: 'date-time',
+    nullable: true,
+    description: 'วันปิดรับ; null เมื่อไม่ได้ระบุ',
+  })
+  deadline: Date | null;
+
   @ApiProperty({ example: 'InternFinder' })
   companyName: string;
 
@@ -59,6 +75,13 @@ export class JobDetailDto {
     description: 'เว็บไซต์ที่บันทึกในโปรไฟล์บริษัท; ค่าว่างเมื่อไม่ได้ระบุ',
   })
   companyWebsiteUrl: string;
+
+  @ApiProperty({
+    type: () => [ContactLinkDto],
+    description:
+      'ช่องทางติดต่อจากโปรไฟล์บริษัทล่าสุด; รายการว่างเมื่อไม่ได้ระบุ',
+  })
+  companyContactLinks: ContactLinkDto[];
 
   @ApiProperty({ example: '51-200', description: 'ขนาดองค์กรจากโปรไฟล์บริษัท' })
   companySize: string;
@@ -76,6 +99,11 @@ export class JobDetailDto {
     description: 'มีโลโก้บริษัท; ดาวน์โหลดผ่าน GET /api/jobs/:id/company-logo',
   })
   companyLogoAvailable: boolean;
+
+  @ApiProperty({
+    description: 'มีรูปหน้าปกบริษัท; ดาวน์โหลดผ่าน GET /api/jobs/:id/company-cover',
+  })
+  companyCoverAvailable: boolean;
 
   @ApiProperty({ description: 'นักศึกษานี้บันทึกประกาศนี้ไว้แล้วหรือยัง' })
   saved: boolean;

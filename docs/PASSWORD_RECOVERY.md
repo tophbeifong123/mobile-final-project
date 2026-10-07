@@ -15,7 +15,7 @@
 3. ใส่ค่าต่อไปนี้ใน `server/.env` ซึ่งถูก gitignore ไว้แล้ว:
 
 ```dotenv
-APP_WEB_URL=http://localhost:8080
+APP_WEB_URL=http://127.0.0.1:3000
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=465
 SMTP_SECURE=true
@@ -27,9 +27,7 @@ SMTP_FROM=InternFinder <your-address@gmail.com>
 
 ใช้ App Password ไม่ใช่รหัสผ่านเข้าสู่ระบบ Google ปกติ ใส่รหัสโดยไม่มีช่องว่าง อย่าใส่ SMTP credentials ใน Flutter, dart-define, source code หรือ git
 
-`APP_WEB_URL` ต้องเป็นที่อยู่เว็บ Flutter ที่ผู้รับเปิดได้ หากใช้งานนอกเครื่องพัฒนาให้ใช้โดเมน HTTPS ที่ deploy แล้ว ระบบสร้างเส้นทาง `/#/reset-password?token=...` อัตโนมัติ ไม่อิง Host header ของคำขอ
-
-ในเครื่องพัฒนาให้ใช้ `http://localhost:8080` ตรงกับคำสั่ง Flutter ด้านล่าง หากเปลี่ยน hostname หรือ port ต้องเปลี่ยน `APP_WEB_URL` ตามและ restart API จากนั้นขอลิงก์ใหม่ ลิงก์ในอีเมลเดิมจะไม่เปลี่ยนตามการตั้งค่า และ `localhost` ใช้ได้เฉพาะเมื่อเปิดอีเมลบนเครื่องที่รัน Flutter อยู่
+`APP_WEB_URL` คือ origin สาธารณะของ API นี้ ที่ผู้รับเปิดจากอีเมลได้ ระบบสร้างลิงก์ `{APP_WEB_URL}/reset-password#token=...` ไม่อิง Host header ของคำขอ และไม่อิงพอร์ตที่ `flutter run` สุ่มให้ token อยู่ท้าย fragment จึงไม่ถูกส่งเข้า access log ของเซิร์ฟเวอร์ หน้านี้เสิร์ฟโดย API ที่ส่งอีเมล จึงเปิดได้ตราบใดที่ API ทำงาน ถ้าใช้งานนอกเครื่องพัฒนาให้ตั้งเป็นโดเมน HTTPS ของ API
 
 บัญชี Google Workspace หรือบัญชีที่เปิด Advanced Protection อาจไม่อนุญาต App Password ให้ใช้ SMTP ที่ผู้ดูแลอนุญาตแทน ตัวส่งรองรับ SMTP มาตรฐาน
 
@@ -44,13 +42,7 @@ npm run migration:run
 npm run start:dev
 ```
 
-จากอีกเทอร์มินัล:
-
-```powershell
-cd client
-flutter pub get
-flutter run -d chrome --web-hostname localhost --web-port 8080
-```
+เปิดแอป Flutter จากอีกเทอร์มินัลได้ตามปกติ พอร์ตของ `flutter run` ไม่ต้องตรงกับลิงก์ในอีเมล
 
 หลังเปลี่ยนค่า SMTP ให้ restart backend ผู้รับต้องใช้อีเมลบัญชีที่สมัครใน InternFinder อยู่แล้ว หากยังไม่มี SMTP credentials ฟังก์ชันจะตอบ 503 แทนการแสดงว่าระบบพร้อมส่ง
 

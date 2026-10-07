@@ -15,6 +15,7 @@ import '../../../student_profile/presentation/widgets/resume_preview_modal.dart'
 import '../../../../core/widgets/company_top_bar.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/loading_view.dart';
+import '../../../company_profile/domain/entities/company_contact_policy.dart';
 import '../../domain/entities/company_job.dart';
 import 'package:client/features/student_profile/domain/entities/student_profile.dart';
 import '../providers/company_jobs_controller.dart';
@@ -731,14 +732,15 @@ class _ContactLinksCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (c.label != null && c.label!.isNotEmpty)
-                            Text(
-                              c.label!,
-                              style: textTheme.bodySmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textSecondary,
-                              ),
+                          Text(
+                            (c.label != null && c.label!.trim().isNotEmpty)
+                                ? c.label!.trim()
+                                : companyContactPlatformLabel(c.platform),
+                            style: textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textSecondary,
                             ),
+                          ),
                           SelectableText(
                             c.value,
                             style: textTheme.bodyMedium?.copyWith(

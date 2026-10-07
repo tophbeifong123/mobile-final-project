@@ -116,6 +116,43 @@ export class JobsController {
     res.send(buffer);
   }
 
+  @Get(':id/company-cover')
+  @ApiOperation({
+    summary: 'รูปหน้าปกบริษัทบนรายละเอียดงานที่เปิดรับ',
+  })
+  @ApiParam({ name: 'id', format: 'uuid' })
+  @ApiResponse({
+    status: 200,
+    description: 'ไฟล์หน้าปก PNG/JPEG/WEBP/GIF/SVG',
+    content: {
+      'image/png': { schema: { type: 'string', format: 'binary' } },
+      'image/jpeg': { schema: { type: 'string', format: 'binary' } },
+      'image/webp': { schema: { type: 'string', format: 'binary' } },
+      'image/gif': { schema: { type: 'string', format: 'binary' } },
+      'image/svg+xml': { schema: { type: 'string', format: 'binary' } },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'รหัสประกาศไม่ถูกต้อง' })
+  @ApiResponse({ status: 401, description: 'access token ไม่ถูกต้อง' })
+  @ApiResponse({ status: 403, description: 'เฉพาะนักศึกษา' })
+  @ApiResponse({ status: 404, description: 'ไม่พบประกาศหรือรูปหน้าปก' })
+  async getCompanyCover(
+    @CurrentUser() user: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    const { buffer, mimeType } = await this.jobsService.getCompanyCover(
+      user,
+      id,
+    );
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Cache-Control', 'private, no-store');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Content-Security-Policy', "sandbox; default-src 'none'");
+    res.setHeader('Content-Disposition', 'attachment');
+    res.send(buffer);
+  }
+
   @Post(':id/save')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'บันทึกงานที่เปิดรับ ถ้าบันทึกแล้วไม่สร้างซ้ำ' })

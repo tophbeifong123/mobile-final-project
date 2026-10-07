@@ -156,7 +156,7 @@ AuthService ตรวจรหัสผ่านตอนสมัคร: อย
 
 Access token อายุสั้น Refresh token หมุนทุกครั้งที่ใช้ และเก็บเป็นค่า hash Logout คือเพิกถอน refresh token
 
-Password recovery รองรับอีเมลที่ใช้สมัครของ Student และ Company ทุกโดเมน DTO และ PasswordRecoveryService ตรวจรูปแบบอีเมล ไม่ตรวจโดเมนตอนขอลิงก์หรือตอนใช้ token อีเมลรูปแบบถูกต้องได้คำตอบเดียวกันไม่ว่าบัญชีมีอยู่หรือไม่ ระบบส่งลิงก์ไปยังอีเมลที่บันทึกไว้ด้วย SMTP เก็บเฉพาะ SHA-256 ของ token ใน PostgreSQL ใช้ได้ครั้งเดียวภายใน 15 นาที รีเซ็ตรหัสผ่านและเพิกถอน refresh token ใน transaction เดียวใต้ user/token lock พร้อมเพิ่ม `users.token_version` เพื่อยกเลิก access token เดิมทันที ไม่ขึ้นกับ Google Login รายละเอียด SMTP อยู่ใน [PASSWORD_RECOVERY.md](PASSWORD_RECOVERY.md)
+Password recovery รองรับอีเมลที่ใช้สมัครของ Student และ Company ทุกโดเมน DTO และ PasswordRecoveryService ตรวจรูปแบบอีเมล ไม่ตรวจโดเมนตอนขอลิงก์หรือตอนใช้ token อีเมลรูปแบบถูกต้องได้คำตอบเดียวกันไม่ว่าบัญชีมีอยู่หรือไม่ ระบบส่งลิงก์ไปยังอีเมลที่บันทึกไว้ด้วย SMTP ลิงก์เปิด `GET /reset-password` ที่ origin ของ API นี้ เป็นหน้า HTML นอก prefix `/api` และไม่อยู่ใน Swagger token อยู่ท้าย fragment แล้วหน้าเว็บเรียก `POST /api/auth/reset-password` เก็บเฉพาะ SHA-256 ของ token ใน PostgreSQL ใช้ได้ครั้งเดียวภายใน 15 นาที รีเซ็ตรหัสผ่านและเพิกถอน refresh token ใน transaction เดียวใต้ user/token lock พร้อมเพิ่ม `users.token_version` เพื่อยกเลิก access token เดิมทันที ไม่ขึ้นกับ Google Login รายละเอียด SMTP อยู่ใน [PASSWORD_RECOVERY.md](PASSWORD_RECOVERY.md)
 
 ### นักศึกษา
 
@@ -174,6 +174,7 @@ Password recovery รองรับอีเมลที่ใช้สมั�
 | GET | /api/jobs | Home / Job Feed |
 | GET | /api/jobs/:id | Job Detail |
 | GET | /api/jobs/:id/company-logo | โลโก้บริษัทบนฟีด รายละเอียดงาน และ Saved Jobs เฉพาะประกาศที่เปิดรับและนักศึกษาที่ login แล้ว |
+| GET | /api/jobs/:id/company-cover | รูปหน้าปกบริษัทบนรายละเอียดงาน เฉพาะประกาศที่เปิดรับและนักศึกษาที่ login แล้ว |
 | POST, DELETE | /api/jobs/:id/save | Save จาก Job Detail |
 | GET | /api/jobs/saved | Saved Jobs |
 | POST | /api/jobs/:id/applications | Apply Job |
@@ -192,7 +193,7 @@ Password recovery รองรับอีเมลที่ใช้สมั�
 
 Route `GET /api/jobs/saved` ต้องประกาศก่อน `GET /api/jobs/:id` เพื่อไม่ให้คำว่า `saved` ถูกจับเป็น id
 
-`GET /api/jobs/:id` join โปรไฟล์บริษัทล่าสุดและคืน `companyWebsiteUrl`, `companySize`, `companyPerks`, `companyLocation`, `companyLogoAvailable` ร่วมกับชื่อ ประเภทกิจการ และคำอธิบาย ไม่เปิดเผย object key ของโลโก้ให้นักศึกษา โหลดโลโก้ผ่านเส้นทางประกาศที่ตรวจ role และสถานะงานก่อนอ่าน storage รองรับ PNG/JPEG/WEBP/GIF/SVG และคืน 404 เมื่อไม่มีไฟล์ งานปิดแล้วไม่สามารถใช้เส้นทางนี้ได้
+`GET /api/jobs/:id` join โปรไฟล์บริษัทล่าสุดและคืน `companyWebsiteUrl`, `companyContactLinks`, `companySize`, `companyPerks`, `companyLocation`, `companyLogoAvailable`, `companyCoverAvailable` ร่วมกับชื่อ ประเภทกิจการ คำอธิบาย `createdAt` และ `deadline` ไม่เปิดเผย object key ของโลโก้หรือรูปหน้าปกให้นักศึกษา โหลดไฟล์ผ่านเส้นทางประกาศที่ตรวจ role และสถานะงานก่อนอ่าน storage รองรับ PNG/JPEG/WEBP/GIF/SVG และคืน 404 เมื่อไม่มีไฟล์ งานปิดแล้วไม่สามารถใช้เส้นทางนี้ได้
 
 Flutter โหลดรายละเอียดใหม่เมื่อกลับมาเปิดหน้าและโหลดโลโก้ด้วย Dio ที่มี token ไม่ใช้ URL รูปแบบสาธารณะหรือเพิ่มหน้าโปรไฟล์บริษัท แสดงตัวอักษรชื่อบริษัทแทนเมื่อไม่มีโลโก้หรือโหลดล้มเหลว; SVG แสดงด้วย `flutter_svg`
 
@@ -220,7 +221,7 @@ Flutter โหลดรายละเอียดใหม่เมื่อก
 
 `PATCH /api/companies/me` รับ `provinceId` และ `location` (ที่อยู่สั้น) ไม่รับพิกัดสำนักงาน
 
-`PATCH /api/companies/me` บันทึกเว็บไซต์ ขนาดองค์กร สวัสดิการ และที่อยู่ด้วยคอลัมน์เดิม เว็บไซต์ตรวจใน CompaniesService: ว่างได้ หรือ URL HTTP/HTTPS แบบเต็มที่ไม่มี credentials ค่าไม่ถูกต้องคืน 400 พร้อมเหตุผลโดยไม่บันทึกข้อมูลส่วนอื่น Swagger ระบุฟิลด์และกติกานี้ที่ `/api/docs`
+`PATCH /api/companies/me` บันทึกเว็บไซต์ ช่องทางติดต่อ ขนาดองค์กร สวัสดิการ และที่อยู่ด้วยคอลัมน์เดิม เว็บไซต์ตรวจใน CompaniesService: ว่างได้ หรือ URL HTTP/HTTPS แบบเต็มที่ไม่มี credentials ค่าไม่ถูกต้องคืน 400 พร้อมเหตุผลโดยไม่บันทึกข้อมูลส่วนอื่น ช่องทางติดต่อเป็น jsonb ไม่เกิน 8 รายการ ประเภท `phone` `email` `line` `linkedin` `facebook` `instagram` `other` รายการว่างล้างค่าได้ ค่าไม่ถูกต้องไม่บันทึก Swagger ระบุฟิลด์และกติกานี้ที่ `/api/docs`
 
 ### Health
 

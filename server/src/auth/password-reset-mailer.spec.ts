@@ -50,11 +50,12 @@ describe('PasswordResetMailer', () => {
         from: gmail.SMTP_FROM,
         to: 'student@example.com',
         text: expect.stringContaining(
-          `https://internfinder.example/app/#/reset-password?token=${'a'.repeat(64)}`,
+          `https://internfinder.example/app/reset-password#token=${'a'.repeat(64)}`,
         ),
       }),
     );
     expect(transport.sendMail.mock.calls[0][0].text).not.toContain('discard=1');
+    expect(transport.sendMail.mock.calls[0][0].text).not.toContain('?token=');
   });
 
   it('uses implicit TLS for Gmail port 465 and reuses and closes its transport', async () => {

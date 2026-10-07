@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { ContactLinkDto } from '../../students/dto/contact-link.dto.js';
 
 export class CompanyProfileDto {
   @ApiProperty({ example: 'Tech Corp' })
@@ -38,6 +39,14 @@ export class CompanyProfileDto {
 
   @ApiProperty({ example: 'https://www.bitkub.com', default: '' })
   websiteUrl: string;
+
+  @ApiProperty({
+    type: () => [ContactLinkDto],
+    description:
+      'ช่องทางติดต่อที่บริษัทบันทึกเอง เช่น โทร อีเมล Line; ไม่ใช่อีเมลที่ใช้เข้าสู่ระบบ',
+    default: [],
+  })
+  contactLinks: ContactLinkDto[];
 
   @ApiProperty({ example: '201-500 คน', default: '' })
   companySize: string;
