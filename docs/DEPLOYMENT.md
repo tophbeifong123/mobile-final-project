@@ -62,6 +62,14 @@ az account set --subscription "<subscription-id>"
 
 ถ้าจะให้ Azure Monitor ยิง Discord ให้ตั้ง `DISCORD_WEBHOOK_URL` ก่อนรัน bootstrap `SENTRY_DSN` และ `SMTP_PASSWORD` ตั้งเป็นตัวแปรสภาพแวดล้อมของเครื่องก่อนรันได้ ถ้าไม่ตั้ง สคริปต์เก็บค่า `disabled` ซึ่งแอปจะไม่ส่ง Sentry และจะไม่พยายามเข้า SMTP จนกว่าจะมี `SMTP_USER`
 
+Alert ทั้ง 9 กฎอยู่ใน `infra/alerts.bicep` Discord ไม่รับ common alert schema ของ Azure Monitor action group จึงส่งเข้า Logic App `internfinder-discord-relay` ซึ่งแปลงเป็น embed ก่อนโพสต์ ไฟล์นี้ deploy แยกได้โดยไม่แตะ Container App ใช้เมื่อเพิ่มหรือเปลี่ยน webhook ภายหลัง
+
+```powershell
+az deployment group create -g internfinder-prod -n internfinder-alerts --template-file infra/alerts.bicep --parameters discordWebhookUrl=<webhook> postgresName=<postgres-server-name>
+```
+
+Azure for Students ส่ง test notification จาก action group ไม่ได้ ทดสอบด้วยการ POST payload แบบ common alert schema เข้า callback URL ของ Logic App แทน
+
 อิมเมจตัวแรกเป็น placeholder อ่านพอร์ตไม่ตรงกับ API จริง revision นี้จะไม่ผ่าน readiness จนกว่า workflow ของ `main` จะใส่ภาพของเซิร์ฟเวอร์
 
 ## Sentry
