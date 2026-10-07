@@ -267,7 +267,8 @@ export class AuthRepository {
           fullName: '',
           universityId: null,
           customUniversityName: null,
-          major: '',
+          majorId: null,
+          customMajorName: null,
           skills: [],
         }),
       );

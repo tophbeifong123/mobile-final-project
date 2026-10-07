@@ -107,7 +107,8 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | full_name | varchar | |
 | university_id | uuid | null ได้, FK → universities.id |
 | custom_university_name | varchar(255) | null ได้; ใช้เมื่อไม่ได้เลือกจากมาสเตอร์ |
-| major | varchar | สาขา |
+| major_id | uuid | null ได้, FK → majors.id |
+| custom_major_name | varchar(255) | null ได้; ใช้เมื่อไม่ได้เลือกจากมาสเตอร์ |
 | skills | text[] | ทักษะ |
 | bio | text | ข้อมูลเกี่ยวกับฉัน / แนะนำตัว |
 | contact_links | jsonb | รายการช่องทางติดต่อ (phone, line, linkedin ฯลฯ) |
@@ -119,6 +120,15 @@ Access token เป็น JWT ไม่เก็บในตารางนี�
 | updated_at | timestamptz | |
 
 `university_id` และ `custom_university_name` มี CHECK constraint `university_id IS NULL OR custom_university_name IS NULL`; ทั้งคู่ null หมายถึงยังไม่ได้ระบุ. Migration `1791244800000-add-student-university-master` สร้างมาสเตอร์และ backfill ชื่อเดิมโดย normalize whitespace/periods แล้ว match แบบ exact กับชื่อหรือ alias; ชื่อ unmatched/ambiguous เก็บเป็น custom โดยไม่เดา. Rollback คืนชื่อที่แสดงปัจจุบันลงคอลัมน์เดิมก่อนถอด FK/คอลัมน์ใหม่และตารางมาสเตอร์.
+
+ตาราง `majors` เก็บชื่อสาขาแนะนำ. `major_id` และ `custom_major_name` อยู่ภายใต้ CHECK ที่ห้ามมีค่าพร้อมกัน; migration เพิ่ม unique master, backfill ชื่อที่ตรงแบบ exact และเก็บชื่ออื่นเป็น custom. Rollback รวมชื่อที่แสดงกลับลงคอลัมน์ `major` เดิมก่อนลบ schema ใหม่.
+
+| majors column | type | notes |
+|---|---|---|
+| id | uuid | PK, deterministic จากชื่อมาตรฐาน |
+| name_th | varchar(255) | unique, ชื่อสำหรับแสดง |
+
+ค้นหาคำแนะนำผ่าน `GET /api/majors?q=...`; รายการเป็นคำแนะนำ ไม่ใช่ allowlist สำหรับค่าที่โปรไฟล์บันทึกได้.
 
 มาสเตอร์ seed จาก [MHESI Open Data: รายชื่อสถาบันอุดมศึกษา](https://data.mhesi.go.th/dataset/univ_uni_11_03) (academic year 2563; metadata ระบุข้อมูลล่าสุด 1 มีนาคม 2564 และปรับปรุงชุดข้อมูล 24 สิงหาคม 2568). Migration ฝัง snapshot ไม่เรียก network. ชื่อวิทยาเขตที่ระบุชัดถูกรวมที่สถาบันต้นสังกัด และเพิ่ม aliases สำหรับคำย่อที่ค้นหาบ่อย เช่น `ม.อ.` และ `PSU`. เนื่องจาก metadata ของแหล่งข้อมูลระบุปีการศึกษา 2563 ให้ผู้ตรวจยืนยันว่าขอบเขต snapshot นี้เพียงพอก่อน release.
 

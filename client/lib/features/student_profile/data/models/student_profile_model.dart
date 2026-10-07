@@ -111,6 +111,8 @@ class StudentProfileModel {
     this.avatarObjectKey,
     this.universityId,
     this.customUniversityName,
+    this.majorId,
+    this.customMajorName,
   });
 
   factory StudentProfileModel.fromJson(Map<String, dynamic> json) {
@@ -120,6 +122,8 @@ class StudentProfileModel {
       universityId: json['universityId'] as String?,
       customUniversityName: json['customUniversityName'] as String?,
       major: json['major'] as String? ?? '',
+      majorId: json['majorId'] as String?,
+      customMajorName: json['customMajorName'] as String?,
       skills: (json['skills'] as List<dynamic>? ?? const [])
           .map((skill) => skill as String)
           .toList(),
@@ -160,6 +164,8 @@ class StudentProfileModel {
       avatarObjectKey: entity.avatarObjectKey,
       universityId: entity.universityId,
       customUniversityName: entity.customUniversityName,
+      majorId: entity.majorId,
+      customMajorName: entity.customMajorName,
     );
   }
 
@@ -167,6 +173,8 @@ class StudentProfileModel {
   final String university;
   final String? universityId;
   final String? customUniversityName;
+  final String? majorId;
+  final String? customMajorName;
   final String major;
   final List<String> skills;
   final String bio;
@@ -182,7 +190,8 @@ class StudentProfileModel {
       'fullName': fullName,
       'universityId': universityId,
       'customUniversityName': customUniversityName,
-      'major': major,
+      'majorId': majorId,
+      'customMajorName': customMajorName,
       'skills': skills,
       'bio': bio,
       'contactLinks': contactLinks.map((c) => c.toJson()).toList(),
@@ -207,6 +216,8 @@ class StudentProfileModel {
       avatarObjectKey: avatarObjectKey,
       universityId: universityId,
       customUniversityName: customUniversityName,
+      majorId: majorId,
+      customMajorName: customMajorName,
     );
   }
 }

@@ -8,6 +8,7 @@ import '../../data/repositories/student_profile_repository_impl.dart';
 import '../../domain/entities/student_profile.dart';
 import '../../domain/repositories/student_profile_repository.dart';
 import '../../domain/entities/university.dart';
+import '../../domain/entities/major.dart';
 
 final studentProfileRepositoryProvider = Provider<StudentProfileRepository>((
   ref,
@@ -63,6 +64,12 @@ final universitiesSearchProvider = FutureProvider.autoDispose
           .watch(studentProfileRepositoryProvider)
           .searchUniversities(query);
     });
+
+final majorsSearchProvider = FutureProvider.autoDispose
+    .family<List<Major>, String>(
+      (ref, query) =>
+          ref.watch(studentProfileRepositoryProvider).searchMajors(query),
+    );
 
 final studentAvatarBytesProvider = FutureProvider.family<List<int>?, String?>((
   ref,

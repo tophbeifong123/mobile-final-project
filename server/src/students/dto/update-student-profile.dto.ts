@@ -38,12 +38,17 @@ export class UpdateStudentProfileDto {
   @MaxLength(255)
   customUniversityName?: string | null;
 
-  @ApiProperty({ example: 'วิทยาการคอมพิวเตอร์', maxLength: 255 })
+  @ApiProperty({ format: 'uuid', nullable: true, required: false, description: 'ID จาก GET /api/majors; ส่ง null เพื่อล้างค่า' })
+  @IsOptional()
+  @IsUUID()
+  majorId?: string | null;
+
+  @ApiProperty({ example: 'สาขาอื่น', maxLength: 255, nullable: true, required: false, description: 'ใช้เมื่อสาขาไม่มีในรายการ' })
+  @IsOptional()
   @Transform(trimString)
   @IsString()
-  @MinLength(1)
   @MaxLength(255)
-  major: string;
+  customMajorName?: string | null;
 
   @ApiProperty({ type: [String], example: ['Flutter', 'SQL'] })
   @Transform(({ value }: { value: unknown }) => {

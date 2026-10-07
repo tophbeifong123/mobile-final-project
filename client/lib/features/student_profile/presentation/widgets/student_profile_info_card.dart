@@ -12,7 +12,9 @@ class StudentProfileInfoCard extends StatelessWidget {
     required this.universityName,
     required this.onChooseUniversity,
     required this.onClearUniversity,
-    required this.majorController,
+    required this.majorName,
+    required this.onChooseMajor,
+    required this.onClearMajor,
     required this.requiredValidator,
   });
 
@@ -20,7 +22,9 @@ class StudentProfileInfoCard extends StatelessWidget {
   final String universityName;
   final VoidCallback onChooseUniversity;
   final VoidCallback onClearUniversity;
-  final TextEditingController majorController;
+  final String majorName;
+  final VoidCallback onChooseMajor;
+  final VoidCallback onClearMajor;
   final FormFieldValidator<String>? requiredValidator;
 
   @override
@@ -128,12 +132,39 @@ class StudentProfileInfoCard extends StatelessWidget {
           ),
           const Gap(12),
 
-          AppTextField(
-            controller: majorController,
-            textInputAction: TextInputAction.next,
-            label: 'สาขา',
-            prefixIcon: const Icon(Icons.menu_book_rounded, size: 18),
-            validator: requiredValidator,
+          InkWell(
+            key: const Key('student-major-picker'),
+            onTap: onChooseMajor,
+            borderRadius: BorderRadius.circular(12),
+            child: InputDecorator(
+              decoration: InputDecoration(
+                labelText: 'สาขา',
+                prefixIcon: const Icon(Icons.menu_book_rounded, size: 18),
+                suffixIcon: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.search),
+                    if (majorName.isNotEmpty)
+                      IconButton(
+                        key: const Key('student-clear-major'),
+                        tooltip: 'ล้างสาขา',
+                        onPressed: onClearMajor,
+                        icon: const Icon(Icons.close),
+                      ),
+                  ],
+                ),
+                border: const OutlineInputBorder(),
+              ),
+              child: Text(
+                majorName.isEmpty ? 'เลือกหรือค้นหาสาขา' : majorName,
+                style: TextStyle(
+                  color: majorName.isEmpty
+                      ? NeoColors.mutedInk
+                      : NeoColors.inkSolid,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
           ),
         ],
       ),

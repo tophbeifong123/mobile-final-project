@@ -11,6 +11,7 @@ import { UpdateStudentProfileDto } from './dto/update-student-profile.dto.js';
 import { StudentsRepository, TooManyOtherDocumentsError } from './students.repository.js';
 import { StudentsService } from './students.service.js';
 import { UniversitiesService } from '../universities/universities.service.js';
+import { MajorsService } from '../majors/majors.service.js';
 
 describe('StudentsService', () => {
   const repository = {
@@ -18,6 +19,7 @@ describe('StudentsService', () => {
     updateByUserId: vi.fn(),
     updateAvatar: vi.fn(),
     resolveDisplayUniversity: vi.fn(),
+    resolveDisplayMajor: vi.fn(),
     findCv: vi.fn(),
     saveDocument: vi.fn(),
     isObjectReferencedByApplication: vi.fn(),
@@ -32,6 +34,7 @@ describe('StudentsService', () => {
     delete: vi.fn(),
   };
   const universities = { requireById: vi.fn() };
+  const majors = { requireById: vi.fn() };
 
   let service: StudentsService;
 
@@ -41,7 +44,8 @@ describe('StudentsService', () => {
     fullName: 'มีนา',
     universityId: null,
     customUniversityName: 'PSU',
-    major: 'IT',
+    majorId: null,
+    customMajorName: 'IT',
     skills: ['Flutter'],
     portfolioUrl: null,
     resumeFileName: 'resume.pdf',
@@ -53,6 +57,7 @@ describe('StudentsService', () => {
     repository.resolveDisplayUniversity.mockImplementation(async (profile) =>
       profile.customUniversityName ?? (profile.universityId ? 'มหาวิทยาลัยสงขลานครินทร์' : ''),
     );
+    repository.resolveDisplayMajor.mockImplementation(async (profile) => profile.customMajorName ?? '');
     universities.requireById.mockResolvedValue({ id: 'uni-psu', nameTh: 'มหาวิทยาลัยสงขลานครินทร์' });
     repository.findCv.mockResolvedValue(null);
     storage.delete.mockResolvedValue(undefined);
@@ -62,6 +67,7 @@ describe('StudentsService', () => {
         { provide: StudentsRepository, useValue: repository },
         { provide: StorageService, useValue: storage },
         { provide: UniversitiesService, useValue: universities },
+        { provide: MajorsService, useValue: majors },
       ],
     }).compile();
     service = module.get(StudentsService);
@@ -116,13 +122,14 @@ describe('StudentsService', () => {
       fullName: 'มีนา',
       universityId: null,
       customUniversityName: 'PSU',
-      major: 'IT',
+      majorId: null,
+      customMajorName: 'IT',
       skills: ['Flutter', 'SQL'],
       portfolioUrl: null,
     });
     const dto = new UpdateStudentProfileDto();
     dto.fullName = '  มีนา  ';
-    dto.major = ' IT ';
+    dto.customMajorName = ' IT ';
     dto.skills = [' Flutter ', '', 'SQL'];
     dto.portfolioUrl = '   ';
 
@@ -132,7 +139,8 @@ describe('StudentsService', () => {
       fullName: 'มีนา',
       universityId: undefined,
       customUniversityName: undefined,
-      major: 'IT',
+      majorId: null,
+      customMajorName: 'IT',
       skills: ['Flutter', 'SQL'],
       portfolioUrl: null,
     });
@@ -143,7 +151,6 @@ describe('StudentsService', () => {
   it('rejects a company updating a student profile', async () => {
     const dto = new UpdateStudentProfileDto();
     dto.fullName = 'บริษัท';
-    dto.major = 'IT';
     dto.skills = [];
 
     await expect(service.updateMine(company, dto)).rejects.toBeInstanceOf(
@@ -155,10 +162,10 @@ describe('StudentsService', () => {
   it('selects a master university and clears a previous custom value', async () => {
     repository.updateByUserId.mockResolvedValue({
       fullName: 'มีนา', universityId: 'uni-psu', customUniversityName: null,
-      major: 'IT', skills: [], portfolioUrl: null,
+      majorId: null, customMajorName: 'IT', skills: [], portfolioUrl: null,
     });
     const dto = new UpdateStudentProfileDto();
-    dto.fullName = 'มีนา'; dto.universityId = 'uni-psu'; dto.major = 'IT'; dto.skills = [];
+    dto.fullName = 'มีนา'; dto.universityId = 'uni-psu'; dto.customMajorName = 'IT'; dto.skills = [];
 
     const result = await service.updateMine(student, dto);
 
@@ -172,10 +179,36 @@ describe('StudentsService', () => {
   it('rejects both master and custom university values before writing', async () => {
     const dto = new UpdateStudentProfileDto();
     dto.fullName = 'มีนา'; dto.universityId = 'uni-psu';
-    dto.customUniversityName = 'ชื่อที่พิมพ์เอง'; dto.major = 'IT'; dto.skills = [];
+    dto.customUniversityName = 'ชื่อที่พิมพ์เอง'; dto.customMajorName = 'IT'; dto.skills = [];
 
     await expect(service.updateMine(student, dto)).rejects.toBeInstanceOf(BadRequestException);
     expect(repository.updateByUserId).not.toHaveBeenCalled();
+  });
+
+  it('selects a master major and clears a previous custom value', async () => {
+    majors.requireById.mockResolvedValue({ id: 'major-cs', nameTh: 'วิทยาการคอมพิวเตอร์' });
+    repository.updateByUserId.mockResolvedValue({ ...stored, majorId: 'major-cs', customMajorName: null });
+    const dto = new UpdateStudentProfileDto();
+    dto.fullName = 'มีนา'; dto.majorId = 'major-cs'; dto.skills = [];
+    const result = await service.updateMine(student, dto);
+    expect(majors.requireById).toHaveBeenCalledWith('major-cs');
+    expect(repository.updateByUserId).toHaveBeenCalledWith('user-1', expect.objectContaining({ majorId: 'major-cs', customMajorName: null }));
+    expect(result.majorId).toBe('major-cs');
+  });
+
+  it('rejects both master and custom major values before writing', async () => {
+    const dto = new UpdateStudentProfileDto();
+    dto.fullName = 'มีนา'; dto.majorId = 'major-cs'; dto.customMajorName = 'สาขาเอง'; dto.skills = [];
+    await expect(service.updateMine(student, dto)).rejects.toBeInstanceOf(BadRequestException);
+    expect(repository.updateByUserId).not.toHaveBeenCalled();
+  });
+
+  it('clears both major choices when both values are null', async () => {
+    const dto = new UpdateStudentProfileDto();
+    dto.fullName = 'มีนา'; dto.majorId = null; dto.customMajorName = null; dto.skills = [];
+    repository.updateByUserId.mockResolvedValue({ ...stored, majorId: null, customMajorName: null });
+    await service.updateMine(student, dto);
+    expect(repository.updateByUserId).toHaveBeenCalledWith('user-1', expect.objectContaining({ majorId: null, customMajorName: null }));
   });
 
   describe('uploadResume', () => {

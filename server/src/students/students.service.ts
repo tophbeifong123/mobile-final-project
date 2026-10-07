@@ -13,6 +13,7 @@ import { type UploadedFilePayload } from '../storage/uploaded-file.interface.js'
 import { UniversitiesService } from '../universities/universities.service.js';
 import { ResumeResponseDto } from './dto/resume-response.dto.js';
 import { StudentProfileDto } from './dto/student-profile.dto.js';
+import { MajorsService } from '../majors/majors.service.js';
 import { UpdateStudentProfileDto } from './dto/update-student-profile.dto.js';
 import { StudentDocumentType } from './student-document.entity.js';
 import {
@@ -41,6 +42,7 @@ export class StudentsService {
     private readonly studentsRepository: StudentsRepository,
     private readonly storageService: StorageService,
     private readonly universitiesService: UniversitiesService,
+    private readonly majorsService: MajorsService,
   ) {}
 
   async getMine(user: AuthUser): Promise<StudentProfileDto> {
@@ -78,6 +80,18 @@ export class StudentsService {
       }
     }
 
+    let majorId: string | null | undefined;
+    let customMajorName: string | null | undefined;
+    if (dto.majorId !== undefined || dto.customMajorName !== undefined) {
+      const custom = dto.customMajorName?.trim() || null;
+      if (dto.majorId != null && custom != null) {
+        throw new BadRequestException('เลือกสาขาจากรายการหรือกรอกชื่อเองได้อย่างใดอย่างหนึ่ง');
+      }
+      majorId = dto.majorId ?? null;
+      customMajorName = majorId ? null : custom;
+      if (majorId) await this.majorsService.requireById(majorId);
+    }
+
     const contactLinks = dto.contactLinks
       ? dto.contactLinks.map((item) => ({
           id: item.id || randomUUID(),
@@ -105,7 +119,8 @@ export class StudentsService {
       fullName: dto.fullName.trim(),
       universityId,
       customUniversityName,
-      major: dto.major.trim(),
+      majorId,
+      customMajorName,
       skills: dto.skills
         .map((skill) => skill.trim())
         .filter((skill) => skill.length > 0),
@@ -478,6 +493,7 @@ export class StudentsService {
     const dto = toDto(
       profile,
       await this.studentsRepository.resolveDisplayUniversity(profile),
+      await this.studentsRepository.resolveDisplayMajor(profile),
     );
 
     const cv = await this.studentsRepository.findCv(profile.id);
@@ -490,11 +506,11 @@ export class StudentsService {
 
 function toDto(
   profile: {
-    id?: string;
     universityId?: string | null;
     customUniversityName?: string | null;
     fullName: string;
-    major: string;
+    majorId?: string | null;
+    customMajorName?: string | null;
     skills: string[];
     bio?: string | null;
     contactLinks?: Array<{
@@ -515,14 +531,17 @@ function toDto(
     avatarObjectKey?: string | null;
   },
   university = '',
+  major = '',
 ): StudentProfileDto {
   const dto = new StudentProfileDto();
-
+  // Return only the student's own saved identity; blank values stay blank.
   dto.fullName = profile.fullName.trim();
   dto.universityId = profile.universityId ?? null;
   dto.customUniversityName = profile.customUniversityName ?? null;
   dto.university = university.trim();
-  dto.major = profile.major;
+  dto.majorId = profile.majorId ?? null;
+  dto.customMajorName = profile.customMajorName ?? null;
+  dto.major = major.trim();
   dto.skills = profile.skills;
   dto.bio = profile.bio ?? '';
   dto.contactLinks = (profile.contactLinks ?? []).map((contact) => ({

@@ -67,6 +67,7 @@ Prefix ของ API คือ `/api` ตาม `app.setGlobalPrefix('api')` ใ
 | CompaniesModule | โปรไฟล์บริษัท, logo, จังหวัดและที่อยู่สั้น, ตัวเลขแดชบอร์ด |
 | ProvincesModule | มาสเตอร์จังหวัด 77 จังหวัดและชื่อเรียก |
 | UniversitiesModule | ค้นหามาสเตอร์สถาบันอุดมศึกษาไทยด้วยชื่อเต็มและ aliases |
+| MajorsModule | ค้นหามาสเตอร์สาขายอดนิยมเพื่อใช้เป็นคำแนะนำ |
 | JobsModule | ประกาศ, feed, บันทึกงาน, เปิดหรือปิดรับสมัคร |
 | ApplicationsModule | สมัครงาน, timeline, เปลี่ยนสถานะ |
 | NotificationsModule | แจ้งเตือนในแอปและ BullMQ worker |
@@ -184,6 +185,8 @@ Password recovery รองรับอีเมลที่ใช้สมั�
 
 `PATCH /api/students/me` รับ `universityId` หรือ `customUniversityName` อย่างใดอย่างหนึ่ง. ละสองฟิลด์ไว้เพื่อคงเดิม, ส่งทั้งคู่ `null` เพื่อล้างค่า; response คืนสองฟิลด์นี้และ `university` ที่ derive เป็นชื่อเต็มสำหรับแสดง.
 
+สาขาใช้รูปแบบเดียวกัน: `GET /api/majors?q=...` คืนคำแนะนำ และ PATCH รับ `majorId` หรือ `customMajorName`; ส่งทั้งคู่ `null` เพื่อล้างค่า. response คง `major` เป็นชื่อสำหรับแสดงผล.
+
 ค่า `province` และชื่อจังหวัดที่บันทึกในประกาศถูกแปลงเป็นชื่อมาตรฐานเดียวกันก่อนกรอง เพื่อรองรับชื่อเรียกอย่าง `กทม.` และข้อมูลเก่าอย่าง `กรุงเทพฯ`
 
 Route `GET /api/jobs/saved` ต้องประกาศก่อน `GET /api/jobs/:id` เพื่อไม่ให้คำว่า `saved` ถูกจับเป็น id
@@ -278,6 +281,7 @@ submitted → reviewing → accepted
 รายละเอียด lock และ transaction อยู่ใน [DATABASE.md](DATABASE.md)
 
 Profile update ตรวจว่าเลือก ID ที่มีอยู่จริงหรือชื่อ custom ที่ trim แล้วอย่างใดอย่างหนึ่ง; database บังคับ FK และ CHECK constraint ซ้ำอีกชั้น. Applicant list/detail คืนชื่อมหาวิทยาลัยปัจจุบันที่ resolve จาก master/custom.
+สาขาก็ตรวจ master ID/custom แบบ exclusive ที่ service และ database; Applicant list/detail resolve ชื่อจาก master หรือ custom เช่นเดียวกัน.
 
 ## 8. Flutter
 
