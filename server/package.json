@@ -70,5 +70,11 @@
     "typescript": "^6.0.2",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^4.1.2"
+  },
+  "overrides": {
+    "brace-expansion": "5.0.12",
+    "multer": "2.4.0",
+    "picomatch": "4.0.7",
+    "proxy-addr": "2.0.8"
   }
 }
