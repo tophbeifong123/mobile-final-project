@@ -333,6 +333,7 @@ Future<void> _scrollToCoverLetter(WidgetTester tester) {
   return tester.scrollUntilVisible(
     find.byKey(const Key('apply-cover-letter')),
     300,
+    scrollable: find.byType(ListView),
   );
 }
 

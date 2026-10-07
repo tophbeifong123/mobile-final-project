@@ -91,7 +91,10 @@ class CompanyContactLinksEditor extends StatelessWidget {
   }) async {
     final saved = await showDialog<ContactLink>(
       context: context,
-      builder: (context) => _ContactDialog(existing: existing),
+      builder: (context) => _ContactDialog(
+        existing: existing,
+        initialPlatform: links.isEmpty ? null : links.last.platform,
+      ),
     );
     if (saved == null) return;
     final next = List<ContactLink>.from(links);
@@ -176,9 +179,10 @@ class _ContactRow extends StatelessWidget {
 }
 
 class _ContactDialog extends StatefulWidget {
-  const _ContactDialog({this.existing});
+  const _ContactDialog({this.existing, this.initialPlatform});
 
   final ContactLink? existing;
+  final String? initialPlatform;
 
   @override
   State<_ContactDialog> createState() => _ContactDialogState();
@@ -193,9 +197,11 @@ class _ContactDialogState extends State<_ContactDialog> {
   @override
   void initState() {
     super.initState();
-    final existing = widget.existing?.platform.toLowerCase();
-    _platform = companyContactPlatformLabels.containsKey(existing)
-        ? existing!
+    final platform =
+        widget.existing?.platform.toLowerCase() ??
+        widget.initialPlatform?.toLowerCase();
+    _platform = companyContactPlatformLabels.containsKey(platform)
+        ? platform!
         : 'phone';
     _label = TextEditingController(text: widget.existing?.label ?? '');
     _value = TextEditingController(text: widget.existing?.value ?? '');
@@ -212,6 +218,7 @@ class _ContactDialogState extends State<_ContactDialog> {
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
     final availableHeight = media.size.height - media.viewInsets.bottom - 48;
+    final isCompact = media.size.width < 360;
     final title = widget.existing == null
         ? 'เพิ่มช่องทางติดต่อ'
         : 'แก้ไขช่องทางติดต่อ';
@@ -219,13 +226,16 @@ class _ContactDialogState extends State<_ContactDialog> {
     return Dialog(
       backgroundColor: Colors.transparent,
       elevation: 0,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      insetPadding: EdgeInsets.symmetric(
+        horizontal: isCompact ? 8 : 16,
+        vertical: 24,
+      ),
       child: Container(
         constraints: BoxConstraints(
           maxWidth: 420,
           maxHeight: availableHeight.clamp(180, media.size.height).toDouble(),
         ),
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(isCompact ? 12 : 20),
         decoration: BoxDecoration(
           color: NeoColors.pureWhite,
           borderRadius: BorderRadius.circular(18),
