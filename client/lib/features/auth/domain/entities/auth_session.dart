@@ -20,8 +20,15 @@ class AuthSession {
 }
 
 class GoogleAuthResult {
-  const GoogleAuthResult({this.roleRequired = false, this.error});
+  const GoogleAuthResult({
+    this.roleRequired = false,
+    this.passwordLinkRequired = false,
+    this.error,
+    this.email,
+  });
 
   final bool roleRequired;
+  final bool passwordLinkRequired;
   final String? error;
+  final String? email;
 }

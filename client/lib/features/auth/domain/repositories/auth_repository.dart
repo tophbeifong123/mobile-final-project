@@ -16,5 +16,10 @@ abstract class AuthRepository {
     UserRole? role,
   });
 
+  Future<AuthSession> linkGoogle({
+    required String idToken,
+    required String password,
+  });
+
   Future<void> logout();
 }

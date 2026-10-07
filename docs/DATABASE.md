@@ -59,7 +59,7 @@ applications ||--o{ outbox_messages : "enqueue on status change"
 | created_at | timestamptz | |
 | updated_at | timestamptz | |
 
-บัญชี Google-only มี password_hash เป็น null และ password login ต้องปฏิเสธอย่างปลอดภัยเมื่อ hash เป็น null. ตาราง auth_identities เก็บ provider (google), provider_subject (Google sub), user_id และเวลาสร้าง; unique (provider, provider_subject) และ FK ไป users. Email ยังคง unique ใน users; ห้ามผูกบัญชีเดิมอัตโนมัติจาก email.
+บัญชี Google-only มี password_hash เป็น null และ password login ต้องปฏิเสธอย่างปลอดภัยเมื่อ hash เป็น null. ตาราง auth_identities เก็บ provider (google), provider_subject (Google sub), user_id และเวลาสร้าง; unique (provider, provider_subject), unique (user_id, provider) และ FK ไป users. Email ยังคง unique ใน users. การผูก Google เข้ากับบัญชีรหัสผ่านเดิมเกิดหลังตรวจรหัสผ่านเท่านั้น ไม่ผูกจาก email โดยอัตโนมัติ.
 
 ### auth_identities
 
@@ -71,7 +71,7 @@ applications ||--o{ outbox_messages : "enqueue on status change"
 | provider_subject | varchar | ค่า sub จาก ID token ที่ verify แล้ว |
 | created_at | timestamptz | |
 
-Unique ที่ (provider, provider_subject) ใช้ระบุตัวผู้ให้บริการ ไม่ใช้ email เป็น identity.
+Unique ที่ (provider, provider_subject) ใช้ระบุตัวผู้ให้บริการ ไม่ใช้ email เป็น identity. Unique ที่ (user_id, provider) ทำให้บัญชีหนึ่งผูก Google ได้หนึ่งรายการ.
 
 ### refresh_tokens
 

@@ -61,8 +61,8 @@ void main() {
       expect(find.text('หรือเข้าสู่ระบบด้วย'), findsOneWidget);
 
       // Social buttons
-      expect(find.text('Google'), findsOneWidget);
-      expect(find.text('GitHub'), findsOneWidget);
+      expect(find.text('เข้าสู่ระบบด้วย Google'), findsOneWidget);
+      expect(find.text('GitHub'), findsNothing);
 
       // Bottom prompt & partner badge
       expect(find.text('ยังไม่มีบัญชีผู้ใช้?'), findsOneWidget);
@@ -330,6 +330,14 @@ class _FakeAuthRepository implements AuthRepository {
   Future<bool> authenticateWithGoogle({
     required String idToken,
     UserRole? role,
+  }) async {
+    throw const AppException('Not implemented in fake');
+  }
+
+  @override
+  Future<AuthSession> linkGoogle({
+    required String idToken,
+    required String password,
   }) async {
     throw const AppException('Not implemented in fake');
   }

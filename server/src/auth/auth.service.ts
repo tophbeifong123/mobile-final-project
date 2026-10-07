@@ -8,8 +8,14 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { QueryFailedError } from 'typeorm';
-import { AuthRepository } from './auth.repository.js';
+import {
+  AuthRepository,
+  GoogleLinkUserMissingError,
+  GoogleSubjectTakenError,
+  UserAlreadyHasDifferentGoogleError,
+} from './auth.repository.js';
 import { type GoogleAuthDto } from './dto/google-auth.dto.js';
+import { type GoogleLinkDto } from './dto/google-link.dto.js';
 import { type GoogleRoleRequiredDto } from './dto/google-role-required.dto.js';
 import { AuthSessionDto } from './dto/auth-session.dto.js';
 import { LoginDto } from './dto/login.dto.js';
@@ -25,8 +31,10 @@ import {
 
 const INVALID_CREDENTIALS = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
 const DUPLICATE_EMAIL = 'อีเมลนี้ถูกใช้แล้ว';
-const GOOGLE_EMAIL_EXISTS =
-  'อีเมลนี้มีบัญชีอยู่แล้ว กรุณาเข้าสู่ระบบด้วยรหัสผ่านเดิม';
+const GOOGLE_LINK_REQUIRED =
+  'อีเมลนี้มีบัญชีอยู่แล้ว กรอกรหัสผ่านเดิมเพื่อผูก Google';
+const GOOGLE_ALREADY_LINKED_ELSEWHERE = 'บัญชีนี้ผูกกับ Google อื่นอยู่แล้ว';
+const GOOGLE_SUBJECT_TAKEN = 'บัญชี Google นี้ถูกใช้แล้ว';
 const INVALID_REFRESH = 'refresh token ใช้ไม่ได้';
 
 @Injectable()
@@ -90,7 +98,7 @@ export class AuthService {
     const email = normalizeEmail(identity.email);
     const emailUser = await this.authRepository.findByEmail(email);
     if (emailUser) {
-      throw new ConflictException(GOOGLE_EMAIL_EXISTS);
+      throw emailCollision(emailUser.passwordHash, email);
     }
 
     if (!dto.role) {
@@ -117,11 +125,67 @@ export class AuthService {
       if (racedIdentity) {
         return this.issueSession(racedIdentity);
       }
-      if (await this.authRepository.findByEmail(email)) {
-        throw new ConflictException(GOOGLE_EMAIL_EXISTS);
+      const existing = await this.authRepository.findByEmail(email);
+      if (existing) {
+        throw emailCollision(existing.passwordHash, email);
       }
-      throw new ConflictException('บัญชี Google นี้ถูกใช้แล้ว');
+      throw new ConflictException(GOOGLE_SUBJECT_TAKEN);
     }
+  }
+
+  async linkGooglePasswordAccount(dto: GoogleLinkDto): Promise<AuthSessionDto> {
+    const identity = await this.googleTokens.verify(dto.idToken);
+    const email = normalizeEmail(identity.email);
+    const linkedUser = await this.authRepository.findByGoogleSubject(
+      identity.subject,
+    );
+    if (linkedUser) {
+      if (normalizeEmail(linkedUser.email) === email) {
+        return this.issueSession(linkedUser);
+      }
+      throw new ConflictException(GOOGLE_SUBJECT_TAKEN);
+    }
+
+    const user = await this.authRepository.findByEmail(email);
+    if (!user?.passwordHash) {
+      throw new UnauthorizedException(INVALID_CREDENTIALS);
+    }
+    const passwordMatches = await this.passwords.verify(
+      dto.password,
+      user.passwordHash,
+    );
+    if (!passwordMatches) {
+      throw new UnauthorizedException(INVALID_CREDENTIALS);
+    }
+
+    try {
+      await this.authRepository.linkGoogleIdentity(user.id, identity.subject);
+    } catch (error) {
+      if (error instanceof GoogleSubjectTakenError) {
+        throw new ConflictException(GOOGLE_SUBJECT_TAKEN);
+      }
+      if (
+        error instanceof UserAlreadyHasDifferentGoogleError ||
+        error instanceof GoogleLinkUserMissingError
+      ) {
+        throw new ConflictException(GOOGLE_ALREADY_LINKED_ELSEWHERE);
+      }
+      if (!isUniqueViolation(error)) {
+        throw error;
+      }
+      const raced = await this.authRepository.findByGoogleSubject(
+        identity.subject,
+      );
+      if (raced?.id === user.id) {
+        return this.issueSession(user);
+      }
+      if (raced) {
+        throw new ConflictException(GOOGLE_SUBJECT_TAKEN);
+      }
+      throw new ConflictException(GOOGLE_ALREADY_LINKED_ELSEWHERE);
+    }
+
+    return this.issueSession(user);
   }
 
   async refresh(dto: RefreshDto): Promise<AuthSessionDto> {
@@ -180,6 +244,23 @@ export class AuthService {
       Date.now() + durationMs(configured, 7 * 24 * 60 * 60 * 1000),
     );
   }
+}
+
+function emailCollision(
+  passwordHash: string | null,
+  email: string,
+): ConflictException {
+  if (passwordHash) {
+    return new ConflictException({
+      code: 'password_link_required',
+      message: GOOGLE_LINK_REQUIRED,
+      email,
+    });
+  }
+  return new ConflictException({
+    code: 'google_email_taken',
+    message: GOOGLE_ALREADY_LINKED_ELSEWHERE,
+  });
 }
 
 function normalizeEmail(email: string): string {

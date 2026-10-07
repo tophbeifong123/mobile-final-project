@@ -10,6 +10,9 @@ import {
 @Index('UQ_auth_identities_provider_subject', ['provider', 'providerSubject'], {
   unique: true,
 })
+@Index('UQ_auth_identities_user_provider', ['userId', 'provider'], {
+  unique: true,
+})
 export class AuthIdentity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
