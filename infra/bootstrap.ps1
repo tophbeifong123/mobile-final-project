@@ -52,7 +52,8 @@ function Write-ParameterFile {
     [string]$Jwt,
     [string]$Sentry,
     [string]$Smtp,
-    [string]$Discord
+    [string]$Discord,
+    [string]$AcrPull = ''
   )
   $payload = [ordered]@{
     '$schema' = 'https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#'
@@ -65,6 +66,7 @@ function Write-ParameterFile {
       sentryDsn = @{ value = $Sentry }
       smtpPassword = @{ value = $Smtp }
       discordWebhookUrl = @{ value = $Discord }
+      acrPullPassword = @{ value = $AcrPull }
     }
   }
   $json = $payload | ConvertTo-Json -Depth 6
@@ -185,7 +187,16 @@ Set-VaultSecret -Name jwt-secret -Value $jwtSecret
 Set-VaultSecret -Name sentry-dsn -Value $sentryDsn
 Set-VaultSecret -Name smtp-password -Value $smtpPassword
 
-Write-ParameterFile -Path $paramFile -Location $chosen -IncludeApp $true -Password $postgresPassword -Jwt $jwtSecret -Sentry $sentryDsn -Smtp $smtpPassword -Discord $discord
+$registry = $names.registryName.value
+$pullToken = 'internfinder-api-pull'
+az acr scope-map create --name $pullToken --registry $registry --repository internfinder-api content/read metadata/read --output none 2>$null
+az acr token create --name $pullToken --registry $registry --scope-map $pullToken --output none 2>$null
+$acrPullPassword = az acr token credential generate --name $pullToken --registry $registry --password1 --query 'passwords[0].value' --output tsv 2>$null
+if ($LASTEXITCODE -ne 0 -or -not $acrPullPassword) {
+  throw 'Could not create the registry pull token.'
+}
+
+Write-ParameterFile -Path $paramFile -Location $chosen -IncludeApp $true -Password $postgresPassword -Jwt $jwtSecret -Sentry $sentryDsn -Smtp $smtpPassword -Discord $discord -AcrPull $acrPullPassword.Trim()
 $app = Invoke-Az @(
   'deployment', 'group', 'create',
   '--resource-group', $resourceGroup,
@@ -222,6 +233,16 @@ $credentials = @(
   @{ name = 'github-main'; subject = "repo:${repo}:ref:refs/heads/main" },
   @{ name = 'github-production'; subject = "repo:${repo}:environment:production" }
 )
+$repoMeta = gh api "repos/$repo" | ConvertFrom-Json
+if ($repoMeta.id -and $repoMeta.owner.id) {
+  $ownerId = $repoMeta.owner.id
+  $repoId = $repoMeta.id
+  $qualified = "$($repoMeta.owner.login)@${ownerId}/$($repoMeta.name)@${repoId}"
+  $credentials += @(
+    @{ name = 'github-main-id'; subject = "repo:${qualified}:ref:refs/heads/main" },
+    @{ name = 'github-production-id'; subject = "repo:${qualified}:environment:production" }
+  )
+}
 foreach ($credential in $credentials) {
   $body = @{
     name = $credential.name

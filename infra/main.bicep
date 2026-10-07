@@ -12,6 +12,12 @@ param image string = 'mcr.microsoft.com/k8se/quickstart:latest'
 @secure()
 param postgresPassword string
 
+@description('ACR token limited to pulling internfinder-api. Express environments cannot pull with a managed identity.')
+param acrPullUsername string = 'internfinder-api-pull'
+
+@secure()
+param acrPullPassword string = ''
+
 @secure()
 @description('Copied into the Container App because Express environments cannot reference Key Vault.')
 param jwtSecret string = ''
@@ -331,9 +337,14 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = if (includeApp)
         allowInsecure: false
       }
       registries: [
-        { server: registry.properties.loginServer, identity: identity.id }
+        {
+          server: registry.properties.loginServer
+          username: acrPullUsername
+          passwordSecretRef: 'acr-pull-password'
+        }
       ]
       secrets: [
+        { name: 'acr-pull-password', value: acrPullPassword }
         { name: 'database-password', value: postgresPassword }
         { name: 'jwt-secret', value: jwtSecret }
         { name: 'sentry-dsn', value: sentryDsn }
@@ -375,6 +386,7 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = if (includeApp)
             {
               type: 'Liveness'
               httpGet: { path: '/api/health', port: 3000 }
+              initialDelaySeconds: 20
               periodSeconds: 30
               failureThreshold: 3
             }
