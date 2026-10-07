@@ -250,6 +250,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(fakeAuthRepo.registerCalls, 1);
+    expect(fakeAuthRepo.lastRegisteredFullName, 'กวิน รัตนพงษ์');
     expect(fakeAuthRepo.lastRegisteredEmail, 'student@university.ac.th');
     expect(fakeAuthRepo.lastRegisteredRole, UserRole.student);
   });
@@ -257,6 +258,7 @@ void main() {
 
 class _FakeAuthRepository implements AuthRepository {
   int registerCalls = 0;
+  String? lastRegisteredFullName;
   String? lastRegisteredEmail;
   UserRole? lastRegisteredRole;
 
@@ -273,11 +275,13 @@ class _FakeAuthRepository implements AuthRepository {
 
   @override
   Future<AuthSession> register({
+    required String fullName,
     required String email,
     required String password,
     required UserRole role,
   }) async {
     registerCalls++;
+    lastRegisteredFullName = fullName;
     lastRegisteredEmail = email;
     lastRegisteredRole = role;
     return AuthSession(

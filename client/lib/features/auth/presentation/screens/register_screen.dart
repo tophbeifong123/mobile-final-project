@@ -72,6 +72,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     final error = await ref
         .read(authControllerProvider.notifier)
         .register(
+          fullName: _nameController.text.trim(),
           email: _emailController.text.trim(),
           password: _passwordController.text,
           role: _role,
