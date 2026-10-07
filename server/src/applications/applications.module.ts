@@ -11,6 +11,7 @@ import { ApplicationsRepository } from './applications.repository.js';
 import { ApplicationsService } from './applications.service.js';
 import { ApplicationStatusEvent } from './entities/application-status-event.entity.js';
 import { Application } from './entities/application.entity.js';
+import { StudentDocument } from '../students/student-document.entity.js';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { Application } from './entities/application.entity.js';
       CompanyProfile,
       Job,
       Notification,
+      StudentDocument,
     ]),
   ],
   controllers: [ApplicationsController],

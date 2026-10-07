@@ -70,6 +70,19 @@ class CompanyJobRepositoryImpl implements CompanyJobRepository {
   }
 
   @override
+  Future<List<int>> downloadApplicantDocument({
+    required String jobId,
+    required String applicationId,
+    required String documentId,
+  }) {
+    return _remote.downloadApplicantDocument(
+      jobId: jobId,
+      applicationId: applicationId,
+      documentId: documentId,
+    );
+  }
+
+  @override
   Future<void> updateApplicantStatus({
     required String jobId,
     required String applicationId,

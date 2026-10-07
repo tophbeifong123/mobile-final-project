@@ -17,6 +17,7 @@ import { RefreshDto } from './dto/refresh.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { User } from './entities/user.entity.js';
 import { PASSWORD_HASHER, type PasswordHasher } from './password-hasher.js';
+import { validateRegistrationPassword } from './registration-password-policy.js';
 import {
   GOOGLE_TOKEN_VERIFIER,
   type GoogleTokenVerifier,
@@ -40,6 +41,7 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto): Promise<AuthSessionDto> {
+    validateRegistrationPassword(dto.password);
     const email = normalizeEmail(dto.email);
     const existing = await this.authRepository.findByEmail(email);
     if (existing) {
