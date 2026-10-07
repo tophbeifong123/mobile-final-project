@@ -168,7 +168,7 @@ Password recovery รองรับอีเมลที่ใช้สมั�
 | GET | /api/students/me/documents | รายการเอกสาร |
 | POST | /api/students/me/documents/cv | อัปโหลด/แทนที่ CV (multipart/form-data, PDF, 10 MiB max) |
 | POST | /api/students/me/documents/transcript | อัปโหลด/แทนที่ transcript (multipart/form-data, PDF, 10 MiB max) |
-| POST | /api/students/me/documents/other | เพิ่มเอกสารอื่น (multipart/form-data, PDF, สูงสุด 3, 10 MiB max) |
+| POST | /api/students/me/documents/other | เพิ่มเอกสารอื่น หรือแทนที่ของตัวเองด้วย documentId แบบ transaction (multipart/form-data, PDF, สูงสุด 3, 10 MiB max) |
 | DELETE | /api/students/me/documents/:id | ลบ CV, transcript หรือเอกสารอื่น; CV ที่ถูกใช้สมัครงานแล้วจะคงไฟล์ snapshot ของใบสมัครไว้ |
 | GET | /api/students/me/documents/:id/file | เปิดเอกสารของตัวเอง |
 | GET | /api/jobs | Home / Job Feed |

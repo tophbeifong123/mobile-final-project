@@ -104,6 +104,7 @@ class ResumeRemoteDataSource {
   }
 
   Future<StudentDocument> uploadDocument({
+    String? replacingId,
     required String kind,
     required String filePath,
     required String fileName,
@@ -126,7 +127,7 @@ class ResumeRemoteDataSource {
             );
       final response = await _dio.post<Map<String, dynamic>>(
         ApiConstants.studentDocumentUpload(kind),
-        data: FormData.fromMap({'file': multipart}),
+        data: FormData.fromMap({'file': multipart, 'documentId': ?replacingId}),
       );
       final json = response.data;
       if (json == null) throw const AppException('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');

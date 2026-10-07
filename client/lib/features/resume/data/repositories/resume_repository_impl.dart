@@ -35,11 +35,13 @@ class ResumeRepositoryImpl implements ResumeRepository {
 
   @override
   Future<StudentDocument> uploadDocument({
+    String? replacingId,
     required String kind,
     required String filePath,
     required String fileName,
     List<int>? bytes,
   }) => _remote.uploadDocument(
+    replacingId: replacingId,
     kind: kind,
     filePath: filePath,
     fileName: fileName,
