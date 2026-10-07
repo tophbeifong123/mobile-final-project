@@ -13,8 +13,9 @@ void main() {
   Future<void> open(
     WidgetTester tester,
     DocumentsRepo repo,
-    Future<PlatformFile?> Function() picker,
-  ) async {
+    Future<PlatformFile?> Function() picker, {
+    StudentDocument? existing,
+  }) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -26,7 +27,8 @@ void main() {
           home: Builder(
             builder: (context) => Scaffold(
               body: TextButton(
-                onPressed: () => StudentDocumentsDialog.show(context),
+                onPressed: () =>
+                    StudentDocumentsDialog.show(context, existing: existing),
                 child: const Text('open'),
               ),
             ),
@@ -44,6 +46,40 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text(label).last);
     await tester.pumpAndSettle();
+  }
+
+  for (final size in [
+    const Size(390, 640),
+    const Size(320, 568),
+    const Size(768, 666),
+  ]) {
+    testWidgets('edit actions fit without scrolling at $size', (tester) async {
+      tester.view.physicalSize = size;
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      const document = StudentDocument(
+        id: 'cv',
+        type: 'cv',
+        fileName: 'CVVVV.pdf',
+      );
+      final repo = DocumentsRepo()..documents.add(document);
+      var picks = 0;
+      await open(tester, repo, () async {
+        picks++;
+        return null;
+      }, existing: document);
+      final scroll = tester.state<ScrollableState>(
+        find.byType(Scrollable).first,
+      );
+      expect(scroll.position.maxScrollExtent, 0);
+      expect(find.text('บันทึกชื่อเอกสาร').hitTestable(), findsOneWidget);
+      expect(find.text('เลือก PDF เพื่อแทนที่').hitTestable(), findsOneWidget);
+      await tester.tap(find.text('เลือก PDF เพื่อแทนที่'));
+      await tester.pumpAndSettle();
+      expect(picks, 1);
+      expect(tester.takeException(), isNull);
+    });
   }
 
   Future<void> upload(WidgetTester tester, String label) async {
