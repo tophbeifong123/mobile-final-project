@@ -20,65 +20,67 @@ class CompanyContactLinksEditor extends StatelessWidget {
   Widget build(BuildContext context) {
     final canAdd = links.length < maxCompanyContacts;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'นักศึกษาเห็นช่องทางนี้ในรายละเอียดงาน เว้นว่างได้ และไม่ใช่อีเมลที่ใช้เข้าสู่ระบบ',
-          style: TextStyle(
-            fontSize: 12,
-            height: 1.4,
-            fontWeight: FontWeight.w600,
-            color: NeoColors.subtleInk,
-          ),
-        ),
-        const Gap(12),
-        if (links.isEmpty)
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
           const Text(
-            'ยังไม่มีช่องทางติดต่อ',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: NeoColors.inkSolid,
-            ),
-          )
-        else
-          for (var index = 0; index < links.length; index++) ...[
-            if (index > 0) const Gap(8),
-            _ContactRow(
-              link: links[index],
-              onEdit: () =>
-                  _edit(context, existing: links[index], index: index),
-              onDelete: () {
-                final next = List<ContactLink>.from(links)..removeAt(index);
-                onChanged(next);
-              },
-            ),
-          ],
-        const Gap(12),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: NeoButton(
-            key: const Key('add-company-contact'),
-            onPressed: canAdd ? () => _edit(context) : null,
-            variant: NeoButtonVariant.secondary,
-            height: 44,
-            text: 'เพิ่มช่องทาง',
-            icon: const Icon(Icons.add_rounded, size: 18),
-          ),
-        ),
-        if (!canAdd) ...[
-          const Gap(4),
-          const Text(
-            companyContactLimitError,
+            'นักศึกษาเห็นช่องทางนี้ในรายละเอียดงาน เว้นว่างได้ และไม่ใช่อีเมลที่ใช้เข้าสู่ระบบ',
             style: TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.w700,
+              height: 1.4,
+              fontWeight: FontWeight.w600,
               color: NeoColors.subtleInk,
             ),
           ),
+          const Gap(12),
+          if (links.isEmpty)
+            const Text(
+              'ยังไม่มีช่องทางติดต่อ',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: NeoColors.inkSolid,
+              ),
+            )
+          else
+            for (var index = 0; index < links.length; index++) ...[
+              if (index > 0) const Gap(8),
+              _ContactRow(
+                link: links[index],
+                onEdit: () =>
+                    _edit(context, existing: links[index], index: index),
+                onDelete: () {
+                  final next = List<ContactLink>.from(links)..removeAt(index);
+                  onChanged(next);
+                },
+              ),
+            ],
+          const Gap(12),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: NeoButton(
+              key: const Key('add-company-contact'),
+              onPressed: canAdd ? () => _edit(context) : null,
+              variant: NeoButtonVariant.secondary,
+              height: 44,
+              text: 'เพิ่มช่องทาง',
+              icon: const Icon(Icons.add_rounded, size: 18),
+            ),
+          ),
+          if (!canAdd) ...[
+            const Gap(4),
+            const Text(
+              companyContactLimitError,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: NeoColors.subtleInk,
+              ),
+            ),
+          ],
         ],
-      ],
+      ),
     );
   }
 
@@ -241,6 +243,8 @@ class _ContactDialogState extends State<_ContactDialog> {
                   Expanded(
                     child: Text(
                       title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontWeight: FontWeight.w900,
                         fontSize: 18,

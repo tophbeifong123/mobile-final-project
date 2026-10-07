@@ -394,9 +394,7 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
             ),
             child: NeoButton(
               key: const Key('apply-submit'),
-              onPressed: (!hasResume || _submitting || job == null)
-                  ? null
-                  : _submit,
+              onPressed: (!hasResume || _submitting) ? null : _submit,
               isFullWidth: true,
               isLoading: _submitting,
               height: 52,

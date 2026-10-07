@@ -81,6 +81,7 @@ void main() {
         expect(card.shadows, isNotEmpty);
       }
 
+      await _scrollToCoverLetter(tester);
       final field = tester.widget<TextFormField>(find.byType(TextFormField));
       expect(field.enabled, isTrue);
 
@@ -136,6 +137,7 @@ void main() {
       appRepository: appRepository,
     );
 
+    await _scrollToCoverLetter(tester);
     await tester.enterText(
       find.byKey(const Key('apply-cover-letter')),
       '  \n  ',
@@ -158,6 +160,7 @@ void main() {
       appRepository: appRepository,
     );
 
+    await _scrollToCoverLetter(tester);
     await tester.enterText(
       find.byKey(const Key('apply-cover-letter')),
       'จดหมายสมัครงาน',
@@ -190,6 +193,7 @@ void main() {
       appRepository: appRepository,
     );
 
+    await _scrollToCoverLetter(tester);
     await tester.enterText(
       find.byKey(const Key('apply-cover-letter')),
       'ข้อความที่ต้องเก็บไว้',
@@ -232,6 +236,7 @@ void main() {
     expect(find.text('my_resume.pdf'), findsOneWidget);
     expect(find.text('portfolio.pdf'), findsOneWidget);
 
+    await _scrollToCoverLetter(tester);
     await tester.enterText(
       find.byKey(const Key('apply-cover-letter')),
       'สนใจตำแหน่งนี้',
@@ -322,6 +327,13 @@ Future<void> _mount(
     ),
   );
   await tester.pumpAndSettle();
+}
+
+Future<void> _scrollToCoverLetter(WidgetTester tester) {
+  return tester.scrollUntilVisible(
+    find.byKey(const Key('apply-cover-letter')),
+    300,
+  );
 }
 
 JobApplication _submitted(String coverLetter) => JobApplication(
