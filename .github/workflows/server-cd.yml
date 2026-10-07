@@ -1,0 +1,175 @@
+name: Deploy API
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'server/**'
+      - 'infra/**'
+      - '.github/workflows/server-cd.yml'
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Image tag already in the registry. Skips the build.
+        required: false
+        type: string
+      revision_name:
+        description: Existing Container App revision to restore. Skips the build.
+        required: false
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  IMAGE_NAME: internfinder-api
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  rollback:
+    name: Roll back
+    if: github.event_name == 'workflow_dispatch' && (inputs.image_tag != '' || inputs.revision_name != '')
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Activate a previous revision
+        if: inputs.revision_name != ''
+        run: |
+          image="$(az containerapp revision show \
+            --name "${{ secrets.AZURE_CONTAINER_APP_NAME }}" \
+            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
+            --revision "${{ inputs.revision_name }}" \
+            --query "properties.template.containers[0].image" \
+            --output tsv)"
+          az containerapp update \
+            --name "${{ secrets.AZURE_CONTAINER_APP_NAME }}" \
+            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
+            --image "$image"
+
+      - name: Deploy an existing image tag
+        if: inputs.revision_name == '' && inputs.image_tag != ''
+        run: |
+          az containerapp update \
+            --name "${{ secrets.AZURE_CONTAINER_APP_NAME }}" \
+            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
+            --image "${{ secrets.AZURE_REGISTRY_NAME }}.azurecr.io/${IMAGE_NAME}:${{ inputs.image_tag }}"
+
+  lint:
+    name: Lint
+    if: github.event_name == 'push' || (inputs.image_tag == '' && inputs.revision_name == '')
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci --legacy-peer-deps
+      - run: npm run lint
+
+  test:
+    name: Test
+    needs: lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: server/package-lock.json
+      - run: npm ci --legacy-peer-deps
+      - run: npm test
+
+  security-scan:
+    name: Security scan
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan dependencies
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: server
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
+          vuln-type: library
+
+  docker-build:
+    name: Docker build
+    needs: security-scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t ${{ env.IMAGE_NAME }}:${{ github.sha }} server
+
+  push:
+    name: Push ACR
+    needs: docker-build
+    runs-on: ubuntu-latest
+    environment: production
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t ${{ env.IMAGE_NAME }}:${{ github.sha }} server
+      - name: Scan image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
+          vuln-type: os,library
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Push image
+        id: meta
+        run: |
+          image="${{ secrets.AZURE_REGISTRY_NAME }}.azurecr.io/${IMAGE_NAME}:${GITHUB_SHA}"
+          docker tag "${IMAGE_NAME}:${GITHUB_SHA}" "$image"
+          az acr login --name "${{ secrets.AZURE_REGISTRY_NAME }}"
+          docker push "$image"
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    name: Deploy Container App
+    needs: push
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Release a new single revision
+        run: |
+          az containerapp update \
+            --name "${{ secrets.AZURE_CONTAINER_APP_NAME }}" \
+            --resource-group "${{ secrets.AZURE_RESOURCE_GROUP }}" \
+            --image "${{ needs.push.outputs.image }}"

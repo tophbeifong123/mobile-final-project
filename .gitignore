@@ -39,6 +39,9 @@ Thumbs.db
 *.key
 *.pem
 *.cert
+# Public DigiCert roots for Azure PostgreSQL. These are not private keys.
+!server/certs/
+!server/certs/*.crt.pem
 
 # ==========================================
 # Node / NestJS Server

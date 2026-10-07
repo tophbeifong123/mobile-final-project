@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
+
+import '../observability/sentry_config.dart';
 
 import '../../features/applications/presentation/screens/application_detail_screen.dart';
 import '../../features/applications/presentation/screens/apply_job_screen.dart';
@@ -40,6 +43,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     navigatorKey: rootNavigatorKey,
     initialLocation: '/splash',
     refreshListenable: refresh,
+    observers: [if (sentryEnabled) SentryNavigatorObserver()],
     redirect: (context, state) {
       return _redirect(ref.read(authControllerProvider), state.matchedLocation);
     },
