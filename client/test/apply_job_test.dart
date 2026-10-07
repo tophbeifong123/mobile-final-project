@@ -333,7 +333,12 @@ Future<void> _scrollToCoverLetter(WidgetTester tester) {
   return tester.scrollUntilVisible(
     find.byKey(const Key('apply-cover-letter')),
     300,
-    scrollable: find.byKey(const Key('apply-scroll-view')),
+    scrollable: find
+        .descendant(
+          of: find.byKey(const Key('apply-scroll-view')),
+          matching: find.byType(Scrollable),
+        )
+        .first,
   );
 }
 
