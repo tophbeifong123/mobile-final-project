@@ -71,6 +71,7 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
         child: Form(
           key: _formKey,
           child: ListView(
+            key: const Key('apply-scroll-view'),
             keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
             padding: const EdgeInsets.fromLTRB(
               kPagePadding,
