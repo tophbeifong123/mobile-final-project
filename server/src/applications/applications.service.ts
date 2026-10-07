@@ -189,6 +189,7 @@ export class ApplicationsService {
       fullName: app.fullName,
       university: app.university,
       major: app.major,
+      avatarObjectKey: app.avatarObjectKey,
       status: app.status,
       coverLetter: app.coverLetter,
       ...selectionResponse(app),

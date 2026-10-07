@@ -23,12 +23,14 @@ describe('GoogleIdTokenVerifier', () => {
         sub: 'google-sub',
         email: 'student@example.com',
         email_verified: true,
+        name: 'Google Student',
       }),
     } as Awaited<ReturnType<OAuth2Client['verifyIdToken']>>);
 
     await expect(verifier.verify('signed-id-token')).resolves.toEqual({
       subject: 'google-sub',
       email: 'student@example.com',
+      name: 'Google Student',
     });
     expect(verifyIdToken).toHaveBeenCalledWith({
       idToken: 'signed-id-token',
@@ -42,6 +44,20 @@ describe('GoogleIdTokenVerifier', () => {
     await expect(verifier.verify('bad-id-token')).rejects.toBeInstanceOf(
       UnauthorizedException,
     );
+  });
+
+  it('uses an empty profile name when Google omits the optional claim', async () => {
+    verifyIdToken.mockResolvedValue({
+      getPayload: () => ({
+        sub: 'google-sub',
+        email: 'student@example.com',
+        email_verified: true,
+      }),
+    } as Awaited<ReturnType<OAuth2Client['verifyIdToken']>>);
+
+    await expect(verifier.verify('signed-id-token')).resolves.toMatchObject({
+      name: '',
+    });
   });
 
   it('rejects a verified token without verified email identity fields', async () => {

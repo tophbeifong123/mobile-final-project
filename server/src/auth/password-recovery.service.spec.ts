@@ -30,7 +30,7 @@ describe('PasswordRecoveryService', () => {
     sendPasswordChanged: vi.fn(),
   };
   const passwords = { hash: vi.fn(), verify: vi.fn() };
-  const dto = { token: 'a'.repeat(64), password: 'a-new-strong-password' };
+  const dto = { token: 'a'.repeat(64), password: 'A-new-strong-password-1' };
   const tokenHash = createHash('sha256').update(dto.token).digest('hex');
   let service: PasswordRecoveryService;
 
@@ -234,6 +234,24 @@ describe('PasswordRecoveryService', () => {
     },
   );
 
+  it.each([
+    'Aa1!abc', 'lowercase1!', 'UPPERCASE1!', 'NoNumbers!',
+    'NoSymbols123', 'NoSymbols123🔐', 'Aa1!' + 'ก'.repeat(23),
+  ])('rejects invalid new password %s without consuming the token', async (password) => {
+    await expect(service.resetPassword({ ...dto, password })).rejects.toBeInstanceOf(BadRequestException);
+    expect(passwords.hash).not.toHaveBeenCalled();
+    expect(repository.consumePasswordResetToken).not.toHaveBeenCalled();
+    expect(repository.deletePasswordResetToken).not.toHaveBeenCalled();
+    expect(mailer.sendPasswordChanged).not.toHaveBeenCalled();
+    await expect(service.resetPassword(dto)).resolves.toEqual(expect.objectContaining({ message: expect.any(String) }));
+    expect(repository.consumePasswordResetToken).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(['Aa1!abcd', 'Aa1!' + 'ก'.repeat(22) + 'ab'])('accepts valid password including the 72-byte boundary: %s', async (password) => {
+    await expect(service.resetPassword({ ...dto, password })).resolves.toEqual(expect.objectContaining({ message: expect.any(String) }));
+    expect(passwords.hash).toHaveBeenCalledWith(password);
+  });
+
   it('passes the password hash to atomic consumption and notifies only the account owner', async () => {
     await service.resetPassword(dto);
 
@@ -296,7 +314,7 @@ describe('PasswordRecoveryService', () => {
     expect(repository.consumePasswordResetToken).toHaveBeenCalledTimes(1);
     expect(repository.deletePasswordResetToken).not.toHaveBeenCalled();
 
-    const corrected = { ...dto, password: 'different-new-password' };
+    const corrected = { ...dto, password: 'Different-new-password-1' };
     await expect(service.resetPassword(corrected)).resolves.toEqual(
       expect.objectContaining({ message: expect.any(String) }),
     );

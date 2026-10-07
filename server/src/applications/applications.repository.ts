@@ -98,6 +98,7 @@ export interface JobApplicantRecord {
   fullName: string;
   university: string;
   major: string;
+  avatarObjectKey: string | null;
   status: ApplicationStatus;
   coverLetter: string;
   examUrl: string | null;
@@ -390,6 +391,7 @@ export class ApplicationsRepository {
       .addSelect('student.fullName', 'fullName')
       .addSelect(`COALESCE(student.customUniversityName, university.nameTh, '')`, 'university')
       .addSelect(`COALESCE(student.customMajorName, major.nameTh, '')`, 'major')
+      .addSelect('student.avatarObjectKey', 'avatarObjectKey')
       .addSelect('app.status', 'status')
       .addSelect('app.coverLetter', 'coverLetter')
       .addSelect('app.examUrl', 'examUrl')
@@ -407,6 +409,7 @@ export class ApplicationsRepository {
       fullName: (row.fullName as string) ?? '',
       university: (row.university as string) ?? '',
       major: (row.major as string) ?? '',
+      avatarObjectKey: (row.avatarObjectKey as string) ?? null,
       status: row.status as ApplicationStatus,
       coverLetter: (row.coverLetter as string) ?? '',
       ...selectionFromRow(row),

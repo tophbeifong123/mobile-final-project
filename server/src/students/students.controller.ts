@@ -30,6 +30,7 @@ import { StudentProfileDto } from './dto/student-profile.dto.js';
 import { UpdateStudentProfileDto } from './dto/update-student-profile.dto.js';
 import { StudentsService } from './students.service.js';
 import { StudentDocumentType } from './student-document.entity.js';
+import { ReplaceDocumentDto } from './dto/replace-document.dto.js';
 
 @ApiTags('Students')
 @ApiBearerAuth()
@@ -149,13 +150,14 @@ export class StudentsController {
   }
 
   @Post('me/documents/other')
-  @ApiOperation({ summary: 'เพิ่มเอกสารอื่นเป็น PDF (สูงสุด 3 ไฟล์)' })
+  @ApiOperation({ summary: 'เพิ่มหรือแทนที่เอกสารอื่นเป็น PDF (สูงสุด 3 ไฟล์)' })
   @ApiConsumes('multipart/form-data')
-  @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } }, required: ['file'] } })
+  @ApiBody({ schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' }, documentId: { type: 'string', format: 'uuid', description: 'เอกสารอื่นของผู้ใช้ที่จะถูกแทนที่; เว้นว่างเพื่อเพิ่มไฟล์' } }, required: ['file'] } })
+  @ApiResponse({ status: 404, description: 'ไม่พบเอกสารอื่นของผู้ใช้ที่จะแทนที่' })
   @ApiResponse({ status: 201, description: 'เพิ่มเอกสารสำเร็จ' })
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }))
-  uploadOther(@CurrentUser() user: AuthUser, @UploadedFile() file: UploadedFilePayload | undefined) {
-    return this.studentsService.uploadDocument(user, StudentDocumentType.Other, file);
+  uploadOther(@CurrentUser() user: AuthUser, @UploadedFile() file: UploadedFilePayload | undefined, @Body() dto: ReplaceDocumentDto) {
+    return this.studentsService.uploadDocument(user, StudentDocumentType.Other, file, dto.documentId);
   }
 
   @Delete('me/documents/:id')

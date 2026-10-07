@@ -50,7 +50,7 @@ class ApiConstants {
       '/company/jobs/$jobId/applications/$applicationId/documents/$documentId/file';
   static const String studentAvatar = '/students/me/avatar';
   static String applicantAvatar(String jobId, String applicationId) =>
-      '/applications/company/jobs/$jobId/applications/$applicationId/avatar';
+      '/company/jobs/$jobId/applications/$applicationId/avatar';
   static const String applications = '/applications';
   static const String notifications = '/notifications';
   static const String companyProfile = '/companies/me';

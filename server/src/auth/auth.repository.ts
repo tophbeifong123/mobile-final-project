@@ -12,12 +12,14 @@ export interface NewUser {
   email: string;
   passwordHash: string | null;
   role: UserRole;
+  fullName: string;
 }
 
 export interface NewGoogleUser {
   email: string;
   providerSubject: string;
   role: UserRole;
+  fullName: string;
 }
 
 export interface StoredRefreshToken {
@@ -127,7 +129,7 @@ export class AuthRepository {
           providerSubject: input.providerSubject,
         }),
       );
-      await this.saveEmptyProfile(manager, user.id, input.role);
+      await this.saveEmptyProfile(manager, user.id, input.role, input.fullName);
       return user;
     });
   }
@@ -145,7 +147,7 @@ export class AuthRepository {
           role: input.role,
         }),
       );
-      await this.saveEmptyProfile(manager, user.id, input.role);
+      await this.saveEmptyProfile(manager, user.id, input.role, input.fullName);
       return user;
     });
   }
@@ -307,12 +309,13 @@ export class AuthRepository {
     manager: EntityManager,
     userId: string,
     role: UserRole,
+    fullName: string,
   ): Promise<void> {
     if (role === UserRole.Student) {
       await manager.save(
         manager.create(StudentProfile, {
           userId,
-          fullName: '',
+          fullName,
           universityId: null,
           customUniversityName: null,
           majorId: null,
@@ -327,7 +330,7 @@ export class AuthRepository {
       await manager.save(
         manager.create(CompanyProfile, {
           userId,
-          name: '',
+          name: fullName,
           businessType: '',
           description: '',
         }),

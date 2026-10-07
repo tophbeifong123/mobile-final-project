@@ -175,12 +175,14 @@ void main() {
     final name = List.filled(10, 'ชื่อจริงที่ยาว').join();
     final university = List.filled(10, 'มหาวิทยาลัยชื่อยาว').join();
     await tester.pumpWidget(
-      MaterialApp(
-        theme: AppTheme.lightTheme,
-        home: Scaffold(
-          body: MediaQuery(
-            data: const MediaQueryData(textScaler: TextScaler.linear(1.5)),
-            child: FeedGreetingHeader(name: name, university: university),
+      ProviderScope(
+        child: MaterialApp(
+          theme: AppTheme.lightTheme,
+          home: Scaffold(
+            body: MediaQuery(
+              data: const MediaQueryData(textScaler: TextScaler.linear(1.5)),
+              child: FeedGreetingHeader(name: name, university: university),
+            ),
           ),
         ),
       ),

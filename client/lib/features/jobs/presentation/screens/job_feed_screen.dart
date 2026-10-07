@@ -72,6 +72,7 @@ class _JobFeedScreenState extends ConsumerState<JobFeedScreen> {
             FeedGreetingHeader(
               name: studentProfile?.fullName,
               university: studentProfile?.university,
+              avatarKey: studentProfile?.avatarObjectKey,
             ),
             const Gap(2),
 

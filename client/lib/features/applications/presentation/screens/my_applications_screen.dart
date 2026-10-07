@@ -7,7 +7,9 @@ import 'package:skeletonizer/skeletonizer.dart';
 import '../../../../core/error/app_exception.dart';
 import '../../../../core/theme/app_tokens.dart';
 import '../../../../core/widgets/app_card.dart';
+import '../../../jobs/presentation/widgets/feed_greeting_header.dart';
 import '../../../jobs/presentation/widgets/feed_top_bar.dart';
+import '../../../student_profile/presentation/providers/student_profile_controller.dart';
 import '../../domain/entities/job_application.dart';
 import '../../domain/selection_progress.dart';
 import '../providers/applications_controller.dart';
@@ -26,6 +28,10 @@ class _MyApplicationsScreenState extends ConsumerState<MyApplicationsScreen> {
   @override
   Widget build(BuildContext context) {
     final applicationsAsync = ref.watch(myApplicationsProvider);
+    final studentProfile = ref
+        .watch(studentProfileControllerProvider)
+        .asData
+        ?.value;
 
     return Scaffold(
       backgroundColor: NeoColors.paperCanvas,
@@ -33,6 +39,13 @@ class _MyApplicationsScreenState extends ConsumerState<MyApplicationsScreen> {
         child: Column(
           children: [
             const FeedTopBar(),
+            FeedGreetingHeader(
+              name: studentProfile?.fullName,
+              university: studentProfile?.university,
+              major: studentProfile?.major,
+              avatarKey: studentProfile?.avatarObjectKey,
+              showMajor: true,
+            ),
             Expanded(
               child: applicationsAsync.when(
                 skipLoadingOnReload: true,

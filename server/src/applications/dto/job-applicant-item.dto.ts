@@ -28,6 +28,13 @@ export class JobApplicantItemDto {
   major: string;
 
   @ApiProperty({
+    example: 'student-avatars/student-123/avatar.png',
+    nullable: true,
+    description: 'Object key ของรูปโปรไฟล์ผู้สมัคร',
+  })
+  avatarObjectKey: string | null;
+
+  @ApiProperty({
     enum: ApplicationStatus,
     example: ApplicationStatus.Submitted,
     description: 'สถานะใบสมัคร',

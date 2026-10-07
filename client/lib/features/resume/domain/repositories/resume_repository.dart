@@ -11,6 +11,7 @@ abstract class ResumeRepository {
   Future<List<int>> downloadDocumentPdf(String id);
   Future<List<StudentDocument>> listDocuments();
   Future<StudentDocument> uploadDocument({
+    String? replacingId,
     required String kind,
     required String filePath,
     required String fileName,
