@@ -2,7 +2,8 @@
 # Passwords are written only to Key Vault. This script prints identifiers, not secrets.
 $ErrorActionPreference = 'Stop'
 $resourceGroup = 'internfinder-prod'
-$locations = @('southeastasia', 'eastasia', 'australiaeast')
+# Azure for Students on this subscription allows these regions only.
+$locations = @('eastasia', 'koreacentral', 'japanwest', 'malaysiawest', 'indonesiacentral')
 $repo = 'tophbeifong123/mobile-final-project'
 
 function New-RandomSecret {
@@ -12,13 +13,34 @@ function New-RandomSecret {
 }
 
 function Test-LocationError([string]$text) {
-  return $text -match 'LocationNotAvailable|InvalidResourceLocation|not available|quota|RequestDisallowedByAzure|LocationIsOfferRestricted'
+  return $text -match 'LocationNotAvailable|InvalidResourceLocation|InvalidResourceGroupLocation|not available|quota|RequestDisallowedByAzure|LocationIsOfferRestricted'
+}
+
+function Remove-EmptyGroup {
+  $listed = Invoke-Az @('resource', 'list', '--resource-group', $resourceGroup, '--output', 'json')
+  if ($listed.Code -ne 0) { throw $listed.Text }
+  $body = $listed.Text.Trim()
+  if ($body -and $body -ne '[]') {
+    $resources = $body | ConvertFrom-Json
+    if (@($resources).Count -gt 0) {
+      throw "Resource group $resourceGroup already has resources. Refusing to delete it while changing region."
+    }
+  }
+  Write-Host "Removing empty resource group $resourceGroup"
+  $deleted = Invoke-Az @('group', 'delete', '--name', $resourceGroup, '--yes', '--output', 'none')
+  if ($deleted.Code -ne 0) { throw $deleted.Text }
 }
 
 function Invoke-Az {
   param([string[]]$Arguments)
-  $output = & az @Arguments 2>&1 | Out-String
-  return @{ Code = $LASTEXITCODE; Text = $output }
+  $previous = $ErrorActionPreference
+  $ErrorActionPreference = 'Continue'
+  try {
+    $lines = & az @Arguments 2>&1 | ForEach-Object { "$_" }
+    return @{ Code = $LASTEXITCODE; Text = ($lines -join "`n") }
+  } finally {
+    $ErrorActionPreference = $previous
+  }
 }
 
 function Write-ParameterFile {
@@ -27,6 +49,9 @@ function Write-ParameterFile {
     [string]$Location,
     [bool]$IncludeApp,
     [string]$Password,
+    [string]$Jwt,
+    [string]$Sentry,
+    [string]$Smtp,
     [string]$Discord
   )
   $payload = [ordered]@{
@@ -36,6 +61,9 @@ function Write-ParameterFile {
       location = @{ value = $Location }
       includeApp = @{ value = $IncludeApp }
       postgresPassword = @{ value = $Password }
+      jwtSecret = @{ value = $Jwt }
+      sentryDsn = @{ value = $Sentry }
+      smtpPassword = @{ value = $Smtp }
       discordWebhookUrl = @{ value = $Discord }
     }
   }
@@ -64,12 +92,23 @@ foreach ($location in $locations) {
     '--output', 'none'
   )
   if ($group.Code -ne 0) {
-    if (Test-LocationError $group.Text) { continue }
-    Remove-Item $paramFile -Force -ErrorAction SilentlyContinue
-    throw $group.Text
+    if (Test-LocationError $group.Text) {
+      Write-Host $group.Text
+      Remove-EmptyGroup
+      $group = Invoke-Az @(
+        'group', 'create',
+        '--name', $resourceGroup,
+        '--location', $location,
+        '--output', 'none'
+      )
+    }
+    if ($group.Code -ne 0) {
+      Remove-Item $paramFile -Force -ErrorAction SilentlyContinue
+      throw $group.Text
+    }
   }
 
-  Write-ParameterFile -Path $paramFile -Location $location -IncludeApp $false -Password $postgresPassword -Discord $discord
+  Write-ParameterFile -Path $paramFile -Location $location -IncludeApp $false -Password $postgresPassword -Jwt $jwtSecret -Sentry $sentryDsn -Smtp $smtpPassword -Discord $discord
   $deploy = Invoke-Az @(
     'deployment', 'group', 'create',
     '--resource-group', $resourceGroup,
@@ -82,14 +121,18 @@ foreach ($location in $locations) {
     $chosen = $location
     break
   }
-  if (Test-LocationError $deploy.Text) { continue }
+  if (Test-LocationError $deploy.Text) {
+    Write-Host $deploy.Text
+    Remove-EmptyGroup
+    continue
+  }
   Remove-Item $paramFile -Force -ErrorAction SilentlyContinue
   throw $deploy.Text
 }
 
 if (-not $chosen) {
   Remove-Item $paramFile -Force -ErrorAction SilentlyContinue
-  throw 'None of southeastasia, eastasia, or australiaeast accepted this subscription.'
+  throw 'None of the regions allowed by this Azure for Students subscription accepted the deployment.'
 }
 
 $names = az deployment group show `
@@ -99,6 +142,23 @@ $names = az deployment group show `
   --output json | ConvertFrom-Json
 
 $vault = $names.keyVaultName.value
+$vaultId = az keyvault show --name $vault --query id --output tsv
+$userId = az ad signed-in-user show --query id --output tsv
+if ($LASTEXITCODE -ne 0 -or -not $userId) {
+  throw 'Could not resolve the signed-in user for Key Vault access.'
+}
+az role assignment create `
+  --assignee-object-id $userId `
+  --assignee-principal-type User `
+  --role 'Key Vault Secrets Officer' `
+  --scope $vaultId `
+  --output none
+if ($LASTEXITCODE -ne 0) {
+  $existing = az role assignment list --assignee $userId --scope $vaultId --role 'Key Vault Secrets Officer' --query '[0].id' --output tsv
+  if (-not $existing) {
+    throw 'Could not grant Key Vault Secrets Officer to the signed-in user.'
+  }
+}
 Write-Host 'Waiting for Key Vault role assignment to propagate'
 Start-Sleep -Seconds 30
 
@@ -106,8 +166,14 @@ function Set-VaultSecret {
   param([string]$Name, [string]$Value)
   $file = Join-Path $env:TEMP "ifnd-$Name.txt"
   [System.IO.File]::WriteAllText($file, $Value)
-  az keyvault secret set --vault-name $vault --name $Name --file $file --output none
-  $code = $LASTEXITCODE
+  $code = 1
+  foreach ($attempt in 1..8) {
+    az keyvault secret set --vault-name $vault --name $Name --file $file --output none
+    $code = $LASTEXITCODE
+    if ($code -eq 0) { break }
+    Write-Host "Key Vault is not ready for $Name yet. Attempt $attempt of 8."
+    Start-Sleep -Seconds 20
+  }
   Remove-Item $file -Force
   if ($code -ne 0) {
     throw 'Key Vault rejected a secret. Wait a minute and run the secret commands from docs/OPERATIONS.md.'
@@ -119,7 +185,7 @@ Set-VaultSecret -Name jwt-secret -Value $jwtSecret
 Set-VaultSecret -Name sentry-dsn -Value $sentryDsn
 Set-VaultSecret -Name smtp-password -Value $smtpPassword
 
-Write-ParameterFile -Path $paramFile -Location $chosen -IncludeApp $true -Password $postgresPassword -Discord $discord
+Write-ParameterFile -Path $paramFile -Location $chosen -IncludeApp $true -Password $postgresPassword -Jwt $jwtSecret -Sentry $sentryDsn -Smtp $smtpPassword -Discord $discord
 $app = Invoke-Az @(
   'deployment', 'group', 'create',
   '--resource-group', $resourceGroup,

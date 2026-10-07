@@ -1,7 +1,7 @@
 targetScope = 'resourceGroup'
 
-@description('Azure region. Bootstrap tries southeastasia, then eastasia, then australiaeast.')
-param location string = 'southeastasia'
+@description('Azure region. Bootstrap tries the regions allowed by Azure for Students, starting with eastasia.')
+param location string = 'eastasia'
 
 @description('Create the Container App. The bootstrap script enables this only after Key Vault secrets exist.')
 param includeApp bool = false
@@ -11,6 +11,16 @@ param image string = 'mcr.microsoft.com/k8se/quickstart:latest'
 
 @secure()
 param postgresPassword string
+
+@secure()
+@description('Copied into the Container App because Express environments cannot reference Key Vault.')
+param jwtSecret string = ''
+
+@secure()
+param sentryDsn string = ''
+
+@secure()
+param smtpPassword string = ''
 
 @description('Discord incoming webhook. Alerts are skipped when this is empty.')
 @secure()
@@ -155,10 +165,16 @@ resource azureServices 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@
   properties: { startIpAddress: '0.0.0.0', endIpAddress: '0.0.0.0' }
 }
 
-resource environment 'Microsoft.App/managedEnvironments@2024-03-01' = {
+resource environment 'Microsoft.App/managedEnvironments@2026-01-01' = {
   name: environmentName
   location: location
   properties: {
+    workloadProfiles: [
+      {
+        name: 'Consumption'
+        workloadProfileType: 'Consumption'
+      }
+    ]
     appLogsConfiguration: {
       destination: 'log-analytics'
       logAnalyticsConfiguration: {
@@ -318,26 +334,10 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = if (includeApp)
         { server: registry.properties.loginServer, identity: identity.id }
       ]
       secrets: [
-        {
-          name: 'database-password'
-          keyVaultUrl: '${keyVault.properties.vaultUri}secrets/database-password'
-          identity: identity.id
-        }
-        {
-          name: 'jwt-secret'
-          keyVaultUrl: '${keyVault.properties.vaultUri}secrets/jwt-secret'
-          identity: identity.id
-        }
-        {
-          name: 'sentry-dsn'
-          keyVaultUrl: '${keyVault.properties.vaultUri}secrets/sentry-dsn'
-          identity: identity.id
-        }
-        {
-          name: 'smtp-password'
-          keyVaultUrl: '${keyVault.properties.vaultUri}secrets/smtp-password'
-          identity: identity.id
-        }
+        { name: 'database-password', value: postgresPassword }
+        { name: 'jwt-secret', value: jwtSecret }
+        { name: 'sentry-dsn', value: sentryDsn }
+        { name: 'smtp-password', value: smtpPassword }
       ]
     }
     template: {

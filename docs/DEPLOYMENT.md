@@ -31,7 +31,7 @@ resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
 
 `json('0.5')` คือค่า 0.5 GB ตัวคอมไพเลอร์ของ Bicep อ่านเลข `0.5` ที่ขึ้นต้นด้วยศูนย์เป็นตัวเลขศูนย์ตามด้วยชื่อพร็อพเพอร์ตี้ จึงต้องส่งเศษผ่าน `json`
 
-แอปดึง `DATABASE_PASSWORD`, `JWT_SECRET`, `SENTRY_DSN` และ `SMTP_PASSWORD` จาก Key Vault ผ่าน identity เดียวกัน ไม่มี storage key ในตัวแปรสภาพแวดล้อม ไฟล์ใช้ `DefaultAzureCredential` กับ Blob
+รหัสฐานข้อมูล, `JWT_SECRET`, `SENTRY_DSN` และ `SMTP_PASSWORD` ถูกเก็บใน Key Vault สภาพแวดล้อมของ Container Apps บน subscription นี้อยู่ในโหมด Express ซึ่งอ้างอิง Key Vault จากแอปโดยตรงไม่ได้ ดังนั้นตอนปล่อยแอป สคริปต์คัดลอกค่าเหล่านั้นเข้า secret ของ Container App ไม่มี storage key ในตัวแปรสภาพแวดล้อม ไฟล์ใช้ `DefaultAzureCredential` กับ Blob
 
 `DATABASE_SSL=true` ทำให้ TypeORM เชื่อใบรับรอง DigiCert Global Root CA และ DigiCert Global Root G2 พร้อมกัน เพราะ Flexible Server ใช้สาย G2 เครื่องพัฒนาไม่ตั้งค่านี้
 
@@ -45,7 +45,7 @@ az account set --subscription "<subscription-id>"
 .\infra\bootstrap.ps1
 ```
 
-สคริปต์ลอง `southeastasia` แล้วจึง `eastasia` และ `australiaeast` ถ้ารายการล้มเพราะโควตาหรือภูมิภาคที่ subscription ไม่เปิด รหัสผ่านถูกสุ่มแล้วเก็บใน Key Vault เท่านั้น ผลลัพธ์ที่พิมพ์คือค่าที่ต้องใส่เป็น GitHub Actions secret
+สคริปต์ลองภูมิภาคที่นโยบายของ Azure for Students เปิดให้ คือ `eastasia`, `koreacentral`, `japanwest`, `malaysiawest` แล้วจึง `indonesiacentral` ถ้ารายการล้มเพราะโควตาหรือภูมิภาคที่ไม่ได้รับอนุญาต และ resource group ยังว่าง จะลบแล้วลองภูมิภาคถัดไป รหัสผ่านถูกสุ่มแล้วเก็บใน Key Vault เท่านั้น ผลลัพธ์ที่พิมพ์คือค่าที่ต้องใส่เป็น GitHub Actions secret
 
 - `AZURE_CLIENT_ID`
 - `AZURE_TENANT_ID`

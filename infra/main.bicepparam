@@ -1,5 +1,5 @@
 using 'main.bicep'
 
-param location = 'southeastasia'
+param location = 'eastasia'
 param includeApp = false
 param discordWebhookUrl = ''
