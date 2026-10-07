@@ -7,6 +7,8 @@ import 'package:client/features/resume/domain/entities/resume_file.dart';
 import 'package:client/features/resume/domain/repositories/resume_repository.dart';
 import 'package:client/features/resume/presentation/providers/resume_controller.dart';
 import 'package:client/features/resume/presentation/screens/resume_upload_screen.dart';
+import 'package:client/features/resume/presentation/widgets/student_documents_dialog.dart';
+import 'package:client/features/student_profile/presentation/widgets/student_profile_resume_card.dart';
 import 'package:client/features/student_profile/presentation/widgets/resume_preview_modal.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -41,6 +43,134 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  for (final width in [320.0, 390.0]) {
+    testWidgets(
+      'profile opens document popup, uploads immediately, and closes at $width px',
+      (tester) async {
+        final repo = DocumentsRepo()..uploadWait = Completer<void>();
+        tester.view.physicalSize = Size(width, 900);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [
+              resumeRepositoryProvider.overrideWithValue(repo),
+              documentPickerProvider.overrideWithValue(
+                () async => MemoryPdf('my-cv.pdf'),
+              ),
+            ],
+            child: MaterialApp(
+              theme: AppTheme.lightTheme,
+              home: const Scaffold(
+                body: Padding(
+                  padding: EdgeInsets.all(16),
+                  child: StudentProfileResumeCard(resumeFileName: null),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('+ เพิ่ม'));
+        await tester.pumpAndSettle();
+        expect(find.byType(StudentDocumentsDialog), findsOneWidget);
+        final popupSize = tester.getSize(
+          find.byKey(const ValueKey('document-dialog-border-inset')),
+        );
+        expect(popupSize.width, lessThanOrEqualTo(320));
+        expect(popupSize.height, lessThanOrEqualTo(410));
+        final borderInset = tester.widget<Padding>(
+          find.byKey(const ValueKey('document-dialog-border-inset')),
+        );
+        expect(borderInset.padding, const EdgeInsets.all(2));
+        expect(
+          find.descendant(
+            of: find.byKey(const ValueKey('document-dialog-border-inset')),
+            matching: find.byType(ClipRRect),
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('ประเภทเอกสาร'), findsOneWidget);
+        expect(find.text('ชื่อเอกสาร *'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        await tester.enterText(find.byType(TextFormField), 'my-cv');
+        await tester.ensureVisible(find.text('เลือก PDF'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('เลือก PDF'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 200));
+        expect(repo.uploadCalls, 1);
+        expect(
+          tester.widget<NeoButton>(find.byType(NeoButton).last).isLoading,
+          isTrue,
+        );
+        final close = find.byWidgetPredicate(
+          (widget) =>
+              widget is IconButton && widget.tooltip == 'ปิดหน้าต่างเอกสาร',
+        );
+        expect(tester.widget<IconButton>(close).onPressed, isNull);
+        repo.uploadWait!.complete();
+        await tester.pumpAndSettle();
+        expect(
+          tester.widget<NeoButton>(find.byType(NeoButton).last).isLoading,
+          isFalse,
+        );
+        expect(find.text('my-cv.pdf'), findsWidgets);
+        expect(find.text('บันทึก'), findsOneWidget);
+        await tester.ensureVisible(find.text('บันทึก'));
+        await tester.pumpAndSettle();
+        expect(tester.widget<IconButton>(close).onPressed, isNotNull);
+        await tester.tap(find.text('บันทึก'));
+        await tester.pumpAndSettle();
+        expect(find.byType(StudentDocumentsDialog), findsNothing);
+        expect(find.text('my-cv.pdf'), findsOneWidget);
+        expect(repo.uploadCalls, 1);
+        expect(tester.takeException(), isNull);
+      },
+    );
+  }
+
+  // Layout regressions cover empty controls and long names across viewports.
+  for (final width in [320.0, 390.0, 1440.0]) {
+    testWidgets('document list remains compact and bounded at $width px', (
+      tester,
+    ) async {
+      final repo = DocumentsRepo();
+      await open(tester, repo, () async => null);
+      tester.view.physicalSize = Size(width, 1100);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.text('เพิ่ม CV'), findsOneWidget);
+      repo.documents.addAll([
+        StudentDocument(
+          id: 'cv',
+          type: 'cv',
+          fileName: '${List.filled(10, 'long-name-').join()}.pdf',
+        ),
+        const StudentDocument(
+          id: 'transcript',
+          type: 'transcript',
+          fileName: 'Transcript_2026.pdf',
+        ),
+        const StudentDocument(
+          id: 'other',
+          type: 'other',
+          fileName: 'Certificate_Flutter.pdf',
+        ),
+      ]);
+      final element = tester.element(find.byType(ResumeUploadScreen));
+      ProviderScope.containerOf(element).invalidate(studentDocumentsProvider);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.text('แทนที่'), findsNothing);
+      expect(find.byType(PopupMenuButton<String>), findsNWidgets(3));
+      expect(
+        tester.getSize(find.byType(ListView)).width,
+        lessThanOrEqualTo(448),
+      );
+    });
+  }
   for (final kind in ['cv', 'transcript', 'other']) {
     testWidgets(
       'empty $kind row uploads immediately and offers stored actions',
@@ -68,11 +198,15 @@ void main() {
         await tester.pumpAndSettle();
         expect(find.text('กำลังอัปโหลด…'), findsNothing);
         expect(find.text('อัปโหลดแล้ว'), findsOneWidget);
+        expect(find.text('แทนที่'), findsNothing);
+        await tester.ensureVisible(find.byTooltip('จัดการ file.pdf'));
+        await tester.tap(find.byTooltip('จัดการ file.pdf'));
+        await tester.pumpAndSettle();
         expect(find.text('เปิดดู'), findsOneWidget);
         expect(find.text('แทนที่'), findsOneWidget);
         expect(find.text('ลบ'), findsOneWidget);
         if (kind == 'other') {
-          expect(find.text('เอกสารอื่น (1/3)'), findsOneWidget);
+          expect(find.text('เอกสารอื่นๆ (1/3)'), findsOneWidget);
           expect(find.text('เพิ่มไฟล์'), findsOneWidget);
         }
         await tester.tap(find.text('ลบ'));
@@ -93,18 +227,22 @@ void main() {
         );
       await open(tester, repo, () async => MemoryPdf('new.pdf'));
       repo.failUpload = true;
+      await tester.tap(find.byTooltip('จัดการ old.pdf'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('แทนที่'));
       await tester.pumpAndSettle();
       expect(find.text('old.pdf'), findsOneWidget);
       expect(find.text('อัปโหลดไม่สำเร็จ'), findsOneWidget);
       repo.failUpload = false;
+      await tester.tap(find.byTooltip('จัดการ old.pdf'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('แทนที่'));
       await tester.pumpAndSettle();
       expect(repo.documents.length, 1);
       expect(find.text('new.pdf'), findsOneWidget);
       expect(find.text('old.pdf'), findsNothing);
       expect(repo.deleted, isEmpty);
-      await tester.tap(find.text('เปิดดู'));
+      await tester.tap(find.text('new.pdf'));
       await tester.pumpAndSettle();
       expect(find.byType(ResumePreviewModal), findsOneWidget);
       expect(repo.openedId, 'doc-2');
@@ -126,9 +264,11 @@ void main() {
         ),
       );
     await open(tester, repo, () async => MemoryPdf('replacement.pdf'));
-    expect(find.text('เอกสารอื่น (3/3)'), findsOneWidget);
+    expect(find.text('เอกสารอื่นๆ (3/3)'), findsOneWidget);
     expect(find.text('เพิ่มไฟล์'), findsNothing);
-    await tester.ensureVisible(find.text('แทนที่').first);
+    await tester.ensureVisible(find.byTooltip('จัดการ old-0.pdf'));
+    await tester.tap(find.byTooltip('จัดการ old-0.pdf'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('แทนที่').first);
     await tester.pumpAndSettle();
     expect(repo.replacingId, 'other-0');

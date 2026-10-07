@@ -16,7 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   testWidgets(
-    'tapping the resume file name opens ResumePreviewModal and closing dismisses it',
+    'only the eye opens ResumePreviewModal; filename is not interactive',
     (tester) async {
       tester.view.physicalSize = const Size(390, 844);
       tester.view.devicePixelRatio = 1;
@@ -54,9 +54,14 @@ void main() {
 
       // Verify resume card shows the active resume file name.
       expect(find.text('my_resume.pdf'), findsOneWidget);
-
-      // Tap the linked resume file name.
       await tester.tap(find.text('my_resume.pdf'));
+      await tester.pumpAndSettle();
+      expect(find.text('ตัวอย่างเรซูเม่ (PDF Preview)'), findsNothing);
+      expect(find.byTooltip('เปิดดู my_resume.pdf'), findsOneWidget);
+
+      // The eye next to the filename is part of the same preview target.
+      expect(find.byIcon(Icons.visibility_outlined), findsOneWidget);
+      await tester.tap(find.byIcon(Icons.visibility_outlined));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
 
@@ -126,7 +131,9 @@ class _FakeResumeRepository implements ResumeRepository {
   }
 
   @override
-  Future<List<StudentDocument>> listDocuments() async => const [];
+  Future<List<StudentDocument>> listDocuments() async => const [
+    StudentDocument(id: 'cv', type: 'cv', fileName: 'my_resume.pdf'),
+  ];
 
   @override
   Future<StudentDocument> uploadDocument({
