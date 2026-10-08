@@ -1,11 +1,12 @@
 {
-    "name": "client",
-    "short_name": "client",
+    "name": "InternFinder",
+    "short_name": "InternFinder",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "InternFinder แอปหาที่ฝึกงานสำหรับนักศึกษา และรับสมัครนักศึกษาฝึกงานสำหรับบริษัท",
+    "lang": "th",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
