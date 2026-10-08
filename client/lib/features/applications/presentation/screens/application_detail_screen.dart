@@ -88,7 +88,7 @@ class ApplicationDetailScreen extends ConsumerWidget {
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 18,
-                              fontWeight: FontWeight.w900,
+                              fontWeight: FontWeight.w800,
                               color: NeoColors.inkSolid,
                             ),
                           ),
@@ -115,7 +115,7 @@ class ApplicationDetailScreen extends ConsumerWidget {
                                 backgroundColor: NeoColors.butterYellow,
                                 side: const BorderSide(
                                   color: NeoColors.inkSolid,
-                                  width: 2,
+                                  width: 1.5,
                                 ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
@@ -297,7 +297,7 @@ class _DetailTopBar extends StatelessWidget {
             style: IconButton.styleFrom(
               backgroundColor: NeoColors.surfaceCream,
               foregroundColor: NeoColors.inkSolid,
-              side: const BorderSide(color: NeoColors.inkSolid, width: 1.5),
+              side: const BorderSide(color: NeoColors.inkSolid, width: 1.2),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -312,7 +312,7 @@ class _DetailTopBar extends StatelessWidget {
             decoration: BoxDecoration(
               color: NeoColors.butterYellow,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: NeoColors.inkSolid, width: 2),
+              border: Border.all(color: NeoColors.inkSolid, width: 1.5),
               boxShadow: NeoShadows.elevation1,
             ),
             child: const Icon(
@@ -333,7 +333,7 @@ class _DetailTopBar extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w800,
                     color: NeoColors.inkSolid,
                     letterSpacing: -0.3,
                   ),
@@ -389,7 +389,7 @@ class _JobSummaryCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: NeoColors.freshMint,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: NeoColors.inkSolid, width: 2),
+                  border: Border.all(color: NeoColors.inkSolid, width: 1.5),
                   boxShadow: NeoShadows.elevation1,
                 ),
                 child: const Icon(
@@ -422,7 +422,7 @@ class _JobSummaryCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 18,
                         height: 1.2,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w800,
                         color: NeoColors.inkSolid,
                       ),
                     ),
@@ -444,7 +444,7 @@ class _JobSummaryCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: color,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: NeoColors.inkSolid, width: 2),
+              border: Border.all(color: NeoColors.inkSolid, width: 1.5),
               boxShadow: NeoShadows.elevation1,
             ),
             child: Row(
@@ -457,7 +457,7 @@ class _JobSummaryCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: NeoColors.pureWhite,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                    border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                   ),
                   child: Icon(
                     _statusIcon(application.status),
@@ -475,7 +475,7 @@ class _JobSummaryCard extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 15,
                           height: 1.3,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w800,
                           color: NeoColors.inkSolid,
                         ),
                       ),
@@ -548,7 +548,7 @@ class _JobSummaryCard extends StatelessWidget {
                   minimumSize: const Size.fromHeight(44),
                   foregroundColor: NeoColors.inkSolid,
                   backgroundColor: NeoColors.surfaceCream,
-                  side: const BorderSide(color: NeoColors.inkSolid, width: 2),
+                  side: const BorderSide(color: NeoColors.inkSolid, width: 1.5),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -581,7 +581,7 @@ class _DetailBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.2),
         boxShadow: NeoShadows.elevation1,
       ),
       child: Row(
@@ -616,7 +616,7 @@ class _MetaTag extends StatelessWidget {
       decoration: BoxDecoration(
         color: NeoColors.surfaceCream,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.2),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -671,7 +671,7 @@ class _TimelineHeading extends StatelessWidget {
               decoration: BoxDecoration(
                 color: NeoColors.electricIndigo,
                 shape: BoxShape.circle,
-                border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                border: Border.all(color: NeoColors.inkSolid, width: 1.2),
               ),
             ),
             const Gap(8),
@@ -680,7 +680,7 @@ class _TimelineHeading extends StatelessWidget {
                 'ไทม์ไลน์การคัดเลือก',
                 style: TextStyle(
                   fontSize: 19,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w800,
                   color: NeoColors.inkSolid,
                 ),
               ),
@@ -842,7 +842,7 @@ class _TimelineStepItem extends StatelessWidget {
           decoration: BoxDecoration(
             color: nodeColor,
             shape: BoxShape.circle,
-            border: Border.all(color: NeoColors.inkSolid, width: 2.5),
+            border: Border.all(color: NeoColors.inkSolid, width: 2),
             boxShadow: upcoming ? null : NeoShadows.elevation1,
           ),
           child: Icon(icon, size: 19, color: NeoColors.inkSolid),
@@ -872,7 +872,7 @@ class _TimelineStepItem extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     height: 1.25,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w800,
                     color: upcoming ? NeoColors.subtleInk : NeoColors.inkSolid,
                   ),
                 ),
@@ -936,7 +936,7 @@ class _TimelineStepItem extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: NeoColors.pureWhite,
                       borderRadius: BorderRadius.circular(7),
-                      border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                      border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
@@ -996,7 +996,7 @@ class _CoverLetterCard extends StatelessWidget {
                 'Cover Letter',
                 style: TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w800,
                   color: NeoColors.inkSolid,
                 ),
               ),
@@ -1009,7 +1009,7 @@ class _CoverLetterCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: NeoColors.pureWhite,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+              border: Border.all(color: NeoColors.inkSolid, width: 1.2),
             ),
             child: Text(
               coverLetter.trim().isNotEmpty
@@ -1059,7 +1059,7 @@ class _ResumeCard extends StatelessWidget {
                   'เอกสารที่แนบส่งไปแล้ว',
                   style: TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w800,
                     color: NeoColors.inkSolid,
                   ),
                 ),
@@ -1069,7 +1069,7 @@ class _ResumeCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: NeoColors.surfaceCream,
                   borderRadius: BorderRadius.circular(7),
-                  border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                  border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                 ),
                 child: Text(
                   hasResume ? '1 ฉบับ' : '0 ฉบับ',
@@ -1089,7 +1089,7 @@ class _ResumeCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: NeoColors.paperCanvas,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: NeoColors.inkSolid, width: 2),
+              border: Border.all(color: NeoColors.inkSolid, width: 1.5),
               boxShadow: NeoShadows.elevation1,
             ),
             child: Row(
@@ -1101,7 +1101,7 @@ class _ResumeCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: NeoColors.softRose,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                    border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                   ),
                   child: const Icon(
                     Icons.description_outlined,
@@ -1118,7 +1118,7 @@ class _ResumeCard extends StatelessWidget {
                         'Resume ที่ใช้สมัคร',
                         style: TextStyle(
                           fontSize: 14,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w800,
                           color: NeoColors.inkSolid,
                         ),
                       ),

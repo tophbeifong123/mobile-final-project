@@ -33,7 +33,7 @@ class NeoSubmitButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: isEnabled ? backgroundColor : backgroundColor.withAlpha(180),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: NeoColors.inkSolid, width: 2.2),
+          border: Border.all(color: NeoColors.inkSolid, width: 1.5),
           boxShadow: NeoShadows.elevation3,
         ),
         child: Row(
@@ -57,7 +57,7 @@ class NeoSubmitButton extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 16,
                     height: 1.15,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w800,
                     color: NeoColors.inkSolid,
                     letterSpacing: -0.3,
                   ),

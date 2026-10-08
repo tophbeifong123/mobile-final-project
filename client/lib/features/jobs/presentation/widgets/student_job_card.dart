@@ -51,7 +51,7 @@ class StudentJobCard extends ConsumerWidget {
               fallback: Center(
                 child: Text(
                   letter,
-                  style: const TextStyle(fontWeight: FontWeight.w900),
+                  style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
               ),
             )

@@ -15,7 +15,7 @@ class SavedJobsProTipBanner extends StatelessWidget {
         decoration: BoxDecoration(
           color: NeoColors.butterYellow,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: NeoColors.inkSolid, width: 2.2),
+          border: Border.all(color: NeoColors.inkSolid, width: 1.5),
           boxShadow: NeoShadows.elevation2,
         ),
         padding: const EdgeInsets.all(12),
@@ -30,7 +30,7 @@ class SavedJobsProTipBanner extends StatelessWidget {
               decoration: BoxDecoration(
                 color: NeoColors.pureWhite,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                 boxShadow: NeoShadows.elevation1,
               ),
               child: const Icon(

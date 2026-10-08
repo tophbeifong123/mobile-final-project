@@ -287,7 +287,7 @@ class _JobFormState extends ConsumerState<_JobForm> {
                 child: Container(
                   decoration: const BoxDecoration(
                     border: Border(
-                      top: BorderSide(color: NeoColors.inkSolid, width: 2),
+                      top: BorderSide(color: NeoColors.inkSolid, width: 1.5),
                     ),
                   ),
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
@@ -678,7 +678,7 @@ class _FormCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: NeoColors.pureWhite,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: NeoColors.inkSolid, width: 2.2),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
         boxShadow: NeoShadows.elevation2,
       ),
       child: Column(
@@ -693,7 +693,7 @@ class _FormCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: iconBg,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                  border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                 ),
                 child: Icon(icon, size: 16, color: NeoColors.inkSolid),
               ),
@@ -809,7 +809,7 @@ class _WorkModePicker extends StatelessWidget {
                         ? NeoColors.butterYellow
                         : NeoColors.paperCanvas,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: NeoColors.inkSolid, width: 1.8),
+                    border: Border.all(color: NeoColors.inkSolid, width: 1.5),
                     boxShadow: mode == value ? NeoShadows.elevation1 : null,
                   ),
                   child: Text(
@@ -871,7 +871,7 @@ class _InterviewModePicker extends StatelessWidget {
                         ? NeoColors.butterYellow
                         : NeoColors.paperCanvas,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: NeoColors.inkSolid, width: 1.8),
+                    border: Border.all(color: NeoColors.inkSolid, width: 1.5),
                     boxShadow: mode == value ? NeoShadows.elevation1 : null,
                   ),
                   child: Text(
@@ -911,7 +911,7 @@ class _AllowanceToggle extends StatelessWidget {
         decoration: BoxDecoration(
           color: value ? NeoColors.butterYellow : NeoColors.paperCanvas,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: NeoColors.inkSolid, width: 2),
+          border: Border.all(color: NeoColors.inkSolid, width: 1.5),
         ),
         child: Row(
           children: [
@@ -1000,7 +1000,7 @@ class _SkillsEditor extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: NeoColors.skyBlue,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                      border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,

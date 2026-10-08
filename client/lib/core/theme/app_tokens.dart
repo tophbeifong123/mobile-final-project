@@ -58,23 +58,15 @@ abstract final class AppShadows {
 /// Retro-Chunky Neo-Brutalist Hard Drop Shadows
 abstract final class NeoShadows {
   static const List<BoxShadow> elevation1 = [
-    BoxShadow(
-      color: NeoColors.inkSolid,
-      offset: Offset(1.5, 1.5),
-      blurRadius: 0,
-    ),
+    BoxShadow(color: NeoColors.inkSolid, offset: Offset(1, 1), blurRadius: 0),
   ];
 
   static const List<BoxShadow> elevation2 = [
-    BoxShadow(color: NeoColors.inkSolid, offset: Offset(3, 3), blurRadius: 0),
+    BoxShadow(color: NeoColors.inkSolid, offset: Offset(2, 2), blurRadius: 0),
   ];
 
   static const List<BoxShadow> elevation3 = [
-    BoxShadow(
-      color: NeoColors.inkSolid,
-      offset: Offset(3.5, 3.5),
-      blurRadius: 0,
-    ),
+    BoxShadow(color: NeoColors.inkSolid, offset: Offset(3, 3), blurRadius: 0),
   ];
 }
 

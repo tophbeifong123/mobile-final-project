@@ -248,7 +248,7 @@ class _ApplicantAvatar extends StatelessWidget {
       decoration: BoxDecoration(
         color: NeoColors.skyBlue,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.2),
       ),
       child: SizedBox(
         width: 44,

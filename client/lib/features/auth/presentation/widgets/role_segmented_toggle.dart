@@ -24,7 +24,7 @@ class RoleSegmentedToggle extends StatelessWidget {
       decoration: BoxDecoration(
         color: NeoColors.pureWhite,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: NeoColors.inkSolid, width: 2.2),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
       ),
       child: Row(
         children: [
@@ -79,13 +79,13 @@ class _RoleTabItem extends StatelessWidget {
           color: isSelected ? NeoColors.butterYellow : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
           border: isSelected
-              ? Border.all(color: NeoColors.inkSolid, width: 1.8)
+              ? Border.all(color: NeoColors.inkSolid, width: 1.5)
               : null,
           boxShadow: isSelected
               ? const [
                   BoxShadow(
                     color: NeoColors.inkSolid,
-                    offset: Offset(2, 2),
+                    offset: Offset(1.5, 1.5),
                     blurRadius: 0,
                   ),
                 ]
@@ -102,7 +102,7 @@ class _RoleTabItem extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 13,
-                  fontWeight: isSelected ? FontWeight.w900 : FontWeight.w700,
+                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w700,
                   color: NeoColors.inkSolid,
                 ),
               ),

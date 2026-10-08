@@ -124,7 +124,7 @@ class _JobFeedScreenState extends ConsumerState<JobFeedScreen> {
                       borderRadius: BorderRadius.circular(999),
                       side: const BorderSide(
                         color: NeoColors.inkSolid,
-                        width: 1.8,
+                        width: 1.5,
                       ),
                     ),
                     elevation: 1.5,
@@ -163,7 +163,7 @@ class _JobFeedScreenState extends ConsumerState<JobFeedScreen> {
             //                 overflow: TextOverflow.ellipsis,
             //                 style: TextStyle(
             //                   fontSize: 16,
-            //                   fontWeight: FontWeight.w900,
+            //                   fontWeight: FontWeight.w800,
             //                   color: NeoColors.inkSolid,
             //                   letterSpacing: -0.3,
             //                 ),

@@ -51,7 +51,7 @@ class CompanyApplicantStatusChip extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.2),
         boxShadow: NeoShadows.elevation1,
       ),
       child: Text(

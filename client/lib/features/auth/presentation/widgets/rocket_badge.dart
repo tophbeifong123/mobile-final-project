@@ -19,7 +19,7 @@ class RocketBadge extends StatelessWidget {
           decoration: BoxDecoration(
             color: NeoColors.skyBlue,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: NeoColors.inkSolid, width: 2.2),
+            border: Border.all(color: NeoColors.inkSolid, width: 1.5),
             boxShadow: NeoShadows.elevation2,
           ),
           child: Center(
@@ -39,7 +39,7 @@ class RocketBadge extends StatelessWidget {
             decoration: BoxDecoration(
               color: NeoColors.onlineGreen,
               shape: BoxShape.circle,
-              border: Border.all(color: NeoColors.inkSolid, width: 2),
+              border: Border.all(color: NeoColors.inkSolid, width: 1.5),
             ),
           ),
         ),

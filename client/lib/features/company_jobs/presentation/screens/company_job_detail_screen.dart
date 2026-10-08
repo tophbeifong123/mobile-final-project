@@ -168,7 +168,7 @@ class _PostingColumn extends StatelessWidget {
           style: const TextStyle(
             fontSize: 28,
             height: 1.15,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w800,
             letterSpacing: -0.4,
             color: NeoColors.inkSolid,
           ),
@@ -317,7 +317,7 @@ class _ManagePanel extends StatelessWidget {
         child: Container(
           decoration: const BoxDecoration(
             border: Border(
-              top: BorderSide(color: NeoColors.inkSolid, width: 2),
+              top: BorderSide(color: NeoColors.inkSolid, width: 1.5),
             ),
           ),
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
@@ -331,7 +331,7 @@ class _ManagePanel extends StatelessWidget {
       decoration: BoxDecoration(
         color: NeoColors.pureWhite,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: NeoColors.inkSolid, width: 2.2),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
         boxShadow: NeoShadows.elevation2,
       ),
       child: content,
@@ -360,7 +360,7 @@ class _SectionCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: NeoColors.pureWhite,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: NeoColors.inkSolid, width: 2.2),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
         boxShadow: NeoShadows.elevation2,
       ),
       child: Column(
@@ -375,7 +375,7 @@ class _SectionCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: iconBg,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                  border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                 ),
                 child: Icon(icon, size: 16, color: NeoColors.inkSolid),
               ),
@@ -423,7 +423,7 @@ class _SkillsCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: NeoColors.pureWhite,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: NeoColors.inkSolid, width: 2.2),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
         boxShadow: NeoShadows.elevation2,
       ),
       child: Column(
@@ -438,7 +438,7 @@ class _SkillsCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: NeoColors.softLilac,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                  border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                 ),
                 child: const Icon(
                   LucideIcons.sparkles,
@@ -476,7 +476,7 @@ class _SkillsCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: NeoColors.skyBlue,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                      border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                     ),
                     child: Text(
                       skill.trim(),
@@ -506,7 +506,7 @@ class _ClosedNotice extends StatelessWidget {
       decoration: BoxDecoration(
         color: NeoColors.skyBlue,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: NeoColors.inkSolid, width: 1.8),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
       ),
       child: const Text(
         'ปิดรับสมัครแล้ว นักศึกษาไม่เห็นประกาศนี้ในหน้าแรก',
@@ -533,7 +533,7 @@ class _StatusBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: open ? NeoColors.freshMint : NeoColors.skyBlue,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.2),
         boxShadow: NeoShadows.elevation1,
       ),
       child: Text(

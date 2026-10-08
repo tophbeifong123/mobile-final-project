@@ -49,11 +49,11 @@ class FeedGreetingHeader extends ConsumerWidget {
                 decoration: BoxDecoration(
                   color: NeoColors.butterYellow,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: NeoColors.inkSolid, width: 2),
+                  border: Border.all(color: NeoColors.inkSolid, width: 1.5),
                   boxShadow: const [
                     BoxShadow(
                       color: NeoColors.inkSolid,
-                      offset: Offset(2, 2),
+                      offset: Offset(1.5, 1.5),
                       blurRadius: 0,
                     ),
                   ],
@@ -95,7 +95,7 @@ class FeedGreetingHeader extends ConsumerWidget {
                       'สวัสดี',
                       style: TextStyle(
                         fontSize: 20,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w800,
                         color: NeoColors.inkSolid,
                         letterSpacing: -0.3,
                       ),
@@ -109,7 +109,7 @@ class FeedGreetingHeader extends ConsumerWidget {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 20,
-                            fontWeight: FontWeight.w900,
+                            fontWeight: FontWeight.w800,
                             color: NeoColors.inkSolid,
                             letterSpacing: -0.3,
                           ),

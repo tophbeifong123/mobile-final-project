@@ -219,7 +219,7 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
           decoration: BoxDecoration(
             color: NeoColors.butterYellow,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: NeoColors.inkSolid, width: 2.5),
+            border: Border.all(color: NeoColors.inkSolid, width: 2),
             boxShadow: NeoShadows.elevation2,
           ),
           clipBehavior: Clip.antiAlias,
@@ -267,7 +267,7 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
                     decoration: BoxDecoration(
                       color: NeoColors.surfaceCream,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: NeoColors.inkSolid, width: 2),
+                      border: Border.all(color: NeoColors.inkSolid, width: 1.5),
                       boxShadow: NeoShadows.elevation1,
                     ),
                     child: Row(
@@ -323,7 +323,7 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
                   decoration: BoxDecoration(
                     color: NeoColors.freshMint,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                    border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                     boxShadow: NeoShadows.elevation1,
                   ),
                   child: Row(
@@ -372,7 +372,7 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
           decoration: BoxDecoration(
             color: NeoColors.freshMint.withValues(alpha: 0.35),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: NeoColors.inkSolid, width: 3),
+            border: Border.all(color: NeoColors.inkSolid, width: 2),
             boxShadow: NeoShadows.elevation2,
           ),
           clipBehavior: Clip.antiAlias,
@@ -397,7 +397,7 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
                         letter,
                         style: const TextStyle(
                           fontSize: 26,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w800,
                           color: NeoColors.freshMint,
                         ),
                       ),
@@ -416,7 +416,7 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
               decoration: BoxDecoration(
                 color: NeoColors.butterYellow,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: NeoColors.inkSolid, width: 2),
+                border: Border.all(color: NeoColors.inkSolid, width: 1.5),
                 boxShadow: NeoShadows.elevation1,
               ),
               child: Center(
@@ -455,7 +455,7 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
                     : 'โปรไฟล์บริษัท',
                 style: const TextStyle(
                   fontSize: 22,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w800,
                   color: NeoColors.inkSolid,
                   letterSpacing: -0.4,
                 ),
@@ -487,7 +487,7 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
       decoration: BoxDecoration(
         color: NeoColors.pureWhite,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: NeoColors.inkSolid, width: 2.5),
+        border: Border.all(color: NeoColors.inkSolid, width: 2),
         boxShadow: NeoShadows.elevation2,
       ),
       padding: const EdgeInsets.all(16),
@@ -508,7 +508,7 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
                           color: NeoColors.inkSolid,
-                          width: 1.5,
+                          width: 1.2,
                         ),
                       ),
                       child: Icon(icon, size: 16, color: NeoColors.inkSolid),
@@ -616,7 +616,7 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
           decoration: BoxDecoration(
             color: NeoColors.paperCanvas,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: NeoColors.inkSolid, width: 2),
+            border: Border.all(color: NeoColors.inkSolid, width: 1.5),
             boxShadow: NeoShadows.elevation1,
           ),
           padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -700,7 +700,7 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
                   ? NeoColors.butterYellow
                   : NeoColors.paperCanvas,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: NeoColors.inkSolid, width: 2),
+              border: Border.all(color: NeoColors.inkSolid, width: 1.5),
               boxShadow: isSelected
                   ? NeoShadows.elevation2
                   : NeoShadows.elevation1,
@@ -812,7 +812,7 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
         decoration: BoxDecoration(
           color: NeoColors.paperCanvas,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+          border: Border.all(color: NeoColors.inkSolid, width: 1.2),
         ),
         child: Text(
           '${_perks.length} แท็ก',
@@ -842,7 +842,7 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
                   decoration: BoxDecoration(
                     color: color,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: NeoColors.inkSolid, width: 2),
+                    border: Border.all(color: NeoColors.inkSolid, width: 1.5),
                     boxShadow: NeoShadows.elevation1,
                   ),
                   child: Row(
@@ -989,26 +989,32 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: NeoColors.inkSolid, width: 2),
+          borderSide: const BorderSide(color: NeoColors.inkSolid, width: 1.5),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: NeoColors.inkSolid, width: 2),
+          borderSide: const BorderSide(color: NeoColors.inkSolid, width: 1.5),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(
             color: NeoColors.electricIndigo,
-            width: 2.2,
+            width: 1.5,
           ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: NeoColors.errorBorder, width: 2),
+          borderSide: const BorderSide(
+            color: NeoColors.errorBorder,
+            width: 1.5,
+          ),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: NeoColors.errorBorder, width: 2),
+          borderSide: const BorderSide(
+            color: NeoColors.errorBorder,
+            width: 1.5,
+          ),
         ),
       ),
     );
@@ -1065,7 +1071,7 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
         decoration: BoxDecoration(
           color: NeoColors.freshMint,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: NeoColors.inkSolid, width: 2.5),
+          border: Border.all(color: NeoColors.inkSolid, width: 2),
           boxShadow: NeoShadows.elevation3,
         ),
         child: Row(
@@ -1110,7 +1116,7 @@ class _CompanyProfileFormState extends ConsumerState<_CompanyProfileForm> {
       decoration: BoxDecoration(
         color: NeoColors.errorBg,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: NeoColors.errorBorder, width: 2),
+        border: Border.all(color: NeoColors.errorBorder, width: 1.5),
       ),
       child: Text(
         msg,

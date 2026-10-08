@@ -151,7 +151,7 @@ class _StepCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: accent,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                  border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                 ),
                 child: Icon(icon, size: 18, color: NeoColors.inkSolid),
               ),
@@ -161,7 +161,7 @@ class _StepCard extends StatelessWidget {
                   title,
                   style: const TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w800,
                     color: NeoColors.inkSolid,
                   ),
                 ),

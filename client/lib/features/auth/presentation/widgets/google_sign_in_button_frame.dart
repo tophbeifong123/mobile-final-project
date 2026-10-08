@@ -34,7 +34,7 @@ class _GoogleSignInButtonFrameState extends State<GoogleSignInButtonFrame> {
         decoration: BoxDecoration(
           color: NeoColors.pureWhite,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: NeoColors.inkSolid, width: 2.2),
+          border: Border.all(color: NeoColors.inkSolid, width: 1.5),
           boxShadow: NeoShadows.elevation3,
         ),
         child: SizedBox(

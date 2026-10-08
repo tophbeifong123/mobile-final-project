@@ -27,7 +27,7 @@ class NeoNavBar extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         color: NeoColors.pureWhite,
-        border: Border(top: BorderSide(color: NeoColors.inkSolid, width: 2)),
+        border: Border(top: BorderSide(color: NeoColors.inkSolid, width: 1.5)),
       ),
       child: SafeArea(
         top: false,
@@ -76,13 +76,13 @@ class _NeoNavItem extends StatelessWidget {
           color: isSelected ? NeoColors.butterYellow : Colors.transparent,
           border: Border.all(
             color: isSelected ? NeoColors.inkSolid : Colors.transparent,
-            width: 1.5,
+            width: 1.2,
           ),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
               color: isSelected ? NeoColors.inkSolid : Colors.transparent,
-              offset: const Offset(2, 2),
+              offset: const Offset(1.5, 1.5),
               blurRadius: 0,
             ),
           ],

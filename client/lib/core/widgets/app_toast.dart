@@ -312,11 +312,11 @@ class AppToastWidgetState extends State<AppToastOverlayWidget>
                     decoration: BoxDecoration(
                       color: _backgroundColor,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: inkSolid, width: 2.2),
+                      border: Border.all(color: inkSolid, width: 1.5),
                       boxShadow: const [
                         BoxShadow(
                           color: inkSolid,
-                          offset: Offset(3, 3),
+                          offset: Offset(2, 2),
                           blurRadius: 0,
                         ),
                       ],
@@ -331,7 +331,7 @@ class AppToastWidgetState extends State<AppToastOverlayWidget>
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(8),
-                            border: Border.all(color: inkSolid, width: 1.8),
+                            border: Border.all(color: inkSolid, width: 1.5),
                           ),
                           child: Icon(_iconData, size: 18, color: inkSolid),
                         ),

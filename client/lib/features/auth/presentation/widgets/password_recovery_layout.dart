@@ -44,7 +44,7 @@ class PasswordRecoveryLayout extends StatelessWidget {
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
                               color: NeoColors.inkSolid,
-                              width: 2.5,
+                              width: 2,
                             ),
                             boxShadow: NeoShadows.elevation3,
                           ),
@@ -60,7 +60,7 @@ class PasswordRecoveryLayout extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(14),
                                     border: Border.all(
                                       color: NeoColors.inkSolid,
-                                      width: 2,
+                                      width: 1.5,
                                     ),
                                     boxShadow: NeoShadows.elevation2,
                                   ),
@@ -72,7 +72,7 @@ class PasswordRecoveryLayout extends StatelessWidget {
                                 heading,
                                 style: const TextStyle(
                                   fontSize: 24,
-                                  fontWeight: FontWeight.w900,
+                                  fontWeight: FontWeight.w800,
                                   color: NeoColors.inkSolid,
                                 ),
                               ),
@@ -121,7 +121,7 @@ class PasswordRecoveryFeedback extends StatelessWidget {
       decoration: BoxDecoration(
         color: isError ? NeoColors.errorBg : NeoColors.freshMint,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.2),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,

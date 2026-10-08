@@ -129,7 +129,7 @@ class _ContactRow extends StatelessWidget {
       decoration: BoxDecoration(
         color: NeoColors.paperCanvas,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.2),
       ),
       child: Row(
         children: [
@@ -239,7 +239,7 @@ class _ContactDialogState extends State<_ContactDialog> {
         decoration: BoxDecoration(
           color: NeoColors.pureWhite,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: NeoColors.inkSolid, width: 2.5),
+          border: Border.all(color: NeoColors.inkSolid, width: 2),
           boxShadow: NeoShadows.elevation3,
         ),
         child: Form(
@@ -256,7 +256,7 @@ class _ContactDialogState extends State<_ContactDialog> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w800,
                         fontSize: 18,
                         color: NeoColors.inkSolid,
                       ),
@@ -281,7 +281,7 @@ class _ContactDialogState extends State<_ContactDialog> {
                         backgroundColor: NeoColors.surfaceCream,
                         side: const BorderSide(
                           color: NeoColors.inkSolid,
-                          width: 1.8,
+                          width: 1.5,
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
@@ -427,23 +427,23 @@ InputDecoration _contactInputDecoration({String? hintText}) {
     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: NeoColors.inkSolid, width: 2),
+      borderSide: const BorderSide(color: NeoColors.inkSolid, width: 1.5),
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: NeoColors.inkSolid, width: 2),
+      borderSide: const BorderSide(color: NeoColors.inkSolid, width: 1.5),
     ),
     focusedBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: NeoColors.inkSolid, width: 2.5),
+      borderSide: const BorderSide(color: NeoColors.inkSolid, width: 2),
     ),
     errorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: NeoColors.errorBorder, width: 2),
+      borderSide: const BorderSide(color: NeoColors.errorBorder, width: 1.5),
     ),
     focusedErrorBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: NeoColors.errorBorder, width: 2.5),
+      borderSide: const BorderSide(color: NeoColors.errorBorder, width: 2),
     ),
   );
 }

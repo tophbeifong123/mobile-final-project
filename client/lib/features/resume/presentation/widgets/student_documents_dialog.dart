@@ -172,7 +172,7 @@ class _StudentDocumentsDialogState
                         backgroundColor: NeoColors.paperCanvas,
                         side: const BorderSide(
                           color: NeoColors.inkSolid,
-                          width: 1.5,
+                          width: 1.2,
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -312,11 +312,11 @@ class _StudentDocumentsDialogState
     contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(10),
-      borderSide: const BorderSide(color: NeoColors.mutedInk, width: 1.5),
+      borderSide: const BorderSide(color: NeoColors.mutedInk, width: 1.2),
     ),
     enabledBorder: OutlineInputBorder(
       borderRadius: BorderRadius.circular(10),
-      borderSide: const BorderSide(color: NeoColors.mutedInk, width: 1.5),
+      borderSide: const BorderSide(color: NeoColors.mutedInk, width: 1.2),
     ),
   );
 }
@@ -331,7 +331,7 @@ class _DocumentSurface extends StatelessWidget {
     insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(16),
-      side: const BorderSide(color: NeoColors.inkSolid, width: 2),
+      side: const BorderSide(color: NeoColors.inkSolid, width: 1.5),
     ),
     clipBehavior: Clip.antiAlias,
     child: ConstrainedBox(

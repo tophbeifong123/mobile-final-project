@@ -15,11 +15,11 @@ class StudentProfileBioCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: NeoColors.pureWhite,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: NeoColors.inkSolid, width: 2),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
         boxShadow: const [
           BoxShadow(
             color: NeoColors.inkSolid,
-            offset: Offset(3, 3),
+            offset: Offset(2, 2),
             blurRadius: 0,
           ),
         ],
@@ -37,11 +37,11 @@ class StudentProfileBioCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: NeoColors.freshMint,
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                  border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                   boxShadow: const [
                     BoxShadow(
                       color: NeoColors.inkSolid,
-                      offset: Offset(1.5, 1.5),
+                      offset: Offset(1, 1),
                       blurRadius: 0,
                     ),
                   ],
@@ -99,21 +99,21 @@ class StudentProfileBioCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
                 borderSide: const BorderSide(
                   color: NeoColors.inkSolid,
-                  width: 1.5,
+                  width: 1.2,
                 ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
                 borderSide: const BorderSide(
                   color: NeoColors.mutedInk,
-                  width: 1.5,
+                  width: 1.2,
                 ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
                 borderSide: const BorderSide(
                   color: NeoColors.inkSolid,
-                  width: 2,
+                  width: 1.5,
                 ),
               ),
             ),

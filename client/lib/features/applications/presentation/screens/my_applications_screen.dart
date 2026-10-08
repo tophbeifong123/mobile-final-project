@@ -161,7 +161,7 @@ class _SummaryCard extends StatelessWidget {
           //       decoration: BoxDecoration(
           //         color: NeoColors.electricIndigo,
           //         borderRadius: BorderRadius.circular(8),
-          //         border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+          //         border: Border.all(color: NeoColors.inkSolid, width: 1.2),
           //       ),
           //       // child: const Icon(
           //       //   Icons.rocket_launch_rounded,
@@ -183,7 +183,7 @@ class _SummaryCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 25,
                     height: 1.15,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w800,
                     letterSpacing: -0.6,
                     color: NeoColors.inkSolid,
                   ),
@@ -268,7 +268,7 @@ class _SummaryStat extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.2),
       ),
       child: Column(
         children: [
@@ -276,7 +276,7 @@ class _SummaryStat extends StatelessWidget {
             '$count',
             style: const TextStyle(
               fontSize: 18,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
               color: NeoColors.inkSolid,
             ),
           ),
@@ -317,7 +317,7 @@ class _SmallBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.2),
         boxShadow: large ? NeoShadows.elevation1 : null,
       ),
       child: Text(
@@ -385,7 +385,7 @@ class _StatusFilters extends StatelessWidget {
                       ? NeoColors.butterYellow
                       : NeoColors.pureWhite,
                   borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: NeoColors.inkSolid, width: 1.8),
+                  border: Border.all(color: NeoColors.inkSolid, width: 1.5),
                   boxShadow: NeoShadows.elevation1,
                 ),
                 child: Text(
@@ -492,7 +492,7 @@ class _ApplicationCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: statusColor.withValues(alpha: 0.22),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+              border: Border.all(color: NeoColors.inkSolid, width: 1.2),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -591,13 +591,13 @@ class _CompanyMark extends StatelessWidget {
       decoration: BoxDecoration(
         color: markColors[colorIndex % markColors.length],
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.2),
       ),
       child: Text(
         letter,
         style: const TextStyle(
           fontSize: 20,
-          fontWeight: FontWeight.w900,
+          fontWeight: FontWeight.w800,
           color: NeoColors.inkSolid,
         ),
       ),
@@ -618,7 +618,7 @@ class _StatusBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.2),
         boxShadow: NeoShadows.elevation1,
       ),
       child: Row(
@@ -740,7 +740,7 @@ class _ProgressStep extends StatelessWidget {
             shape: BoxShape.circle,
             border: Border.all(
               color: active ? NeoColors.inkSolid : NeoColors.mutedInk,
-              width: 1.5,
+              width: 1.2,
             ),
           ),
           child: completed
@@ -749,7 +749,7 @@ class _ProgressStep extends StatelessWidget {
                   '$number',
                   style: TextStyle(
                     fontSize: 11,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w800,
                     color: active ? NeoColors.inkSolid : NeoColors.mutedInk,
                   ),
                 ),
@@ -802,7 +802,7 @@ class _StatePanel extends StatelessWidget {
             decoration: BoxDecoration(
               color: NeoColors.skyBlue,
               borderRadius: BorderRadius.circular(17),
-              border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+              border: Border.all(color: NeoColors.inkSolid, width: 1.2),
             ),
             child: Icon(icon, size: 30, color: NeoColors.inkSolid),
           ),
@@ -812,7 +812,7 @@ class _StatePanel extends StatelessWidget {
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 20,
-              fontWeight: FontWeight.w900,
+              fontWeight: FontWeight.w800,
               color: NeoColors.inkSolid,
             ),
           ),
@@ -835,7 +835,7 @@ class _StatePanel extends StatelessWidget {
                 minimumSize: const Size.fromHeight(48),
                 foregroundColor: NeoColors.inkSolid,
                 backgroundColor: NeoColors.butterYellow,
-                side: const BorderSide(color: NeoColors.inkSolid, width: 2),
+                side: const BorderSide(color: NeoColors.inkSolid, width: 1.5),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),

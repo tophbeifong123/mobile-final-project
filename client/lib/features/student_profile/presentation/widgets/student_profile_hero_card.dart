@@ -29,11 +29,11 @@ class StudentProfileHeroCard extends ConsumerWidget {
       decoration: BoxDecoration(
         color: NeoColors.pureWhite,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: NeoColors.inkSolid, width: 2),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
         boxShadow: const [
           BoxShadow(
             color: NeoColors.inkSolid,
-            offset: Offset(3, 3),
+            offset: Offset(2, 2),
             blurRadius: 0,
           ),
         ],
@@ -88,12 +88,12 @@ class StudentProfileHeroCard extends ConsumerWidget {
                               borderRadius: BorderRadius.circular(14),
                               border: Border.all(
                                 color: NeoColors.inkSolid,
-                                width: 2,
+                                width: 1.5,
                               ),
                               boxShadow: const [
                                 BoxShadow(
                                   color: NeoColors.inkSolid,
-                                  offset: Offset(2, 2),
+                                  offset: Offset(1.5, 1.5),
                                   blurRadius: 0,
                                 ),
                               ],
@@ -116,7 +116,7 @@ class StudentProfileHeroCard extends ConsumerWidget {
                                         : 'S',
                                     style: const TextStyle(
                                       fontSize: 30,
-                                      fontWeight: FontWeight.w900,
+                                      fontWeight: FontWeight.w800,
                                       color: NeoColors.inkSolid,
                                     ),
                                   ),
@@ -139,7 +139,7 @@ class StudentProfileHeroCard extends ConsumerWidget {
                                       : 'S',
                                   style: const TextStyle(
                                     fontSize: 30,
-                                    fontWeight: FontWeight.w900,
+                                    fontWeight: FontWeight.w800,
                                     color: NeoColors.inkSolid,
                                   ),
                                 ),
@@ -160,12 +160,12 @@ class StudentProfileHeroCard extends ConsumerWidget {
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
                                   color: NeoColors.inkSolid,
-                                  width: 1.5,
+                                  width: 1.2,
                                 ),
                                 boxShadow: const [
                                   BoxShadow(
                                     color: NeoColors.inkSolid,
-                                    offset: Offset(1.5, 1.5),
+                                    offset: Offset(1, 1),
                                     blurRadius: 0,
                                   ),
                                 ],
@@ -227,12 +227,12 @@ class StudentProfileHeroCard extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
                           color: NeoColors.inkSolid,
-                          width: 1.5,
+                          width: 1.2,
                         ),
                         boxShadow: const [
                           BoxShadow(
                             color: NeoColors.inkSolid,
-                            offset: Offset(1.5, 1.5),
+                            offset: Offset(1, 1),
                             blurRadius: 0,
                           ),
                         ],
@@ -271,12 +271,12 @@ class StudentProfileHeroCard extends ConsumerWidget {
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
                           color: NeoColors.inkSolid,
-                          width: 1.5,
+                          width: 1.2,
                         ),
                         boxShadow: const [
                           BoxShadow(
                             color: NeoColors.inkSolid,
-                            offset: Offset(1.5, 1.5),
+                            offset: Offset(1, 1),
                             blurRadius: 0,
                           ),
                         ],

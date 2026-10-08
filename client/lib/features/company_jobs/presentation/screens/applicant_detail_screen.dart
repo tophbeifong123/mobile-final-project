@@ -422,7 +422,7 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
                 decoration: const BoxDecoration(
                   color: NeoColors.paperCanvas,
                   border: Border(
-                    top: BorderSide(color: NeoColors.inkSolid, width: 2),
+                    top: BorderSide(color: NeoColors.inkSolid, width: 1.5),
                   ),
                 ),
                 child: SizedBox(
@@ -474,7 +474,7 @@ class _ApplicantDetailScreenState extends ConsumerState<ApplicantDetailScreen> {
                 decoration: const BoxDecoration(
                   color: NeoColors.paperCanvas,
                   border: Border(
-                    top: BorderSide(color: NeoColors.inkSolid, width: 2),
+                    top: BorderSide(color: NeoColors.inkSolid, width: 1.5),
                   ),
                 ),
                 child: Column(
@@ -851,7 +851,7 @@ class _ContactLinksCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: NeoColors.surfaceCream,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                  border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                 ),
                 child: Row(
                   children: [
@@ -1111,7 +1111,7 @@ class _ResumeCard extends ConsumerWidget {
             decoration: BoxDecoration(
               color: NeoColors.surfaceCream,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+              border: Border.all(color: NeoColors.inkSolid, width: 1.2),
             ),
             child: Row(
               children: [

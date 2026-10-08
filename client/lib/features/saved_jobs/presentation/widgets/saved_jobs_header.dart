@@ -18,7 +18,7 @@ class SavedJobsHeader extends StatelessWidget {
         decoration: BoxDecoration(
           color: NeoColors.surfaceCream,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: NeoColors.inkSolid, width: 2),
+          border: Border.all(color: NeoColors.inkSolid, width: 1.5),
           boxShadow: NeoShadows.elevation1,
         ),
         child: Column(
@@ -29,7 +29,7 @@ class SavedJobsHeader extends StatelessWidget {
                 text: 'งานที่บันทึกไว้',
                 style: const TextStyle(
                   fontSize: 20,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w800,
                   color: NeoColors.inkSolid,
                   letterSpacing: -0.5,
                 ),

@@ -108,7 +108,7 @@ class _ArrowButton extends StatelessWidget {
           backgroundColor: NeoColors.pureWhite,
           disabledBackgroundColor: NeoColors.surfaceCream,
           foregroundColor: NeoColors.inkSolid,
-          side: const BorderSide(color: NeoColors.inkSolid, width: 2),
+          side: const BorderSide(color: NeoColors.inkSolid, width: 1.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -143,7 +143,7 @@ class _PageChip extends StatelessWidget {
         color: selected ? NeoColors.butterYellow : NeoColors.pureWhite,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: NeoColors.inkSolid, width: 2),
+          side: const BorderSide(color: NeoColors.inkSolid, width: 1.5),
         ),
         child: InkWell(
           onTap: selected ? null : onPressed,

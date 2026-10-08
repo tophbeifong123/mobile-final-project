@@ -20,7 +20,7 @@ class FeedTopBar extends StatelessWidget {
             decoration: BoxDecoration(
               color: NeoColors.butterYellow,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: NeoColors.inkSolid, width: 2),
+              border: Border.all(color: NeoColors.inkSolid, width: 1.5),
               boxShadow: NeoShadows.elevation1,
             ),
             child: const Center(
@@ -39,7 +39,7 @@ class FeedTopBar extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w800,
                 color: NeoColors.inkSolid,
                 letterSpacing: -0.3,
               ),
@@ -58,7 +58,7 @@ class FeedTopBar extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: NeoColors.surfaceCream,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: NeoColors.inkSolid, width: 1.8),
+                  border: Border.all(color: NeoColors.inkSolid, width: 1.5),
                   boxShadow: NeoShadows.elevation1,
                 ),
                 child: const Icon(

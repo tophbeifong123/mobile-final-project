@@ -35,7 +35,7 @@ class _ApplicationDocumentsDialogState
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: NeoColors.inkSolid, width: 2),
+        side: const BorderSide(color: NeoColors.inkSolid, width: 1.5),
       ),
       clipBehavior: Clip.antiAlias,
       insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
@@ -114,7 +114,7 @@ class _ApplicationDocumentsDialogState
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
                                   color: NeoColors.inkSolid,
-                                  width: 2,
+                                  width: 1.5,
                                 ),
                               ),
                               child: Row(

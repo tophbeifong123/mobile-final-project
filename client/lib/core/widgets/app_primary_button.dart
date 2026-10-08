@@ -25,11 +25,11 @@ class AppPrimaryButton extends StatelessWidget {
       decoration: BoxDecoration(
         color: isEnabled ? bg : bg.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: NeoColors.inkSolid, width: 2),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
         boxShadow: [
           BoxShadow(
             color: NeoColors.inkSolid,
-            offset: isEnabled ? const Offset(2.5, 2.5) : const Offset(1, 1),
+            offset: isEnabled ? const Offset(1.5, 1.5) : const Offset(0.5, 0.5),
             blurRadius: 0,
           ),
         ],

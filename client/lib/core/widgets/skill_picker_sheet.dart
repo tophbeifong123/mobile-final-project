@@ -116,9 +116,9 @@ class _SkillPickerSheetState extends State<SkillPickerSheet> {
         color: NeoColors.pureWhite,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         border: Border(
-          top: BorderSide(color: NeoColors.inkSolid, width: 2.5),
-          left: BorderSide(color: NeoColors.inkSolid, width: 2.5),
-          right: BorderSide(color: NeoColors.inkSolid, width: 2.5),
+          top: BorderSide(color: NeoColors.inkSolid, width: 2),
+          left: BorderSide(color: NeoColors.inkSolid, width: 2),
+          right: BorderSide(color: NeoColors.inkSolid, width: 2),
         ),
       ),
       child: SafeArea(
@@ -155,7 +155,7 @@ class _SkillPickerSheetState extends State<SkillPickerSheet> {
                           widget.title,
                           style: const TextStyle(
                             fontSize: 18,
-                            fontWeight: FontWeight.w900,
+                            fontWeight: FontWeight.w800,
                             color: NeoColors.inkSolid,
                             letterSpacing: -0.3,
                           ),
@@ -180,11 +180,11 @@ class _SkillPickerSheetState extends State<SkillPickerSheet> {
                     decoration: BoxDecoration(
                       color: NeoColors.butterYellow,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                      border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                       boxShadow: const [
                         BoxShadow(
                           color: NeoColors.inkSolid,
-                          offset: Offset(1.5, 1.5),
+                          offset: Offset(1, 1),
                           blurRadius: 0,
                         ),
                       ],
@@ -214,11 +214,11 @@ class _SkillPickerSheetState extends State<SkillPickerSheet> {
                 decoration: BoxDecoration(
                   color: NeoColors.paperCanvas,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                  border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                   boxShadow: const [
                     BoxShadow(
                       color: NeoColors.inkSolid,
-                      offset: Offset(2, 2),
+                      offset: Offset(1.5, 1.5),
                       blurRadius: 0,
                     ),
                   ],
@@ -292,11 +292,11 @@ class _SkillPickerSheetState extends State<SkillPickerSheet> {
                     decoration: BoxDecoration(
                       color: NeoColors.freshMint,
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                      border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                       boxShadow: const [
                         BoxShadow(
                           color: NeoColors.inkSolid,
-                          offset: Offset(2, 2),
+                          offset: Offset(1.5, 1.5),
                           blurRadius: 0,
                         ),
                       ],
@@ -364,7 +364,7 @@ class _SkillPickerSheetState extends State<SkillPickerSheet> {
               decoration: const BoxDecoration(
                 color: NeoColors.paperCanvas,
                 border: Border(
-                  top: BorderSide(color: NeoColors.inkSolid, width: 1.5),
+                  top: BorderSide(color: NeoColors.inkSolid, width: 1.2),
                 ),
               ),
               child: Row(
@@ -404,12 +404,12 @@ class _SkillPickerSheetState extends State<SkillPickerSheet> {
         decoration: BoxDecoration(
           color: isSelected ? NeoColors.electricIndigo : NeoColors.pureWhite,
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+          border: Border.all(color: NeoColors.inkSolid, width: 1.2),
           boxShadow: isSelected
               ? const [
                   BoxShadow(
                     color: NeoColors.inkSolid,
-                    offset: Offset(1.5, 1.5),
+                    offset: Offset(1, 1),
                     blurRadius: 0,
                   ),
                 ]
@@ -437,11 +437,11 @@ class _SkillPickerSheetState extends State<SkillPickerSheet> {
         decoration: BoxDecoration(
           color: isSelected ? NeoColors.electricIndigo : NeoColors.surfaceCream,
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+          border: Border.all(color: NeoColors.inkSolid, width: 1.2),
           boxShadow: const [
             BoxShadow(
               color: NeoColors.inkSolid,
-              offset: Offset(1.5, 1.5),
+              offset: Offset(1, 1),
               blurRadius: 0,
             ),
           ],

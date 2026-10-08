@@ -33,11 +33,11 @@ class StudentProfileInfoCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: NeoColors.pureWhite,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: NeoColors.inkSolid, width: 2),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
         boxShadow: const [
           BoxShadow(
             color: NeoColors.inkSolid,
-            offset: Offset(3, 3),
+            offset: Offset(2, 2),
             blurRadius: 0,
           ),
         ],
@@ -55,11 +55,11 @@ class StudentProfileInfoCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: NeoColors.pastelCoral,
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                  border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                   boxShadow: const [
                     BoxShadow(
                       color: NeoColors.inkSolid,
-                      offset: Offset(1.5, 1.5),
+                      offset: Offset(1, 1),
                       blurRadius: 0,
                     ),
                   ],

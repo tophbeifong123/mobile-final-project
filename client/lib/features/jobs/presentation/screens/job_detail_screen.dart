@@ -59,7 +59,7 @@ class _JobDetailScreenState extends ConsumerState<JobDetailScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         shape: const Border(
-          bottom: BorderSide(color: NeoColors.inkSolid, width: 2),
+          bottom: BorderSide(color: NeoColors.inkSolid, width: 1.5),
         ),
         leading: IconButton(
           tooltip: 'กลับ',
@@ -157,7 +157,7 @@ class _JobBody extends StatelessWidget {
           style: const TextStyle(
             fontSize: 28,
             height: 1.15,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w800,
             letterSpacing: -0.4,
             color: NeoColors.inkSolid,
           ),
@@ -344,7 +344,7 @@ class _RequirementsCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: NeoColors.freshMint,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                  border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                 ),
                 child: const Icon(
                   LucideIcons.listChecks,
@@ -403,7 +403,7 @@ class _RequirementsCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: NeoColors.skyBlue,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                      border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                     ),
                     child: Text(
                       skill,
@@ -529,7 +529,7 @@ class _CompanyStory extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: NeoColors.butterYellow,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                      border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                     ),
                     child: Text(
                       perk,
@@ -630,7 +630,9 @@ class _Actions extends StatelessWidget {
       color: NeoColors.paperCanvas,
       child: Container(
         decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: NeoColors.inkSolid, width: 2)),
+          border: Border(
+            top: BorderSide(color: NeoColors.inkSolid, width: 1.5),
+          ),
         ),
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
         child: SafeArea(
@@ -702,7 +704,7 @@ class _CompanyCoverState extends ConsumerState<_CompanyCover> {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: NeoColors.inkSolid, width: 2.5),
+        border: Border.all(color: NeoColors.inkSolid, width: 2),
         boxShadow: NeoShadows.elevation2,
       ),
       clipBehavior: Clip.antiAlias,
@@ -780,7 +782,7 @@ class _CompanyMarkState extends ConsumerState<_CompanyMark> {
         letter,
         style: const TextStyle(
           fontSize: 18,
-          fontWeight: FontWeight.w900,
+          fontWeight: FontWeight.w800,
           color: NeoColors.inkSolid,
         ),
       ),
@@ -818,7 +820,7 @@ class _CompanyMarkState extends ConsumerState<_CompanyMark> {
       decoration: BoxDecoration(
         color: NeoColors.pureWhite,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: NeoColors.inkSolid, width: 3),
+        border: Border.all(color: NeoColors.inkSolid, width: 2),
         boxShadow: NeoShadows.elevation2,
       ),
       child: ClipRRect(borderRadius: BorderRadius.circular(10), child: child),
@@ -863,7 +865,7 @@ class _SectionCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: iconBg,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                  border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                 ),
                 child: Icon(icon, size: 16, color: NeoColors.inkSolid),
               ),
@@ -947,7 +949,7 @@ class _SurfaceCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: NeoColors.pureWhite,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: NeoColors.inkSolid, width: 2.2),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
         boxShadow: NeoShadows.elevation2,
       ),
       child: child,

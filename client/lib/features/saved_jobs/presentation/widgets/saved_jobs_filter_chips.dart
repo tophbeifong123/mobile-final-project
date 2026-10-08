@@ -61,7 +61,7 @@ class SavedJobsFilterChips extends StatelessWidget {
                     : const [
                         BoxShadow(
                           color: NeoColors.inkSolid,
-                          offset: Offset(1.5, 1.5),
+                          offset: Offset(1, 1),
                           blurRadius: 0,
                         ),
                       ],

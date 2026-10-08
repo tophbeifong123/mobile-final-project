@@ -37,7 +37,7 @@ class FeedSearchBar extends StatelessWidget {
               decoration: BoxDecoration(
                 color: NeoColors.pureWhite,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: NeoColors.inkSolid, width: 2.2),
+                border: Border.all(color: NeoColors.inkSolid, width: 1.5),
                 boxShadow: NeoShadows.elevation2,
               ),
               child: Row(
@@ -51,7 +51,7 @@ class FeedSearchBar extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: NeoColors.softLilac,
                       borderRadius: BorderRadius.circular(7),
-                      border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                      border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                     ),
                     child: const Icon(
                       Icons.search_rounded,
@@ -120,7 +120,7 @@ class FeedSearchBar extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: NeoColors.butterYellow,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: NeoColors.inkSolid, width: 2.2),
+                    border: Border.all(color: NeoColors.inkSolid, width: 1.5),
                     boxShadow: NeoShadows.elevation2,
                   ),
                   child: const Icon(
