@@ -82,7 +82,7 @@ class _NeoNavItem extends StatelessWidget {
           boxShadow: [
             BoxShadow(
               color: isSelected ? NeoColors.inkSolid : Colors.transparent,
-              offset: const Offset(2, 2),
+              offset: const Offset(1.5, 1.5),
               blurRadius: 0,
             ),
           ],

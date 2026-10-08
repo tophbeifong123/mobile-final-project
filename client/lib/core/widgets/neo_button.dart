@@ -55,40 +55,40 @@ class _NeoButtonState extends State<NeoButton> {
     Color bg;
     Color fg;
     double borderWidth = 2.0;
-    double shadowOffset = 2.5;
+    double shadowOffset = 1.5;
 
     switch (widget.variant) {
       case NeoButtonVariant.primary:
         bg = widget.backgroundColor ?? NeoColors.electricIndigo;
         fg = widget.foregroundColor ?? Colors.white;
         borderWidth = 2.0;
-        shadowOffset = 3.0;
+        shadowOffset = 2.0;
       case NeoButtonVariant.secondary:
         bg = widget.backgroundColor ?? NeoColors.butterYellow;
         fg = widget.foregroundColor ?? NeoColors.inkSolid;
         borderWidth = 2.0;
-        shadowOffset = 2.5;
+        shadowOffset = 1.5;
       case NeoButtonVariant.destructive:
         bg = widget.backgroundColor ?? NeoColors.surfaceCream;
         fg = widget.foregroundColor ?? NeoColors.errorText;
         borderWidth = 1.8;
-        shadowOffset = 2.0;
+        shadowOffset = 1.5;
       case NeoButtonVariant.outline:
         bg = widget.backgroundColor ?? NeoColors.pureWhite;
         fg = widget.foregroundColor ?? NeoColors.inkSolid;
         borderWidth = 1.8;
-        shadowOffset = 2.0;
+        shadowOffset = 1.5;
       case NeoButtonVariant.surface:
         bg = widget.backgroundColor ?? NeoColors.surfaceCream;
         fg = widget.foregroundColor ?? NeoColors.inkSolid;
         borderWidth = 1.8;
-        shadowOffset = 2.0;
+        shadowOffset = 1.5;
     }
 
     if (!isEnabled) {
       bg = bg.withValues(alpha: 0.55);
       fg = fg.withValues(alpha: 0.65);
-      shadowOffset = 1.0;
+      shadowOffset = 0.5;
     }
 
     final content = Row(
@@ -133,6 +133,7 @@ class _NeoButtonState extends State<NeoButton> {
     );
 
     final currentOffset = _isPressed && isEnabled ? 0.5 : shadowOffset;
+    final pressShift = _isPressed && isEnabled ? shadowOffset - 0.5 : 0.0;
 
     return GestureDetector(
       onTapDown: isEnabled ? (_) => setState(() => _isPressed = true) : null,
@@ -145,11 +146,7 @@ class _NeoButtonState extends State<NeoButton> {
         padding: EdgeInsets.symmetric(
           horizontal: widget.height <= 38 ? 12 : 18,
         ),
-        transform: Matrix4.translationValues(
-          _isPressed && isEnabled ? 1.5 : 0,
-          _isPressed && isEnabled ? 1.5 : 0,
-          0,
-        ),
+        transform: Matrix4.translationValues(pressShift, pressShift, 0),
         decoration: BoxDecoration(
           color: bg,
           borderRadius: BorderRadius.circular(12),

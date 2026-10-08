@@ -316,7 +316,7 @@ class AppToastWidgetState extends State<AppToastOverlayWidget>
                       boxShadow: const [
                         BoxShadow(
                           color: inkSolid,
-                          offset: Offset(3, 3),
+                          offset: Offset(2, 2),
                           blurRadius: 0,
                         ),
                       ],

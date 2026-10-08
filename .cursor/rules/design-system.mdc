@@ -61,17 +61,17 @@
 --border-thick: 3.5px solid #18181B;
 
 /* Elevation 1 (Chips / Badges) */
-box-shadow: 1.5px 1.5px 0px #18181B;
+box-shadow: 1px 1px 0px #18181B;
 
 /* Elevation 2 (Cards / Inputs / Buttons) */
-box-shadow: 3px 3px 0px #18181B;
+box-shadow: 2px 2px 0px #18181B;
 
 /* Elevation 3 (Device Frame / Floating Panels) */
-box-shadow: 6px 6px 0px #18181B;
+box-shadow: 3px 3px 0px #18181B;
 
-/* Active Pressed Effect */
-transform: translate(2px, 2px);
-box-shadow: 1px 1px 0px #18181B;
+/* Active Pressed Effect: shift by the shadow offset minus 0.5px */
+transform: translate(1.5px, 1.5px);
+box-shadow: 0.5px 0.5px 0px #18181B;
 ```
 
 ---

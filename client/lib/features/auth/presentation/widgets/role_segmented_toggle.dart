@@ -85,7 +85,7 @@ class _RoleTabItem extends StatelessWidget {
               ? const [
                   BoxShadow(
                     color: NeoColors.inkSolid,
-                    offset: Offset(2, 2),
+                    offset: Offset(1.5, 1.5),
                     blurRadius: 0,
                   ),
                 ]

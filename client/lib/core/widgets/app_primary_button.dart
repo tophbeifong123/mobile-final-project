@@ -29,7 +29,7 @@ class AppPrimaryButton extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: NeoColors.inkSolid,
-            offset: isEnabled ? const Offset(2.5, 2.5) : const Offset(1, 1),
+            offset: isEnabled ? const Offset(1.5, 1.5) : const Offset(0.5, 0.5),
             blurRadius: 0,
           ),
         ],

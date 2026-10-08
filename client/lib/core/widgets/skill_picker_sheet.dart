@@ -184,7 +184,7 @@ class _SkillPickerSheetState extends State<SkillPickerSheet> {
                       boxShadow: const [
                         BoxShadow(
                           color: NeoColors.inkSolid,
-                          offset: Offset(1.5, 1.5),
+                          offset: Offset(1, 1),
                           blurRadius: 0,
                         ),
                       ],
@@ -218,7 +218,7 @@ class _SkillPickerSheetState extends State<SkillPickerSheet> {
                   boxShadow: const [
                     BoxShadow(
                       color: NeoColors.inkSolid,
-                      offset: Offset(2, 2),
+                      offset: Offset(1.5, 1.5),
                       blurRadius: 0,
                     ),
                   ],
@@ -296,7 +296,7 @@ class _SkillPickerSheetState extends State<SkillPickerSheet> {
                       boxShadow: const [
                         BoxShadow(
                           color: NeoColors.inkSolid,
-                          offset: Offset(2, 2),
+                          offset: Offset(1.5, 1.5),
                           blurRadius: 0,
                         ),
                       ],
@@ -409,7 +409,7 @@ class _SkillPickerSheetState extends State<SkillPickerSheet> {
               ? const [
                   BoxShadow(
                     color: NeoColors.inkSolid,
-                    offset: Offset(1.5, 1.5),
+                    offset: Offset(1, 1),
                     blurRadius: 0,
                   ),
                 ]
@@ -441,7 +441,7 @@ class _SkillPickerSheetState extends State<SkillPickerSheet> {
           boxShadow: const [
             BoxShadow(
               color: NeoColors.inkSolid,
-              offset: Offset(1.5, 1.5),
+              offset: Offset(1, 1),
               blurRadius: 0,
             ),
           ],

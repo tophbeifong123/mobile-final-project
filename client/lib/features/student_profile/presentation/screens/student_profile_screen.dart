@@ -299,7 +299,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
             boxShadow: const [
               BoxShadow(
                 color: NeoColors.inkSolid,
-                offset: Offset(0, -4),
+                offset: Offset(0, -2),
                 blurRadius: 0,
               ),
             ],

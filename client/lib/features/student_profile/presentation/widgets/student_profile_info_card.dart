@@ -37,7 +37,7 @@ class StudentProfileInfoCard extends StatelessWidget {
         boxShadow: const [
           BoxShadow(
             color: NeoColors.inkSolid,
-            offset: Offset(3, 3),
+            offset: Offset(2, 2),
             blurRadius: 0,
           ),
         ],
@@ -59,7 +59,7 @@ class StudentProfileInfoCard extends StatelessWidget {
                   boxShadow: const [
                     BoxShadow(
                       color: NeoColors.inkSolid,
-                      offset: Offset(1.5, 1.5),
+                      offset: Offset(1, 1),
                       blurRadius: 0,
                     ),
                   ],
