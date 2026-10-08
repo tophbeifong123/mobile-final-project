@@ -72,7 +72,7 @@ class ResumePreviewModal extends ConsumerWidget {
             decoration: BoxDecoration(
               color: NeoColors.pureWhite,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: NeoColors.inkSolid, width: 2.5),
+              border: Border.all(color: NeoColors.inkSolid, width: 2),
               boxShadow: const [
                 BoxShadow(
                   color: NeoColors.inkSolid,
@@ -118,7 +118,9 @@ class ResumePreviewModal extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: const BoxDecoration(
         color: NeoColors.butterYellow,
-        border: Border(bottom: BorderSide(color: NeoColors.inkSolid, width: 2)),
+        border: Border(
+          bottom: BorderSide(color: NeoColors.inkSolid, width: 1.5),
+        ),
       ),
       child: Row(
         children: [
@@ -128,7 +130,7 @@ class ResumePreviewModal extends ConsumerWidget {
             decoration: BoxDecoration(
               color: NeoColors.softRose,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+              border: Border.all(color: NeoColors.inkSolid, width: 1.2),
               boxShadow: const [
                 BoxShadow(
                   color: NeoColors.inkSolid,
@@ -180,7 +182,7 @@ class ResumePreviewModal extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: NeoColors.pureWhite,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                 boxShadow: const [
                   BoxShadow(
                     color: NeoColors.inkSolid,
@@ -215,7 +217,7 @@ class ResumePreviewModal extends ConsumerWidget {
               decoration: BoxDecoration(
                 color: NeoColors.errorBg,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: NeoColors.inkSolid, width: 2),
+                border: Border.all(color: NeoColors.inkSolid, width: 1.5),
                 boxShadow: const [
                   BoxShadow(
                     color: NeoColors.inkSolid,
@@ -260,7 +262,7 @@ class ResumePreviewModal extends ConsumerWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: const BoxDecoration(
         color: NeoColors.paperCanvas,
-        border: Border(top: BorderSide(color: NeoColors.inkSolid, width: 2)),
+        border: Border(top: BorderSide(color: NeoColors.inkSolid, width: 1.5)),
       ),
       child: Row(
         children: [
@@ -456,7 +458,7 @@ class _PdfViewerCanvasState extends State<_PdfViewerCanvas> {
                   decoration: BoxDecoration(
                     color: NeoColors.pureWhite,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                    border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                     boxShadow: const [
                       BoxShadow(
                         color: NeoColors.inkSolid,
@@ -497,7 +499,7 @@ class _PdfViewerCanvasState extends State<_PdfViewerCanvas> {
               decoration: BoxDecoration(
                 color: NeoColors.freshMint,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: NeoColors.inkSolid, width: 2),
+                border: Border.all(color: NeoColors.inkSolid, width: 1.5),
                 boxShadow: const [
                   BoxShadow(
                     color: NeoColors.inkSolid,
@@ -518,7 +520,7 @@ class _PdfViewerCanvasState extends State<_PdfViewerCanvas> {
               textAlign: TextAlign.center,
               style: const TextStyle(
                 fontSize: 16,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w800,
                 color: NeoColors.inkSolid,
               ),
             ),
@@ -610,7 +612,7 @@ class _PdfLoadingView extends StatelessWidget {
               decoration: BoxDecoration(
                 color: NeoColors.butterYellow,
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: NeoColors.inkSolid, width: 2),
+                border: Border.all(color: NeoColors.inkSolid, width: 1.5),
                 boxShadow: const [
                   BoxShadow(
                     color: NeoColors.inkSolid,

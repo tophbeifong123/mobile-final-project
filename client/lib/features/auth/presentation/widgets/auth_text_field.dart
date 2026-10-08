@@ -59,7 +59,7 @@ class AuthTextField extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 12,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w800,
                         color: NeoColors.inkSolid,
                       ),
                     ),
@@ -70,7 +70,7 @@ class AuthTextField extends StatelessWidget {
                       '*',
                       style: TextStyle(
                         fontSize: 12,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w800,
                         color: NeoColors.errorBorder,
                       ),
                     ),
@@ -138,7 +138,7 @@ class AuthTextField extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: badgeColor,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                      border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                     ),
                     child: Icon(badgeIcon, size: 18, color: NeoColors.inkSolid),
                   ),
@@ -161,35 +161,35 @@ class AuthTextField extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(
                   color: NeoColors.inkSolid,
-                  width: 2.2,
+                  width: 1.5,
                 ),
               ),
               enabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(
                   color: NeoColors.inkSolid,
-                  width: 2.2,
+                  width: 1.5,
                 ),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(
                   color: NeoColors.inkSolid,
-                  width: 2.5,
+                  width: 2,
                 ),
               ),
               errorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(
                   color: NeoColors.errorBorder,
-                  width: 2.2,
+                  width: 1.5,
                 ),
               ),
               focusedErrorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(
                   color: NeoColors.errorBorder,
-                  width: 2.5,
+                  width: 2,
                 ),
               ),
               errorStyle: const TextStyle(

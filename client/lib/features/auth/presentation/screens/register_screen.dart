@@ -195,7 +195,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                                       style: TextStyle(
                                                         fontSize: 21,
                                                         fontWeight:
-                                                            FontWeight.w900,
+                                                            FontWeight.w800,
                                                         color:
                                                             NeoColors.inkSolid,
                                                         letterSpacing: -0.5,
@@ -211,7 +211,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                                             color: NeoColors
                                                                 .inkSolid,
                                                             fontWeight:
-                                                                FontWeight.w900,
+                                                                FontWeight.w800,
                                                           ),
                                                         ),
                                                       ],
@@ -395,7 +395,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                                       BorderRadius.circular(6),
                                                   border: Border.all(
                                                     color: NeoColors.inkSolid,
-                                                    width: 2.2,
+                                                    width: 1.5,
                                                   ),
                                                 ),
                                                 child: _agreedToTerms
@@ -485,7 +485,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                                   BorderRadius.circular(10),
                                               border: Border.all(
                                                 color: NeoColors.errorBorder,
-                                                width: 1.8,
+                                                width: 1.5,
                                               ),
                                             ),
                                             child: Row(
@@ -571,7 +571,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                                 'เข้าสู่ระบบ',
                                                 style: TextStyle(
                                                   fontSize: 13,
-                                                  fontWeight: FontWeight.w900,
+                                                  fontWeight: FontWeight.w800,
                                                   color: NeoColors.inkSolid,
                                                   decoration:
                                                       TextDecoration.underline,
@@ -590,7 +590,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                                         borderRadius: BorderRadius.circular(20),
                                         border: Border.all(
                                           color: NeoColors.inkSolid,
-                                          width: 2.5,
+                                          width: 2,
                                         ),
                                         boxShadow: NeoShadows.elevation3,
                                       ),

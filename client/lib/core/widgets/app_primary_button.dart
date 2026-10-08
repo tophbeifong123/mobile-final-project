@@ -25,7 +25,7 @@ class AppPrimaryButton extends StatelessWidget {
       decoration: BoxDecoration(
         color: isEnabled ? bg : bg.withValues(alpha: 0.55),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: NeoColors.inkSolid, width: 2),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
         boxShadow: [
           BoxShadow(
             color: NeoColors.inkSolid,

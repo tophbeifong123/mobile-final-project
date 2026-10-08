@@ -59,7 +59,7 @@ class _GooglePasswordLinkPanelState extends State<GooglePasswordLinkPanel> {
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 20,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w800,
             color: NeoColors.inkSolid,
             letterSpacing: -0.3,
           ),
@@ -95,7 +95,7 @@ class _GooglePasswordLinkPanelState extends State<GooglePasswordLinkPanel> {
             decoration: BoxDecoration(
               color: NeoColors.skyBlue,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+              border: Border.all(color: NeoColors.inkSolid, width: 1.2),
             ),
             child: Text(
               email,
@@ -137,7 +137,7 @@ class _GooglePasswordLinkPanelState extends State<GooglePasswordLinkPanel> {
             decoration: BoxDecoration(
               color: NeoColors.errorBg,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: NeoColors.errorBorder, width: 1.5),
+              border: Border.all(color: NeoColors.errorBorder, width: 1.2),
             ),
             child: Text(
               widget.error!,

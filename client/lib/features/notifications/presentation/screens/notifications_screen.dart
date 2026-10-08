@@ -77,7 +77,9 @@ class _NotiTopBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: const BoxDecoration(
         color: NeoColors.paperCanvas,
-        border: Border(bottom: BorderSide(color: NeoColors.inkSolid, width: 2)),
+        border: Border(
+          bottom: BorderSide(color: NeoColors.inkSolid, width: 1.5),
+        ),
       ),
       child: Row(
         children: [
@@ -90,7 +92,7 @@ class _NotiTopBar extends StatelessWidget {
               decoration: BoxDecoration(
                 color: NeoColors.pureWhite,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: NeoColors.inkSolid, width: 1.8),
+                border: Border.all(color: NeoColors.inkSolid, width: 1.5),
                 boxShadow: NeoShadows.elevation1,
               ),
               child: const Icon(
@@ -108,7 +110,7 @@ class _NotiTopBar extends StatelessWidget {
             decoration: BoxDecoration(
               color: NeoColors.butterYellow,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: NeoColors.inkSolid, width: 1.8),
+              border: Border.all(color: NeoColors.inkSolid, width: 1.5),
               boxShadow: NeoShadows.elevation1,
             ),
             child: const Icon(
@@ -124,7 +126,7 @@ class _NotiTopBar extends StatelessWidget {
               'การแจ้งเตือน',
               style: TextStyle(
                 fontSize: 18,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w800,
                 color: NeoColors.inkSolid,
                 letterSpacing: -0.3,
               ),
@@ -137,7 +139,7 @@ class _NotiTopBar extends StatelessWidget {
               decoration: BoxDecoration(
                 color: NeoColors.electricIndigo,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                 boxShadow: NeoShadows.elevation1,
               ),
               child: Text(
@@ -207,7 +209,7 @@ class _NotificationCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: isUnread ? NeoColors.softLilac : NeoColors.pureWhite,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: NeoColors.inkSolid, width: 2),
+          border: Border.all(color: NeoColors.inkSolid, width: 1.5),
           boxShadow: NeoShadows.elevation2,
         ),
         child: Row(
@@ -222,7 +224,7 @@ class _NotificationCard extends StatelessWidget {
                     ? NeoColors.electricIndigo
                     : NeoColors.surfaceCream,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                 boxShadow: NeoShadows.elevation1,
               ),
               child: Icon(
@@ -264,7 +266,7 @@ class _NotificationCard extends StatelessWidget {
                             shape: BoxShape.circle,
                             border: Border.all(
                               color: NeoColors.inkSolid,
-                              width: 1.5,
+                              width: 1.2,
                             ),
                           ),
                         ),
@@ -376,7 +378,7 @@ class _NotiSkeletonList extends StatelessWidget {
           decoration: BoxDecoration(
             color: NeoColors.pureWhite,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: NeoColors.inkSolid, width: 2),
+            border: Border.all(color: NeoColors.inkSolid, width: 1.5),
             boxShadow: NeoShadows.elevation2,
           ),
           child: const Row(
@@ -458,7 +460,10 @@ class _NotiEmptyView extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: NeoColors.butterYellow,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: NeoColors.inkSolid, width: 2),
+                        border: Border.all(
+                          color: NeoColors.inkSolid,
+                          width: 1.5,
+                        ),
                         boxShadow: NeoShadows.elevation2,
                       ),
                       child: const Icon(
@@ -473,7 +478,7 @@ class _NotiEmptyView extends StatelessWidget {
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 20,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w800,
                         color: NeoColors.inkSolid,
                         letterSpacing: -0.3,
                       ),
@@ -522,7 +527,7 @@ class _NotiErrorView extends StatelessWidget {
               decoration: BoxDecoration(
                 color: NeoColors.errorBg,
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: NeoColors.inkSolid, width: 2),
+                border: Border.all(color: NeoColors.inkSolid, width: 1.5),
                 boxShadow: NeoShadows.elevation2,
               ),
               child: const Icon(
@@ -536,7 +541,7 @@ class _NotiErrorView extends StatelessWidget {
               'โหลดการแจ้งเตือนไม่ได้',
               style: TextStyle(
                 fontSize: 18,
-                fontWeight: FontWeight.w900,
+                fontWeight: FontWeight.w800,
                 color: NeoColors.inkSolid,
               ),
             ),

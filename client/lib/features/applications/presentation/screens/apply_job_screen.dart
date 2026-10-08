@@ -63,7 +63,7 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
         elevation: 0,
         scrolledUnderElevation: 0,
         shape: const Border(
-          bottom: BorderSide(color: NeoColors.inkSolid, width: 2),
+          bottom: BorderSide(color: NeoColors.inkSolid, width: 1.5),
         ),
       ),
       body: SafeArea(
@@ -94,7 +94,7 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
                           Text(
                             'ยืนยันการสมัคร',
                             style: textTheme.titleLarge?.copyWith(
-                              fontWeight: FontWeight.w900,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
                           const Gap(4),
@@ -131,7 +131,7 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
                       Text(
                         job.title,
                         style: textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w800,
                         ),
                         softWrap: true,
                       ),
@@ -190,7 +190,7 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
                             child: Text(
                               'ยังไม่มี CV ในระบบ',
                               style: textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w900,
+                                fontWeight: FontWeight.w800,
                               ),
                             ),
                           ),
@@ -329,7 +329,7 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
                     Text(
                       'Cover Letter',
                       style: textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                     const Gap(6),
@@ -360,7 +360,7 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
                           color: NeoColors.errorBg,
                           border: Border.all(
                             color: NeoColors.errorBorder,
-                            width: 2,
+                            width: 1.5,
                           ),
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -383,7 +383,9 @@ class _ApplyJobScreenState extends ConsumerState<ApplyJobScreen> {
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: NeoColors.paperCanvas,
-          border: Border(top: BorderSide(color: NeoColors.inkSolid, width: 2)),
+          border: Border(
+            top: BorderSide(color: NeoColors.inkSolid, width: 1.5),
+          ),
         ),
         child: SafeArea(
           child: Padding(
@@ -469,7 +471,7 @@ class _NeoPanel extends StatelessWidget {
     decoration: BoxDecoration(
       color: color,
       borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: NeoColors.inkSolid, width: 2.5),
+      border: Border.all(color: NeoColors.inkSolid, width: 2),
       boxShadow: NeoShadows.elevation3,
     ),
     child: child,
@@ -485,7 +487,7 @@ class _Eyebrow extends StatelessWidget {
   Widget build(BuildContext context) => Text(
     text.toUpperCase(),
     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-      fontWeight: FontWeight.w900,
+      fontWeight: FontWeight.w800,
       letterSpacing: 0.7,
     ),
   );

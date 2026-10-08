@@ -26,7 +26,7 @@ class AuthSocialButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: NeoColors.pureWhite,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: NeoColors.inkSolid, width: 2.2),
+          border: Border.all(color: NeoColors.inkSolid, width: 1.5),
           boxShadow: NeoShadows.elevation3,
         ),
         child: Row(
@@ -41,7 +41,7 @@ class AuthSocialButton extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 15,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w800,
                   letterSpacing: -0.3,
                   color: NeoColors.inkSolid,
                 ),

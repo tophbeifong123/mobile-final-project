@@ -10,7 +10,7 @@
 
 ### 1.1 Core Principles
 1. **Playful yet Purposeful (ขี้เล่นแต่จริงจัง):** Combining chunky retro pop illustration with clear recruitment ergonomics. Information must never be obscured by novelty.
-2. **Hard Surfaces & Physical Tactility:** No soft Gaussian blurs or subtle drop shadows. Instead, we use solid black outlines (`2px` – `3.5px`) with hard `3px 3px 0px #18181B` offset shadows that depress on tap.
+2. **Hard Surfaces & Physical Tactility:** No soft Gaussian blurs or subtle drop shadows. Instead, we use solid black outlines (`1.2px` – `2px`) with hard `2px 2px 0px #18181B` offset shadows that depress on tap.
 3. **Warm Paper Canvas:** Ditching sterile pure white `#FFFFFF` backgrounds in favor of warm creamy tones (`#FDF8EE` / `#FFFBEB`) mimicking zines, indie comic prints, and retro Japanese editorial layouts.
 4. **Instant Scannability:** Pill badges, color-coded status chips, bold emoji stickers, and oversized numerals for stipends and match percentages.
 
@@ -44,11 +44,11 @@
 ## 3. ✍️ Typography & Elevation Rules
 
 ### 3.1 Typography
-- **Heading / Display Font:** Serif / Grotesk Display (`font-serif` / `Clash Display` / `Cooper Black` style fallback) with `font-black` weights.
+- **Heading / Display Font:** Serif / Grotesk Display (`font-serif` / `Clash Display` / `Cooper Black` style fallback) with `font-extrabold` (800) as the heaviest weight.
 - **Body & Numerical Font:** Clean Geometric Sans (`Inter` / `Plus Jakarta Sans` / `Noto Sans Thai` for bilingual support).
 - **Scale:**
   - `Hero / Title`: `24px` – `32px` (Line height: `1.15`, letter-spacing: `-0.03em`)
-  - `Section Header`: `18px` – `20px` (Weight: `900`)
+  - `Section Header`: `18px` – `20px` (Weight: `800`)
   - `Card Title / Item`: `14px` – `15px` (Weight: `800`)
   - `Body / Descriptions`: `12px` – `13px` (Weight: `500`, Line height: `1.5`)
   - `Micro / Badges / Timestamps`: `10px` – `11px` (Weight: `800`, uppercase tracking)
@@ -56,9 +56,9 @@
 ### 3.2 Elevation & Shadow Elevation Matrix
 ```css
 /* Chunky Neo-Brutalist CSS Rules */
---border-standard: 2.5px solid #18181B;
---border-thin: 1.5px solid #18181B;
---border-thick: 3.5px solid #18181B;
+--border-standard: 1.5px solid #18181B;
+--border-thin: 1.2px solid #18181B;
+--border-thick: 2px solid #18181B;
 
 /* Elevation 1 (Chips / Badges) */
 box-shadow: 1px 1px 0px #18181B;
@@ -79,22 +79,22 @@ box-shadow: 0.5px 0.5px 0px #18181B;
 ## 4. 🧩 Core Component Anatomy
 
 ### 4.1 Neo-Card (`NeoCard`)
-- **Container:** `rounded-2xl`, `border-[2.5px] border-[#18181B]`, `shadow-[3px_3px_0px_#18181B]`.
-- **States:** Hover/tap moves `translate-x-[2px] translate-y-[2px]` with shadow reduction.
+- **Container:** `rounded-2xl`, `border-[1.5px] border-[#18181B]`, `shadow-[2px_2px_0px_#18181B]`.
+- **States:** Hover/tap moves `translate-x-[1.5px] translate-y-[1.5px]` with shadow reduction.
 - **Header:** Company avatar (`44px` by `44px` rounded square with solid border).
 
 ### 4.2 Pill Tags & Badges (`NeoBadge`)
-- **Shape:** `rounded-full` or `rounded-lg`, border `1.5px` to `2px`.
+- **Shape:** `rounded-full` or `rounded-lg`, border `1.2px` to `1.5px`.
 - **Colors:** Contextual (e.g. Remote = Mint `#A7F3D0`, Hybrid = Lilac `#DDD6FE`, Stipend = Butter Yellow `#FEF08A`).
 
 ### 4.3 Form Controls
-- **Inputs:** `h-11`, `rounded-xl`, `border-[2.5px] border-[#18181B]`, `shadow-[2.5px_2.5px_0px_#18181B]`.
+- **Inputs:** `h-11`, `rounded-xl`, `border-[1.5px] border-[#18181B]`, `shadow-[1.5px_1.5px_0px_#18181B]`.
 - **Focus State:** Background shifts to `#FEF08A`/15% tint with border remaining deep black.
-- **Labels:** Uppercase `11px`, `tracking-wider`, `font-black`.
+- **Labels:** Uppercase `11px`, `tracking-wider`, `font-extrabold`.
 
 ### 4.4 Sticky Bottom Action Bar
 - Pinned at the bottom of the viewport with frosted glass / solid backing (`bg-white/95 backdrop-blur-sm`).
-- Top solid border `2.5px solid #18181B`.
+- Top solid border `1.5px solid #18181B`.
 - Primary CTA button takes `flex-1` width alongside a quick action square button (e.g., Bookmark / Shortlist).
 
 ---
@@ -163,7 +163,7 @@ box-shadow: 0.5px 0.5px 0px #18181B;
 - **Portfolio Links:** External links for Behance, GitHub, and LinkedIn.
 
 #### 8. Resume Upload Screen
-- **Upload Dropzone:** Dashed 3px border container with upload icon.
+- **Upload Dropzone:** Dashed 2px border container with upload icon.
 - **Auto-Parser Badge:** "Auto-Parses Skills & GPA".
 - **Current Resume Card:** File preview with file size, modified date, "Replace PDF", and "Delete" actions.
 

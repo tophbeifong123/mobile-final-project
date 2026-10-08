@@ -124,7 +124,7 @@ class StudentProfileLinksCard extends StatelessWidget {
           return AlertDialog(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
-              side: const BorderSide(color: NeoColors.inkSolid, width: 2),
+              side: const BorderSide(color: NeoColors.inkSolid, width: 1.5),
             ),
             backgroundColor: NeoColors.pureWhite,
             title: Row(
@@ -150,7 +150,7 @@ class StudentProfileLinksCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: NeoColors.paperCanvas,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                      border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                     ),
                     child: const Icon(
                       Icons.close_rounded,
@@ -184,7 +184,7 @@ class StudentProfileLinksCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
                           color: NeoColors.mutedInk,
-                          width: 1.5,
+                          width: 1.2,
                         ),
                       ),
                       child: DropdownButtonHideUnderline(
@@ -264,21 +264,21 @@ class StudentProfileLinksCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10),
                           borderSide: const BorderSide(
                             color: NeoColors.inkSolid,
-                            width: 1.5,
+                            width: 1.2,
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                           borderSide: const BorderSide(
                             color: NeoColors.mutedInk,
-                            width: 1.5,
+                            width: 1.2,
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                           borderSide: const BorderSide(
                             color: NeoColors.inkSolid,
-                            width: 2,
+                            width: 1.5,
                           ),
                         ),
                       ),
@@ -330,21 +330,21 @@ class StudentProfileLinksCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10),
                           borderSide: const BorderSide(
                             color: NeoColors.inkSolid,
-                            width: 1.5,
+                            width: 1.2,
                           ),
                         ),
                         enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                           borderSide: const BorderSide(
                             color: NeoColors.mutedInk,
-                            width: 1.5,
+                            width: 1.2,
                           ),
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                           borderSide: const BorderSide(
                             color: NeoColors.inkSolid,
-                            width: 2,
+                            width: 1.5,
                           ),
                         ),
                       ),
@@ -364,7 +364,7 @@ class StudentProfileLinksCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                       side: const BorderSide(
                         color: NeoColors.inkSolid,
-                        width: 1.5,
+                        width: 1.2,
                       ),
                     ),
                   ),
@@ -418,7 +418,7 @@ class StudentProfileLinksCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: NeoColors.pureWhite,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: NeoColors.inkSolid, width: 2),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
         boxShadow: const [
           BoxShadow(
             color: NeoColors.inkSolid,
@@ -440,7 +440,7 @@ class StudentProfileLinksCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: NeoColors.butterYellow,
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                  border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                   boxShadow: const [
                     BoxShadow(
                       color: NeoColors.inkSolid,
@@ -479,7 +479,7 @@ class StudentProfileLinksCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: NeoColors.freshMint,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                    border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                     boxShadow: const [
                       BoxShadow(
                         color: NeoColors.inkSolid,
@@ -522,7 +522,7 @@ class StudentProfileLinksCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
                   color: NeoColors.mutedInk,
-                  width: 1.5,
+                  width: 1.2,
                   style: BorderStyle.solid,
                 ),
               ),
@@ -568,7 +568,7 @@ class StudentProfileLinksCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: NeoColors.pureWhite,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                    border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                     boxShadow: const [
                       BoxShadow(
                         color: NeoColors.inkSolid,

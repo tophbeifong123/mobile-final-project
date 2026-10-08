@@ -172,7 +172,7 @@ class _SelectionHeading extends StatelessWidget {
           title,
           style: const TextStyle(
             fontSize: 16,
-            fontWeight: FontWeight.w900,
+            fontWeight: FontWeight.w800,
             color: NeoColors.inkSolid,
           ),
         ),
@@ -238,11 +238,11 @@ class _SelectionLinkDialogState extends State<SelectionLinkDialog> {
       backgroundColor: NeoColors.paperCanvas,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: NeoColors.inkSolid, width: 2),
+        side: const BorderSide(color: NeoColors.inkSolid, width: 1.5),
       ),
       title: Text(
         widget.title,
-        style: const TextStyle(fontWeight: FontWeight.w900),
+        style: const TextStyle(fontWeight: FontWeight.w800),
       ),
       content: Column(
         mainAxisSize: MainAxisSize.min,

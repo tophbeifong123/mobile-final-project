@@ -73,7 +73,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           decoration: BoxDecoration(
             color: NeoColors.butterYellow,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: NeoColors.inkSolid, width: 2),
+            border: Border.all(color: NeoColors.inkSolid, width: 1.5),
             boxShadow: NeoShadows.elevation3,
           ),
           child: Text(
@@ -104,7 +104,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             decoration: BoxDecoration(
               color: NeoColors.pureWhite,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: NeoColors.inkSolid, width: 2.5),
+              border: Border.all(color: NeoColors.inkSolid, width: 2),
               boxShadow: NeoShadows.elevation3,
             ),
             child: Column(
@@ -116,7 +116,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 20,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w800,
                     color: NeoColors.inkSolid,
                   ),
                 ),
@@ -270,7 +270,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       borderRadius: BorderRadius.circular(20),
                                       border: Border.all(
                                         color: NeoColors.inkSolid,
-                                        width: 2.5,
+                                        width: 2,
                                       ),
                                       boxShadow: NeoShadows.elevation3,
                                     ),
@@ -376,7 +376,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                                               border: Border.all(
                                                                 color: NeoColors
                                                                     .inkSolid,
-                                                                width: 1.5,
+                                                                width: 1.2,
                                                               ),
                                                             ),
                                                             child: _rememberMe
@@ -447,7 +447,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                                     border: Border.all(
                                                       color:
                                                           NeoColors.errorBorder,
-                                                      width: 1.5,
+                                                      width: 1.2,
                                                     ),
                                                   ),
                                                   child: Text(
@@ -536,7 +536,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                             'ลงทะเบียนสมาชิก',
                                             style: TextStyle(
                                               fontSize: 12.5,
-                                              fontWeight: FontWeight.w900,
+                                              fontWeight: FontWeight.w800,
                                               color: NeoColors.inkSolid,
                                               decoration:
                                                   TextDecoration.underline,

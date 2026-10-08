@@ -60,7 +60,7 @@ class StudentProfileSkillsCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: NeoColors.pureWhite,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: NeoColors.inkSolid, width: 2),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
         boxShadow: const [
           BoxShadow(
             color: NeoColors.inkSolid,
@@ -88,7 +88,7 @@ class StudentProfileSkillsCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(
                           color: NeoColors.inkSolid,
-                          width: 1.5,
+                          width: 1.2,
                         ),
                         boxShadow: const [
                           BoxShadow(
@@ -126,7 +126,7 @@ class StudentProfileSkillsCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: NeoColors.butterYellow,
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                  border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                 ),
                 child: Text(
                   '${skills.length} ทักษะ',
@@ -156,7 +156,7 @@ class StudentProfileSkillsCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: NeoColors.subtleInk,
-                    width: 1.5,
+                    width: 1.2,
                     style: BorderStyle.solid,
                   ),
                 ),
@@ -203,7 +203,7 @@ class StudentProfileSkillsCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: NeoColors.surfaceCream,
                       borderRadius: BorderRadius.circular(999),
-                      border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                      border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                       boxShadow: const [
                         BoxShadow(
                           color: NeoColors.inkSolid,
@@ -247,7 +247,7 @@ class StudentProfileSkillsCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: NeoColors.butterYellow,
                       borderRadius: BorderRadius.circular(999),
-                      border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                      border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                       boxShadow: const [
                         BoxShadow(
                           color: NeoColors.inkSolid,

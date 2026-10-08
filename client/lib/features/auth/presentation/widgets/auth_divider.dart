@@ -19,7 +19,7 @@ class AuthDivider extends StatelessWidget {
           decoration: BoxDecoration(
             color: NeoColors.paperCanvas,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+            border: Border.all(color: NeoColors.inkSolid, width: 1.2),
           ),
           child: Text(
             text,

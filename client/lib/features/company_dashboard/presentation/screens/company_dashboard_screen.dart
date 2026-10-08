@@ -575,7 +575,7 @@ class _StatTile extends StatelessWidget {
             value,
             style: Theme.of(
               context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900),
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
           ),
           const Gap(2),
           Text(
@@ -608,7 +608,7 @@ class _IconBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.2),
         boxShadow: NeoShadows.elevation1,
       ),
       child: Icon(icon, size: size * 0.46, color: NeoColors.inkSolid),
@@ -629,7 +629,7 @@ class _DetailPill extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.2),
       ),
       child: Text(
         label,

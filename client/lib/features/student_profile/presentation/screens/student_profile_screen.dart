@@ -232,7 +232,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
               decoration: BoxDecoration(
                 color: NeoColors.errorBg,
                 borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: NeoColors.errorBorder, width: 1.5),
+                border: Border.all(color: NeoColors.errorBorder, width: 1.2),
               ),
               child: Row(
                 children: [
@@ -295,7 +295,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
           decoration: BoxDecoration(
             color: NeoColors.pureWhite,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            border: Border.all(color: NeoColors.inkSolid, width: 2),
+            border: Border.all(color: NeoColors.inkSolid, width: 1.5),
             boxShadow: const [
               BoxShadow(
                 color: NeoColors.inkSolid,
@@ -335,7 +335,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
                         borderRadius: BorderRadius.circular(6),
                         border: Border.all(
                           color: NeoColors.inkSolid,
-                          width: 1.5,
+                          width: 1.2,
                         ),
                       ),
                       child: const Icon(
@@ -363,7 +363,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
                   decoration: BoxDecoration(
                     color: NeoColors.surfaceCream,
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                    border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                   ),
                   child: Row(
                     children: [
@@ -375,7 +375,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
                             color: NeoColors.inkSolid,
-                            width: 1.5,
+                            width: 1.2,
                           ),
                         ),
                         child: const Icon(
@@ -438,7 +438,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
                         color: NeoColors.errorBorder,
-                        width: 1.5,
+                        width: 1.2,
                       ),
                     ),
                     child: Row(
@@ -451,7 +451,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
                               color: NeoColors.errorBorder,
-                              width: 1.5,
+                              width: 1.2,
                             ),
                           ),
                           child: const Icon(
@@ -591,7 +591,7 @@ class _ProfileFormState extends ConsumerState<_ProfileForm> {
         backgroundColor: NeoColors.pureWhite,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: NeoColors.inkSolid, width: 2),
+          side: const BorderSide(color: NeoColors.inkSolid, width: 1.5),
         ),
         title: const Text(
           'ยืนยันการลบรูปโปรไฟล์',

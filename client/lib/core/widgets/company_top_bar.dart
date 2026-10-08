@@ -42,7 +42,7 @@ class CompanyTopBar extends StatelessWidget implements PreferredSizeWidget {
       elevation: 0,
       scrolledUnderElevation: 0,
       shape: const Border(
-        bottom: BorderSide(color: NeoColors.inkSolid, width: 2),
+        bottom: BorderSide(color: NeoColors.inkSolid, width: 1.5),
       ),
       leadingWidth: showBack ? 56 : null,
       leading: showBack
@@ -61,7 +61,7 @@ class CompanyTopBar extends StatelessWidget implements PreferredSizeWidget {
             decoration: BoxDecoration(
               color: NeoColors.butterYellow,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: NeoColors.inkSolid, width: 2),
+              border: Border.all(color: NeoColors.inkSolid, width: 1.5),
               boxShadow: NeoShadows.elevation1,
             ),
             child: const ExcludeSemantics(
@@ -81,7 +81,7 @@ class CompanyTopBar extends StatelessWidget implements PreferredSizeWidget {
                   style: TextStyle(
                     fontSize: 16,
                     height: 1.2,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w800,
                     color: NeoColors.inkSolid,
                   ),
                 ),
@@ -116,7 +116,7 @@ class CompanyTopBar extends StatelessWidget implements PreferredSizeWidget {
                 decoration: BoxDecoration(
                   color: NeoColors.freshMint,
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                  border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                 ),
                 child: const Text(
                   'บริษัท',

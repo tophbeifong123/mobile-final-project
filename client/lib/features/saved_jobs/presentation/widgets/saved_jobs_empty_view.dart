@@ -30,7 +30,7 @@ class SavedJobsEmptyView extends StatelessWidget {
           decoration: BoxDecoration(
             color: NeoColors.pureWhite,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: NeoColors.inkSolid, width: 2.5),
+            border: Border.all(color: NeoColors.inkSolid, width: 2),
             boxShadow: NeoShadows.elevation3,
           ),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
@@ -45,7 +45,7 @@ class SavedJobsEmptyView extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: NeoColors.butterYellow,
                   borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: NeoColors.inkSolid, width: 2),
+                  border: Border.all(color: NeoColors.inkSolid, width: 1.5),
                   boxShadow: NeoShadows.elevation1,
                 ),
                 child: const Icon(
@@ -61,7 +61,7 @@ class SavedJobsEmptyView extends StatelessWidget {
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 17,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w800,
                   color: NeoColors.inkSolid,
                   letterSpacing: -0.3,
                 ),
@@ -93,7 +93,7 @@ class SavedJobsEmptyView extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: NeoColors.electricIndigo,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: NeoColors.inkSolid, width: 2),
+                    border: Border.all(color: NeoColors.inkSolid, width: 1.5),
                     boxShadow: NeoShadows.elevation1,
                   ),
                   child: Row(

@@ -154,7 +154,7 @@ class _FilterSegment extends StatelessWidget {
       color: selected ? NeoColors.inkSolid : NeoColors.pureWhite,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: const BorderSide(color: NeoColors.inkSolid, width: 1.8),
+        side: const BorderSide(color: NeoColors.inkSolid, width: 1.5),
       ),
       child: InkWell(
         onTap: onTap,
@@ -244,7 +244,7 @@ class _ErrorState extends ConsumerWidget {
               height: 64,
               decoration: BoxDecoration(
                 color: NeoColors.pastelCoral,
-                border: Border.all(color: NeoColors.inkSolid, width: 2),
+                border: Border.all(color: NeoColors.inkSolid, width: 1.5),
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: NeoShadows.elevation2,
               ),
@@ -299,7 +299,7 @@ class _EmptyState extends StatelessWidget {
               height: 72,
               decoration: BoxDecoration(
                 color: NeoColors.butterYellow,
-                border: Border.all(color: NeoColors.inkSolid, width: 2),
+                border: Border.all(color: NeoColors.inkSolid, width: 1.5),
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: NeoShadows.elevation2,
               ),
@@ -344,7 +344,7 @@ class _CreateButton extends StatelessWidget {
     return Container(
       decoration: const BoxDecoration(
         color: NeoColors.paperCanvas,
-        border: Border(top: BorderSide(color: NeoColors.inkSolid, width: 2)),
+        border: Border(top: BorderSide(color: NeoColors.inkSolid, width: 1.5)),
       ),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
       child: NeoButton(
@@ -400,7 +400,7 @@ class _CompanyJobCardState extends ConsumerState<_CompanyJobCard> {
     return Container(
       decoration: BoxDecoration(
         color: NeoColors.pureWhite,
-        border: Border.all(color: NeoColors.inkSolid, width: 2.2),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
         borderRadius: BorderRadius.circular(16),
         boxShadow: NeoShadows.elevation2,
       ),
@@ -501,7 +501,7 @@ class _StatusBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: color,
-        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.2),
         borderRadius: BorderRadius.circular(20),
         boxShadow: const [
           BoxShadow(color: NeoColors.inkSolid, offset: Offset(1.5, 1.5)),
@@ -620,7 +620,7 @@ class _StatusAction extends StatelessWidget {
       color: NeoColors.pureWhite,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
-        side: const BorderSide(color: NeoColors.inkSolid, width: 1.8),
+        side: const BorderSide(color: NeoColors.inkSolid, width: 1.5),
       ),
       child: InkWell(
         onTap: isLoading ? null : onPressed,
@@ -700,7 +700,7 @@ class _JobSkeletonList extends StatelessWidget {
         itemBuilder: (_, _) => Container(
           decoration: BoxDecoration(
             color: NeoColors.pureWhite,
-            border: Border.all(color: NeoColors.inkSolid, width: 2),
+            border: Border.all(color: NeoColors.inkSolid, width: 1.5),
             borderRadius: BorderRadius.circular(8),
           ),
           padding: const EdgeInsets.all(14),

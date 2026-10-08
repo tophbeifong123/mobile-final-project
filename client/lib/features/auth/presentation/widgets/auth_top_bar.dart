@@ -15,7 +15,7 @@ class AuthTopBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 14),
       decoration: const BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: NeoColors.inkSolid, width: 1.5),
+          bottom: BorderSide(color: NeoColors.inkSolid, width: 1.2),
         ),
       ),
       child: Text(
@@ -23,7 +23,7 @@ class AuthTopBar extends StatelessWidget {
         textAlign: TextAlign.center,
         style: const TextStyle(
           fontSize: 16,
-          fontWeight: FontWeight.w900,
+          fontWeight: FontWeight.w800,
           color: NeoColors.inkSolid,
           letterSpacing: -0.3,
         ),

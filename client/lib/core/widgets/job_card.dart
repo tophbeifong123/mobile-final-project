@@ -46,7 +46,7 @@ class JobCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: NeoColors.pureWhite,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: NeoColors.inkSolid, width: 2.5),
+          border: Border.all(color: NeoColors.inkSolid, width: 2),
           boxShadow: NeoShadows.elevation2,
         ),
         padding: const EdgeInsets.all(14),
@@ -62,7 +62,7 @@ class JobCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: markColor,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: NeoColors.inkSolid, width: 2),
+                    border: Border.all(color: NeoColors.inkSolid, width: 1.5),
                     boxShadow: NeoShadows.elevation1,
                   ),
                   child: ClipRRect(
@@ -74,7 +74,7 @@ class JobCard extends StatelessWidget {
                             letter,
                             style: const TextStyle(
                               fontSize: 18,
-                              fontWeight: FontWeight.w900,
+                              fontWeight: FontWeight.w800,
                               color: NeoColors.inkSolid,
                             ),
                           ),
@@ -148,7 +148,7 @@ class JobCard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(8),
                               border: Border.all(
                                 color: NeoColors.inkSolid,
-                                width: 1.5,
+                                width: 1.2,
                               ),
                             ),
                             child: Text(
@@ -183,7 +183,7 @@ class JobCard extends StatelessWidget {
                           ? NeoColors.butterYellow
                           : NeoColors.surfaceCream,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                      border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                     ),
                     child: Text(
                       allowance,
@@ -257,7 +257,7 @@ class _BookmarkButton extends StatelessWidget {
           decoration: BoxDecoration(
             color: isSaved ? NeoColors.butterYellow : NeoColors.paperCanvas,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: NeoColors.inkSolid, width: 2),
+            border: Border.all(color: NeoColors.inkSolid, width: 1.5),
             boxShadow: NeoShadows.elevation1,
           ),
           child: Icon(

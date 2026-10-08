@@ -247,7 +247,7 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
     decoration: BoxDecoration(
       color: NeoColors.pureWhite,
       borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: NeoColors.inkSolid, width: 2),
+      border: Border.all(color: NeoColors.inkSolid, width: 1.5),
       boxShadow: NeoShadows.elevation1,
     ),
     child: child,
@@ -259,7 +259,7 @@ class _ResumeUploadScreenState extends ConsumerState<ResumeUploadScreen> {
     alignment: Alignment.center,
     decoration: BoxDecoration(
       color: busy ? NeoColors.softLilac : NeoColors.skyBlue,
-      border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+      border: Border.all(color: NeoColors.inkSolid, width: 1.2),
       borderRadius: BorderRadius.circular(10),
     ),
     child: busy

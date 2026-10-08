@@ -77,7 +77,7 @@ class _StudentProfileResumeCardState
       decoration: BoxDecoration(
         color: NeoColors.pureWhite,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: NeoColors.inkSolid, width: 2),
+        border: Border.all(color: NeoColors.inkSolid, width: 1.5),
         boxShadow: const [
           BoxShadow(color: NeoColors.inkSolid, offset: Offset(3, 3)),
         ],
@@ -93,7 +93,7 @@ class _StudentProfileResumeCardState
                 decoration: BoxDecoration(
                   color: NeoColors.freshMint,
                   borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+                  border: Border.all(color: NeoColors.inkSolid, width: 1.2),
                 ),
                 child: const Icon(Icons.description_rounded, size: 15),
               ),
@@ -114,7 +114,7 @@ class _StudentProfileResumeCardState
                 style: OutlinedButton.styleFrom(
                   backgroundColor: NeoColors.freshMint,
                   foregroundColor: NeoColors.inkSolid,
-                  side: const BorderSide(color: NeoColors.inkSolid, width: 1.5),
+                  side: const BorderSide(color: NeoColors.inkSolid, width: 1.2),
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -203,7 +203,7 @@ class _DocumentRow extends StatelessWidget {
     decoration: BoxDecoration(
       color: NeoColors.pureWhite,
       borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: NeoColors.inkSolid, width: 1.5),
+      border: Border.all(color: NeoColors.inkSolid, width: 1.2),
       boxShadow: const [
         BoxShadow(color: NeoColors.inkSolid, offset: Offset(1.5, 2)),
       ],
